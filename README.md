@@ -48,11 +48,15 @@ VALUE       OPCODE  EXPLANATION
 
 ### PPU
 
+### Assembly
+
+```
+2 2 + $ef
+```
+
 ### Assembler
 
 
 ### Emulator
 
 - SDL Layer
-
-### Assembly

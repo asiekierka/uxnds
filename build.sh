@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # format code
+clang-format -i uxnasm.c
 clang-format -i uxn.c
 
 # remove old
+rm -f ./uxnasm
 rm -f ./uxn
 
 # debug(slow)
+cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxnasm.c -o uxnasm
 cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c -o uxn
 
 # build(fast)
@@ -15,12 +18,6 @@ cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werr
 # Size
 echo "Size: $(du -sk ./uxn)"
 
-# Install
-if [ -d "$HOME/bin" ] && [ -e ./uxn ]
-then
-	cp ./uxn $HOME/bin
-    echo "Installed: $HOME/bin" 
-fi
-
 # run
-./uxn 
+./uxnasm program.usm program.rom
+# ./uxn program.rom
