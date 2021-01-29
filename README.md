@@ -50,6 +50,9 @@ VALUE       OPCODE  EXPLANATION
 
 ### Assembly
 
+- `%25`, decimal
+- `#25`, hex
+
 ```
 2 2 + $ef
 ```

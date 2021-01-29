@@ -15,6 +15,7 @@ WITH REGARD TO THIS SOFTWARE.
 #define ECHO 1
 
 typedef unsigned char Uint8;
+typedef unsigned char Uint16;
 
 typedef struct {
 
@@ -23,12 +24,13 @@ typedef struct {
 Uint8 sptr;
 Uint8 stack[STACK_DEPTH];
 Uint8 address[STACK_DEPTH];
-Uint8 memory[STACK_DEPTH];
+Uint16 memory[STACK_DEPTH];
 
 void
-stackprint(Uint8 *s, Uint8 len)
+echo(Uint8 *s, Uint8 len, char *name)
 {
 	int i;
+	printf("%s\n", name);
 	for(i = 0; i < len; ++i) {
 		if(i % 16 == 0)
 			printf("\n");
@@ -65,13 +67,12 @@ disk(Computer *cpu, FILE *f)
 	reset(cpu);
 	if(!fread(buffer, sizeof(buffer), 1, f))
 		return 0;
-	/*
-	
+
 	for(i = 0; i < 128; i++) {
 		cpu->memory[i * 2] |= (buffer[i] >> 8) & 0xFF;
 		cpu->memory[i * 2 + 1] |= buffer[i] & 0xFF;
 	}
-	*/
+
 	return 1;
 }
 
@@ -92,12 +93,8 @@ main(int argc, char *argv[])
 	if(!disk(&cpu, f))
 		return error("Unreadable input.");
 	run(&cpu, ECHO);
-	/* program */
-	op_push(stack, 0xef);
-	op_pop(stack);
-	op_push(stack, 0x02);
-	op_push(stack, 0x03);
 	/* print result */
-	stackprint(stack, 0x40);
+	echo(stack, 0x40, "stack");
+	echo(memory, 0x40, "memory");
 	return 0;
 }

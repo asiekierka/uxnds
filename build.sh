@@ -20,4 +20,4 @@ echo "Size: $(du -sk ./uxn)"
 
 # run
 ./uxnasm program.usm program.rom
-# ./uxn program.rom
+./uxn program.rom
