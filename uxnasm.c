@@ -20,7 +20,39 @@ typedef struct {
 	Uint8 data[PRGLEN];
 } Program;
 
-char opcodes[][4] = {"BRK", "LIT", "DUP", "DRP", "SWP", "SLP", "PSH", "POP", "JMP", "JSR", "RST", "BEQ", "EQU", "NEQ", "LTH", "GTH"};
+char opcodes[][4] = {
+	"BRK",
+	"LIT",
+	"DUP",
+	"DRP",
+	"SWP",
+	"SLP",
+	"PSH",
+	"POP", /* --- */
+	"JMP",
+	"JSR",
+	"RST",
+	"BEQ",
+	"EQU",
+	"NEQ",
+	"LTH",
+	"GTH", /* --- */
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---", /* --- */
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---",
+	"---"};
 
 Program p;
 
@@ -65,26 +97,12 @@ Uint8
 getopcode(char *s)
 {
 	int i;
+	if(s[0] == '{') /* TODO catch closing */
+		return 0x01;
 	for(i = 0; i < 16; ++i)
 		if(scmp(opcodes[i], suca(s)))
 			return i;
 	return 0xff;
-}
-
-void
-echo(Uint8 *s, Uint8 len, Uint8 ptr, char *name)
-{
-	int i;
-	printf("%s\n", name);
-	for(i = 0; i < len; ++i) {
-		if(i % 16 == 0)
-			printf("\n");
-		if(ptr == i)
-			printf("[%02x]", s[i]);
-		else
-			printf(" %02x ", s[i]);
-	}
-	printf("\n");
 }
 
 void
@@ -93,6 +111,8 @@ pass1(FILE *f)
 	char word[64];
 	while(fscanf(f, "%s", word) == 1) {
 		int op = getopcode(word);
+		if(word[0] == '}')
+			continue;
 		if(op == 0xff)
 			op = shex(word);
 		p.data[p.ptr++] = op;
@@ -117,6 +137,5 @@ main(int argc, char *argv[])
 	pass1(f);
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
-	echo(p.data, 0x40, 0, "program");
 	return 0;
 }

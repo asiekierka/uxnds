@@ -1,7 +1,9 @@
 AlignAfterOpenBracket: DontAlign
 AlignEscapedNewlines: DontAlign
+AlignOperands: DontAlign
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterDefinitionReturnType: TopLevel
