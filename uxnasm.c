@@ -14,12 +14,13 @@ WITH REGARD TO THIS SOFTWARE.
 #define PRGLEN 256
 
 typedef unsigned char Uint8;
-typedef unsigned short Uint16;
 
 typedef struct {
 	int ptr;
-	Uint16 data[PRGLEN];
+	Uint8 data[PRGLEN];
 } Program;
+
+char opcodes[][4] = {"BRK", "LIT", "DUP", "DRP", "SWP", "SLP", "PSH", "POP", "JMP", "JSR", "RST", "BEQ", "EQU", "NEQ", "LTH", "GTH"};
 
 Program p;
 
@@ -33,6 +34,16 @@ scmp(char *a, char *b) /* string compare */
 		if(!a[i++])
 			return 1;
 	return 0;
+}
+
+char *
+suca(char *s) /* string to uppercase */
+{
+	int i = 0;
+	char c;
+	while((c = s[i]))
+		s[i++] = c >= 'a' && c <= 'z' ? c - ('a' - 'A') : c;
+	return s;
 }
 
 int
@@ -53,10 +64,27 @@ shex(char *s) /* string to num */
 Uint8
 getopcode(char *s)
 {
-	if(scmp(s, "add")) {
-		return 0x01;
+	int i;
+	for(i = 0; i < 16; ++i)
+		if(scmp(opcodes[i], suca(s)))
+			return i;
+	return 0xff;
+}
+
+void
+echo(Uint8 *s, Uint8 len, Uint8 ptr, char *name)
+{
+	int i;
+	printf("%s\n", name);
+	for(i = 0; i < len; ++i) {
+		if(i % 16 == 0)
+			printf("\n");
+		if(ptr == i)
+			printf("[%02x]", s[i]);
+		else
+			printf(" %02x ", s[i]);
 	}
-	return 0;
+	printf("\n");
 }
 
 void
@@ -64,16 +92,10 @@ pass1(FILE *f)
 {
 	char word[64];
 	while(fscanf(f, "%s", word) == 1) {
-		int lit = 0, val = 0;
-		if(word[0] == '#') {
-			lit = 0;
-			val = shex(word + 1);
-		} else {
-			lit = 1;
-			val = getopcode(word);
-		}
-		printf("#%d -> %s[%02x %02x]\n", p.ptr, word, lit, val);
-		p.data[p.ptr++] = (val << 8) + (lit & 0xff);
+		int op = getopcode(word);
+		if(op == 0xff)
+			op = shex(word);
+		p.data[p.ptr++] = op;
 	}
 }
 
@@ -95,5 +117,6 @@ main(int argc, char *argv[])
 	pass1(f);
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
+	echo(p.data, 0x40, 0, "program");
 	return 0;
 }
