@@ -1,11 +1,11 @@
 AlignAfterOpenBracket: DontAlign
 AlignEscapedNewlines: DontAlign
 AlignOperands: DontAlign
-AllowShortBlocksOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortEnumsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: TopLevel
 BinPackArguments: false
 BinPackParameters: false

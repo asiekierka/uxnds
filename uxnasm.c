@@ -16,43 +16,31 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned char Uint8;
 
 typedef struct {
-	int ptr;
+	int len;
 	Uint8 data[PRGLEN];
 } Program;
+
+char labels[256][16];
 
 char opcodes[][4] = {
 	"BRK",
 	"LIT",
+	"---",
+	"POP",
 	"DUP",
-	"DRP",
 	"SWP",
-	"SLP",
-	"PSH",
-	"POP", /* --- */
+	"OVR",
+	"ROT",
+	/* */
 	"JMP",
 	"JSR",
-	"RST",
-	"BEQ",
+	"JEQ",
+	"RTS",
 	"EQU",
 	"NEQ",
 	"LTH",
-	"GTH", /* --- */
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---", /* --- */
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---",
-	"---"};
+	"GTH",
+	/* */};
 
 Program p;
 
@@ -79,6 +67,17 @@ suca(char *s) /* string to uppercase */
 }
 
 int
+sihx(char *s)
+{
+	int i = 0;
+	char c;
+	while((c = s[i++]))
+		if(!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'F'))
+			return 0;
+	return 1;
+}
+
+int
 shex(char *s) /* string to num */
 {
 	int n = 0, i = 0;
@@ -86,36 +85,90 @@ shex(char *s) /* string to num */
 	while((c = s[i++]))
 		if(c >= '0' && c <= '9')
 			n = n * 16 + (c - '0');
-		else if(c >= 'a' && c <= 'f')
-			n = n * 16 + 10 + (c - 'a');
+		else if(c >= 'A' && c <= 'F')
+			n = n * 16 + 10 + (c - 'A');
 	return n;
 }
 
-#pragma mark - Helpers
+#pragma mark - Parser
+
+void
+addprg(Uint8 hex)
+{
+	p.data[p.len++] = hex;
+}
+
+void
+addlabel(char *id, Uint8 addr)
+{
+	printf("new label: %s=%02x\n", id, addr);
+}
+
+void
+addconst(char *id, Uint8 value)
+{
+	printf("new const: %s=%02x\n", id, value);
+}
 
 Uint8
-getopcode(char *s)
+findop(char *s)
 {
 	int i;
-	if(s[0] == '{') /* TODO catch closing */
-		return 0x01;
 	for(i = 0; i < 16; ++i)
-		if(scmp(opcodes[i], suca(s)))
+		if(scmp(opcodes[i], s))
 			return i;
-	return 0xff;
+	return 0;
+}
+
+int
+comment(char *w, int *skip)
+{
+	if(w[0] == '>') {
+		*skip = 0;
+		return 1;
+	}
+	if(w[0] == '<') *skip = 1;
+	if(*skip) return 1;
+	return 0;
 }
 
 void
 pass1(FILE *f)
 {
+	int skip = 0;
 	char word[64];
 	while(fscanf(f, "%s", word) == 1) {
-		int op = getopcode(word);
-		if(word[0] == '}')
+		if(comment(word, &skip))
 			continue;
-		if(op == 0xff)
-			op = shex(word);
-		p.data[p.ptr++] = op;
+	}
+	rewind(f);
+}
+
+void
+pass2(FILE *f)
+{
+	int skip = 0;
+	char word[64];
+	while(fscanf(f, "%s", word) == 1) {
+		Uint8 op;
+		suca(word);
+		if(comment(word, &skip)) continue;
+		if(word[0] == ']') continue;
+		if(word[0] == '+') {
+			addprg(0x01);
+			addprg(1);
+			addprg(shex(word + 1));
+		} else if(word[0] == '[') {
+			addprg(0x01);
+			addprg(shex(word + 1));
+		} else if((op = findop(word)))
+			addprg(op);
+		else if(sihx(word))
+			addprg(shex(word));
+		else if(scmp(word, "BRK"))
+			addprg(0x00);
+		else
+			printf("unknown: %s\n", word);
 	}
 }
 
@@ -135,6 +188,7 @@ main(int argc, char *argv[])
 	if(!(f = fopen(argv[1], "r")))
 		return error("Missing input.");
 	pass1(f);
+	pass2(f);
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
 	return 0;

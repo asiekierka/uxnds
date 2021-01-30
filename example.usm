@@ -1,1 +1,5 @@
-{ 25 26 27 28 } SWP POP DUP BRK
+< comment >
+
+[3 1 2 3 ] pop dup swp ovr rot 
+
+brk

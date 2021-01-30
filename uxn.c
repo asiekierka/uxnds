@@ -29,19 +29,23 @@ typedef struct {
 	Uint8 address[STACK_DEPTH];
 } Computer;
 
+Computer cpu;
+
+#pragma mark - Helpers
+
 void
-setflag(Computer *cpu, char flag, int b)
+setflag(char flag, int b)
 {
 	if(b)
-		cpu->status |= flag;
+		cpu.status |= flag;
 	else
-		cpu->status &= (~flag);
+		cpu.status &= (~flag);
 }
 
 int
-getflag(Computer *cpu, char flag)
+getflag(char flag)
 {
-	return cpu->status & flag;
+	return cpu.status & flag;
 }
 
 void
@@ -57,30 +61,31 @@ echo(Uint8 *s, Uint8 len, char *name)
 	printf("\n\n");
 }
 
+#pragma mark - Operations
+
 void
 op_push(Uint8 *s, Uint8 *ptr, Uint8 v)
 {
-	s[*ptr] = v;
-	(*ptr) += 1;
+	s[(*ptr)++] = v;
 }
 
-void
+Uint8
 op_pop(Uint8 *s, Uint8 *ptr)
 {
-	s[*ptr--] = 0x00;
+	return s[--*ptr];
 }
 
 void
-reset(Computer *cpu)
+reset(void)
 {
 	int i;
-	cpu->status = 0x00;
-	cpu->counter = 0x00;
-	cpu->mptr = 0x00;
-	cpu->sptr = 0x00;
-	cpu->literal = 0x00;
+	cpu.status = 0x00;
+	cpu.counter = 0x00;
+	cpu.mptr = 0x00;
+	cpu.sptr = 0x00;
+	cpu.literal = 0x00;
 	for(i = 0; i < 256; i++)
-		cpu->stack[i] = 0x00;
+		cpu.stack[i] = 0x00;
 }
 
 int
@@ -91,39 +96,63 @@ error(char *name)
 }
 
 void
-load(Computer *cpu, FILE *f)
+load(FILE *f)
 {
-	fread(cpu->memory, sizeof(cpu->memory), 1, f);
+	fread(cpu.memory, sizeof(cpu.memory), 1, f);
 }
 
 void
-eval(Computer *cpu)
+eval()
 {
-	Uint8 instr = cpu->memory[cpu->mptr++];
-
-	if(cpu->literal > 0) {
-		printf("push: %02x[%d](%d)\n", instr, cpu->literal, cpu->sptr);
-		op_push(cpu->stack, &cpu->sptr, instr);
-		cpu->literal--;
+	Uint8 instr = cpu.memory[cpu.mptr++];
+	Uint8 a, b, c;
+	if(cpu.literal > 0) {
+		printf("push: %02x[%d](%d)\n", instr, cpu.literal, cpu.sptr);
+		op_push(cpu.stack, &cpu.sptr, instr);
+		cpu.literal--;
 		return;
 	}
 	switch(instr) {
-	case 0x0: setflag(cpu, FLAG_HALT, 1); break;
-	case 0x1: cpu->literal += 4; break;
+	case 0x0: setflag(FLAG_HALT, 1); break;
+	case 0x1: cpu.literal += cpu.memory[cpu.mptr++]; break;
+	case 0x2: printf("??\n"); break;
+	case 0x3: /* pop */
+		op_pop(cpu.stack, &cpu.sptr);
+		break;
+	case 0x4: /* dup */
+		op_push(cpu.stack, &cpu.sptr, cpu.stack[cpu.sptr - 1]);
+		break;
+	case 0x5: /* swp */
+		b = op_pop(cpu.stack, &cpu.sptr);
+		a = op_pop(cpu.stack, &cpu.sptr);
+		op_push(cpu.stack, &cpu.sptr, b);
+		op_push(cpu.stack, &cpu.sptr, a);
+		break;
+	case 0x6: /* ovr */
+		op_push(cpu.stack, &cpu.sptr, cpu.stack[cpu.sptr - 2]);
+		break;
+	case 0x7: /* rot */
+		c = op_pop(cpu.stack, &cpu.sptr);
+		b = op_pop(cpu.stack, &cpu.sptr);
+		a = op_pop(cpu.stack, &cpu.sptr);
+		op_push(cpu.stack, &cpu.sptr, b);
+		op_push(cpu.stack, &cpu.sptr, c);
+		op_push(cpu.stack, &cpu.sptr, a);
+		break;
 	default: printf("Unknown instruction: #%02x\n", instr);
 	}
 }
 
 void
-run(Computer *cpu)
+run(void)
 {
 	int i;
-	while((cpu->status & FLAG_HALT) == 0)
+	while((cpu.status & FLAG_HALT) == 0)
 		eval(cpu);
 	/* debug */
-	printf("ended @ %d  |  ", cpu->counter);
+	printf("ended @ %d  |  ", cpu.counter);
 	for(i = 0; i < 4; i++)
-		printf("%d-", (cpu->status & (1 << i)) != 0);
+		printf("%d-", (cpu.status & (1 << i)) != 0);
 	printf("\n\n");
 }
 
@@ -131,14 +160,13 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	Computer cpu;
 	if(argc < 2)
 		return error("No input.");
 	if(!(f = fopen(argv[1], "rb")))
 		return error("Missing input.");
-	reset(&cpu);
-	load(&cpu, f);
-	run(&cpu);
+	reset();
+	load(f);
+	run();
 	/* print result */
 	echo(cpu.stack, 0x40, "stack");
 	echo(cpu.memory, 0x40, "memory");

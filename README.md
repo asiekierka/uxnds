@@ -11,26 +11,23 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 ## Assembly Syntax
 
 ```
-: 	starting a definition
-& 	obtaining pointers
-( 	stack comments
-` 	inlining bytecodes
-' 	strings
-# 	numbers
-$ 	characters
-~   vector
-[ 12 34 ] real values
-< 12 34 > relative values
-( 12 34 ) deadzone
-```
+< comment >
 
-```
-;add-two JSR
++01 < literal >
 
-BRK
+[ 01 02 03 04 ] < block of literals >
 
-:add-two
-	[ 2 ] ADD RTS
+$01 < pointer8 >
+
+{ 01 02 03 04 } < block of pointer8 >
+
+~ff0f < pointer16 >
+
+( ff00 ff01 ff02 ff03 ) < block of pointer16 >
+
+=const +ff
+
+:label ADD RTS
 ```
 
 ## Design
@@ -57,3 +54,12 @@ BRK
 ### Emulator
 
 - SDL Layer
+
+
+## Refs
+
+https://code.9front.org/hg/plan9front/file/a7f9946e238f/sys/src/games/nes/cpu.c
+http://www.w3group.de/stable_glossar.html
+http://www.emulator101.com/6502-addressing-modes.html
+http://forth.works/8f0c04f616b6c34496eb2141785b4454
+https://justinmeiners.github.io/lc3-vm/
