@@ -24,8 +24,9 @@ typedef struct {
 	Uint8 literal;
 	Uint8 status, counter;
 	Uint8 memory[STACK_DEPTH];
-	Uint8 mptr, sptr;
+	Uint8 mptr, sptr, rsptr;
 	Uint8 stack[STACK_DEPTH];
+	Uint8 rstack[STACK_DEPTH];
 	Uint8 address[STACK_DEPTH];
 } Computer;
 
@@ -61,19 +62,65 @@ echo(Uint8 *s, Uint8 len, char *name)
 	printf("\n\n");
 }
 
-#pragma mark - Operations
-
 void
-op_push(Uint8 *s, Uint8 *ptr, Uint8 v)
+spush(Uint8 v)
 {
-	s[(*ptr)++] = v;
+	cpu.stack[cpu.sptr++] = v;
 }
 
 Uint8
-op_pop(Uint8 *s, Uint8 *ptr)
+spop(void)
 {
-	return s[--*ptr];
+	return cpu.stack[--cpu.sptr];
 }
+
+void
+rspush(Uint8 v)
+{
+	cpu.rstack[cpu.rsptr++] = v;
+}
+
+Uint8
+rspop(void)
+{
+	return cpu.rstack[--cpu.rsptr];
+}
+
+#pragma mark - Operations
+
+/* clang-format off */
+
+void op_brk() { setflag(FLAG_HALT, 1); }
+void op_lit() { cpu.literal += cpu.memory[cpu.mptr++]; }
+void op_nop() { }
+void op_drp() { spop(); }
+void op_dup() { spush(cpu.stack[cpu.sptr - 1]); }
+void op_swp() { Uint8 b = spop(), a = spop(); spush(b); spush(a); }
+void op_ovr() { spush(cpu.stack[cpu.sptr - 2]); }
+void op_rot() { Uint8 c = spop(),b = spop(),a = spop(); spush(b); spush(c); spush(a); }
+void op_jmp() { cpu.mptr = spop(); }
+void op_jsr() { rspush(cpu.mptr); cpu.mptr = spop(); }
+void op_jeq() { if(getflag(FLAG_ZERO)) cpu.mptr = spop(); }
+void op_rts() {	cpu.mptr = rspop(); }
+void op_equ() { setflag(FLAG_ZERO, spop() == spop()); }
+void op_neq() { setflag(FLAG_ZERO, spop() != spop()); }
+void op_lth() {	setflag(FLAG_ZERO, spop() < spop()); }
+void op_gth() {	setflag(FLAG_ZERO, spop() > spop()); }
+void op_and() {	spush(spop() & spop()); }
+void op_ora() {	spush(spop() | spop()); }
+void op_rol() { spush(spop() << 1); }
+void op_ror() { spush(spop() >> 1); }
+void op_add() { spush(spop() + spop()); }
+void op_sub() { spush(spop() - spop()); }
+void op_mul() { spush(spop() * spop()); }
+void op_div() { spush(spop() / spop()); }
+
+void (*ops[])(void) = {
+	op_brk, op_lit, op_nop, op_drp, op_dup, op_swp, op_ovr, op_rot, 
+	op_jmp, op_jsr, op_jeq, op_rts, op_equ, op_neq, op_gth, op_lth, 
+	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div};
+
+/* clang-format on */
 
 void
 reset(void)
@@ -105,42 +152,13 @@ void
 eval()
 {
 	Uint8 instr = cpu.memory[cpu.mptr++];
-	Uint8 a, b, c;
 	if(cpu.literal > 0) {
-		printf("push: %02x[%d](%d)\n", instr, cpu.literal, cpu.sptr);
-		op_push(cpu.stack, &cpu.sptr, instr);
+		spush(instr);
 		cpu.literal--;
 		return;
 	}
-	switch(instr) {
-	case 0x0: setflag(FLAG_HALT, 1); break;
-	case 0x1: cpu.literal += cpu.memory[cpu.mptr++]; break;
-	case 0x2: printf("??\n"); break;
-	case 0x3: /* pop */
-		op_pop(cpu.stack, &cpu.sptr);
-		break;
-	case 0x4: /* dup */
-		op_push(cpu.stack, &cpu.sptr, cpu.stack[cpu.sptr - 1]);
-		break;
-	case 0x5: /* swp */
-		b = op_pop(cpu.stack, &cpu.sptr);
-		a = op_pop(cpu.stack, &cpu.sptr);
-		op_push(cpu.stack, &cpu.sptr, b);
-		op_push(cpu.stack, &cpu.sptr, a);
-		break;
-	case 0x6: /* ovr */
-		op_push(cpu.stack, &cpu.sptr, cpu.stack[cpu.sptr - 2]);
-		break;
-	case 0x7: /* rot */
-		c = op_pop(cpu.stack, &cpu.sptr);
-		b = op_pop(cpu.stack, &cpu.sptr);
-		a = op_pop(cpu.stack, &cpu.sptr);
-		op_push(cpu.stack, &cpu.sptr, b);
-		op_push(cpu.stack, &cpu.sptr, c);
-		op_push(cpu.stack, &cpu.sptr, a);
-		break;
-	default: printf("Unknown instruction: #%02x\n", instr);
-	}
+	if(instr < 24)
+		(*ops[instr])();
 }
 
 void

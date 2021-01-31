@@ -10,6 +10,10 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ## Assembly Syntax
 
+- `:label`, a named offset
+- `+literal`, a numeric value
+- `.pointer`, pointer to a label
+
 ```
 < comment >
 
@@ -30,31 +34,16 @@ $01 < pointer8 >
 :label ADD RTS
 ```
 
-## Design
+## TODOs
 
-### CPU
-
-- Build stack with pointer
-- Print stack
-- Build memory
-
-### PPU
-
-### Assembly
-
-#### Addressing 
-
-- `label`, a named offset[TODO]
-- `literal`, a numeric value
-- `pointer`, pointer to an address[TODO]
-
-### Assembler
-
-
-### Emulator
-
-- SDL Layer
-
+- Implement addressing
+- Implement 16 bits operations
+- Jumps should be relative
+- Catch overflow/underflow
+- Implement literals like `[2]`, and `[ 2 3 ]`.
+- Audo-detect literals length.
+- SDL Layer Emulator
+- Build PPU
 
 ## Refs
 

@@ -1,5 +1,18 @@
 < comment >
 
-[3 1 2 3 ] pop dup swp ovr rot 
+.deep JSR [4 6 7 8 9 ] BRK
 
-brk
+:deep
+	[2 1 2 ] 
+	.deeper JSR 
+	RTS
+
+:deeper
+	[3 3 4 5 ] 
+	.deeperyet JSR
+	RTS
+
+:deeperyet
+	[2 aa bb ]
+	RTS
+	
