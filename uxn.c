@@ -91,8 +91,8 @@ rspop(void)
 /* clang-format off */
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_lit() { cpu.literal += cpu.memory[cpu.mptr++]; }
-void op_nop() { }
+void op_rts() {	cpu.mptr = rspop(); }
+void op_lit() { cpu.literal += 1;}
 void op_drp() { spop(); }
 void op_dup() { spush(cpu.stack[cpu.sptr - 1]); }
 void op_swp() { Uint8 b = spop(), a = spop(); spush(b); spush(a); }
@@ -100,8 +100,8 @@ void op_ovr() { spush(cpu.stack[cpu.sptr - 2]); }
 void op_rot() { Uint8 c = spop(),b = spop(),a = spop(); spush(b); spush(c); spush(a); }
 void op_jmp() { cpu.mptr = spop(); }
 void op_jsr() { rspush(cpu.mptr); cpu.mptr = spop(); }
-void op_jeq() { if(getflag(FLAG_ZERO)) cpu.mptr = spop(); }
-void op_rts() {	cpu.mptr = rspop(); }
+void op_jmq() { if(getflag(FLAG_ZERO)) op_jmp(); }
+void op_jsq() { if(getflag(FLAG_ZERO)) op_jsr(); }
 void op_equ() { setflag(FLAG_ZERO, spop() == spop()); }
 void op_neq() { setflag(FLAG_ZERO, spop() != spop()); }
 void op_lth() {	setflag(FLAG_ZERO, spop() < spop()); }
@@ -116,8 +116,8 @@ void op_mul() { spush(spop() * spop()); }
 void op_div() { spush(spop() / spop()); }
 
 void (*ops[])(void) = {
-	op_brk, op_lit, op_nop, op_drp, op_dup, op_swp, op_ovr, op_rot, 
-	op_jmp, op_jsr, op_jeq, op_rts, op_equ, op_neq, op_gth, op_lth, 
+	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
+	op_jmp, op_jsr, op_jmq, op_jsq, op_equ, op_neq, op_gth, op_lth, 
 	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div};
 
 /* clang-format on */

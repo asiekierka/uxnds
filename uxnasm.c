@@ -31,8 +31,8 @@ Label labels[256];
 
 char opcodes[][4] = {
 	"BRK",
+	"RTS",
 	"LIT",
-	"---",
 	"POP",
 	"DUP",
 	"SWP",
@@ -41,8 +41,8 @@ char opcodes[][4] = {
 	/* */
 	"JMP",
 	"JSR",
-	"JEQ",
-	"RTS",
+	"JMQ",
+	"JSQ",
 	"EQU",
 	"NEQ",
 	"LTH",
@@ -164,11 +164,10 @@ int
 getlength(char *w)
 {
 	if(findop(w) || scmp(w, "BRK")) return 1;
-	if(w[0] == '.') return 3;
+	if(w[0] == '.') return 2;
 	if(w[0] == ':') return 0;
-	if(w[0] == '[') return 2;
-	if(sihx(w)) return 1;
-	if(w[0] == ']') return 0;
+	if(w[0] == '+') return 2;
+	if(w[0] == '-') return 2;
 	printf("Unknown length %s\n", w);
 	return 0;
 }
@@ -205,28 +204,23 @@ pass2(FILE *f)
 	int skip = 0;
 	char word[64];
 	while(fscanf(f, "%s", word) == 1) {
-		Uint8 op;
+		Uint8 op = 0;
 		Label *l;
 		if(word[0] == ':') continue;
 		suca(word);
 		if(comment(word, &skip)) continue;
-		if(word[0] == ']') continue;
-		if(word[0] == '+') {
-			addprg(0x01);
-			addprg(1);
+		/* literals */
+		if(word[0] == '+' || word[0] == '-')
+			addprg(0x02);
+		if(word[0] == '+')
 			addprg(shex(word + 1));
-		} else if(word[0] == '[') {
-			addprg(0x01);
-			addprg(shex(word + 1));
-		} else if((op = findop(word)))
+		else if(word[0] == '-')
+			addprg((Uint8)(-1 * shex(word + 1)));
+		/* opcodes */
+		else if((op = findop(word)) || scmp(word, "BRK"))
 			addprg(op);
-		else if(sihx(word))
-			addprg(shex(word));
-		else if(scmp(word, "BRK"))
-			addprg(0x00);
 		else if((l = findlabel(word + 1))) {
-			addprg(0x01);
-			addprg(1);
+			addprg(0x02);
 			addprg(l->addr);
 		} else
 			printf("unknown: %s\n", word);

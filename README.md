@@ -34,6 +34,17 @@ $01 < pointer8 >
 :label ADD RTS
 ```
 
+## Mission
+
+- Loop
+- Conditional example
+- Pointers/Literals
+- Print word to stdout
+- Draw pixel to screen
+- Detect mouse click
+- 16 bits addressing
+- jumping to subroutine should be relative
+
 ## TODOs
 
 - Implement addressing
@@ -44,6 +55,7 @@ $01 < pointer8 >
 - Audo-detect literals length.
 - SDL Layer Emulator
 - Build PPU
+- Interrupts
 
 ## Refs
 
