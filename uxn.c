@@ -92,7 +92,7 @@ rspop(void)
 
 void op_brk() { setflag(FLAG_HALT, 1); }
 void op_rts() {	cpu.mptr = rspop(); }
-void op_lit() { cpu.literal += 1;}
+void op_lit() { cpu.literal += 1; }
 void op_drp() { spop(); }
 void op_dup() { spush(cpu.stack[cpu.sptr - 1]); }
 void op_swp() { Uint8 b = spop(), a = spop(); spush(b); spush(a); }
@@ -100,8 +100,8 @@ void op_ovr() { spush(cpu.stack[cpu.sptr - 2]); }
 void op_rot() { Uint8 c = spop(),b = spop(),a = spop(); spush(b); spush(c); spush(a); }
 void op_jmp() { cpu.mptr = spop(); }
 void op_jsr() { rspush(cpu.mptr); cpu.mptr = spop(); }
-void op_jmq() { if(getflag(FLAG_ZERO)) op_jmp(); }
-void op_jsq() { if(getflag(FLAG_ZERO)) op_jsr(); }
+void op_jmq() { if(getflag(FLAG_ZERO)){ op_jmp(); } setflag(FLAG_ZERO,0); }
+void op_jsq() { if(getflag(FLAG_ZERO)){ op_jsr(); } setflag(FLAG_ZERO,0); }
 void op_equ() { setflag(FLAG_ZERO, spop() == spop()); }
 void op_neq() { setflag(FLAG_ZERO, spop() != spop()); }
 void op_lth() {	setflag(FLAG_ZERO, spop() < spop()); }
@@ -159,6 +159,8 @@ eval()
 	}
 	if(instr < 24)
 		(*ops[instr])();
+	if(instr > 0x10)
+		setflag(FLAG_ZERO, 0);
 }
 
 void
@@ -169,6 +171,12 @@ run(void)
 		eval(cpu);
 	/* debug */
 	printf("ended @ %d  |  ", cpu.counter);
+	printf("hf: %x zf: %x cf: %x tf: %x\n",
+		getflag(FLAG_HALT),
+		getflag(FLAG_ZERO),
+		getflag(FLAG_CARRY),
+		getflag(FLAG_TRAPS));
+	printf("\n\n");
 	for(i = 0; i < 4; i++)
 		printf("%d-", (cpu.status & (1 << i)) != 0);
 	printf("\n\n");

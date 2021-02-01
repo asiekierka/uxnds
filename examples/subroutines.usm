@@ -1,0 +1,25 @@
+< subroutines >
+
+:begin
+  .addall JSR ADD ADD
+  +06 EQU .isequal JSR
+  BRK
+
+:add1
+  +01 RTS
+
+:add2
+  +02 RTS
+
+:add3
+  +03 RTS
+
+:addall
+  .add1 JSR
+  .add2 JSR
+  .add3 JSR
+  RTS
+
+:isequal
+  .addall JSR +ff
+  RTS

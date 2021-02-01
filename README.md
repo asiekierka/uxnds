@@ -36,8 +36,8 @@ $01 < pointer8 >
 
 ## Mission
 
+- Carry flag?
 - Loop
-- Conditional example
 - Pointers/Literals
 - Print word to stdout
 - Draw pixel to screen
@@ -51,7 +51,6 @@ $01 < pointer8 >
 - Implement 16 bits operations
 - Jumps should be relative
 - Catch overflow/underflow
-- Implement literals like `[2]`, and `[ 2 3 ]`.
 - Audo-detect literals length.
 - SDL Layer Emulator
 - Build PPU
