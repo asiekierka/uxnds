@@ -1,10 +1,8 @@
 < loop >
 
-01 .loop JSR BRK
+01 .loop JSI ffff BRK
 
-:loop
+:loop 
 	01 ADD
-	0f NEQ .loop JMQ
+	0f NEQ .loop JMZ
 	RTS
-
-:end ff BRK

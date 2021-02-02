@@ -33,7 +33,7 @@ Label labels[256];
 
 char opcodes[][4] = {
 	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
-	"JMP", "JSR", "JMQ", "JSQ", "EQU", "NEQ", "LTH", "GTH",
+	"JMI", "JSI", "JMZ", "JSZ", "EQU", "NEQ", "LTH", "GTH",
 	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV"};
 
 /* clang-format on */

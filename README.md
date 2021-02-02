@@ -20,7 +20,7 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 0302	ADD 
 05		EQU
 
-.there	JMQ
+.there	JMZ
 
 :here
 	< when not equal >

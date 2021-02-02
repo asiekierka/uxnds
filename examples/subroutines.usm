@@ -1,8 +1,8 @@
 < subroutines >
 
 :begin
-  .addall JSR ADD ADD
-  06 EQU .isequal JSR
+  .addall JSI ADD ADD
+  06 EQU .isequal JSI
   BRK
 
 :add1
@@ -15,11 +15,11 @@
   03 RTS
 
 :addall
-  .add1 JSR
-  .add2 JSR
-  .add3 JSR
+  .add1 JSI
+  .add2 JSI
+  .add3 JSI
   RTS
 
 :isequal
-  .addall JSR ff
+  .addall JSI ff
   RTS

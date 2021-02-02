@@ -1,6 +1,6 @@
 < jump >
 
-.end JMP BRK
+.end JMI BRK
 
 :end 
 	ff

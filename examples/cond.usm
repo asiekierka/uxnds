@@ -3,7 +3,7 @@
 0302	ADD 
 05		EQU
 
-.there	JMQ
+.there	JMZ
 
 :here
 	< when not equal >
