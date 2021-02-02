@@ -2,17 +2,17 @@
 
 :begin
   .addall JSR ADD ADD
-  +06 EQU .isequal JSR
+  06 EQU .isequal JSR
   BRK
 
 :add1
-  +01 RTS
+  01 RTS
 
 :add2
-  +02 RTS
+  02 RTS
 
 :add3
-  +03 RTS
+  03 RTS
 
 :addall
   .add1 JSR
@@ -21,5 +21,5 @@
   RTS
 
 :isequal
-  .addall JSR +ff
+  .addall JSR ff
   RTS

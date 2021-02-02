@@ -1,7 +1,7 @@
-< conditionals >
+< jump >
 
-.end       JMP
+.end JMP BRK
 
-:end
-  +ff
-  BRK
+:end 
+	ff
+	BRK

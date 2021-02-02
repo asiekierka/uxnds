@@ -17,20 +17,20 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 ```
 < conditionals >
 
-+03 +02    ADD 
-+05        EQU
+0302	ADD 
+05		EQU
 
-.there     JMQ
+.there	JMQ
 
 :here
-  < when not equal >
-  +ee
-  BRK
+	< when not equal >
+	ee
+	BRK
 
 :there
-  < when is equal >
-  +ff
-  BRK
+	< when is equal >
+	ff
+	BRK
 ```
 
 ## Mission
@@ -44,16 +44,19 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - Print word to stdout
 - Draw pixel to screen
 - Detect mouse click
-- 16 bits addressing
-- jumping to subroutine should be relative
-- Implement addressing
-- Implement 16 bits operations
 - Jumps should be relative
 - Catch overflow/underflow
 - Audo-detect literals length.
 - SDL Layer Emulator
 - Build PPU
 - Interrupts
+
+### 16 Bit Missions
+
+- 16 bits addressing
+- jumping to subroutine should be relative
+- Implement addressing
+- Implement 16 bits operations
 
 ## Refs
 

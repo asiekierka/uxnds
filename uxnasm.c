@@ -29,33 +29,14 @@ typedef struct {
 int labelslen;
 Label labels[256];
 
+/* clang-format off */
+
 char opcodes[][4] = {
-	"BRK",
-	"RTS",
-	"LIT",
-	"POP",
-	"DUP",
-	"SWP",
-	"OVR",
-	"ROT",
-	/* */
-	"JMP",
-	"JSR",
-	"JMQ",
-	"JSQ",
-	"EQU",
-	"NEQ",
-	"LTH",
-	"GTH",
-	"---",
-	"---",
-	"---",
-	"---",
-	"ADD",
-	"SUB",
-	"MUL",
-	"DIV"
-	/* */};
+	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
+	"JMP", "JSR", "JMQ", "JSQ", "EQU", "NEQ", "LTH", "GTH",
+	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV"};
+
+/* clang-format on */
 
 Program p;
 
@@ -79,6 +60,15 @@ scpy(char *src, char *dst, int len) /* string copy */
 		i++;
 	dst[i + 1] = '\0';
 	return dst;
+}
+
+int
+slen(char *s) /* string length */
+{
+	int i = 0;
+	while(s[i] && s[++i])
+		;
+	return i;
 }
 
 char *
@@ -120,9 +110,39 @@ shex(char *s) /* string to num */
 #pragma mark - Parser
 
 void
-addprg(Uint8 hex)
+pushprg(Uint8 hex)
 {
 	p.data[p.len++] = hex;
+}
+
+void
+pushlabel(Label *l)
+{
+	pushprg(0x02);
+	pushprg(0x01);
+	pushprg(l->addr);
+}
+
+void
+pushliteral(char *w)
+{
+	int len = slen(w) / 2, value = shex(w);
+	pushprg(0x02);
+	pushprg(len);
+	switch(len) {
+	case 1:
+		pushprg(value);
+		break;
+	case 2:
+		pushprg(value >> 8);
+		pushprg(value);
+		break;
+	case 3:
+		pushprg(value >> 16);
+		pushprg(value >> 8);
+		pushprg(value);
+		break;
+	}
 }
 
 void
@@ -164,10 +184,9 @@ int
 getlength(char *w)
 {
 	if(findop(w) || scmp(w, "BRK")) return 1;
-	if(w[0] == '.') return 2;
+	if(w[0] == '.') return 3;
 	if(w[0] == ':') return 0;
-	if(w[0] == '+') return 2;
-	if(w[0] == '-') return 2;
+	if(sihx(w)) { return slen(w) / 2 + 2; }
 	printf("Unknown length %s\n", w);
 	return 0;
 }
@@ -209,21 +228,14 @@ pass2(FILE *f)
 		if(word[0] == ':') continue;
 		suca(word);
 		if(comment(word, &skip)) continue;
-		/* literals */
-		if(word[0] == '+' || word[0] == '-')
-			addprg(0x02);
-		if(word[0] == '+')
-			addprg(shex(word + 1));
-		else if(word[0] == '-')
-			addprg((Uint8)(-1 * shex(word + 1)));
-		/* opcodes */
-		else if((op = findop(word)) || scmp(word, "BRK"))
-			addprg(op);
-		else if((l = findlabel(word + 1))) {
-			addprg(0x02);
-			addprg(l->addr);
-		} else
-			printf("unknown: %s\n", word);
+		if((op = findop(word)) || scmp(word, "BRK"))
+			pushprg(op);
+		else if((l = findlabel(word + 1)))
+			pushlabel(l);
+		else if(sihx(word))
+			pushliteral(word);
+		else
+			printf("Unknown label: %s\n", word);
 	}
 }
 

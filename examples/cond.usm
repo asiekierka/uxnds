@@ -1,16 +1,16 @@
 < conditionals >
 
-+03 +02    ADD 
-+05        EQU
+0302	ADD 
+05		EQU
 
-.there     JMQ
+.there	JMQ
 
 :here
-  < when not equal >
-  +ee
-  BRK
+	< when not equal >
+	ee
+	BRK
 
 :there
-  < when is equal >
-  +ff
-  BRK
+	< when is equal >
+	ff
+	BRK
