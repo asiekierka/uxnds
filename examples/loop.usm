@@ -1,0 +1,10 @@
+< loop >
+
+01 .loop JSR BRK
+
+:loop
+	01 ADD
+	0f NEQ .loop JMQ
+	RTS
+
+:end ff BRK

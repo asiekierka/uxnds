@@ -56,26 +56,26 @@ getflag(char flag)
 }
 
 void
-echo(Uint8 *s, Uint8 len, char *name)
+echo(Stack *s, Uint8 len, char *name)
 {
 	int i;
 	printf("%s\n", name);
 	for(i = 0; i < len; ++i) {
 		if(i % 16 == 0)
 			printf("\n");
-		printf("%02x ", s[i]);
+		printf("%02x%c", s->dat[i], s->ptr == i ? '<' : ' ');
 	}
 	printf("\n\n");
 }
 
 void
-spush(Uint8 v)
+wspush(Uint8 v)
 {
 	cpu.wst.dat[cpu.wst.ptr++] = v;
 }
 
 Uint8
-spop(void)
+wspop(void)
 {
 	return cpu.wst.dat[--cpu.wst.ptr];
 }
@@ -87,7 +87,7 @@ rspush(Uint8 v)
 }
 
 Uint8
-rspop(void)
+rwspop(void)
 {
 	return cpu.rst.dat[--cpu.rst.ptr];
 }
@@ -97,29 +97,29 @@ rspop(void)
 /* clang-format off */
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_rts() {	cpu.rom.ptr = rspop(); }
+void op_rts() {	cpu.rom.ptr = wspop(); }
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
-void op_drp() { spop(); }
-void op_dup() { spush(cpu.wst.dat[cpu.wst.ptr - 1]); }
-void op_swp() { Uint8 b = spop(), a = spop(); spush(b); spush(a); }
-void op_ovr() { spush(cpu.wst.dat[cpu.wst.ptr - 2]); }
-void op_rot() { Uint8 c = spop(),b = spop(),a = spop(); spush(b); spush(c); spush(a); }
-void op_jmp() { cpu.rom.ptr = spop(); }
-void op_jsr() { rspush(cpu.rom.ptr); cpu.rom.ptr = spop(); }
-void op_jmq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
-void op_jsq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ rspush(cpu.rom.ptr); cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
-void op_equ() { setflag(FLAG_ZERO, spop() == spop()); }
-void op_neq() { setflag(FLAG_ZERO, spop() != spop()); }
-void op_lth() {	setflag(FLAG_ZERO, spop() < spop()); }
-void op_gth() {	setflag(FLAG_ZERO, spop() > spop()); }
-void op_and() {	spush(spop() & spop()); }
-void op_ora() {	spush(spop() | spop()); }
-void op_rol() { spush(spop() << 1); }
-void op_ror() { spush(spop() >> 1); }
-void op_add() { spush(spop() + spop()); }
-void op_sub() { spush(spop() - spop()); }
-void op_mul() { spush(spop() * spop()); }
-void op_div() { spush(spop() / spop()); }
+void op_drp() { wspop(); }
+void op_dup() { wspush(cpu.wst.dat[cpu.wst.ptr - 1]); }
+void op_swp() { Uint8 b = wspop(), a = wspop(); wspush(b); wspush(a); }
+void op_ovr() { wspush(cpu.wst.dat[cpu.wst.ptr - 2]); }
+void op_rot() { Uint8 c = wspop(),b = wspop(),a = wspop(); wspush(b); wspush(c); wspush(a); }
+void op_jmp() { cpu.rom.ptr = wspop(); }
+void op_jsr() { rspush(cpu.rom.ptr); cpu.rom.ptr = wspop(); }
+void op_jmq() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
+void op_jsq() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ rspush(cpu.rom.ptr); cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
+void op_equ() { setflag(FLAG_ZERO, wspop() == cpu.wst.dat[cpu.wst.ptr]); }
+void op_neq() { setflag(FLAG_ZERO, wspop() != cpu.wst.dat[cpu.wst.ptr]); }
+void op_lth() {	setflag(FLAG_ZERO, wspop() < cpu.wst.dat[cpu.wst.ptr]); }
+void op_gth() {	setflag(FLAG_ZERO, wspop() > cpu.wst.dat[cpu.wst.ptr]); }
+void op_and() {	wspush(wspop() & wspop()); }
+void op_ora() {	wspush(wspop() | wspop()); }
+void op_rol() { wspush(wspop() << 1); }
+void op_ror() { wspush(wspop() >> 1); }
+void op_add() { wspush(wspop() + wspop()); }
+void op_sub() { wspush(wspop() - wspop()); }
+void op_mul() { wspush(wspop() * wspop()); }
+void op_div() { wspush(wspop() / wspop()); }
 
 void (*ops[])(void) = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
@@ -167,7 +167,7 @@ eval()
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
 	if(cpu.literal > 0) {
-		spush(instr);
+		wspush(instr);
 		cpu.literal--;
 		return 1;
 	}
@@ -179,6 +179,10 @@ eval()
 	}
 	if(instr > 0x10)
 		setflag(FLAG_ZERO, 0);
+	if(cpu.counter == 64) {
+		printf("REACHED COUNTER\n");
+		return 0;
+	}
 	cpu.counter++;
 	return 1;
 }
@@ -210,6 +214,6 @@ main(int argc, char *argv[])
 	load(f);
 	run();
 	/* print result */
-	echo(cpu.wst.dat, 0x40, "stack");
+	echo(&cpu.wst, 0x40, "stack");
 	return 0;
 }
