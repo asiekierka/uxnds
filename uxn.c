@@ -16,18 +16,24 @@ WITH REGARD TO THIS SOFTWARE.
 #define FLAG_CARRY 0x04
 #define FLAG_TRAPS 0x08
 
-#define STACK_DEPTH 256
-
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 
 typedef struct {
+	Uint8 ptr;
+	Uint8 dat[256];
+} Stack;
+
+typedef struct {
+	Uint16 ptr;
+	Uint8 dat[65536];
+} Memory;
+
+typedef struct {
 	Uint8 literal, status;
-	Uint8 mptr, sptr, rsptr;
-	Uint8 memory[STACK_DEPTH];
-	Uint8 stack[STACK_DEPTH];
-	Uint8 rstack[STACK_DEPTH];
 	Uint16 counter;
+	Stack wst, rst;
+	Memory rom, ram;
 } Computer;
 
 Computer cpu;
@@ -65,25 +71,25 @@ echo(Uint8 *s, Uint8 len, char *name)
 void
 spush(Uint8 v)
 {
-	cpu.stack[cpu.sptr++] = v;
+	cpu.wst.dat[cpu.wst.ptr++] = v;
 }
 
 Uint8
 spop(void)
 {
-	return cpu.stack[--cpu.sptr];
+	return cpu.wst.dat[--cpu.wst.ptr];
 }
 
 void
 rspush(Uint8 v)
 {
-	cpu.rstack[cpu.rsptr++] = v;
+	cpu.rst.dat[cpu.rst.ptr++] = v;
 }
 
 Uint8
 rspop(void)
 {
-	return cpu.rstack[--cpu.rsptr];
+	return cpu.rst.dat[--cpu.rst.ptr];
 }
 
 #pragma mark - Operations
@@ -91,17 +97,17 @@ rspop(void)
 /* clang-format off */
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_rts() {	cpu.mptr = rspop(); }
-void op_lit() { cpu.literal += cpu.memory[cpu.mptr++]; }
+void op_rts() {	cpu.rom.ptr = rspop(); }
+void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
 void op_drp() { spop(); }
-void op_dup() { spush(cpu.stack[cpu.sptr - 1]); }
+void op_dup() { spush(cpu.wst.dat[cpu.wst.ptr - 1]); }
 void op_swp() { Uint8 b = spop(), a = spop(); spush(b); spush(a); }
-void op_ovr() { spush(cpu.stack[cpu.sptr - 2]); }
+void op_ovr() { spush(cpu.wst.dat[cpu.wst.ptr - 2]); }
 void op_rot() { Uint8 c = spop(),b = spop(),a = spop(); spush(b); spush(c); spush(a); }
-void op_jmp() { cpu.mptr = spop(); }
-void op_jsr() { rspush(cpu.mptr); cpu.mptr = spop(); }
-void op_jmq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ cpu.mptr = a; } setflag(FLAG_ZERO,0); }
-void op_jsq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ rspush(cpu.mptr); cpu.mptr = a; } setflag(FLAG_ZERO,0); }
+void op_jmp() { cpu.rom.ptr = spop(); }
+void op_jsr() { rspush(cpu.rom.ptr); cpu.rom.ptr = spop(); }
+void op_jmq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
+void op_jsq() { Uint8 a = spop(); if(getflag(FLAG_ZERO)){ rspush(cpu.rom.ptr); cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
 void op_equ() { setflag(FLAG_ZERO, spop() == spop()); }
 void op_neq() { setflag(FLAG_ZERO, spop() != spop()); }
 void op_lth() {	setflag(FLAG_ZERO, spop() < spop()); }
@@ -135,11 +141,12 @@ reset(void)
 	int i;
 	cpu.status = 0x00;
 	cpu.counter = 0x00;
-	cpu.mptr = 0x00;
-	cpu.sptr = 0x00;
+	cpu.rom.ptr = 0x00;
+	cpu.wst.ptr = 0x00;
 	cpu.literal = 0x00;
+	cpu.rst.ptr = 0x00;
 	for(i = 0; i < 256; i++)
-		cpu.stack[i] = 0x00;
+		cpu.wst.dat[i] = 0x00;
 }
 
 int
@@ -152,20 +159,20 @@ error(char *name)
 void
 load(FILE *f)
 {
-	fread(cpu.memory, sizeof(cpu.memory), 1, f);
+	fread(cpu.rom.dat, sizeof(cpu.rom.dat), 1, f);
 }
 
 int
 eval()
 {
-	Uint8 instr = cpu.memory[cpu.mptr++];
+	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
 	if(cpu.literal > 0) {
 		spush(instr);
 		cpu.literal--;
 		return 1;
 	}
 	if(instr < 24) {
-		if(cpu.sptr < opr[instr][0])
+		if(cpu.wst.ptr < opr[instr][0])
 			return error("Stack underflow");
 		/* TODO stack overflow */
 		(*ops[instr])();
@@ -203,7 +210,6 @@ main(int argc, char *argv[])
 	load(f);
 	run();
 	/* print result */
-	echo(cpu.stack, 0x40, "stack");
-	echo(cpu.memory, 0x40, "memory");
+	echo(cpu.wst.dat, 0x40, "stack");
 	return 0;
 }
