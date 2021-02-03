@@ -68,39 +68,21 @@ echo(Stack *s, Uint8 len, char *name)
 	printf("\n\n");
 }
 
-void
-wspush(Uint8 v)
-{
-	cpu.wst.dat[cpu.wst.ptr++] = v;
-}
-
-Uint8
-wspop(void)
-{
-	return cpu.wst.dat[--cpu.wst.ptr];
-}
-
-void
-rspush(Uint8 v)
-{
-	cpu.rst.dat[cpu.rst.ptr++] = v;
-}
-
-Uint8
-rspop(void)
-{
-	return cpu.rst.dat[--cpu.rst.ptr];
-}
-
 #pragma mark - Operations
 
 /* clang-format off */
+
+void wspush(Uint8 v) { cpu.wst.dat[cpu.wst.ptr++] = v; }
+Uint8 wspop(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
+Uint8 wspeek(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
+void rspush(Uint8 v) { cpu.rst.dat[cpu.rst.ptr++] = v; }
+Uint8 rspop(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
 
 void op_brk() { setflag(FLAG_HALT, 1); }
 void op_rts() {	cpu.rom.ptr = rspop(); }
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
 void op_drp() { wspop(); }
-void op_dup() { wspush(cpu.wst.dat[cpu.wst.ptr - 1]); }
+void op_dup() { wspush(wspeek()); }
 void op_swp() { Uint8 b = wspop(), a = wspop(); wspush(b); wspush(a); }
 void op_ovr() { wspush(cpu.wst.dat[cpu.wst.ptr - 2]); }
 void op_rot() { Uint8 c = wspop(),b = wspop(),a = wspop(); wspush(b); wspush(c); wspush(a); }
@@ -108,10 +90,10 @@ void op_jmi() { cpu.rom.ptr = wspop(); }
 void op_jsi() { rspush(cpu.rom.ptr); cpu.rom.ptr = wspop(); }
 void op_jmz() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
 void op_jsz() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ rspush(cpu.rom.ptr); cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
-void op_equ() { Uint8 a = wspop(); Uint8 b = wspop(); setflag(FLAG_ZERO, a == b); wspush(b); }
-void op_neq() { Uint8 a = wspop(); Uint8 b = wspop(); setflag(FLAG_ZERO, a != b); wspush(b); }
-void op_lth() {	setflag(FLAG_ZERO, wspop() < cpu.wst.dat[cpu.wst.ptr]); }
-void op_gth() {	setflag(FLAG_ZERO, wspop() > cpu.wst.dat[cpu.wst.ptr]); }
+void op_equ() { setflag(FLAG_ZERO, wspop() == wspeek()); }
+void op_neq() { setflag(FLAG_ZERO, wspop() != wspeek()); }
+void op_gth() {	setflag(FLAG_ZERO, wspop() < wspeek()); }
+void op_lth() {	setflag(FLAG_ZERO, wspop() > wspeek()); }
 void op_and() {	wspush(wspop() & wspop()); }
 void op_ora() {	wspush(wspop() | wspop()); }
 void op_rol() { wspush(wspop() << 1); }
@@ -127,10 +109,10 @@ void (*ops[])(void) = {
 	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div};
 
 Uint8 opr[][2] = {
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
+	{0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {1,1}, {0,1}, {3,3},
+	{1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0},
 	{1,0}, {1,0}, {1,0}, {1,0}, {2,1}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
+	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}
 };
 
 /* clang-format on */

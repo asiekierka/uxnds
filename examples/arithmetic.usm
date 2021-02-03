@@ -1,0 +1,6 @@
+< arithmetic >
+
+0203 LTH .true JMZ
+
+:false ee BRK
+:true ff BRK

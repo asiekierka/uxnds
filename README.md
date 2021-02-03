@@ -35,18 +35,16 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ## Mission
 
+- Catch overflow/underflow
+- Jumps should be relative
 - constants
 - variables
+- Pointers/Literals
 - A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
 - Carry flag?
-- Loop
-- Pointers/Literals
 - Print word to stdout
 - Draw pixel to screen
 - Detect mouse click
-- Jumps should be relative
-- Catch overflow/underflow
-- Audo-detect literals length.
 - SDL Layer Emulator
 - Build PPU
 - Interrupts
