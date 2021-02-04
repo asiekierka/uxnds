@@ -10,13 +10,27 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ## Assembly Syntax
 
-- `;variable`, a named address(zero-page)
-- `:label`, a named address
-- `.pointer`, a pointer to a label
-- `@0010`, a position in the program
+### Write
+
+- `;variable`, set a name to address on the zero-page
+- `:label`, set a name to an address
+
+### Read
+
+- `,literal`, get a literal pointer
+- `.pointer`, get a raw pointer
+
+### Special
+
+- `@0010`, move to position in the program
+- `( comment )`
 
 ```
-< conditionals >
+( comment )
+
+;variable1
+;variable2
+;variable3
 
 .there ( 0a 05 GTH ) JMC
 

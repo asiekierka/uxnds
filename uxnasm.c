@@ -11,19 +11,17 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define PRGLEN 256
-#define LABELIDLEN 32
-
 typedef unsigned char Uint8;
+typedef unsigned short Uint16;
 
 typedef struct {
 	int ptr;
-	Uint8 data[PRGLEN];
+	Uint8 data[65536];
 } Program;
 
 typedef struct {
-	Uint8 addr;
-	char name[LABELIDLEN];
+	Uint16 addr;
+	char name[64];
 } Label;
 
 int labelslen;
@@ -34,7 +32,9 @@ Label labels[256];
 char opcodes[][4] = {
 	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
 	"JMU", "JSU", "JMC", "JSC", "EQU", "NEQ", "GTH", "LTH",
-	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV"};
+	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV",
+	"LDR", "STR", "---", "---", "---", "---", "---", "---"
+};
 
 /* clang-format on */
 
@@ -82,7 +82,7 @@ suca(char *s) /* string to uppercase */
 }
 
 int
-sihx(char *s)
+sihx(char *s) /* string is hexadecimal */
 {
 	int i = 0;
 	char c;
@@ -107,57 +107,66 @@ shex(char *s) /* string to num */
 	return n;
 }
 
+int
+ismarker(char *w)
+{
+	return w[0] == '[' || w[0] == ']' || w[0] == '{' || w[0] == '}';
+}
+
+int
+iscomment(char *w, int *skip)
+{
+	if(w[0] == ')') {
+		*skip = 0;
+		return 1;
+	}
+	if(w[0] == '(') *skip = 1;
+	if(*skip) return 1;
+	return 0;
+}
+
+#pragma mark - I/O
+
+void
+pushbyte(Uint8 b, int lit)
+{
+	if(lit) {
+		pushbyte(0x02, 0);
+		pushbyte(0x01, 0);
+	}
+	p.data[p.ptr++] = b;
+}
+
+void
+pushshort(Uint16 s, int lit)
+{
+	if(lit) {
+		pushbyte(0x02, 0);
+		pushbyte(0x02, 0);
+	}
+	pushbyte((s >> 8) & 0xff, 0);
+	pushbyte(s & 0xff, 0);
+}
+
 #pragma mark - Parser
 
-void
-pushprg(Uint8 hex)
+Uint8
+findop(char *s)
 {
-	p.data[p.ptr++] = hex;
+	int i;
+	for(i = 0; i < 32; ++i)
+		if(scmp(opcodes[i], s))
+			return i;
+	return 0;
 }
 
 void
-pushlabel(Label *l)
-{
-	pushprg(0x02);
-	pushprg(0x01);
-	pushprg(l->addr);
-}
-
-void
-pushliteral(char *w)
-{
-	int len = slen(w) / 2, value = shex(w);
-	pushprg(0x02);
-	pushprg(len);
-	switch(len) {
-	case 1:
-		pushprg(value);
-		break;
-	case 2:
-		pushprg(value >> 8);
-		pushprg(value);
-		break;
-	case 3:
-		pushprg(value >> 16);
-		pushprg(value >> 8);
-		pushprg(value);
-		break;
-	}
-}
-
-void
-addlabel(char *id, Uint8 addr)
+makelabel(char *id, Uint8 addr)
 {
 	Label *l = &labels[labelslen++];
-	scpy(suca(id), l->name, LABELIDLEN);
+	scpy(suca(id), l->name, 64);
 	l->addr = addr;
 	printf("New label: %s[0x%02x]\n", l->name, l->addr);
-}
-
-void
-addconst(char *id, Uint8 value)
-{
-	printf("New const: %s[%02x]\n", id, value);
 }
 
 Label *
@@ -170,94 +179,72 @@ findlabel(char *s)
 	return NULL;
 }
 
-Uint8
-findop(char *s)
+#pragma mark - Parser
+
+int
+error(char *name, char *id)
 {
-	int i;
-	for(i = 0; i < 24; ++i)
-		if(scmp(opcodes[i], s))
-			return i;
+	printf("Error: %s - %s\n", name, id);
 	return 0;
 }
 
 int
-ismarker(char *w)
-{
-	return w[0] == '(' || w[0] == ')' || w[0] == '{' || w[0] == '}';
-}
-
-int
-iscomment(char *w, int *skip)
-{
-	if(w[0] == '>') {
-		*skip = 0;
-		return 1;
-	}
-	if(w[0] == '<') *skip = 1;
-	if(*skip) return 1;
-	return 0;
-}
-
-int
-getlength(char *w)
-{
-	if(findop(w) || scmp(w, "BRK")) return 1;
-	if(w[0] == '.') return 3;
-	if(w[0] == ':') return 0;
-	if(w[0] == ';') return 0;
-	if(w[0] == '@') return 0;
-	if(sihx(w)) { return slen(w) / 2 + 2; }
-	if(ismarker(w)) return 0;
-	printf("Unknown length %s\n", w);
-	return 0;
-}
-
-void
 pass1(FILE *f)
 {
-	int skip = 0;
-	int addr = 0;
-	int vars = 0;
-	char word[64];
-	while(fscanf(f, "%s", word) == 1) {
-		if(iscomment(word, &skip)) continue;
-		if(word[0] == ':') addlabel(word + 1, addr);
-		if(word[0] == ';') addlabel(word + 1, vars++);
-		addr += getlength(word);
+	int skip = 0, addr = 0, vars = 0;
+	char w[64];
+	while(fscanf(f, "%s", w) == 1) {
+		if(iscomment(w, &skip)) continue;
+		if(w[0] == ':') makelabel(w + 1, addr);
+		if(w[0] == ';') makelabel(w + 1, vars++);
+		/* move addr ptr */
+		if(findop(w) || scmp(w, "BRK"))
+			addr += 1;
+		else if(w[0] == '@')
+			addr += 0;
+		else if(w[0] == ':')
+			addr += 0;
+		else if(w[0] == ';')
+			addr += 0;
+		else if(w[0] == '.')
+			addr += 2;
+		else if(w[0] == ',')
+			addr += 4;
+		else if(ismarker(w))
+			addr += 0;
+		else
+			return error("Unknown label(pass1)", w);
 	}
 	rewind(f);
+	return 1;
 }
 
-void
+int
 pass2(FILE *f)
 {
 	int skip = 0;
-	char word[64];
-	while(fscanf(f, "%s", word) == 1) {
+	char w[64];
+	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
-		if(word[0] == ':') continue;
-		if(word[0] == ';') continue;
-		suca(word);
-		if(iscomment(word, &skip) || ismarker(word)) continue;
-		if(word[0] == '@')
-			p.ptr = shex(word + 1);
-		else if((op = findop(word)) || scmp(word, "BRK"))
-			pushprg(op);
-		else if((l = findlabel(word + 1)))
-			pushlabel(l);
-		else if(sihx(word))
-			pushliteral(word);
+		if(w[0] == ':') continue;
+		if(w[0] == ';') continue;
+		suca(w);
+		if(iscomment(w, &skip) || ismarker(w)) continue;
+		if(w[0] == '@')
+			p.ptr = shex(w + 1);
+		else if((op = findop(w)) || scmp(w, "BRK"))
+			pushbyte(op, 0);
+		else if((l = findlabel(w + 1)))
+			pushshort(l->addr, w[0] == ',');
+		else if(sihx(w + 1) && slen(w + 1) == 2)
+			pushbyte(shex(w + 1), w[0] == ',');
+		else if(sihx(w + 1) && slen(w + 1) == 4)
+			pushshort(shex(w + 1), w[0] == ',');
 		else
-			printf("Unknown label: %s\n", word);
+			return error("Unknown label(pass2)", w);
 	}
-}
-
-int
-error(char *name)
-{
-	printf("Error: %s\n", name);
-	return 0;
+	return 1;
 }
 
 int
@@ -265,11 +252,11 @@ main(int argc, char *argv[])
 {
 	FILE *f;
 	if(argc < 3)
-		return error("No input.");
+		return error("Input", "Missing");
 	if(!(f = fopen(argv[1], "r")))
-		return error("Missing input.");
-	pass1(f);
-	pass2(f);
+		return error("Open", "Failed");
+	if(!pass1(f) || !pass2(f))
+		return error("Assembly", "Failed");
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
 	return 0;

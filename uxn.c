@@ -74,6 +74,13 @@ echo(Stack *s, Uint8 len, char *name)
 
 void wspush(Uint8 v) { cpu.wst.dat[cpu.wst.ptr++] = v; }
 Uint8 wspop(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
+Uint16 wspop16(void) { 
+
+	Uint8 a = cpu.wst.dat[--cpu.wst.ptr];
+	Uint8 b = cpu.wst.dat[--cpu.wst.ptr];
+	return a + (b << 8); 
+
+}
 Uint8 wspeek(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
 void rspush(Uint8 v) { cpu.rst.dat[cpu.rst.ptr++] = v; }
 Uint8 rspop(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
@@ -102,17 +109,27 @@ void op_add() { wspush(wspop() + wspop()); }
 void op_sub() { wspush(wspop() - wspop()); }
 void op_mul() { wspush(wspop() * wspop()); }
 void op_div() { wspush(wspop() / wspop()); }
+void op_ldr() {  }
+void op_str() { 
+
+	Uint8 b = wspop();
+	Uint16 addr = wspop16();
+	printf("store: %02x @ %04x\n", b, addr);
+}
 
 void (*ops[])(void) = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
 	op_jmu, op_jsu, op_jmc, op_jsc, op_equ, op_neq, op_gth, op_lth, 
-	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div};
+	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div,
+	op_ldr, op_str, op_brk, op_brk, op_brk, op_brk, op_brk, op_brk
+};
 
 Uint8 opr[][2] = {
 	{0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {1,1}, {0,1}, {3,3},
 	{2,0}, {2,0}, {2,0}, {2,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,0}, {1,0}, {1,0}, {2,1}, {0,0}, {0,0}, {0,0},
-	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}
+	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
+	{3,1}, {3,1}
 };
 
 /* clang-format on */
@@ -155,7 +172,7 @@ eval()
 		cpu.literal--;
 		return 1;
 	}
-	if(instr < 24) {
+	if(instr < 32) {
 		if(cpu.wst.ptr < opr[instr][0])
 			return error("Stack underflow");
 		/* TODO stack overflow */

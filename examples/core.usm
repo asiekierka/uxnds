@@ -1,13 +1,3 @@
-< conditionals >
+( comment )
 
-.there ( 0a 05 GTH ) JMC
-
-:here
-	< when not equal >
-	ee
-	BRK
-
-:there
-	< when is equal >
-	ff
-	BRK
+,abcd ,ef STR
