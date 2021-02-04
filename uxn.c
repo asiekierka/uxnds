@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
 	Uint8 literal, status;
-	Uint16 counter;
+	Uint16 counter, vreset, vframe, verror;
 	Stack wst, rst;
 	Memory rom, ram;
 } Computer;
@@ -85,6 +85,8 @@ echom(Memory *m, Uint8 len, char *name)
 
 /* clang-format off */
 
+Uint8 mempoke8(Uint16 p) { return cpu.rom.dat[p+1] & 0xff; }
+Uint16 mempoke16(Uint16 p) { return (cpu.rom.dat[p] << 8) + (cpu.rom.dat[p+1] & 0xff); }
 void wspush(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 Uint8 wspop(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
 void wspush16(Uint16 s) { 
@@ -120,7 +122,7 @@ void op_add() { wspush(wspop() + wspop()); }
 void op_sub() { wspush(wspop() - wspop()); }
 void op_mul() { wspush(wspop() * wspop()); }
 void op_div() { wspush(wspop() / wspop()); }
-void op_ldr() { wspush16(wspop16()); }
+void op_ldr() { wspush(cpu.ram.dat[wspop16()]); }
 void op_str() { cpu.ram.dat[wspop16()] = wspop(); }
 
 void (*ops[])(void) = {
@@ -134,8 +136,7 @@ Uint8 opr[][2] = {
 	{0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {1,1}, {0,1}, {3,3},
 	{2,0}, {2,0}, {2,0}, {2,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,0}, {1,0}, {1,0}, {2,1}, {0,0}, {0,0}, {0,0},
-	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
-	{3,1}, {3,1}
+	{2,1}, {3,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}
 };
 
 /* clang-format on */
@@ -161,12 +162,6 @@ error(char *name)
 {
 	printf("Error: %s\n", name);
 	return 0;
-}
-
-void
-load(FILE *f)
-{
-	fread(cpu.rom.dat, sizeof(cpu.rom.dat), 1, f);
 }
 
 int
@@ -195,8 +190,13 @@ eval()
 }
 
 void
-run(void)
+start(FILE *f)
 {
+	reset();
+	fread(cpu.rom.dat, sizeof(cpu.rom.dat), 1, f);
+	cpu.vreset = mempoke16(0xfffa);
+	cpu.vframe = mempoke16(0xfffc);
+	cpu.verror = mempoke16(0xfffe);
 	while(!(cpu.status & FLAG_HALT) && eval(cpu))
 		;
 	/* debug */
@@ -217,9 +217,7 @@ main(int argc, char *argv[])
 		return error("No input.");
 	if(!(f = fopen(argv[1], "rb")))
 		return error("Missing input.");
-	reset();
-	load(f);
-	run();
+	start(f);
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");

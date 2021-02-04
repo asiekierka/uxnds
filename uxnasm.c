@@ -178,7 +178,7 @@ findop(char *s)
 }
 
 int
-makelabel(char *id, Uint8 addr)
+makelabel(char *id, Uint16 addr)
 {
 	Label *l;
 	if(findlabel(id))
@@ -193,7 +193,8 @@ makelabel(char *id, Uint8 addr)
 int
 pass1(FILE *f)
 {
-	int skip = 0, addr = 0, vars = 0;
+	int skip = 0, vars = 0;
+	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		if(iscomment(w, &skip)) continue;
@@ -205,9 +206,9 @@ pass1(FILE *f)
 		/* move addr ptr */
 		if(findop(w) || scmp(w, "BRK"))
 			addr += 1;
-		else if(w[0] == '@')
-			addr += 0;
-		else if(w[0] == ':')
+		else if(w[0] == '@') {
+			addr = shex(w + 1);
+		} else if(w[0] == ':')
 			addr += 0;
 		else if(w[0] == ';')
 			addr += 0;
@@ -264,5 +265,6 @@ main(int argc, char *argv[])
 		return error("Assembly", "Failed");
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
+	printf("Assembled %s.\n", argv[2]);
 	return 0;
 }

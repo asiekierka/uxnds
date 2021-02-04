@@ -1,9 +1,29 @@
-( comment )
+( define some variables in the zero-page )
 
 ;var1
 ;var2
 ;var3
 
-,ef ,var2 STR
+,22 ,var1 STR ( store 0x22 in var1 )
+,var1 LDR ( load var2, put value on stack )
 
-:label1
+@0100 ( store program reset after zero-page )
+
+:RESET ( --- )
+  BRK
+
+@c000 ( much further.. )
+
+:FRAME ( --- )
+  BRK
+
+@d000 ( further still.. )
+
+:ERROR ( --- )
+  BRK
+
+@FFFA ( vectors, last 3 shorts )
+
+.RESET
+.FRAME
+.ERROR
