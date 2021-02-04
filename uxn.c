@@ -123,12 +123,14 @@ reset(void)
 	int i;
 	cpu.status = 0x00;
 	cpu.counter = 0x00;
+	cpu.literal = 0x00;
 	cpu.rom.ptr = 0x00;
 	cpu.wst.ptr = 0x00;
-	cpu.literal = 0x00;
 	cpu.rst.ptr = 0x00;
-	for(i = 0; i < 256; i++)
+	for(i = 0; i < 256; i++) {
 		cpu.wst.dat[i] = 0x00;
+		cpu.rst.dat[i] = 0x00;
+	}
 }
 
 int

@@ -1,4 +1,6 @@
 < core >
 
-0102
+34 34 EQU .label JSZ ff BRK
+
+:label ee RTS
 

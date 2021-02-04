@@ -56,6 +56,10 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - Implement addressing
 - Implement 16 bits operations
 
+## Notes
+
+- Forth logic operators pop 2 items and add a bool to the stack, is that viable in uxn?
+
 ## Refs
 
 https://code.9front.org/hg/plan9front/file/a7f9946e238f/sys/src/games/nes/cpu.c

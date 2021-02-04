@@ -1,25 +1,9 @@
 < subroutines >
 
-:begin
-  .addall JSI ADD ADD
-  06 EQU .isequal JSI
-  BRK
+.part1 JSI 44 BRK
 
-:add1
-  01 RTS
+:part1 11 .part2 JSI RTS
 
-:add2
-  02 RTS
+:part2 22 .part3 JSI RTS
 
-:add3
-  03 RTS
-
-:addall
-  .add1 JSI
-  .add2 JSI
-  .add3 JSI
-  RTS
-
-:isequal
-  .addall JSI ff
-  RTS
+:part3 33 RTS
