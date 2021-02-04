@@ -26,22 +26,20 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - `( comment )`
 
 ```
-( comment )
+;value ( alloc zero-page variable )
 
-;variable1
-;variable2
-;variable3
+@0010 ( start at page 1 )
 
-.there ( 0a 05 GTH ) JMC
+,there [ ,0a ,05 GTH ] JMC
 
 :here
-	< when not equal >
-	ee
+	( when not equal )
+	,ee
 	BRK
 
 :there
-	< when is equal >
-	ff
+	( when is equal )
+	,ff
 	BRK
 ```
 
@@ -49,7 +47,6 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ### Assembler
 
-- Crash on missing label
 - Catch overflow/underflow
 - Constants
 - Jumps should be relative
@@ -58,20 +55,12 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 - Pointers/Literals
 - A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
-- Carry flag?
 - Print word to stdout
 - Draw pixel to screen
 - Detect mouse click
 - SDL Layer Emulator
 - Build PPU
-- Interrupts, vectors
-
-### 16 Bit Missions
-
-- 16 bits addressing
-- jumping to subroutine should be relative
-- Implement addressing
-- Implement 16 bits operations
+- Add flags..
 
 ## Refs
 

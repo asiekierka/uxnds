@@ -165,7 +165,7 @@ error(char *name)
 }
 
 int
-eval()
+eval(void)
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
 	if(cpu.literal > 0) {
@@ -197,7 +197,13 @@ start(FILE *f)
 	cpu.vreset = mempoke16(0xfffa);
 	cpu.vframe = mempoke16(0xfffc);
 	cpu.verror = mempoke16(0xfffe);
-	while(!(cpu.status & FLAG_HALT) && eval(cpu))
+	/* eval reset */
+	cpu.rom.ptr = cpu.vreset;
+	while(!(cpu.status & FLAG_HALT) && eval())
+		;
+	/*eval frame */
+	cpu.rom.ptr = cpu.vframe;
+	while(!(cpu.status & FLAG_HALT) && eval())
 		;
 	/* debug */
 	printf("ended @ %d steps | ", cpu.counter);
