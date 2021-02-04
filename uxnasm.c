@@ -148,27 +148,6 @@ pushshort(Uint16 s, int lit)
 	pushbyte(s & 0xff, 0);
 }
 
-#pragma mark - Parser
-
-Uint8
-findop(char *s)
-{
-	int i;
-	for(i = 0; i < 32; ++i)
-		if(scmp(opcodes[i], s))
-			return i;
-	return 0;
-}
-
-void
-makelabel(char *id, Uint8 addr)
-{
-	Label *l = &labels[labelslen++];
-	scpy(suca(id), l->name, 64);
-	l->addr = addr;
-	printf("New label: %s[0x%02x]\n", l->name, l->addr);
-}
-
 Label *
 findlabel(char *s)
 {
@@ -184,8 +163,31 @@ findlabel(char *s)
 int
 error(char *name, char *id)
 {
-	printf("Error: %s - %s\n", name, id);
+	printf("Error: %s(%s)\n", name, id);
 	return 0;
+}
+
+Uint8
+findop(char *s)
+{
+	int i;
+	for(i = 0; i < 32; ++i)
+		if(scmp(opcodes[i], s))
+			return i;
+	return 0;
+}
+
+int
+makelabel(char *id, Uint8 addr)
+{
+	Label *l;
+	if(findlabel(id))
+		return error("Label duplicate", id);
+	l = &labels[labelslen++];
+	scpy(id, l->name, 64);
+	l->addr = addr;
+	printf("New label: %s[0x%02x]\n", l->name, l->addr);
+	return 1;
 }
 
 int
@@ -195,8 +197,11 @@ pass1(FILE *f)
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		if(iscomment(w, &skip)) continue;
-		if(w[0] == ':') makelabel(w + 1, addr);
-		if(w[0] == ';') makelabel(w + 1, vars++);
+		suca(w);
+		if(w[0] == ':' && !makelabel(w + 1, addr))
+			return error("Pass1 failed", w);
+		if(w[0] == ';' && !makelabel(w + 1, vars++))
+			return error("Pass1 failed", w);
 		/* move addr ptr */
 		if(findop(w) || scmp(w, "BRK"))
 			addr += 1;
@@ -213,7 +218,7 @@ pass1(FILE *f)
 		else if(ismarker(w))
 			addr += 0;
 		else
-			return error("Unknown label(pass1)", w);
+			return error("Unknown label", w);
 	}
 	rewind(f);
 	return 1;
@@ -242,7 +247,7 @@ pass2(FILE *f)
 		else if(sihx(w + 1) && slen(w + 1) == 4)
 			pushshort(shex(w + 1), w[0] == ',');
 		else
-			return error("Unknown label(pass2)", w);
+			return error("Unknown label", w);
 	}
 	return 1;
 }

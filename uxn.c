@@ -56,7 +56,7 @@ getflag(char flag)
 }
 
 void
-echo(Stack *s, Uint8 len, char *name)
+echos(Stack *s, Uint8 len, char *name)
 {
 	int i;
 	printf("%s\n", name);
@@ -68,21 +68,32 @@ echo(Stack *s, Uint8 len, char *name)
 	printf("\n\n");
 }
 
+void
+echom(Memory *m, Uint8 len, char *name)
+{
+	int i;
+	printf("%s\n", name);
+	for(i = 0; i < len; ++i) {
+		if(i % 16 == 0)
+			printf("\n");
+		printf("%02x ", m->dat[i]);
+	}
+	printf("\n\n");
+}
+
 #pragma mark - Operations
 
 /* clang-format off */
 
-void wspush(Uint8 v) { cpu.wst.dat[cpu.wst.ptr++] = v; }
+void wspush(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 Uint8 wspop(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
-Uint16 wspop16(void) { 
+void wspush16(Uint16 s) { 
 
-	Uint8 a = cpu.wst.dat[--cpu.wst.ptr];
-	Uint8 b = cpu.wst.dat[--cpu.wst.ptr];
-	return a + (b << 8); 
-
+	printf("0x%04x\n", s);
 }
+Uint16 wspop16(void) { return wspop() + (wspop() << 8); }
 Uint8 wspeek(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
-void rspush(Uint8 v) { cpu.rst.dat[cpu.rst.ptr++] = v; }
+void rspush(Uint8 b) { cpu.rst.dat[cpu.rst.ptr++] = b; }
 Uint8 rspop(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
 
 void op_brk() { setflag(FLAG_HALT, 1); }
@@ -109,13 +120,8 @@ void op_add() { wspush(wspop() + wspop()); }
 void op_sub() { wspush(wspop() - wspop()); }
 void op_mul() { wspush(wspop() * wspop()); }
 void op_div() { wspush(wspop() / wspop()); }
-void op_ldr() {  }
-void op_str() { 
-
-	Uint8 b = wspop();
-	Uint16 addr = wspop16();
-	printf("store: %02x @ %04x\n", b, addr);
-}
+void op_ldr() { wspush16(wspop16()); }
+void op_str() { cpu.ram.dat[wspop16()] = wspop(); }
 
 void (*ops[])(void) = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
@@ -215,6 +221,7 @@ main(int argc, char *argv[])
 	load(f);
 	run();
 	/* print result */
-	echo(&cpu.wst, 0x40, "stack");
+	echos(&cpu.wst, 0x40, "stack");
+	echom(&cpu.ram, 0x40, "ram");
 	return 0;
 }
