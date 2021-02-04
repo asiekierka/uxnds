@@ -86,14 +86,14 @@ void op_dup() { wspush(wspeek()); }
 void op_swp() { Uint8 b = wspop(), a = wspop(); wspush(b); wspush(a); }
 void op_ovr() { wspush(cpu.wst.dat[cpu.wst.ptr - 2]); }
 void op_rot() { Uint8 c = wspop(),b = wspop(),a = wspop(); wspush(b); wspush(c); wspush(a); }
-void op_jmi() { cpu.rom.ptr = wspop(); }
-void op_jsi() { rspush(cpu.rom.ptr); cpu.rom.ptr = wspop(); }
-void op_jmz() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
-void op_jsz() { Uint8 a = wspop(); if(getflag(FLAG_ZERO)){ rspush(cpu.rom.ptr); cpu.rom.ptr = a; } setflag(FLAG_ZERO,0); }
-void op_equ() { setflag(FLAG_ZERO, wspop() == wspeek()); }
-void op_neq() { setflag(FLAG_ZERO, wspop() != wspeek()); }
-void op_gth() {	setflag(FLAG_ZERO, wspop() < wspeek()); }
-void op_lth() {	setflag(FLAG_ZERO, wspop() > wspeek()); }
+void op_jmu() { cpu.rom.ptr = wspop(); }
+void op_jsu() { rspush(cpu.rom.ptr); cpu.rom.ptr = wspop(); }
+void op_jmc() { if(wspop()) op_jmu(); }
+void op_jsc() { if(wspop()) op_jsu(); }
+void op_equ() { wspush(wspop() == wspop()); }
+void op_neq() { wspush(wspop() != wspop()); }
+void op_gth() {	wspush(wspop() < wspop()); }
+void op_lth() {	wspush(wspop() > wspop()); }
 void op_and() {	wspush(wspop() & wspop()); }
 void op_ora() {	wspush(wspop() | wspop()); }
 void op_rol() { wspush(wspop() << 1); }
@@ -105,12 +105,12 @@ void op_div() { wspush(wspop() / wspop()); }
 
 void (*ops[])(void) = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
-	op_jmi, op_jsi, op_jmz, op_jsz, op_equ, op_neq, op_gth, op_lth, 
+	op_jmu, op_jsu, op_jmc, op_jsc, op_equ, op_neq, op_gth, op_lth, 
 	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div};
 
 Uint8 opr[][2] = {
 	{0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {1,1}, {0,1}, {3,3},
-	{1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0}, {1,0},
+	{2,0}, {2,0}, {2,0}, {2,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,0}, {1,0}, {1,0}, {2,1}, {0,0}, {0,0}, {0,0},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}
 };

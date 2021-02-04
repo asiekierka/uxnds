@@ -4,5 +4,5 @@
 
 :loop 
 	01 ADD
-	0f NEQ .loop JMZ
+	0f NEQ .loop JMC
 	RTS

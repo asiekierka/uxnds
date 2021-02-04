@@ -17,7 +17,7 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned char Uint8;
 
 typedef struct {
-	int len;
+	int ptr;
 	Uint8 data[PRGLEN];
 } Program;
 
@@ -33,7 +33,7 @@ Label labels[256];
 
 char opcodes[][4] = {
 	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
-	"JMI", "JSI", "JMZ", "JSZ", "EQU", "NEQ", "GTH", "LTH",
+	"JMU", "JSU", "JMC", "JSC", "EQU", "NEQ", "GTH", "LTH",
 	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV"};
 
 /* clang-format on */
@@ -112,7 +112,7 @@ shex(char *s) /* string to num */
 void
 pushprg(Uint8 hex)
 {
-	p.data[p.len++] = hex;
+	p.data[p.ptr++] = hex;
 }
 
 void
@@ -151,13 +151,13 @@ addlabel(char *id, Uint8 addr)
 	Label *l = &labels[labelslen++];
 	scpy(suca(id), l->name, LABELIDLEN);
 	l->addr = addr;
-	printf("new label: %s=%02x\n", l->name, l->addr);
+	printf("New label: %s[0x%02x]\n", l->name, l->addr);
 }
 
 void
 addconst(char *id, Uint8 value)
 {
-	printf("new const: %s=%02x\n", id, value);
+	printf("New const: %s[%02x]\n", id, value);
 }
 
 Label *
@@ -181,18 +181,13 @@ findop(char *s)
 }
 
 int
-getlength(char *w)
+ismarker(char *w)
 {
-	if(findop(w) || scmp(w, "BRK")) return 1;
-	if(w[0] == '.') return 3;
-	if(w[0] == ':') return 0;
-	if(sihx(w)) { return slen(w) / 2 + 2; }
-	printf("Unknown length %s\n", w);
-	return 0;
+	return w[0] == '(' || w[0] == ')' || w[0] == '{' || w[0] == '}';
 }
 
 int
-comment(char *w, int *skip)
+iscomment(char *w, int *skip)
 {
 	if(w[0] == '>') {
 		*skip = 0;
@@ -203,15 +198,31 @@ comment(char *w, int *skip)
 	return 0;
 }
 
+int
+getlength(char *w)
+{
+	if(findop(w) || scmp(w, "BRK")) return 1;
+	if(w[0] == '.') return 3;
+	if(w[0] == ':') return 0;
+	if(w[0] == ';') return 0;
+	if(w[0] == '@') return 0;
+	if(sihx(w)) { return slen(w) / 2 + 2; }
+	if(ismarker(w)) return 0;
+	printf("Unknown length %s\n", w);
+	return 0;
+}
+
 void
 pass1(FILE *f)
 {
 	int skip = 0;
 	int addr = 0;
+	int vars = 0;
 	char word[64];
 	while(fscanf(f, "%s", word) == 1) {
-		if(comment(word, &skip)) continue;
+		if(iscomment(word, &skip)) continue;
 		if(word[0] == ':') addlabel(word + 1, addr);
+		if(word[0] == ';') addlabel(word + 1, vars++);
 		addr += getlength(word);
 	}
 	rewind(f);
@@ -226,9 +237,12 @@ pass2(FILE *f)
 		Uint8 op = 0;
 		Label *l;
 		if(word[0] == ':') continue;
+		if(word[0] == ';') continue;
 		suca(word);
-		if(comment(word, &skip)) continue;
-		if((op = findop(word)) || scmp(word, "BRK"))
+		if(iscomment(word, &skip) || ismarker(word)) continue;
+		if(word[0] == '@')
+			p.ptr = shex(word + 1);
+		else if((op = findop(word)) || scmp(word, "BRK"))
 			pushprg(op);
 		else if((l = findlabel(word + 1)))
 			pushlabel(l);

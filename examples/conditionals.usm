@@ -1,9 +1,6 @@
 < conditionals >
 
-0302	ADD 
-05		EQU
-
-.there	JMZ
+.there ( 0a 05 GTH ) JMC
 
 :here
 	< when not equal >

@@ -10,17 +10,15 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ## Assembly Syntax
 
+- `;variable`, a named address(zero-page)
 - `:label`, a named address
-- `+literal`, a numeric value
-- `.pointer`, pointer to a label
+- `.pointer`, a pointer to a label
+- `@0010`, a position in the program
 
 ```
 < conditionals >
 
-0302	ADD 
-05		EQU
-
-.there	JMZ
+.there ( 0a 05 GTH ) JMC
 
 :here
 	< when not equal >
@@ -35,10 +33,15 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ## Mission
 
+### Assembler
+
+- Crash on missing label
 - Catch overflow/underflow
+- Constants
 - Jumps should be relative
-- constants
-- variables
+
+### CPU
+
 - Pointers/Literals
 - A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
 - Carry flag?
@@ -47,7 +50,7 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - Detect mouse click
 - SDL Layer Emulator
 - Build PPU
-- Interrupts
+- Interrupts, vectors
 
 ### 16 Bit Missions
 
@@ -55,10 +58,6 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - jumping to subroutine should be relative
 - Implement addressing
 - Implement 16 bits operations
-
-## Notes
-
-- Forth logic operators pop 2 items and add a bool to the stack, is that viable in uxn?
 
 ## Refs
 
