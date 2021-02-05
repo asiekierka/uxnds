@@ -239,7 +239,7 @@ pass1(FILE *f)
 		else if(w[0] == '.')
 			addr += 2;
 		else if(w[0] == '"')
-			addr += slen(w + 1);
+			addr += slen(w + 1) + 2;
 		else if(w[0] == ',')
 			addr += 4;
 		else if(ismarker(w))

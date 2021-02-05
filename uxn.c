@@ -85,15 +85,21 @@ echom(Memory *m, Uint8 len, char *name)
 
 /* clang-format off */
 
+Uint16 bytes2short(Uint8 a, Uint8 b) { return (a << 8) + b; }
 Uint8 rampeek8(Uint16 s) { return cpu.ram.dat[s] & 0xff; }
+Uint8 mempeek8(Uint16 s) { return cpu.rom.dat[s]; }
 Uint16 mempeek16(Uint16 s) { return (cpu.rom.dat[s] << 8) + (cpu.rom.dat[s+1] & 0xff); }
 void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
 Uint16 wspop16(void) { return wspop8() + (wspop8() << 8); }
 Uint8 wspeek8(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
+Uint16 rspop16(void) { return cpu.rst.dat[--cpu.rst.ptr] + (cpu.rst.dat[--cpu.rst.ptr] << 8); }
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_rts() {	cpu.rom.ptr = cpu.rst.dat[--cpu.rst.ptr]; }
+void op_rts() {	
+	cpu.rom.ptr = rspop16(); 
+	printf("RTS: %04x\n", cpu.rom.ptr);
+}
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
 void op_drp() { wspop8(); }
 void op_dup() { wspush8(wspeek8()); }
@@ -101,7 +107,7 @@ void op_swp() { Uint8 b = wspop8(), a = wspop8(); wspush8(b); wspush8(a); }
 void op_ovr() { wspush8(cpu.wst.dat[cpu.wst.ptr - 2]); }
 void op_rot() { Uint8 c = wspop8(),b = wspop8(),a = wspop8(); wspush8(b); wspush8(c); wspush8(a); }
 void op_jmu() { cpu.rom.ptr = wspop8(); }
-void op_jsu() { cpu.rst.dat[cpu.rst.ptr++] = cpu.rom.ptr; cpu.rom.ptr = wspop8(); }
+void op_jsu() { cpu.rst.dat[cpu.rst.ptr++] = (cpu.rom.ptr >> 8) & 0xff; cpu.rst.dat[cpu.rst.ptr++] = cpu.rom.ptr; cpu.rom.ptr = wspop16(); }
 void op_jmc() { if(wspop8()) op_jmu(); }
 void op_jsc() { if(wspop8()) op_jsu(); }
 void op_equ() { wspush8(wspop8() == wspop8()); }
@@ -163,6 +169,7 @@ device1(Uint8 *read, Uint8 *write)
 {
 	printf("%c", *write);
 	*write = 0;
+	(void)read;
 	return 0;
 }
 

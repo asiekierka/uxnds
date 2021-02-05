@@ -28,22 +28,30 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - `"hello`, push literal bytes for word "hello"
 
 ```
-;value ( alloc a zero-page variable )
+( hello world )
 
-@0010 ( start at page 1 )
+;iterator
+:dev1r FFF0
+:dev1w FFF1
 
-,03 ,02 ADD ,05 EQU 
-,there ROT JMC
+|0100 @RESET
 
-:here
-	( when not equal )
-	,ee
-	BRK
+"hello
 
-:there
-	( when is equal )
-	,ff
-	BRK
+@loop
+	,dev1w STR
+	,iterator LDR
+	,01 ADD
+	,iterator STR 
+	,iterator LDR
+	,05 NEQ ,loop ROT JSC
+
+BRK ( RESET )
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR
+
 ```
 
 ## Mission

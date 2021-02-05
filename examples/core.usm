@@ -1,18 +1,20 @@
-( blank project )
+( hello world )
 
-;variable1
+;iterator
 :dev1r FFF0
 :dev1w FFF1
 
 |0100 @RESET
 
-"hello 
+"hello
 
-,dev1w STR
-,dev1w STR
-,dev1w STR
-,dev1w STR
-,dev1w STR
+@loop
+	,dev1w STR
+	,iterator LDR
+	,01 ADD
+	,iterator STR 
+	,iterator LDR
+	,05 NEQ ,loop ROT JSC
 
 BRK ( RESET )
 
