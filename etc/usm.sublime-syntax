@@ -18,7 +18,7 @@ contexts:
     - include: strings
 
   numbers:
-    - match: '\@(\S+)\s?'
+    - match: '\|(\S+)\s?'
       scope: punctuation.definition
       pop: true
 
@@ -27,6 +27,9 @@ contexts:
       scope: string.control
       pop: true
     - match: '\;(\S+)\s?'
+      scope: string.control
+      pop: true
+    - match: '\_(\S+)\s?'
       scope: string.control
       pop: true
     - match: '\,(\S+)\s?'

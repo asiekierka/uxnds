@@ -103,7 +103,7 @@ shex(char *s) /* string to num */
 		else if(c >= 'A' && c <= 'F')
 			n = n * 16 + 10 + (c - 'A');
 		else if(c >= 'a' && c <= 'f')
-			n = n * 16 + 10 + (c - 'f');
+			n = n * 16 + 10 + (c - 'a');
 	return n;
 }
 
@@ -191,6 +191,14 @@ makelabel(char *id, Uint16 addr)
 }
 
 int
+makeconst(char *id, FILE *f)
+{
+	char wv[64];
+	fscanf(f, "%s", wv);
+	return makelabel(id, shex(wv));
+}
+
+int
 pass1(FILE *f)
 {
 	int skip = 0, vars = 0;
@@ -199,16 +207,22 @@ pass1(FILE *f)
 	while(fscanf(f, "%s", w) == 1) {
 		if(iscomment(w, &skip)) continue;
 		suca(w);
-		if(w[0] == ':' && !makelabel(w + 1, addr))
+		if(w[0] == '@' && !makelabel(w + 1, addr))
 			return error("Pass1 failed", w);
 		if(w[0] == ';' && !makelabel(w + 1, vars++))
 			return error("Pass1 failed", w);
+		if(w[0] == ':') {
+			if(!makeconst(w + 1, f))
+				return error("Pass1 failed", w);
+			else
+				continue;
+		}
 		/* move addr ptr */
 		if(findop(w) || scmp(w, "BRK"))
 			addr += 1;
-		else if(w[0] == '@') {
+		else if(w[0] == '|')
 			addr = shex(w + 1);
-		} else if(w[0] == ':')
+		else if(w[0] == '@')
 			addr += 0;
 		else if(w[0] == ';')
 			addr += 0;
@@ -233,12 +247,14 @@ pass2(FILE *f)
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
-		if(w[0] == ':') continue;
+		if(w[0] == '@') continue;
 		if(w[0] == ';') continue;
 		suca(w);
 		if(iscomment(w, &skip) || ismarker(w)) continue;
-		if(w[0] == '@')
+		if(w[0] == '|')
 			p.ptr = shex(w + 1);
+		else if(w[0] == ':')
+			fscanf(f, "%s", w);
 		else if((op = findop(w)) || scmp(w, "BRK"))
 			pushbyte(op, 0);
 		else if((l = findlabel(w + 1)))

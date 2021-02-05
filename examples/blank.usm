@@ -1,27 +1,24 @@
 ( blank project )
 
 ;variable1
-:constant1 9abc
+;variable2
+_constant1 abcd
 
 |0100 ( -------------------------------- )
 
-@RESET
-
-,abcd
-
-BRK ( RESET-END )
+:RESET BRK
 
 |c000 ( -------------------------------- )
 
-@FRAME ( FRAME-START )
+:FRAME ( FRAME-START )
 
-,abcd
+
 
 BRK ( FRAME-END )
 
 |d000 ( -------------------------------- )
 
-@ERROR BRK
+:ERROR BRK
 
 |FFFA ( -------------------------------- )
 

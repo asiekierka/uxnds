@@ -12,18 +12,19 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 ### Write
 
-- `;variable`, set a name to address on the zero-page
-- `:label`, set a name to an address
+- `;variable`, set a label to an assigned address
+- `:const`, set a label to a constant short
+- `@label`, set a label to an address
 
 ### Read
 
-- `,literal`, get a literal pointer
-- `.pointer`, get a raw pointer
+- `,literal`, push label value to stack
+- `.pointer`, read label value
 
 ### Special
 
-- `@0010`, move to position in the program
-- `( comment )`
+- `( comment )`, toggle parsing on/off
+- `|0010`, move to position in the program
 
 ```
 ;value ( alloc a zero-page variable )
@@ -49,7 +50,6 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 ### Assembler
 
 - Catch overflow/underflow
-- Constants
 - Jumps should be relative
 
 ### CPU
@@ -62,6 +62,10 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - SDL Layer Emulator
 - Build PPU
 - Add flags..
+
+### Devices
+
+- Devices each have an input byte, an output byte and two request bytes.
 
 ## Refs
 
