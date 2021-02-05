@@ -85,7 +85,7 @@ echom(Memory *m, Uint8 len, char *name)
 
 /* clang-format off */
 
-Uint8 mempeek8(Uint16 s) { return cpu.rom.dat[s] & 0xff; }
+Uint8 rampeek8(Uint16 s) { return cpu.ram.dat[s] & 0xff; }
 Uint16 mempeek16(Uint16 s) { return (cpu.rom.dat[s] << 8) + (cpu.rom.dat[s+1] & 0xff); }
 void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
@@ -159,6 +159,14 @@ error(char *name)
 }
 
 int
+device1(Uint8 *read, Uint8 *write)
+{
+	printf("%c", *write);
+	*write = 0;
+	return 0;
+}
+
+int
 eval(void)
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
@@ -192,12 +200,15 @@ start(FILE *f)
 	cpu.vframe = mempeek16(0xfffc);
 	cpu.verror = mempeek16(0xfffe);
 	/* eval reset */
-	printf("Phase: reset\n");
+	printf("\nPhase: reset\n");
 	cpu.rom.ptr = cpu.vreset;
-	while(!(cpu.status & FLAG_HALT) && eval())
-		;
+	while(!(cpu.status & FLAG_HALT) && eval()) {
+		/* experimental */
+		if(cpu.ram.dat[0xfff1])
+			device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
+	}
 	/*eval frame */
-	printf("Phase: frame\n");
+	printf("\nPhase: frame\n");
 	setflag(FLAG_HALT, 0);
 	cpu.rom.ptr = cpu.vframe;
 	while(!(cpu.status & FLAG_HALT) && eval())

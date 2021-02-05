@@ -25,6 +25,7 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 - `( comment )`, toggle parsing on/off
 - `|0010`, move to position in the program
+- `"hello`, push literal bytes for word "hello"
 
 ```
 ;value ( alloc a zero-page variable )

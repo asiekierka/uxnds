@@ -148,6 +148,16 @@ pushshort(Uint16 s, int lit)
 	pushbyte(s & 0xff, 0);
 }
 
+void
+pushword(char *w)
+{
+	int i = slen(w);
+	pushbyte(0x02, 0);
+	pushbyte(slen(w), 0);
+	while(i > 0)
+		pushbyte(w[--i], 0);
+}
+
 Label *
 findlabel(char *s)
 {
@@ -228,6 +238,8 @@ pass1(FILE *f)
 			addr += 0;
 		else if(w[0] == '.')
 			addr += 2;
+		else if(w[0] == '"')
+			addr += slen(w + 1);
 		else if(w[0] == ',')
 			addr += 4;
 		else if(ismarker(w))
@@ -255,6 +267,8 @@ pass2(FILE *f)
 			p.ptr = shex(w + 1);
 		else if(w[0] == ':')
 			fscanf(f, "%s", w);
+		else if(w[0] == '"')
+			pushword(w + 1);
 		else if((op = findop(w)) || scmp(w, "BRK"))
 			pushbyte(op, 0);
 		else if((l = findlabel(w + 1)))

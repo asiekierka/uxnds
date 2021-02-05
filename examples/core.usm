@@ -1,30 +1,21 @@
 ( blank project )
 
 ;variable1
-:constant1 9abc
+:dev1r FFF0
+:dev1w FFF1
 
-|0100 ( -------------------------------- )
+|0100 @RESET
 
-@RESET
+"hello 
 
-,abcd
+,dev1w STR
+,dev1w STR
+,dev1w STR
+,dev1w STR
+,dev1w STR
 
-BRK ( RESET-END )
+BRK ( RESET )
 
-|c000 ( -------------------------------- )
-
-@FRAME ( FRAME-START )
-
-,abcd
-
-BRK ( FRAME-END )
-
-|d000 ( -------------------------------- )
-
-@ERROR BRK
-
-|FFFA ( -------------------------------- )
-
-.RESET
-.FRAME
-.ERROR
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR
