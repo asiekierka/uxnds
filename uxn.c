@@ -85,45 +85,39 @@ echom(Memory *m, Uint8 len, char *name)
 
 /* clang-format off */
 
-Uint8 mempoke8(Uint16 p) { return cpu.rom.dat[p+1] & 0xff; }
-Uint16 mempoke16(Uint16 p) { return (cpu.rom.dat[p] << 8) + (cpu.rom.dat[p+1] & 0xff); }
-void wspush(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
-Uint8 wspop(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
-void wspush16(Uint16 s) { 
-
-	printf("0x%04x\n", s);
-}
-Uint16 wspop16(void) { return wspop() + (wspop() << 8); }
-Uint8 wspeek(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
-void rspush(Uint8 b) { cpu.rst.dat[cpu.rst.ptr++] = b; }
-Uint8 rspop(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
+Uint8 mempeek8(Uint16 s) { return cpu.rom.dat[s] & 0xff; }
+Uint16 mempeek16(Uint16 s) { return (cpu.rom.dat[s] << 8) + (cpu.rom.dat[s+1] & 0xff); }
+void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
+Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
+Uint16 wspop16(void) { return wspop8() + (wspop8() << 8); }
+Uint8 wspeek8(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_rts() {	cpu.rom.ptr = rspop(); }
+void op_rts() {	cpu.rom.ptr = cpu.rst.dat[--cpu.rst.ptr]; }
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
-void op_drp() { wspop(); }
-void op_dup() { wspush(wspeek()); }
-void op_swp() { Uint8 b = wspop(), a = wspop(); wspush(b); wspush(a); }
-void op_ovr() { wspush(cpu.wst.dat[cpu.wst.ptr - 2]); }
-void op_rot() { Uint8 c = wspop(),b = wspop(),a = wspop(); wspush(b); wspush(c); wspush(a); }
-void op_jmu() { cpu.rom.ptr = wspop(); }
-void op_jsu() { rspush(cpu.rom.ptr); cpu.rom.ptr = wspop(); }
-void op_jmc() { if(wspop()) op_jmu(); }
-void op_jsc() { if(wspop()) op_jsu(); }
-void op_equ() { wspush(wspop() == wspop()); }
-void op_neq() { wspush(wspop() != wspop()); }
-void op_gth() {	wspush(wspop() < wspop()); }
-void op_lth() {	wspush(wspop() > wspop()); }
-void op_and() {	wspush(wspop() & wspop()); }
-void op_ora() {	wspush(wspop() | wspop()); }
-void op_rol() { wspush(wspop() << 1); }
-void op_ror() { wspush(wspop() >> 1); }
-void op_add() { wspush(wspop() + wspop()); }
-void op_sub() { wspush(wspop() - wspop()); }
-void op_mul() { wspush(wspop() * wspop()); }
-void op_div() { wspush(wspop() / wspop()); }
-void op_ldr() { wspush(cpu.ram.dat[wspop16()]); }
-void op_str() { cpu.ram.dat[wspop16()] = wspop(); }
+void op_drp() { wspop8(); }
+void op_dup() { wspush8(wspeek8()); }
+void op_swp() { Uint8 b = wspop8(), a = wspop8(); wspush8(b); wspush8(a); }
+void op_ovr() { wspush8(cpu.wst.dat[cpu.wst.ptr - 2]); }
+void op_rot() { Uint8 c = wspop8(),b = wspop8(),a = wspop8(); wspush8(b); wspush8(c); wspush8(a); }
+void op_jmu() { cpu.rom.ptr = wspop8(); }
+void op_jsu() { cpu.rst.dat[cpu.rst.ptr++] = cpu.rom.ptr; cpu.rom.ptr = wspop8(); }
+void op_jmc() { if(wspop8()) op_jmu(); }
+void op_jsc() { if(wspop8()) op_jsu(); }
+void op_equ() { wspush8(wspop8() == wspop8()); }
+void op_neq() { wspush8(wspop8() != wspop8()); }
+void op_gth() {	wspush8(wspop8() < wspop8()); }
+void op_lth() {	wspush8(wspop8() > wspop8()); }
+void op_and() {	wspush8(wspop8() & wspop8()); }
+void op_ora() {	wspush8(wspop8() | wspop8()); }
+void op_rol() { wspush8(wspop8() << 1); }
+void op_ror() { wspush8(wspop8() >> 1); }
+void op_add() { wspush8(wspop8() + wspop8()); }
+void op_sub() { wspush8(wspop8() - wspop8()); }
+void op_mul() { wspush8(wspop8() * wspop8()); }
+void op_div() { wspush8(wspop8() / wspop8()); }
+void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
+void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
 
 void (*ops[])(void) = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
@@ -169,7 +163,7 @@ eval(void)
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
 	if(cpu.literal > 0) {
-		wspush(instr);
+		wspush8(instr);
 		cpu.literal--;
 		return 1;
 	}
@@ -194,14 +188,17 @@ start(FILE *f)
 {
 	reset();
 	fread(cpu.rom.dat, sizeof(cpu.rom.dat), 1, f);
-	cpu.vreset = mempoke16(0xfffa);
-	cpu.vframe = mempoke16(0xfffc);
-	cpu.verror = mempoke16(0xfffe);
+	cpu.vreset = mempeek16(0xfffa);
+	cpu.vframe = mempeek16(0xfffc);
+	cpu.verror = mempeek16(0xfffe);
 	/* eval reset */
+	printf("Phase: reset\n");
 	cpu.rom.ptr = cpu.vreset;
 	while(!(cpu.status & FLAG_HALT) && eval())
 		;
 	/*eval frame */
+	printf("Phase: frame\n");
+	setflag(FLAG_HALT, 0);
 	cpu.rom.ptr = cpu.vframe;
 	while(!(cpu.status & FLAG_HALT) && eval())
 		;

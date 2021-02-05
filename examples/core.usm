@@ -6,21 +6,20 @@
 @0100 
 
 :RESET ( --- )
-
-,22 ,var1 STR ( store 0x22 in var1 )
-,var1 LDR ( load var2, put value on stack )
-
-BRK
+	,1234
+	BRK
 
 @c000 ( much further.. )
 
 :FRAME ( --- )
-  BRK
+	,ab ,0008 str
+	BRK
 
 @d000 ( further still.. )
 
 :ERROR ( --- )
-  BRK
+	,cdef
+	BRK
 
 @FFFA ( vectors, last 3 shorts )
 
