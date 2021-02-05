@@ -2,15 +2,15 @@
 
 ;var1
 ;var2
-;var3
+
+@0100 
+
+:RESET ( --- )
 
 ,22 ,var1 STR ( store 0x22 in var1 )
 ,var1 LDR ( load var2, put value on stack )
 
-@0100 ( store program reset after zero-page )
-
-:RESET ( --- )
-  BRK
+BRK
 
 @c000 ( much further.. )
 

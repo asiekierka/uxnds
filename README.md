@@ -26,11 +26,12 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - `( comment )`
 
 ```
-;value ( alloc zero-page variable )
+;value ( alloc a zero-page variable )
 
 @0010 ( start at page 1 )
 
-,there [ ,0a ,05 GTH ] JMC
+,03 ,02 ADD ,05 EQU 
+,there ROT JMC
 
 :here
 	( when not equal )
