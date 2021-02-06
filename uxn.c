@@ -12,7 +12,7 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 #define FLAG_HALT 0x01
-#define FLAG_ZERO 0x02
+#define FLAG_SHORT 0x02
 #define FLAG_CARRY 0x04
 #define FLAG_TRAPS 0x08
 
@@ -96,6 +96,7 @@ Uint8 rampeek8(Uint16 s) { return cpu.ram.dat[s] & 0xff; }
 Uint8 mempeek8(Uint16 s) { return cpu.rom.dat[s]; }
 Uint16 mempeek16(Uint16 s) { return (cpu.rom.dat[s] << 8) + (cpu.rom.dat[s+1] & 0xff); }
 void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
+void wspush16(Uint16 s) { wspush8(s >> 8); wspush8(s & 0xff); }
 Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
 Uint16 wspop16(void) { return wspop8() + (wspop8() << 8); }
 Uint8 wspeek8(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
@@ -116,24 +117,31 @@ void op_jmc() { if(wspop8()) op_jmu(); }
 void op_jsc() { if(wspop8()) op_jsu(); }
 void op_equ() { wspush8(wspop8() == wspop8()); }
 void op_neq() { wspush8(wspop8() != wspop8()); }
-void op_gth() {	wspush8(wspop8() < wspop8()); }
-void op_lth() {	wspush8(wspop8() > wspop8()); }
-void op_and() {	wspush8(wspop8() & wspop8()); }
-void op_ora() {	wspush8(wspop8() | wspop8()); }
+void op_gth() { wspush8(wspop8() < wspop8()); }
+void op_lth() { wspush8(wspop8() > wspop8()); }
+void op_and() { wspush8(wspop8() & wspop8()); }
+void op_ora() { wspush8(wspop8() | wspop8()); }
 void op_rol() { wspush8(wspop8() << 1); }
 void op_ror() { wspush8(wspop8() >> 1); }
-void op_add() { wspush8(wspop8() + wspop8()); }
+void op_add() { 
+	if(getflag(FLAG_SHORT))
+		wspush16(wspop16() + wspop16()); 
+	else
+		wspush8(wspop8() + wspop8()); 
+}
 void op_sub() { wspush8(wspop8() - wspop8()); }
 void op_mul() { wspush8(wspop8() * wspop8()); }
 void op_div() { wspush8(wspop8() / wspop8()); }
 void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
 void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
+void op_pek() { wspush8(cpu.rom.dat[wspop16()]); }
+void op_pok() { printf("TODO:\n");}
 
-void (*ops[])(void) = {
+void (*ops[])() = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
 	op_jmu, op_jsu, op_jmc, op_jsc, op_equ, op_neq, op_gth, op_lth, 
 	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div,
-	op_ldr, op_str, op_brk, op_brk, op_brk, op_brk, op_brk, op_brk
+	op_ldr, op_str, op_pek, op_pok, op_brk, op_brk, op_brk, op_brk
 };
 
 Uint8 opr[][2] = {
@@ -162,9 +170,9 @@ reset(void)
 }
 
 int
-error(char *name)
+error(char *name, int id)
 {
-	printf("Error: %s, at 0x%04x\n", name, cpu.counter);
+	printf("Error: %s[%04x], at 0x%04x\n", name, id, cpu.counter);
 	return 0;
 }
 
@@ -177,31 +185,48 @@ device1(Uint8 *read, Uint8 *write)
 	return 0;
 }
 
+void
+opc(Uint8 src, Uint8 *op, Uint8 *mode)
+{
+	*op = src;
+	*op &= ~(1 << 5);
+	*op &= ~(1 << 6);
+	*op &= ~(1 << 7);
+	*mode = src;
+	*mode &= ~(1 << 0);
+	*mode &= ~(1 << 1);
+	*mode &= ~(1 << 2);
+	*mode &= ~(1 << 3);
+}
+
 int
 eval(void)
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
+	Uint8 op, opmode;
+	/* when literal */
 	if(cpu.literal > 0) {
 		wspush8(instr);
 		cpu.literal--;
 		return 1;
 	}
-	if(instr < 32) {
-		if(cpu.wst.ptr < opr[instr][0])
-			return error("Stack underflow");
-		/* TODO stack overflow */
-		(*ops[instr])();
-	}
-	if(instr > 0x10)
-		setflag(FLAG_ZERO, 0);
-	if(cpu.counter == 128) {
-		return error("Reached bounds");
-	}
+	/* when opcode */
+	opc(instr, &op, &opmode);
+	setflag(FLAG_SHORT, (instr >> 5) & 1);
+	if((instr >> 6) & 1)
+		printf("Unused flag: %02x\n", instr);
+	if((instr >> 7) & 1)
+		printf("Unused flag: %02x\n", instr);
+	/* TODO: setflag(FLAG_B, (instr >> 6) & 1); */
+	/* TODO: setflag(FLAG_C, (instr >> 7) & 1); */
+	if(cpu.wst.ptr < opr[op][0])
+		return error("Stack underflow", op);
+	(*ops[op])();
 	cpu.counter++;
 	return 1;
 }
 
-void
+int
 start(FILE *f)
 {
 	reset();
@@ -216,6 +241,8 @@ start(FILE *f)
 		/* experimental */
 		if(cpu.ram.dat[0xfff1])
 			device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
+		if(cpu.counter > 256)
+			return error("Reached bounds", cpu.counter);
 	}
 	/*eval frame */
 	printf("\nPhase: frame\n");
@@ -227,10 +254,11 @@ start(FILE *f)
 	printf("ended @ %d steps | ", cpu.counter);
 	printf("hf: %x zf: %x cf: %x tf: %x\n",
 		getflag(FLAG_HALT) != 0,
-		getflag(FLAG_ZERO) != 0,
+		getflag(FLAG_SHORT) != 0,
 		getflag(FLAG_CARRY) != 0,
 		getflag(FLAG_TRAPS) != 0);
 	printf("\n");
+	return 1;
 }
 
 int
@@ -238,10 +266,11 @@ main(int argc, char *argv[])
 {
 	FILE *f;
 	if(argc < 2)
-		return error("No input.");
+		return error("No input.", 0);
 	if(!(f = fopen(argv[1], "rb")))
-		return error("Missing input.");
-	start(f);
+		return error("Missing input.", 0);
+	if(!start(f))
+		return error("Program error", 0);
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");

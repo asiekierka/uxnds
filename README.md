@@ -27,6 +27,10 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - `|0010`, move to position in the program
 - `"hello`, push literal bytes for word "hello"
 
+### Operator modes
+
+- `,1234 ,0001 ADD^`, 16-bits operators have the short flag `^`.
+
 ```
 ( hello world )
 

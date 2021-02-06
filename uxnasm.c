@@ -29,11 +29,11 @@ Label labels[256];
 
 /* clang-format off */
 
-char opcodes[][4] = {
+char ops[][4] = {
 	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
 	"JMU", "JSU", "JMC", "JSC", "EQU", "NEQ", "GTH", "LTH",
 	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV",
-	"LDR", "STR", "---", "---", "---", "---", "---", "---"
+	"LDR", "STR", "PEK", "POK", "---", "---", "---", "---"
 };
 
 /* clang-format on */
@@ -162,22 +162,33 @@ findlabel(char *s)
 	return NULL;
 }
 
+Uint8
+findop(char *s)
+{
+	int i;
+	for(i = 0; i < 32; ++i) {
+		int m = 0;
+		if(ops[i][0] != s[0]) continue;
+		if(ops[i][1] != s[1]) continue;
+		if(ops[i][2] != s[2]) continue;
+		while(s[3 + m]) {
+			char c = s[3 + m];
+			if(c == '^') i |= (1 << 5); /* mode: 16 bits */
+			if(c == '&') i |= (1 << 6); /* mode: unused */
+			if(c == '~') i |= (1 << 7); /* mode: unused */
+			m++;
+		}
+		return i;
+	}
+	return 0;
+}
+
 #pragma mark - Parser
 
 int
 error(char *name, char *id)
 {
 	printf("Error: %s[%s]\n", name, id);
-	return 0;
-}
-
-Uint8
-findop(char *s)
-{
-	int i;
-	for(i = 0; i < 32; ++i)
-		if(scmp(opcodes[i], s))
-			return i;
 	return 0;
 }
 
@@ -210,7 +221,6 @@ pass1(FILE *f)
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		if(iscomment(w, &skip)) continue;
-		suca(w);
 		if(w[0] == '@' && !makelabel(w + 1, addr))
 			return error("Pass1 failed", w);
 		if(w[0] == ';' && !makelabel(w + 1, vars++))
@@ -253,7 +263,6 @@ pass2(FILE *f)
 		Label *l;
 		if(w[0] == '@') continue;
 		if(w[0] == ';') continue;
-		suca(w);
 		if(iscomment(w, &skip)) continue;
 		if(w[0] == '|')
 			p.ptr = shex(w + 1);
@@ -261,10 +270,10 @@ pass2(FILE *f)
 			fscanf(f, "%s", w);
 		else if(w[0] == '"')
 			pushword(w + 1);
-		else if((op = findop(w)) || scmp(w, "BRK"))
-			pushbyte(op, 0);
 		else if((l = findlabel(w + 1)))
 			pushshort(l->addr, w[0] == ',');
+		else if((op = findop(w)) || scmp(w, "BRK"))
+			pushbyte(op, 0);
 		else if(sihx(w + 1) && slen(w + 1) == 2)
 			pushbyte(shex(w + 1), w[0] == ',');
 		else if(sihx(w + 1) && slen(w + 1) == 4)
