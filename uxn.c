@@ -25,6 +25,11 @@ typedef struct {
 } Stack;
 
 typedef struct {
+	Uint8 ptr;
+	Uint16 dat[256];
+} Stack16;
+
+typedef struct {
 	Uint16 ptr;
 	Uint8 dat[65536];
 } Memory;
@@ -32,7 +37,8 @@ typedef struct {
 typedef struct {
 	Uint8 literal, status;
 	Uint16 counter, vreset, vframe, verror;
-	Stack wst, rst;
+	Stack wst;
+	Stack16 rst;
 	Memory rom, ram;
 } Computer;
 
@@ -93,13 +99,11 @@ void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
 Uint16 wspop16(void) { return wspop8() + (wspop8() << 8); }
 Uint8 wspeek8(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
-Uint16 rspop16(void) { return cpu.rst.dat[--cpu.rst.ptr] + (cpu.rst.dat[--cpu.rst.ptr] << 8); }
+Uint16 rspop16(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
+void rspush16(Uint16 a) { cpu.rst.dat[cpu.rst.ptr++] = a; }
 
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_rts() {	
-	cpu.rom.ptr = rspop16(); 
-	printf("RTS: %04x\n", cpu.rom.ptr);
-}
+void op_rts() {	cpu.rom.ptr = rspop16(); }
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
 void op_drp() { wspop8(); }
 void op_dup() { wspush8(wspeek8()); }
@@ -107,7 +111,7 @@ void op_swp() { Uint8 b = wspop8(), a = wspop8(); wspush8(b); wspush8(a); }
 void op_ovr() { wspush8(cpu.wst.dat[cpu.wst.ptr - 2]); }
 void op_rot() { Uint8 c = wspop8(),b = wspop8(),a = wspop8(); wspush8(b); wspush8(c); wspush8(a); }
 void op_jmu() { cpu.rom.ptr = wspop8(); }
-void op_jsu() { cpu.rst.dat[cpu.rst.ptr++] = (cpu.rom.ptr >> 8) & 0xff; cpu.rst.dat[cpu.rst.ptr++] = cpu.rom.ptr; cpu.rom.ptr = wspop16(); }
+void op_jsu() { rspush16(cpu.rom.ptr); cpu.rom.ptr = wspop16(); }
 void op_jmc() { if(wspop8()) op_jmu(); }
 void op_jsc() { if(wspop8()) op_jsu(); }
 void op_equ() { wspush8(wspop8() == wspop8()); }
