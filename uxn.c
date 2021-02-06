@@ -164,7 +164,7 @@ reset(void)
 int
 error(char *name)
 {
-	printf("Error: %s\n", name);
+	printf("Error: %s, at 0x%04x\n", name, cpu.counter);
 	return 0;
 }
 
@@ -195,8 +195,7 @@ eval(void)
 	if(instr > 0x10)
 		setflag(FLAG_ZERO, 0);
 	if(cpu.counter == 128) {
-		printf("REACHED COUNTER\n");
-		return 0;
+		return error("Reached bounds");
 	}
 	cpu.counter++;
 	return 1;

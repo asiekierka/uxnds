@@ -108,12 +108,6 @@ shex(char *s) /* string to num */
 }
 
 int
-ismarker(char *w)
-{
-	return w[0] == '[' || w[0] == ']' || w[0] == '{' || w[0] == '}';
-}
-
-int
 iscomment(char *w, int *skip)
 {
 	if(w[0] == ')') {
@@ -173,7 +167,7 @@ findlabel(char *s)
 int
 error(char *name, char *id)
 {
-	printf("Error: %s(%s)\n", name, id);
+	printf("Error: %s[%s]\n", name, id);
 	return 0;
 }
 
@@ -241,9 +235,7 @@ pass1(FILE *f)
 		else if(w[0] == '"')
 			addr += slen(w + 1) + 2;
 		else if(w[0] == ',')
-			addr += 4;
-		else if(ismarker(w))
-			addr += 0;
+			addr += 2 + (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2);
 		else
 			return error("Unknown label", w);
 	}
@@ -262,7 +254,7 @@ pass2(FILE *f)
 		if(w[0] == '@') continue;
 		if(w[0] == ';') continue;
 		suca(w);
-		if(iscomment(w, &skip) || ismarker(w)) continue;
+		if(iscomment(w, &skip)) continue;
 		if(w[0] == '|')
 			p.ptr = shex(w + 1);
 		else if(w[0] == ':')

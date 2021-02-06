@@ -40,18 +40,21 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 @loop
 	,dev1w STR
-	,iterator LDR
-	,01 ADD
-	,iterator STR 
-	,iterator LDR
+	,incr JSU ( call incr )
 	,05 NEQ ,loop ROT JSC
 
 BRK ( RESET )
 
+@incr
+	,iterator LDR
+	,01 ADD
+	,iterator STR 
+	,iterator LDR
+	RTS
+	
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR
-
 ```
 
 ## Mission
