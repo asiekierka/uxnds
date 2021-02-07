@@ -18,14 +18,14 @@ BRK
 
 @strlen
 	,0001 ADD^ PEK
-	RTS
+	RTU
 
 @incr
 	,iterator LDR
 	,01 ADD
 	,iterator STR 
 	,iterator LDR
-	RTS
+	RTU
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

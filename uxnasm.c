@@ -26,98 +26,27 @@ typedef struct {
 
 int labelslen;
 Label labels[256];
+Program p;
 
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "RTS", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
-	"JMU", "JSU", "JMC", "JSC", "EQU", "NEQ", "GTH", "LTH",
-	"AND", "ORA", "ROL", "ROR", "ADD", "SUB", "MUL", "DIV",
-	"LDR", "STR", "PEK", "POK", "---", "---", "---", "---"
+	"BRK", "LIT", "---", "---", "PEK", "POK", "LDR", "STR",
+	"JMU", "JMC", "JSU", "JSC", "RTU", "RTC", "---", "---",
+	"POP", "DUP", "SWP", "OVR", "ROT", "AND", "ORA", "ROL",
+	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
 };
 
-/* clang-format on */
-
-Program p;
+int scmp(char *a, char *b) { int i = 0; while(a[i] == b[i]) if(!a[i++]) return 1; return 0; } /* string compare */
+int slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
+int sihx(char *s) { int i = 0; char c; while((c = s[i++])) if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F')) return 0; return 1; } /* string is hexadecimal */
+int shex(char *s) { int n = 0, i = 0; char c; while((c = s[i++])) if(c >= '0' && c <= '9') n = n * 16 + (c - '0'); else if(c >= 'A' && c <= 'F') n = n * 16 + 10 + (c - 'A'); else if(c >= 'a' && c <= 'f') n = n * 16 + 10 + (c - 'a'); return n; } /* string to num */
+int cmnt(char *w, int *skip) { if(w[0] == ')') { *skip = 0; return 1; } if(w[0] == '(') *skip = 1; if(*skip) return 1; return 0; } /* comment helper */
+char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) && i < len - 2) i++; dst[i + 1] = '\0'; return dst; } /* string copy */
 
 #pragma mark - Helpers
 
-int
-scmp(char *a, char *b) /* string compare */
-{
-	int i = 0;
-	while(a[i] == b[i])
-		if(!a[i++])
-			return 1;
-	return 0;
-}
-
-char *
-scpy(char *src, char *dst, int len) /* string copy */
-{
-	int i = 0;
-	while((dst[i] = src[i]) && i < len - 2)
-		i++;
-	dst[i + 1] = '\0';
-	return dst;
-}
-
-int
-slen(char *s) /* string length */
-{
-	int i = 0;
-	while(s[i] && s[++i])
-		;
-	return i;
-}
-
-char *
-suca(char *s) /* string to uppercase */
-{
-	int i = 0;
-	char c;
-	while((c = s[i]))
-		s[i++] = c >= 'a' && c <= 'z' ? c - ('a' - 'A') : c;
-	return s;
-}
-
-int
-sihx(char *s) /* string is hexadecimal */
-{
-	int i = 0;
-	char c;
-	while((c = s[i++]))
-		if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F'))
-			return 0;
-	return 1;
-}
-
-int
-shex(char *s) /* string to num */
-{
-	int n = 0, i = 0;
-	char c;
-	while((c = s[i++]))
-		if(c >= '0' && c <= '9')
-			n = n * 16 + (c - '0');
-		else if(c >= 'A' && c <= 'F')
-			n = n * 16 + 10 + (c - 'A');
-		else if(c >= 'a' && c <= 'f')
-			n = n * 16 + 10 + (c - 'a');
-	return n;
-}
-
-int
-iscomment(char *w, int *skip)
-{
-	if(w[0] == ')') {
-		*skip = 0;
-		return 1;
-	}
-	if(w[0] == '(') *skip = 1;
-	if(*skip) return 1;
-	return 0;
-}
+/* clang-format on */
 
 #pragma mark - I/O
 
@@ -125,7 +54,7 @@ void
 pushbyte(Uint8 b, int lit)
 {
 	if(lit) {
-		pushbyte(0x02, 0);
+		pushbyte(0x01, 0);
 		pushbyte(0x01, 0);
 	}
 	p.data[p.ptr++] = b;
@@ -135,7 +64,7 @@ void
 pushshort(Uint16 s, int lit)
 {
 	if(lit) {
-		pushbyte(0x02, 0);
+		pushbyte(0x01, 0);
 		pushbyte(0x02, 0);
 	}
 	pushbyte((s >> 8) & 0xff, 0);
@@ -143,10 +72,10 @@ pushshort(Uint16 s, int lit)
 }
 
 void
-pushword(char *w)
+pushtext(char *w)
 {
 	int i = slen(w);
-	pushbyte(0x02, 0);
+	pushbyte(0x01, 0);
 	pushbyte(slen(w), 0);
 	while(i > 0)
 		pushbyte(w[--i], 0);
@@ -163,19 +92,18 @@ findlabel(char *s)
 }
 
 Uint8
-findop(char *s)
+findoperator(char *s)
 {
 	int i;
-	for(i = 0; i < 32; ++i) {
+	for(i = 0; i < 0x20; ++i) {
 		int m = 0;
-		if(ops[i][0] != s[0]) continue;
-		if(ops[i][1] != s[1]) continue;
-		if(ops[i][2] != s[2]) continue;
+		char *o = ops[i];
+		if(o[0] != s[0] || o[1] != s[1] || o[2] != s[2])
+			continue;
 		while(s[3 + m]) {
-			char c = s[3 + m];
-			if(c == '^') i |= (1 << 5); /* mode: 16 bits */
-			if(c == '~') i |= (1 << 6); /* mode: signed */
-			if(c == '&') i |= (1 << 7); /* mode: unused */
+			if(s[3 + m] == '^') i |= (1 << 5); /* mode: 16 bits */
+			if(s[3 + m] == '~') i |= (1 << 6); /* mode: signed */
+			if(s[3 + m] == '&') i |= (1 << 7); /* mode: unused */
 			m++;
 		}
 		return i;
@@ -193,14 +121,14 @@ error(char *name, char *id)
 }
 
 int
-makelabel(char *id, Uint16 addr)
+makelabel(char *name, Uint16 addr)
 {
 	Label *l;
-	if(findlabel(id))
-		return error("Label duplicate", id);
+	if(findlabel(name))
+		return error("Label duplicate", name);
 	l = &labels[labelslen++];
-	scpy(id, l->name, 64);
 	l->addr = addr;
+	scpy(name, l->name, 64);
 	printf("New label: %s[0x%02x]\n", l->name, l->addr);
 	return 1;
 }
@@ -220,7 +148,8 @@ pass1(FILE *f)
 	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
-		if(iscomment(w, &skip)) continue;
+		if(cmnt(w, &skip))
+			continue;
 		if(w[0] == '@' && !makelabel(w + 1, addr))
 			return error("Pass1 failed", w);
 		if(w[0] == ';' && !makelabel(w + 1, vars++))
@@ -231,23 +160,19 @@ pass1(FILE *f)
 			else
 				continue;
 		}
-		/* move addr ptr */
-		if(findop(w) || scmp(w, "BRK"))
+		if(findoperator(w) || scmp(w, "BRK"))
 			addr += 1;
-		else if(w[0] == '|')
-			addr = shex(w + 1);
-		else if(w[0] == '@')
-			addr += 0;
-		else if(w[0] == ';')
-			addr += 0;
-		else if(w[0] == '.')
-			addr += 2;
-		else if(w[0] == '"')
-			addr += slen(w + 1) + 2;
-		else if(w[0] == ',')
-			addr += 2 + (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2);
-		else
-			return error("Unknown label", w);
+		else {
+			switch(w[0]) {
+			case '|': addr = shex(w + 1); break;
+			case '@':
+			case ';': break;
+			case '.': addr += 2; break;
+			case '"': addr += slen(w + 1) + 2; break;
+			case ',': addr += 2 + (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2); break;
+			default: return error("Unknown label", w);
+			}
+		}
 	}
 	rewind(f);
 	return 1;
@@ -263,16 +188,16 @@ pass2(FILE *f)
 		Label *l;
 		if(w[0] == '@') continue;
 		if(w[0] == ';') continue;
-		if(iscomment(w, &skip)) continue;
+		if(cmnt(w, &skip)) continue;
 		if(w[0] == '|')
 			p.ptr = shex(w + 1);
 		else if(w[0] == ':')
 			fscanf(f, "%s", w);
 		else if(w[0] == '"')
-			pushword(w + 1);
+			pushtext(w + 1);
 		else if((l = findlabel(w + 1)))
 			pushshort(l->addr, w[0] == ',');
-		else if((op = findop(w)) || scmp(w, "BRK"))
+		else if((op = findoperator(w)) || scmp(w, "BRK"))
 			pushbyte(op, 0);
 		else if(sihx(w + 1) && slen(w + 1) == 2)
 			pushbyte(shex(w + 1), w[0] == ',');
