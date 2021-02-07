@@ -17,7 +17,7 @@
 BRK
 
 @strlen
-	,0001 ADD^ PEK
+	,0001 ADD^ LDR
 	RTU
 
 @incr

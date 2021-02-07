@@ -22,7 +22,7 @@ typedef unsigned short Uint16;
 typedef struct {
 	Uint8 ptr;
 	Uint8 dat[256];
-} Stack;
+} Stack8;
 
 typedef struct {
 	Uint8 ptr;
@@ -37,9 +37,9 @@ typedef struct {
 typedef struct {
 	Uint8 literal, status;
 	Uint16 counter, vreset, vframe, verror;
-	Stack wst;
+	Stack8 wst;
 	Stack16 rst;
-	Memory rom, ram;
+	Memory ram;
 } Computer;
 
 Computer cpu;
@@ -62,7 +62,7 @@ getflag(char flag)
 }
 
 void
-echos(Stack *s, Uint8 len, char *name)
+echos(Stack8 *s, Uint8 len, char *name)
 {
 	int i;
 	printf("%s\n", name);
@@ -93,8 +93,8 @@ echom(Memory *m, Uint8 len, char *name)
 
 Uint16 bytes2short(Uint8 a, Uint8 b) { return (a << 8) + b; }
 Uint8 rampeek8(Uint16 s) { return cpu.ram.dat[s] & 0xff; }
-Uint8 mempeek8(Uint16 s) { return cpu.rom.dat[s]; }
-Uint16 mempeek16(Uint16 s) { return (cpu.rom.dat[s] << 8) + (cpu.rom.dat[s+1] & 0xff); }
+Uint8 mempeek8(Uint16 s) { return cpu.ram.dat[s]; }
+Uint16 mempeek16(Uint16 s) { return (cpu.ram.dat[s] << 8) + (cpu.ram.dat[s+1] & 0xff); }
 void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 void wspush16(Uint16 s) { wspush8(s >> 8); wspush8(s & 0xff); }
 Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
@@ -106,16 +106,16 @@ void rspush16(Uint16 a) { cpu.rst.dat[cpu.rst.ptr++] = a; }
 
 /* I/O */
 void op_brk() { setflag(FLAG_HALT, 1); }
-void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
+void op_lit() { cpu.literal += cpu.ram.dat[cpu.ram.ptr++]; }
 void op_nop() { }
 void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
 void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
 /* Logic */
-void op_jmu() { cpu.rom.ptr = wspop16(); }
+void op_jmu() { cpu.ram.ptr = wspop16(); }
 void op_jmc() { Uint8 a = wspop8(); if(a) op_jmu(); }
-void op_jsu() { rspush16(cpu.rom.ptr); cpu.rom.ptr = wspop16(); }
+void op_jsu() { rspush16(cpu.ram.ptr); cpu.ram.ptr = wspop16(); }
 void op_jsc() { Uint8 a = wspop8(); if(a) op_jsu(); }
-void op_rtu() {	cpu.rom.ptr = rspop16(); }
+void op_rtu() {	cpu.ram.ptr = rspop16(); }
 void op_rtc() {	/* TODO */ }
 /* Stack */
 void op_pop() { wspop8(); }
@@ -153,12 +153,9 @@ void op_equ16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a == b); }
 void op_neq16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a != b); }
 void op_gth16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a < b); }
 void op_lth16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a > b); }
-/* remove */
-void op_pek() { wspush8(cpu.rom.dat[wspop16()]); }
-void op_pok() { printf("TODO:\n");}
 
 void (*ops[])() = {
-	op_brk, op_lit, op_nop, op_nop, op_pek, op_pok, op_ldr, op_str, 
+	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
 	op_jmu, op_jmc, op_jsu, op_jsc, op_rtu, op_rtc, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
@@ -176,15 +173,6 @@ Uint8 opr[][2] = { /* todo: 16 bits mode */
 };
 
 /* clang-format on */
-
-void
-reset(void)
-{
-	size_t i;
-	char *cptr = (char *)&cpu;
-	for(i = 0; i < sizeof cpu; i++)
-		cptr[i] = 0;
-}
 
 int
 error(char *name, int id)
@@ -214,7 +202,7 @@ opc(Uint8 src, Uint8 *op)
 int
 eval(void)
 {
-	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
+	Uint8 instr = cpu.ram.dat[cpu.ram.ptr++];
 	Uint8 op;
 	/* when literal */
 	if(cpu.literal > 0) {
@@ -233,42 +221,49 @@ eval(void)
 	if(getflag(FLAG_SHORT))
 		op += 16;
 	(*ops[op])();
+
+	/* experimental */
+	if(cpu.ram.dat[0xfff1])
+		device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
+
 	cpu.counter++;
 	return 1;
 }
 
 int
-start(FILE *f)
+load(FILE *f)
 {
-	reset();
-	fread(cpu.rom.dat, sizeof(cpu.rom.dat), 1, f);
-	cpu.vreset = mempeek16(0xfffa);
-	cpu.vframe = mempeek16(0xfffc);
-	cpu.verror = mempeek16(0xfffe);
-	/* eval reset */
-	printf("\nPhase: reset\n");
-	cpu.rom.ptr = cpu.vreset;
-	while(!(cpu.status & FLAG_HALT) && eval()) {
-		/* experimental */
-		if(cpu.ram.dat[0xfff1])
-			device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
-		if(cpu.counter > 256)
-			return error("Reached bounds", cpu.counter);
-	}
-	/*eval frame */
-	printf("\nPhase: frame\n");
-	setflag(FLAG_HALT, 0);
-	cpu.rom.ptr = cpu.vframe;
-	while(!(cpu.status & FLAG_HALT) && eval())
-		;
-	/* debug */
-	printf("ended @ %d steps | ", cpu.counter);
-	printf("hf: %x zf: %x cf: %x tf: %x\n",
+	fread(cpu.ram.dat, sizeof(cpu.ram.dat), 1, f);
+	return 1;
+}
+
+void
+debug(void)
+{
+	printf("ended @ %d steps | hf: %x sf: %x cf: %x tf: %x\n",
+		cpu.counter,
 		getflag(FLAG_HALT) != 0,
 		getflag(FLAG_SHORT) != 0,
 		getflag(FLAG_SIGN) != 0,
 		getflag(FLAG_TRAPS) != 0);
-	printf("\n");
+}
+
+int
+boot(void)
+{
+	cpu.vreset = mempeek16(0xfffa);
+	cpu.vframe = mempeek16(0xfffc);
+	cpu.verror = mempeek16(0xfffe);
+	/* eval reset */
+	cpu.ram.ptr = cpu.vreset;
+	setflag(FLAG_HALT, 0);
+	while(!(cpu.status & FLAG_HALT) && eval())
+		;
+	/*eval frame */
+	cpu.ram.ptr = cpu.vframe;
+	setflag(FLAG_HALT, 0);
+	while(!(cpu.status & FLAG_HALT) && eval())
+		;
 	return 1;
 }
 
@@ -280,10 +275,13 @@ main(int argc, char *argv[])
 		return error("No input.", 0);
 	if(!(f = fopen(argv[1], "rb")))
 		return error("Missing input.", 0);
-	if(!start(f))
-		return error("Program error", 0);
+	if(!load(f))
+		return error("Load error", 0);
+	if(!boot())
+		return error("Boot error", 0);
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");
+	debug();
 	return 0;
 }
