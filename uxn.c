@@ -65,7 +65,7 @@ void
 echos(Stack8 *s, Uint8 len, char *name)
 {
 	int i;
-	printf("%s\n", name);
+	printf("\n%s\n", name);
 	for(i = 0; i < len; ++i) {
 		if(i % 16 == 0)
 			printf("\n");
@@ -78,7 +78,7 @@ void
 echom(Memory *m, Uint8 len, char *name)
 {
 	int i;
-	printf("%s\n", name);
+	printf("\n%s\n", name);
 	for(i = 0; i < len; ++i) {
 		if(i % 16 == 0)
 			printf("\n");
@@ -127,14 +127,14 @@ void op_and() { Uint8 a = wspop8(), b = wspop8(); wspush8(a & b); }
 void op_ora() { Uint8 a = wspop8(), b = wspop8(); wspush8(a | b); }
 void op_rol() { Uint8 a = wspop8(), b = wspop8(); wspush8(a << b); }
 /* Arithmetic */
-void op_add() { Uint8 a = wspop8(), b = wspop8(); wspush8(a + b); }
-void op_sub() { Uint8 a = wspop8(), b = wspop8(); wspush8(a - b); }
-void op_mul() { Uint8 a = wspop8(), b = wspop8(); wspush8(a * b); }
-void op_div() { Uint8 a = wspop8(), b = wspop8(); wspush8(a / b); }
-void op_equ() { Uint8 a = wspop8(), b = wspop8(); wspush8(a == b); }
-void op_neq() { Uint8 a = wspop8(), b = wspop8(); wspush8(a != b); }
-void op_gth() { Uint8 a = wspop8(), b = wspop8(); wspush8(a < b); }
-void op_lth() { Uint8 a = wspop8(), b = wspop8(); wspush8(a > b); }
+void op_add() { Uint8 a = wspop8(), b = wspop8(); wspush8(b + a); }
+void op_sub() { Uint8 a = wspop8(), b = wspop8(); wspush8(b - a); }
+void op_mul() { Uint8 a = wspop8(), b = wspop8(); wspush8(b * a); }
+void op_div() { Uint8 a = wspop8(), b = wspop8(); wspush8(b / a); }
+void op_equ() { Uint8 a = wspop8(), b = wspop8(); wspush8(b == a); }
+void op_neq() { Uint8 a = wspop8(), b = wspop8(); wspush8(b != a); }
+void op_gth() { Uint8 a = wspop8(), b = wspop8(); wspush8(b > a); }
+void op_lth() { Uint8 a = wspop8(), b = wspop8(); wspush8(b < a); }
 /* Stack(16-bits) */
 void op_pop16() { wspop16(); }
 void op_dup16() { wspush16(wspeek16(2)); }
@@ -145,14 +145,14 @@ void op_and16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a & b); }
 void op_ora16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a | b); }
 void op_rol16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a << b); }
 /* Arithmetic(16-bits) */
-void op_add16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a + b); }
-void op_sub16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a - b); }
-void op_mul16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a * b); }
-void op_div16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a / b); }
-void op_equ16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a == b); }
-void op_neq16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a != b); }
-void op_gth16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a < b); }
-void op_lth16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a > b); }
+void op_add16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b + a); }
+void op_sub16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b - a); }
+void op_mul16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b * a); }
+void op_div16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b / a); }
+void op_equ16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b == a); }
+void op_neq16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b != a); }
+void op_gth16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b > a); }
+void op_lth16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b < a); }
 
 void (*ops[])() = {
 	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
@@ -163,7 +163,7 @@ void (*ops[])() = {
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
 
-Uint8 opr[][2] = { /* todo: 16 bits mode */
+Uint8 opr[][2] = { 
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},

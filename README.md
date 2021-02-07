@@ -26,6 +26,7 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 - `( comment )`, toggle parsing on/off
 - `|0010`, move to position in the program
 - `"hello`, push literal bytes for word "hello"
+- `#04`, a zero-page address, equivalent to `,0004`
 
 ### Operator modes
 
@@ -65,23 +66,20 @@ BRK ( RESET )
 
 ### Assembler
 
-- Complete implementing short mode
+- Create a benchmark file
 - Implement shorthand operators
-- Catch overflow/underflow
-- Jumps should be relative
-- Load program in RAM
 - Signed operations
+- zero-page address?
 
 ### CPU
 
-- Pointers/Literals
+- Signed operations
+- Catch overflow/underflow
 - A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
-- Print word to stdout
 - Draw pixel to screen
 - Detect mouse click
 - SDL Layer Emulator
 - Build PPU
-- Add flags..
 
 ### Devices
 

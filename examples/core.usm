@@ -6,27 +6,6 @@
 
 |0100 @RESET
 
-@word1 "hello_word ( len: 0x0b )
-
-@loop
-	,dev1w STR ( write to stdout )
-	,incr JSU ( increment itr )
-	,word1 ,strlen JSU ( get strlen )
-	NEQ ,loop ROT JSC ( loop != strlen )
-
-BRK
-
-@strlen
-	,0001 ADD^ LDR
-	RTU
-
-@incr
-	,iterator LDR
-	,01 ADD
-	,iterator STR 
-	,iterator LDR
-	RTU
-
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR
