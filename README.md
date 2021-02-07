@@ -65,6 +65,8 @@ BRK ( RESET )
 
 ### Assembler
 
+- Complete implementing short mode
+- Implement shorthand operators
 - Catch overflow/underflow
 - Jumps should be relative
 

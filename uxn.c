@@ -103,6 +103,9 @@ Uint8 wspeek8(void) { return cpu.wst.dat[cpu.wst.ptr - 1]; }
 Uint16 rspop16(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
 void rspush16(Uint16 a) { cpu.rst.dat[cpu.rst.ptr++] = a; }
 
+/* new flexy pop/push */
+
+
 void op_brk() { setflag(FLAG_HALT, 1); }
 void op_rts() {	cpu.rom.ptr = rspop16(); }
 void op_lit() { cpu.literal += cpu.rom.dat[cpu.rom.ptr++]; }
@@ -123,28 +126,35 @@ void op_and() { wspush8(wspop8() & wspop8()); }
 void op_ora() { wspush8(wspop8() | wspop8()); }
 void op_rol() { wspush8(wspop8() << 1); }
 void op_ror() { wspush8(wspop8() >> 1); }
-void op_add() { 
-	if(getflag(FLAG_SHORT))
-		wspush16(wspop16() + wspop16()); 
-	else
-		wspush8(wspop8() + wspop8()); 
-}
-void op_sub() { wspush8(wspop8() - wspop8()); }
-void op_mul() { wspush8(wspop8() * wspop8()); }
-void op_div() { wspush8(wspop8() / wspop8()); }
+void op_add() { Uint8 a = wspop8(), b = wspop8(); wspush8(a + b); }
+void op_sub() { Uint8 a = wspop8(), b = wspop8(); wspush8(a - b); }
+void op_mul() { Uint8 a = wspop8(), b = wspop8(); wspush8(a * b); }
+void op_div() { Uint8 a = wspop8(), b = wspop8(); wspush8(a / b); }
 void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
 void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
 void op_pek() { wspush8(cpu.rom.dat[wspop16()]); }
 void op_pok() { printf("TODO:\n");}
 
-void (*ops[])() = {
+void op_add16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a + b); }
+void op_sub16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a - b); }
+void op_mul16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a * b); }
+void op_div16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a / b); }
+
+void (*ops8[])() = {
 	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
 	op_jmu, op_jsu, op_jmc, op_jsc, op_equ, op_neq, op_gth, op_lth, 
 	op_and, op_ora, op_rol, op_ror, op_add, op_sub, op_mul, op_div,
 	op_ldr, op_str, op_pek, op_pok, op_brk, op_brk, op_brk, op_brk
 };
 
-Uint8 opr[][2] = {
+void (*ops16[])() = {
+	op_brk, op_rts, op_lit, op_drp, op_dup, op_swp, op_ovr, op_rot, 
+	op_jmu, op_jsu, op_jmc, op_jsc, op_equ, op_neq, op_gth, op_lth, 
+	op_and, op_ora, op_rol, op_ror, op_add16, op_sub16, op_mul16, op_div16,
+	op_ldr, op_str, op_pek, op_pok, op_brk, op_brk, op_brk, op_brk
+};
+
+Uint8 opr[][2] = { /* todo: 16 bits mode */
 	{0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {1,1}, {0,1}, {3,3},
 	{2,0}, {2,0}, {2,0}, {2,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,0}, {1,0}, {1,0}, {2,1}, {0,0}, {0,0}, {0,0},
@@ -156,17 +166,10 @@ Uint8 opr[][2] = {
 void
 reset(void)
 {
-	int i;
-	cpu.status = 0x00;
-	cpu.counter = 0x00;
-	cpu.literal = 0x00;
-	cpu.rom.ptr = 0x00;
-	cpu.wst.ptr = 0x00;
-	cpu.rst.ptr = 0x00;
-	for(i = 0; i < 256; i++) {
-		cpu.wst.dat[i] = 0x00;
-		cpu.rst.dat[i] = 0x00;
-	}
+	size_t i;
+	char *cptr = (char *)&cpu;
+	for(i = 0; i < sizeof cpu; i++)
+		cptr[i] = 0;
 }
 
 int
@@ -186,24 +189,19 @@ device1(Uint8 *read, Uint8 *write)
 }
 
 void
-opc(Uint8 src, Uint8 *op, Uint8 *mode)
+opc(Uint8 src, Uint8 *op)
 {
 	*op = src;
 	*op &= ~(1 << 5);
 	*op &= ~(1 << 6);
 	*op &= ~(1 << 7);
-	*mode = src;
-	*mode &= ~(1 << 0);
-	*mode &= ~(1 << 1);
-	*mode &= ~(1 << 2);
-	*mode &= ~(1 << 3);
 }
 
 int
 eval(void)
 {
 	Uint8 instr = cpu.rom.dat[cpu.rom.ptr++];
-	Uint8 op, opmode;
+	Uint8 op;
 	/* when literal */
 	if(cpu.literal > 0) {
 		wspush8(instr);
@@ -211,7 +209,7 @@ eval(void)
 		return 1;
 	}
 	/* when opcode */
-	opc(instr, &op, &opmode);
+	opc(instr, &op);
 	setflag(FLAG_SHORT, (instr >> 5) & 1);
 	if((instr >> 6) & 1)
 		printf("Unused flag: %02x\n", instr);
@@ -221,7 +219,10 @@ eval(void)
 	/* TODO: setflag(FLAG_C, (instr >> 7) & 1); */
 	if(cpu.wst.ptr < opr[op][0])
 		return error("Stack underflow", op);
-	(*ops[op])();
+	if(getflag(FLAG_SHORT))
+		(*ops16[op])();
+	else
+		(*ops8[op])();
 	cpu.counter++;
 	return 1;
 }
