@@ -174,8 +174,8 @@ findop(char *s)
 		while(s[3 + m]) {
 			char c = s[3 + m];
 			if(c == '^') i |= (1 << 5); /* mode: 16 bits */
-			if(c == '&') i |= (1 << 6); /* mode: unused */
-			if(c == '~') i |= (1 << 7); /* mode: unused */
+			if(c == '~') i |= (1 << 6); /* mode: signed */
+			if(c == '&') i |= (1 << 7); /* mode: unused */
 			m++;
 		}
 		return i;

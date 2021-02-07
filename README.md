@@ -69,6 +69,8 @@ BRK ( RESET )
 - Implement shorthand operators
 - Catch overflow/underflow
 - Jumps should be relative
+- Load program in RAM
+- Signed operations
 
 ### CPU
 
