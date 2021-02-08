@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 /*
-Copyright (c) 2021 Devine Lu Linvega
+Copyright (u) 2021 Devine Lu Linvega
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -15,85 +15,70 @@ WITH REGARD TO THIS SOFTWARE.
 
 Uxn cpu;
 
-#pragma mark - Helpers
-
-void
-setflag(Uint8 *status, char flag, int b)
-{
-	if(b)
-		*status |= flag;
-	else
-		*status &= (~flag);
-}
-
-int
-getflag(Uint8 *status, char flag)
-{
-	return *status & flag;
-}
-
 #pragma mark - Operations
 
 /* clang-format off */
 
+void   setflag(Uint8 *st, char flag, int b) { if(b) *st |= flag; else *st &= (~flag); }
+int    getflag(Uint8 *st, char flag) { return *st & flag; }
 Uint16 bytes2short(Uint8 a, Uint8 b) { return (a << 8) + b; }
-Uint16 mempeek16(Uxn *c, Uint16 s) { return (c->ram.dat[s] << 8) + (c->ram.dat[s+1] & 0xff); }
-void wspush8(Uxn *c, Uint8 b) { c->wst.dat[c->wst.ptr++] = b; }
-void wspush16(Uxn *c, Uint16 s) { wspush8(c,s >> 8); wspush8(c,s & 0xff); }
-Uint8 wspop8(Uxn *c) { return c->wst.dat[--c->wst.ptr]; }
-Uint16 wspop16(Uxn *c) { return wspop8(c) + (wspop8(c) << 8); }
-Uint8 wspeek8(Uxn *c, Uint8 o) { return c->wst.dat[c->wst.ptr - o]; }
-Uint16 wspeek16(Uxn *c, Uint8 o) { return bytes2short(c->wst.dat[c->wst.ptr - o], c->wst.dat[c->wst.ptr - o + 1]); }
-Uint16 rspop16(Uxn *c) { return c->rst.dat[--c->rst.ptr]; }
-void rspush16(Uxn *c, Uint16 a) { c->rst.dat[c->rst.ptr++] = a; }
-/* I/O */
-void op_brk(Uxn *c) { setflag(&c->status,FLAG_HALT, 1); }
-void op_lit(Uxn *c) { c->literal += c->ram.dat[c->ram.ptr++]; }
-void op_nop(Uxn *c) { (void)c; printf("NOP");}
-void op_ldr(Uxn *c) { wspush8(c, c->ram.dat[wspop16(c)]); }
-void op_str(Uxn *c) { c->ram.dat[wspop16(c)] = wspop8(c); }
-/* Logic */
-void op_jmp(Uxn *c) { c->ram.ptr = wspop16(c); }
-void op_jsr(Uxn *c) { rspush16(c, c->ram.ptr); c->ram.ptr = wspop16(c); }
-void op_rts(Uxn *c) {	c->ram.ptr = rspop16(c); }
-/* Stack */
-void op_pop(Uxn *c) { wspop8(c); }
-void op_dup(Uxn *c) { wspush8(c,wspeek8(c,1)); }
-void op_swp(Uxn *c) { Uint8 b = wspop8(c), a = wspop8(c); wspush8(c,b); wspush8(c,a); }
-void op_ovr(Uxn *c) { Uint8 a = wspeek8(c,2); wspush8(c,a); }
-void op_rot(Uxn *c) { Uint8 c1 = wspop8(c),b = wspop8(c),a = wspop8(c); wspush8(c,b); wspush8(c, c1); wspush8(c,a); }
-void op_and(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a & b); }
-void op_ora(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a | b); }
-void op_rol(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a << b); }
-/* Arithmetic */
-void op_add(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b + a); }
-void op_sub(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b - a); }
-void op_mul(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b * a); }
-void op_div(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b / a); }
-void op_equ(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b == a); }
-void op_neq(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b != a); }
-void op_gth(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b > a); }
-void op_lth(Uxn *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b < a); }
-/* Stack(16-bits) */
-void op_pop16(Uxn *c) { wspop16(c); }
-void op_dup16(Uxn *c) { wspush16(c,wspeek16(c,2)); }
-void op_swp16(Uxn *c) { Uint16 b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c,a); }
-void op_ovr16(Uxn *c) { Uint16 a = wspeek16(c, 4); wspush16(c,a); }
-void op_rot16(Uxn *c) { Uint16 c1 = wspop16(c), b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c, c1); wspush16(c,a); }
-void op_and16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a & b); }
-void op_ora16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a | b); }
-void op_rol16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a << b); }
-/* Arithmetic(16-bits) */
-void op_add16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b + a); }
-void op_sub16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b - a); }
-void op_mul16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b * a); }
-void op_div16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b / a); }
-void op_equ16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b == a); }
-void op_neq16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b != a); }
-void op_gth16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b > a); }
-void op_lth16(Uxn *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b < a); }
+void   wspush8(Uxn *u, Uint8 b) { u->wst.dat[u->wst.ptr++] = b; }
+Uint8  wspop8(Uxn *u) { return u->wst.dat[--u->wst.ptr]; }
+Uint8  wspeek8(Uxn *u, Uint8 o) { return u->wst.dat[u->wst.ptr - o]; }
+void   wspush16(Uxn *u, Uint16 s) { wspush8(u,s >> 8); wspush8(u,s & 0xff); }
+Uint16 wspop16(Uxn *u) { return wspop8(u) + (wspop8(u) << 8); }
+Uint16 wspeek16(Uxn *u, Uint8 o) { return bytes2short(u->wst.dat[u->wst.ptr - o], u->wst.dat[u->wst.ptr - o + 1]); }
+void   rspush16(Uxn *u, Uint16 a) { u->rst.dat[u->rst.ptr++] = a; }
+Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s+1] & 0xff); }
 
-void (*ops[])(Uxn *c) = {
+/* I/O */
+void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
+void op_lit(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
+void op_nop(Uxn *u) { printf("NOP"); (void)u; }
+void op_ldr(Uxn *u) { wspush8(u, u->ram.dat[wspop16(u)]); }
+void op_str(Uxn *u) { u->ram.dat[wspop16(u)] = wspop8(u); }
+/* Logic */
+void op_jmp(Uxn *u) { u->ram.ptr = wspop16(u); }
+void op_jsr(Uxn *u) { u->rst.dat[u->rst.ptr++] = u->ram.ptr; u->ram.ptr = wspop16(u); }
+void op_rts(Uxn *u) { u->ram.ptr = u->rst.dat[--u->rst.ptr]; }
+/* Stack */
+void op_pop(Uxn *u) { wspop8(u); }
+void op_dup(Uxn *u) { wspush8(u, wspeek8(u, 1)); }
+void op_swp(Uxn *u) { Uint8 b = wspop8(u), a = wspop8(u); wspush8(u, b); wspush8(u, a); }
+void op_ovr(Uxn *u) { Uint8 a = wspeek8(u,2); wspush8(u, a); }
+void op_rot(Uxn *u) { Uint8 c = wspop8(u), b = wspop8(u), a = wspop8(u); wspush8(u, b); wspush8(u, c); wspush8(u, a); }
+void op_and(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b & a); }
+void op_ora(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b | a); }
+void op_rol(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b << a); }
+/* Arithmetic */
+void op_add(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b + a); }
+void op_sub(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b - a); }
+void op_mul(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b * a); }
+void op_div(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b / a); }
+void op_equ(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b == a); }
+void op_neq(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b != a); }
+void op_gth(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b > a); }
+void op_lth(Uxn *u) { Uint8 a = wspop8(u), b = wspop8(u); wspush8(u, b < a); }
+/* Stack(16-bits) */
+void op_pop16(Uxn *u) { wspop16(u); }
+void op_dup16(Uxn *u) { wspush16(u, wspeek16(u, 2)); }
+void op_swp16(Uxn *u) { Uint16 b = wspop16(u), a = wspop16(u); wspush16(u, b); wspush16(u, a); }
+void op_ovr16(Uxn *u) { Uint16 a = wspeek16(u, 4); wspush16(u, a); }
+void op_rot16(Uxn *u) { Uint16 c = wspop16(u), b = wspop16(u), a = wspop16(u); wspush16(u, b); wspush16(u, c); wspush16(u, a); }
+void op_and16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b & a); }
+void op_ora16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b | a); }
+void op_rol16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b << a); }
+/* Arithmetic(16-bits) */
+void op_add16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b + a); }
+void op_sub16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b - a); }
+void op_mul16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b * a); }
+void op_div16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush16(u, b / a); }
+void op_equ16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b == a); }
+void op_neq16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b != a); }
+void op_gth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b > a); }
+void op_lth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b < a); }
+
+void (*ops[])(Uxn *u) = {
 	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
@@ -114,97 +99,97 @@ Uint8 opr[][2] = {
 /* clang-format on */
 
 int
-error(Uxn *c, char *name, int id)
+error(Uxn *u, char *name, int id)
 {
-	printf("Error: %s#%04x, at 0x%04x\n", name, id, c->counter);
+	printf("Error: %s#%04x, at 0x%04x\n", name, id, u->counter);
 	return 0;
 }
 
 int
-doliteral(Uxn *c, Uint8 instr)
+doliteral(Uxn *u, Uint8 instr)
 {
-	if(c->wst.ptr >= 255)
-		return error(c, "Stack overflow", instr);
-	wspush8(c, instr);
-	c->literal--;
+	if(u->wst.ptr >= 255)
+		return error(u, "Stack overflow", instr);
+	wspush8(u, instr);
+	u->literal--;
 	return 1;
 }
 
 int
-dodevices(Uxn *c) /* experimental */
+dodevices(Uxn *u) /* experimental */
 {
-	if(c->ram.dat[0xfff1]) {
-		printf("%c", c->ram.dat[0xfff1]);
-		c->ram.dat[0xfff1] = 0x00;
+	if(u->ram.dat[0xfff1]) {
+		printf("%c", u->ram.dat[0xfff1]);
+		u->ram.dat[0xfff1] = 0x00;
 	}
 	return 1;
 }
 
 int
-doopcode(Uxn *c, Uint8 instr)
+doopcode(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
-	setflag(&c->status, FLAG_SHORT, (instr >> 5) & 1);
-	setflag(&c->status, FLAG_SIGN, (instr >> 6) & 1); /* usused */
-	setflag(&c->status, FLAG_COND, (instr >> 7) & 1);
-	if(getflag(&c->status, FLAG_SHORT))
+	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
+	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1); /* usused */
+	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
+	if(getflag(&u->status, FLAG_SHORT))
 		op += 16;
-	if(c->wst.ptr < opr[op][0])
-		return error(c, "Stack underflow", op);
-	if(c->wst.ptr + opr[op][1] - opr[op][0] >= 255)
-		return error(c, "Stack overflow", instr);
-	if(!getflag(&c->status, FLAG_COND) || (getflag(&c->status, FLAG_COND) && wspop8(c)))
-		(*ops[op])(c);
-	dodevices(c);
+	if(u->wst.ptr < opr[op][0])
+		return error(u, "Stack underflow", op);
+	if(u->wst.ptr + opr[op][1] - opr[op][0] >= 255)
+		return error(u, "Stack overflow", instr);
+	if(!getflag(&u->status, FLAG_COND) || (getflag(&u->status, FLAG_COND) && wspop8(u)))
+		(*ops[op])(u);
+	dodevices(u);
 	return 1;
 }
 
 int
-eval(Uxn *c)
+eval(Uxn *u)
 {
-	Uint8 instr = c->ram.dat[c->ram.ptr++];
-	if(c->literal > 0)
-		return doliteral(c, instr);
+	Uint8 instr = u->ram.dat[u->ram.ptr++];
+	if(u->literal > 0)
+		return doliteral(u, instr);
 	else
-		return doopcode(c, instr);
+		return doopcode(u, instr);
 	return 1;
 }
 
 int
-load(Uxn *c, char *filepath)
+load(Uxn *u, char *filepath)
 {
 	FILE *f;
 	if(!(f = fopen(filepath, "rb")))
-		return error(c, "Missing input.", 0);
-	fread(c->ram.dat, sizeof(c->ram.dat), 1, f);
+		return error(u, "Missing input.", 0);
+	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
 	return 1;
 }
 
 void
-reset(Uxn *c)
+reset(Uxn *u)
 {
 	size_t i;
-	char *cptr = (char *)c;
-	for(i = 0; i < sizeof c; i++)
+	char *cptr = (char *)u;
+	for(i = 0; i < sizeof u; i++)
 		cptr[i] = 0;
 }
 
 int
-boot(Uxn *c)
+boot(Uxn *u)
 {
-	reset(c);
-	c->vreset = mempeek16(c, 0xfffa);
-	c->vframe = mempeek16(c, 0xfffc);
-	c->verror = mempeek16(c, 0xfffe);
+	reset(u);
+	u->vreset = mempeek16(u, 0xfffa);
+	u->vframe = mempeek16(u, 0xfffc);
+	u->verror = mempeek16(u, 0xfffe);
 	/* eval reset */
-	c->ram.ptr = c->vreset;
-	setflag(&c->status, FLAG_HALT, 0);
-	while(!(c->status & FLAG_HALT) && eval(c))
-		c->counter++;
+	u->ram.ptr = u->vreset;
+	setflag(&u->status, FLAG_HALT, 0);
+	while(!(u->status & FLAG_HALT) && eval(u))
+		u->counter++;
 	/* eval frame */
-	c->ram.ptr = c->vframe;
-	setflag(&c->status, FLAG_HALT, 0);
-	while(!(c->status & FLAG_HALT) && eval(c))
-		c->counter++;
+	u->ram.ptr = u->vframe;
+	setflag(&u->status, FLAG_HALT, 0);
+	while(!(u->status & FLAG_HALT) && eval(u))
+		u->counter++;
 	return 1;
 }
