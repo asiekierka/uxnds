@@ -1,9 +1,0 @@
-< subroutines >
-
-.part1 JSI 44 BRK
-
-:part1 11 .part2 JSI RTS
-
-:part2 22 .part3 JSI RTS
-
-:part3 33 RTS

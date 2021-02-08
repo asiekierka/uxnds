@@ -1,7 +1,0 @@
-< jump >
-
-.end JMI BRK
-
-:end 
-	ff
-	BRK

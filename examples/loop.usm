@@ -1,8 +1,24 @@
-< loop >
+( loop )
 
-01 .loop JSI ffff BRK
+|0100 @RESET
 
-:loop 
-	01 ADD
-	0f NEQ .loop JMC
-	RTS
+( increment value on stack )
+
+,00
+
+@loop1
+	,01 ADD DUP
+	,ff NEQ ,loop1 ROT JMP? POP^
+
+( increment value in memory )
+
+@loop2
+	#00 LDR ,01 ADD #00 STR
+	#00 LDR 
+	,ff NEQ ,loop2 ROT JMP? POP^
+
+BRK
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR

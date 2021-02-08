@@ -1,10 +1,12 @@
-( hello world )
+( my default test file )
 
 ;iterator
 :dev1r FFF0
 :dev1w FFF1
 
 |0100 @RESET
+
+,01 ,02 ADD 
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

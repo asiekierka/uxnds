@@ -158,13 +158,13 @@ void (*ops[])() = {
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
 
-Uint8 opr[][2] = { /* TODO */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}
+Uint8 opr[][2] = { 
+	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {2,1}, {3,0},
+	{2,0}, {2,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
+	{1,0}, {1,2}, {2,2}, {3,3}, {3,3}, {2,1}, {2,1}, {2,1},
+	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
+	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
+	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}  /* TODO */
 };
 
 /* clang-format on */
@@ -177,54 +177,52 @@ error(char *name, int id)
 }
 
 int
-device1(Uint8 *read, Uint8 *write)
+doliteral(Uint8 instr)
 {
-	printf("%c", *write);
-	*write = 0;
-	(void)read;
-	return 0;
+	if(cpu.wst.ptr >= 255)
+		return error("Stack overflow", instr);
+	wspush8(instr);
+	cpu.literal--;
+	return 1;
 }
 
-void
-opc(Uint8 src, Uint8 *op)
+int
+dodevices(void) /* experimental */
 {
-	*op = src;
-	*op &= ~(1 << 5);
-	*op &= ~(1 << 6);
-	*op &= ~(1 << 7);
+	if(cpu.ram.dat[0xfff1]) {
+		printf("%c", cpu.ram.dat[0xfff1]);
+		cpu.ram.dat[0xfff1] = 0x00;
+	}
+	return 1;
+}
+
+int
+doopcode(Uint8 instr)
+{
+	Uint8 op = instr & 0x1f;
+	setflag(FLAG_SHORT, (instr >> 5) & 1);
+	setflag(FLAG_SIGN, (instr >> 6) & 1); /* usused */
+	setflag(FLAG_COND, (instr >> 7) & 1);
+	if(getflag(FLAG_SHORT))
+		op += 16;
+	if(cpu.wst.ptr < opr[op][0])
+		return error("Stack underflow", op);
+	if(cpu.wst.ptr + opr[op][1] - opr[op][0] >= 255)
+		return error("Stack overflow", instr);
+	if(!getflag(FLAG_COND) || (getflag(FLAG_COND) && wspop8()))
+		(*ops[op])();
+	dodevices();
+	return 1;
 }
 
 int
 eval(void)
 {
-	Uint8 op, instr = cpu.ram.dat[cpu.ram.ptr++];
-	/* when literal */
-	if(cpu.literal > 0) {
-		wspush8(instr);
-		cpu.literal--;
-		return 1;
-	}
-	/* when opcode */
-	opc(instr, &op);
-	setflag(FLAG_SHORT, (instr >> 5) & 1);
-	setflag(FLAG_SIGN, (instr >> 6) & 1); /* TODO: Implement */
-	setflag(FLAG_COND, (instr >> 7) & 1);
-	/* TODO: overflow */
-	if(cpu.wst.ptr < opr[op][0])
-		return error("Stack underflow", op);
-	/* short mode */
-	if(getflag(FLAG_SHORT))
-		op += 16;
-	/* cond mode */
-	if(getflag(FLAG_COND)) {
-		if(wspop8())
-			(*ops[op])();
-	} else
-		(*ops[op])();
-	/* devices: experimental */
-	if(cpu.ram.dat[0xfff1])
-		device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
-	cpu.counter++;
+	Uint8 instr = cpu.ram.dat[cpu.ram.ptr++];
+	if(cpu.literal > 0)
+		return doliteral(instr);
+	else
+		return doopcode(instr);
 	return 1;
 }
 
@@ -236,9 +234,9 @@ load(FILE *f)
 }
 
 void
-debug(void)
+echof(void)
 {
-	printf("ended @ %d steps | hf: %x sf: %x cf: %x tf: %x\n",
+	printf("ended @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
 		cpu.counter,
 		getflag(FLAG_HALT) != 0,
 		getflag(FLAG_SHORT) != 0,
@@ -256,12 +254,12 @@ boot(void)
 	cpu.ram.ptr = cpu.vreset;
 	setflag(FLAG_HALT, 0);
 	while(!(cpu.status & FLAG_HALT) && eval())
-		;
+		cpu.counter++;
 	/*eval frame */
 	cpu.ram.ptr = cpu.vframe;
 	setflag(FLAG_HALT, 0);
 	while(!(cpu.status & FLAG_HALT) && eval())
-		;
+		cpu.counter++;
 	return 1;
 }
 
@@ -280,6 +278,6 @@ main(int argc, char *argv[])
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");
-	debug();
+	echof();
 	return 0;
 }
