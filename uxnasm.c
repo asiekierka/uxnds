@@ -32,7 +32,7 @@ Program p;
 
 char ops[][4] = {
 	"BRK", "LIT", "---", "---", "PEK", "POK", "LDR", "STR",
-	"JMU", "JMC", "JSU", "JSC", "RTU", "RTC", "---", "---",
+	"JMP", "JSR", "RTI", "RTS", "---", "---", "---", "---",
 	"POP", "DUP", "SWP", "OVR", "ROT", "AND", "ORA", "ROL",
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
 };
@@ -103,7 +103,7 @@ findoperator(char *s)
 		while(s[3 + m]) {
 			if(s[3 + m] == '^') i |= (1 << 5); /* mode: 16 bits */
 			if(s[3 + m] == '~') i |= (1 << 6); /* mode: signed */
-			if(s[3 + m] == '&') i |= (1 << 7); /* mode: unused */
+			if(s[3 + m] == '?') i |= (1 << 7); /* mode: conditional */
 			m++;
 		}
 		return i;

@@ -14,7 +14,7 @@ WITH REGARD TO THIS SOFTWARE.
 #define FLAG_HALT 0x01
 #define FLAG_SHORT 0x02
 #define FLAG_SIGN 0x04
-#define FLAG_TRAPS 0x08
+#define FLAG_COND 0x08
 
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
@@ -92,8 +92,6 @@ echom(Memory *m, Uint8 len, char *name)
 /* clang-format off */
 
 Uint16 bytes2short(Uint8 a, Uint8 b) { return (a << 8) + b; }
-Uint8 rampeek8(Uint16 s) { return cpu.ram.dat[s] & 0xff; }
-Uint8 mempeek8(Uint16 s) { return cpu.ram.dat[s]; }
 Uint16 mempeek16(Uint16 s) { return (cpu.ram.dat[s] << 8) + (cpu.ram.dat[s+1] & 0xff); }
 void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
 void wspush16(Uint16 s) { wspush8(s >> 8); wspush8(s & 0xff); }
@@ -107,16 +105,13 @@ void rspush16(Uint16 a) { cpu.rst.dat[cpu.rst.ptr++] = a; }
 /* I/O */
 void op_brk() { setflag(FLAG_HALT, 1); }
 void op_lit() { cpu.literal += cpu.ram.dat[cpu.ram.ptr++]; }
-void op_nop() { }
+void op_nop() { printf("NOP");}
 void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
 void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
 /* Logic */
-void op_jmu() { cpu.ram.ptr = wspop16(); }
-void op_jmc() { Uint8 a = wspop8(); if(a) op_jmu(); }
-void op_jsu() { rspush16(cpu.ram.ptr); cpu.ram.ptr = wspop16(); }
-void op_jsc() { Uint8 a = wspop8(); if(a) op_jsu(); }
-void op_rtu() {	cpu.ram.ptr = rspop16(); }
-void op_rtc() {	/* TODO */ }
+void op_jmp() { cpu.ram.ptr = wspop16(); }
+void op_jsr() { rspush16(cpu.ram.ptr); cpu.ram.ptr = wspop16(); }
+void op_rts() {	cpu.ram.ptr = rspop16(); }
 /* Stack */
 void op_pop() { wspop8(); }
 void op_dup() { wspush8(wspeek8(1)); }
@@ -156,14 +151,14 @@ void op_lth16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b < a); }
 
 void (*ops[])() = {
 	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
-	op_jmu, op_jmc, op_jsu, op_jsc, op_rtu, op_rtc, op_nop, op_nop, 
+	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_and16, op_ora16, op_rol16,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
 
-Uint8 opr[][2] = { 
+Uint8 opr[][2] = { /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
@@ -202,8 +197,7 @@ opc(Uint8 src, Uint8 *op)
 int
 eval(void)
 {
-	Uint8 instr = cpu.ram.dat[cpu.ram.ptr++];
-	Uint8 op;
+	Uint8 op, instr = cpu.ram.dat[cpu.ram.ptr++];
 	/* when literal */
 	if(cpu.literal > 0) {
 		wspush8(instr);
@@ -213,19 +207,23 @@ eval(void)
 	/* when opcode */
 	opc(instr, &op);
 	setflag(FLAG_SHORT, (instr >> 5) & 1);
-	setflag(FLAG_SIGN, (instr >> 6) & 1);
-	if((instr >> 7) & 1)
-		printf("Unused flag: %02x\n", instr);
+	setflag(FLAG_SIGN, (instr >> 6) & 1); /* TODO: Implement */
+	setflag(FLAG_COND, (instr >> 7) & 1);
+	/* TODO: overflow */
 	if(cpu.wst.ptr < opr[op][0])
 		return error("Stack underflow", op);
+	/* short mode */
 	if(getflag(FLAG_SHORT))
 		op += 16;
-	(*ops[op])();
-
-	/* experimental */
+	/* cond mode */
+	if(getflag(FLAG_COND)) {
+		if(wspop8())
+			(*ops[op])();
+	} else
+		(*ops[op])();
+	/* devices: experimental */
 	if(cpu.ram.dat[0xfff1])
 		device1(&cpu.ram.dat[0xfff0], &cpu.ram.dat[0xfff1]);
-
 	cpu.counter++;
 	return 1;
 }
@@ -245,7 +243,7 @@ debug(void)
 		getflag(FLAG_HALT) != 0,
 		getflag(FLAG_SHORT) != 0,
 		getflag(FLAG_SIGN) != 0,
-		getflag(FLAG_TRAPS) != 0);
+		getflag(FLAG_COND) != 0);
 }
 
 int

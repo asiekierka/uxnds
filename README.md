@@ -31,6 +31,7 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 ### Operator modes
 
 - `,1234 ,0001 ADD^`, 16-bits operators have the short flag `^`.
+- `,12 ,11 GTH JMP?`, conditional operators have the cond flag `?`.
 
 ```
 ( hello world )
@@ -41,14 +42,19 @@ cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
 
 |0100 @RESET
 
-"hello
+@word1 "hello_word ( len: 0x0b )
 
 @loop
-	,dev1w STR
-	,incr JSU ( call incr )
-	,05 NEQ ,loop ROT JSC
+	,dev1w STR ( write to stdout )
+	,incr JSR ( increment itr )
+	,word1 ,strlen JSR ( get strlen )
+	NEQ ,loop ROT JSR? ( loop != strlen )
 
-BRK ( RESET )
+BRK
+
+@strlen
+	,0001 ADD^ LDR
+	RTS
 
 @incr
 	,iterator LDR
@@ -56,7 +62,7 @@ BRK ( RESET )
 	,iterator STR 
 	,iterator LDR
 	RTS
-	
+
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR
@@ -66,10 +72,8 @@ BRK ( RESET )
 
 ### Assembler
 
-- Create a benchmark file
 - Implement shorthand operators
 - Signed operations
-- zero-page address?
 
 ### CPU
 
@@ -77,6 +81,7 @@ BRK ( RESET )
 - Catch overflow/underflow
 - A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
 - Draw pixel to screen
+- Redo overflow/underflow mappping
 - Detect mouse click
 - SDL Layer Emulator
 - Build PPU
