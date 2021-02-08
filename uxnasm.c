@@ -224,6 +224,6 @@ main(int argc, char *argv[])
 		return error("Assembly", "Failed");
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
-	printf("Assembled %s.\n", argv[2]);
+	printf("Assembled %s.\n\n", argv[2]);
 	return 0;
 }
