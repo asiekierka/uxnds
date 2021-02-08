@@ -14,6 +14,11 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 
+#define FLAG_HALT 0x01
+#define FLAG_SHORT 0x02
+#define FLAG_SIGN 0x04
+#define FLAG_COND 0x08
+
 typedef struct {
 	Uint8 ptr;
 	Uint8 dat[256];
@@ -37,9 +42,8 @@ typedef struct {
 	Memory ram;
 } Cpu;
 
+void setflag(Uint8 *status, char flag, int b);
+int getflag(Uint8 *status, char flag);
 int error(Cpu *c, char *name, int id);
-int load(Cpu *c, FILE *f);
+int load(Cpu *c, char *filepath);
 int boot(Cpu *c);
-void echof(Cpu *c);
-void echom(Memory *m, Uint8 len, char *name);
-void echos(Stack8 *s, Uint8 len, char *name);

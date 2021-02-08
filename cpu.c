@@ -13,54 +13,23 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "cpu.h"
 
-#define FLAG_HALT 0x01
-#define FLAG_SHORT 0x02
-#define FLAG_SIGN 0x04
-#define FLAG_COND 0x08
-
 Cpu cpu;
 
 #pragma mark - Helpers
 
 void
-setflag(Cpu *c, char flag, int b)
+setflag(Uint8 *status, char flag, int b)
 {
 	if(b)
-		c->status |= flag;
+		*status |= flag;
 	else
-		c->status &= (~flag);
+		*status &= (~flag);
 }
 
 int
-getflag(Cpu *c, char flag)
+getflag(Uint8 *status, char flag)
 {
-	return c->status & flag;
-}
-
-void
-echos(Stack8 *s, Uint8 len, char *name)
-{
-	int i;
-	printf("\n%s\n", name);
-	for(i = 0; i < len; ++i) {
-		if(i % 16 == 0)
-			printf("\n");
-		printf("%02x%c", s->dat[i], s->ptr == i ? '<' : ' ');
-	}
-	printf("\n\n");
-}
-
-void
-echom(Memory *m, Uint8 len, char *name)
-{
-	int i;
-	printf("\n%s\n", name);
-	for(i = 0; i < len; ++i) {
-		if(i % 16 == 0)
-			printf("\n");
-		printf("%02x ", m->dat[i]);
-	}
-	printf("\n\n");
+	return *status & flag;
 }
 
 #pragma mark - Operations
@@ -77,23 +46,22 @@ Uint8 wspeek8(Cpu *c, Uint8 o) { return c->wst.dat[c->wst.ptr - o]; }
 Uint16 wspeek16(Cpu *c, Uint8 o) { return bytes2short(c->wst.dat[c->wst.ptr - o], c->wst.dat[c->wst.ptr - o + 1]); }
 Uint16 rspop16(Cpu *c) { return c->rst.dat[--c->rst.ptr]; }
 void rspush16(Cpu *c, Uint16 a) { c->rst.dat[c->rst.ptr++] = a; }
-
 /* I/O */
-void op_brk(Cpu *c) { setflag(c,FLAG_HALT, 1); }
+void op_brk(Cpu *c) { setflag(&c->status,FLAG_HALT, 1); }
 void op_lit(Cpu *c) { c->literal += c->ram.dat[c->ram.ptr++]; }
-void op_nop(Cpu *c) { printf("NOP");}
-void op_ldr(Cpu *c) { wspush8(c,c->ram.dat[wspop16(c)]); }
+void op_nop(Cpu *c) { (void)c; printf("NOP");}
+void op_ldr(Cpu *c) { wspush8(c, c->ram.dat[wspop16(c)]); }
 void op_str(Cpu *c) { c->ram.dat[wspop16(c)] = wspop8(c); }
 /* Logic */
 void op_jmp(Cpu *c) { c->ram.ptr = wspop16(c); }
-void op_jsr(Cpu *c) { rspush16(c,c->ram.ptr); c->ram.ptr = wspop16(c); }
+void op_jsr(Cpu *c) { rspush16(c, c->ram.ptr); c->ram.ptr = wspop16(c); }
 void op_rts(Cpu *c) {	c->ram.ptr = rspop16(c); }
 /* Stack */
 void op_pop(Cpu *c) { wspop8(c); }
 void op_dup(Cpu *c) { wspush8(c,wspeek8(c,1)); }
 void op_swp(Cpu *c) { Uint8 b = wspop8(c), a = wspop8(c); wspush8(c,b); wspush8(c,a); }
 void op_ovr(Cpu *c) { Uint8 a = wspeek8(c,2); wspush8(c,a); }
-void op_rot(Cpu *c) { Uint8 c1 = wspop8(c),b = wspop8(c),a = wspop8(c); wspush8(c,b); wspush8(c,c1); wspush8(c,a); }
+void op_rot(Cpu *c) { Uint8 c1 = wspop8(c),b = wspop8(c),a = wspop8(c); wspush8(c,b); wspush8(c, c1); wspush8(c,a); }
 void op_and(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a & b); }
 void op_ora(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a | b); }
 void op_rol(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a << b); }
@@ -111,7 +79,7 @@ void op_pop16(Cpu *c) { wspop16(c); }
 void op_dup16(Cpu *c) { wspush16(c,wspeek16(c,2)); }
 void op_swp16(Cpu *c) { Uint16 b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c,a); }
 void op_ovr16(Cpu *c) { Uint16 a = wspeek16(c, 4); wspush16(c,a); }
-void op_rot16(Cpu *c) { Uint16 c1 = wspop16(c), b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c,c1); wspush16(c,a); }
+void op_rot16(Cpu *c) { Uint16 c1 = wspop16(c), b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c, c1); wspush16(c,a); }
 void op_and16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a & b); }
 void op_ora16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a | b); }
 void op_rol16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a << b); }
@@ -148,7 +116,7 @@ Uint8 opr[][2] = {
 int
 error(Cpu *c, char *name, int id)
 {
-	printf("Error: %s[%04x], at 0x%04x\n", name, id, c->counter);
+	printf("Error: %s#%04x, at 0x%04x\n", name, id, c->counter);
 	return 0;
 }
 
@@ -176,16 +144,16 @@ int
 doopcode(Cpu *c, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
-	setflag(c, FLAG_SHORT, (instr >> 5) & 1);
-	setflag(c, FLAG_SIGN, (instr >> 6) & 1); /* usused */
-	setflag(c, FLAG_COND, (instr >> 7) & 1);
-	if(getflag(c, FLAG_SHORT))
+	setflag(&c->status, FLAG_SHORT, (instr >> 5) & 1);
+	setflag(&c->status, FLAG_SIGN, (instr >> 6) & 1); /* usused */
+	setflag(&c->status, FLAG_COND, (instr >> 7) & 1);
+	if(getflag(&c->status, FLAG_SHORT))
 		op += 16;
 	if(c->wst.ptr < opr[op][0])
 		return error(c, "Stack underflow", op);
 	if(c->wst.ptr + opr[op][1] - opr[op][0] >= 255)
 		return error(c, "Stack overflow", instr);
-	if(!getflag(c, FLAG_COND) || (getflag(c, FLAG_COND) && wspop8(c)))
+	if(!getflag(&c->status, FLAG_COND) || (getflag(&c->status, FLAG_COND) && wspop8(c)))
 		(*ops[op])(c);
 	dodevices(c);
 	return 1;
@@ -203,21 +171,13 @@ eval(Cpu *c)
 }
 
 int
-load(Cpu *c, FILE *f)
+load(Cpu *c, char *filepath)
 {
+	FILE *f;
+	if(!(f = fopen(filepath, "rb")))
+		return error(c, "Missing input.", 0);
 	fread(c->ram.dat, sizeof(c->ram.dat), 1, f);
 	return 1;
-}
-
-void
-echof(Cpu *c)
-{
-	printf("ended @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
-		c->counter,
-		getflag(c, FLAG_HALT) != 0,
-		getflag(c, FLAG_SHORT) != 0,
-		getflag(c, FLAG_SIGN) != 0,
-		getflag(c, FLAG_COND) != 0);
 }
 
 void
@@ -238,12 +198,12 @@ boot(Cpu *c)
 	c->verror = mempeek16(c, 0xfffe);
 	/* eval reset */
 	c->ram.ptr = c->vreset;
-	setflag(c, FLAG_HALT, 0);
+	setflag(&c->status, FLAG_HALT, 0);
 	while(!(c->status & FLAG_HALT) && eval(c))
 		c->counter++;
-	/*eval frame */
+	/* eval frame */
 	c->ram.ptr = c->vframe;
-	setflag(c, FLAG_HALT, 0);
+	setflag(&c->status, FLAG_HALT, 0);
 	while(!(c->status & FLAG_HALT) && eval(c))
 		c->counter++;
 	return 1;
