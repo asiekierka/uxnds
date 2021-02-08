@@ -40,10 +40,10 @@ typedef struct {
 	Stack8 wst;
 	Stack16 rst;
 	Memory ram;
-} Cpu;
+} Uxn;
 
 void setflag(Uint8 *status, char flag, int b);
 int getflag(Uint8 *status, char flag);
-int error(Cpu *c, char *name, int id);
-int load(Cpu *c, char *filepath);
-int boot(Cpu *c);
+int error(Uxn *c, char *name, int id);
+int load(Uxn *c, char *filepath);
+int boot(Uxn *c);

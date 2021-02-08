@@ -1,20 +1,21 @@
 #!/bin/bash
 
-# format code
-clang-format -i uxnasm.c
-clang-format -i uxn.c
-clang-format -i cpu.h
-clang-format -i cpu.c
+# Create bin folder
+mkdir -p bin
 
-# remove old
-rm -f ./uxnasm
-rm -f ./uxn
+# Assembler
+clang-format -i assembler.c
+rm -f ./assembler
 rm -f ./boot.rom
+cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined assembler.c -o bin/assembler
+./bin/assembler examples/hello.usm bin/boot.rom
 
-# debug(slow)
-cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxnasm.c -o uxnasm
-cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined cpu.c uxn.c -o uxn
+# Emulator
+clang-format -i emulator.c
+clang-format -i uxn.h
+clang-format -i uxn.c
+rm -f ./uxn
+cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c emulator.c -o bin/emulator
 
 # run
-./uxnasm examples/hello.usm boot.rom
-./uxn boot.rom
+./bin/emulator bin/boot.rom
