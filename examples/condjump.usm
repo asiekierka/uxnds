@@ -1,0 +1,17 @@
+( conditional jump )
+
+|0100 @RESET
+
+,06 ,05 GTH ,there ROT JMP? POP^
+
+@here ( when lesser or equal )
+	,ee
+	BRK
+
+@there ( when greater )
+	,ff
+	BRK
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR
