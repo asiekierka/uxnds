@@ -97,24 +97,44 @@ Uint8 opr[][2] = {
 /* clang-format on */
 
 int
-error(Uxn *u, char *name, int id)
+haltuxn(Uxn *u, char *name, int id)
 {
 	printf("Error: %s#%04x, at 0x%04x\n", name, id, u->counter);
 	return 0;
 }
 
+void
+inituxn(Uxn *u)
+{
+	size_t i;
+	char *cptr = (char *)u;
+	for(i = 0; i < sizeof u; i++)
+		cptr[i] = 0;
+}
+
 int
-doliteral(Uxn *u, Uint8 instr)
+loaduxn(Uxn *u, char *filepath)
+{
+	FILE *f;
+	if(!(f = fopen(filepath, "rb")))
+		return haltuxn(u, "Missing input.", 0);
+	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
+	printf("Uxn Loaded: %s\n", filepath);
+	return 1;
+}
+
+int
+lituxn(Uxn *u, Uint8 instr)
 {
 	if(u->wst.ptr >= 255)
-		return error(u, "Stack overflow", instr);
+		return haltuxn(u, "Stack overflow", instr);
 	wspush8(u, instr);
 	u->literal--;
 	return 1;
 }
 
 int
-dodevices(Uxn *u) /* experimental */
+devuxn(Uxn *u) /* experimental */
 {
 	if(u->ram.dat[0xfff1]) {
 		printf("%c", u->ram.dat[0xfff1]);
@@ -124,7 +144,7 @@ dodevices(Uxn *u) /* experimental */
 }
 
 int
-doopcode(Uxn *u, Uint8 instr)
+opcuxn(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
@@ -133,61 +153,40 @@ doopcode(Uxn *u, Uint8 instr)
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 16;
 	if(u->wst.ptr < opr[op][0])
-		return error(u, "Stack underflow", op);
+		return haltuxn(u, "Stack underflow", op);
 	if(u->wst.ptr + opr[op][1] - opr[op][0] >= 255)
-		return error(u, "Stack overflow", instr);
+		return haltuxn(u, "Stack overflow", instr);
 	if(!getflag(&u->status, FLAG_COND) || (getflag(&u->status, FLAG_COND) && wspop8(u)))
 		(*ops[op])(u);
-	dodevices(u);
+	devuxn(u);
 	return 1;
 }
 
 int
-eval(Uxn *u)
+evaluxn(Uxn *u, Uint16 vec)
 {
-	Uint8 instr = u->ram.dat[u->ram.ptr++];
-	if(u->literal > 0)
-		return doliteral(u, instr);
-	else
-		return doopcode(u, instr);
+	u->ram.ptr = vec;
+	setflag(&u->status, FLAG_HALT, 0);
+	while(!(u->status & FLAG_HALT)) {
+		Uint8 instr = u->ram.dat[u->ram.ptr++];
+		u->counter++;
+		if(u->literal > 0)
+			return lituxn(u, instr);
+		else
+			return opcuxn(u, instr);
+	}
 	return 1;
 }
 
 int
-load(Uxn *u, char *filepath)
+bootuxn(Uxn *u)
 {
-	FILE *f;
-	if(!(f = fopen(filepath, "rb")))
-		return error(u, "Missing input.", 0);
-	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
-	return 1;
-}
-
-void
-reset(Uxn *u)
-{
-	size_t i;
-	char *cptr = (char *)u;
-	for(i = 0; i < sizeof u; i++)
-		cptr[i] = 0;
-}
-
-int
-boot(Uxn *u)
-{
-	reset(u);
+	inituxn(u);
 	u->vreset = mempeek16(u, 0xfffa);
 	u->vframe = mempeek16(u, 0xfffc);
 	u->verror = mempeek16(u, 0xfffe);
-	/* eval reset */
-	u->ram.ptr = u->vreset;
-	setflag(&u->status, FLAG_HALT, 0);
-	while(!(u->status & FLAG_HALT) && eval(u))
-		u->counter++;
-	/* eval frame */
-	u->ram.ptr = u->vframe;
-	setflag(&u->status, FLAG_HALT, 0);
-	while(!(u->status & FLAG_HALT) && eval(u))
-		u->counter++;
+	printf("Uxn Ready.\n");
 	return 1;
 }
+
+/* to start: evaluxn(u, u->vreset); */

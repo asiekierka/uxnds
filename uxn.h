@@ -44,6 +44,6 @@ typedef struct {
 
 void setflag(Uint8 *status, char flag, int b);
 int getflag(Uint8 *status, char flag);
-int error(Uxn *c, char *name, int id);
-int load(Uxn *c, char *filepath);
-int boot(Uxn *c);
+int loaduxn(Uxn *c, char *filepath);
+int bootuxn(Uxn *c);
+int evaluxn(Uxn *u, Uint16 vec);
