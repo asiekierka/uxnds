@@ -1,14 +1,5 @@
 #include <stdio.h>
 
-#define FLAG_HALT 0x01
-#define FLAG_SHORT 0x02
-#define FLAG_SIGN 0x04
-#define FLAG_COND 0x08
-
-#include "cpu.h"
-
-Computer cpu;
-
 /*
 Copyright (c) 2021 Devine Lu Linvega
 
@@ -19,6 +10,15 @@ copyright notice and this permission notice appear in all copies.
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
+
+#include "cpu.h"
+
+#define FLAG_HALT 0x01
+#define FLAG_SHORT 0x02
+#define FLAG_SIGN 0x04
+#define FLAG_COND 0x08
+
+Computer cpu;
 
 #pragma mark - Helpers
 
