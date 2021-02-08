@@ -1,32 +1,26 @@
 # Uxn
 
-A stack-based VM, written in ANSI C.
-
-## Build
-
-```
-cc uxn.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o uxn
-```
+A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C.
 
 ## Assembly Syntax
 
 ### Write
 
-- `;variable`, set a label to an assigned address
-- `:const`, set a label to a constant short
-- `@label`, set a label to an address
+- `;variable`, automatically assign an address to a label.
+- `:const FFCF`, manually assign an address to a label.
+- `@label`, assign the current address to a label.
 
 ### Read
 
-- `,literal`, push label value to stack
-- `.pointer`, read label value
+- `,literal`, push label value to stack, prefixed with `LIT LEN`.
+- `.pointer`, push label value to stack.
 
 ### Special
 
-- `( comment )`, toggle parsing on/off
-- `|0010`, move to position in the program
-- `"hello`, push literal bytes for word "hello"
-- `#04`, a zero-page address, equivalent to `,0004`
+- `( comment )`, toggle parsing on/off.
+- `|0010`, move to position in the program.
+- `"hello`, push literal bytes for word "hello".
+- `#04`, a zero-page address, equivalent to `,0004`.
 
 ### Operator modes
 
@@ -68,7 +62,7 @@ BRK
 |FFFA .RESET .FRAME .ERROR
 ```
 
-## Mission
+## TODOs
 
 ### Assembler
 

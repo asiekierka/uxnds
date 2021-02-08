@@ -27,7 +27,7 @@ void   wspush16(Uxn *u, Uint16 s) { wspush8(u,s >> 8); wspush8(u,s & 0xff); }
 Uint16 wspop16(Uxn *u) { return wspop8(u) + (wspop8(u) << 8); }
 Uint16 wspeek16(Uxn *u, Uint8 o) { return bytes2short(u->wst.dat[u->wst.ptr - o], u->wst.dat[u->wst.ptr - o + 1]); }
 void   rspush16(Uxn *u, Uint16 a) { u->rst.dat[u->rst.ptr++] = a; }
-Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s+1] & 0xff); }
+Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s + 1] & 0xff); }
 
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
