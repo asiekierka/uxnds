@@ -13,8 +13,6 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-Uxn cpu;
-
 #pragma mark - Operations
 
 /* clang-format off */

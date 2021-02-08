@@ -53,12 +53,14 @@ int
 main(int argc, char *argv[])
 {
 	Uxn cpu;
+
 	if(argc < 2)
 		return error(&cpu, "No input.", 0);
 	if(!load(&cpu, argv[1]))
 		return error(&cpu, "Load error", 0);
 	if(!boot(&cpu))
 		return error(&cpu, "Boot error", 0);
+
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");
