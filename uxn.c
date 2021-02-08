@@ -16,18 +16,18 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	Computer cpu;
+	Cpu cpu;
 	if(argc < 2)
-		return error("No input.", 0);
+		return error(&cpu, "No input.", 0);
 	if(!(f = fopen(argv[1], "rb")))
-		return error("Missing input.", 0);
-	if(!load(f))
-		return error("Load error", 0);
-	if(!boot())
-		return error("Boot error", 0);
+		return error(&cpu, "Missing input.", 0);
+	if(!load(&cpu, f))
+		return error(&cpu, "Load error", 0);
+	if(!boot(&cpu))
+		return error(&cpu, "Boot error", 0);
 	/* print result */
 	echos(&cpu.wst, 0x40, "stack");
 	echom(&cpu.ram, 0x40, "ram");
-	echof();
+	echof(&cpu);
 	return 0;
 }

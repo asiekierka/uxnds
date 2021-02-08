@@ -35,11 +35,11 @@ typedef struct {
 	Stack8 wst;
 	Stack16 rst;
 	Memory ram;
-} Computer;
+} Cpu;
 
-int error(char *name, int id);
-int load(FILE *f);
-int boot(void);
-void echof(void);
+int error(Cpu *c, char *name, int id);
+int load(Cpu *c, FILE *f);
+int boot(Cpu *c);
+void echof(Cpu *c);
 void echom(Memory *m, Uint8 len, char *name);
 void echos(Stack8 *s, Uint8 len, char *name);

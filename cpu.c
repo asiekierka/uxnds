@@ -18,23 +18,23 @@ WITH REGARD TO THIS SOFTWARE.
 #define FLAG_SIGN 0x04
 #define FLAG_COND 0x08
 
-Computer cpu;
+Cpu cpu;
 
 #pragma mark - Helpers
 
 void
-setflag(char flag, int b)
+setflag(Cpu *c, char flag, int b)
 {
 	if(b)
-		cpu.status |= flag;
+		c->status |= flag;
 	else
-		cpu.status &= (~flag);
+		c->status &= (~flag);
 }
 
 int
-getflag(char flag)
+getflag(Cpu *c, char flag)
 {
-	return cpu.status & flag;
+	return c->status & flag;
 }
 
 void
@@ -68,64 +68,64 @@ echom(Memory *m, Uint8 len, char *name)
 /* clang-format off */
 
 Uint16 bytes2short(Uint8 a, Uint8 b) { return (a << 8) + b; }
-Uint16 mempeek16(Uint16 s) { return (cpu.ram.dat[s] << 8) + (cpu.ram.dat[s+1] & 0xff); }
-void wspush8(Uint8 b) { cpu.wst.dat[cpu.wst.ptr++] = b; }
-void wspush16(Uint16 s) { wspush8(s >> 8); wspush8(s & 0xff); }
-Uint8 wspop8(void) { return cpu.wst.dat[--cpu.wst.ptr]; }
-Uint16 wspop16(void) { return wspop8() + (wspop8() << 8); }
-Uint8 wspeek8(Uint8 o) { return cpu.wst.dat[cpu.wst.ptr - o]; }
-Uint16 wspeek16(Uint8 o) { return bytes2short(cpu.wst.dat[cpu.wst.ptr - o], cpu.wst.dat[cpu.wst.ptr - o + 1]); }
-Uint16 rspop16(void) { return cpu.rst.dat[--cpu.rst.ptr]; }
-void rspush16(Uint16 a) { cpu.rst.dat[cpu.rst.ptr++] = a; }
+Uint16 mempeek16(Cpu *c, Uint16 s) { return (c->ram.dat[s] << 8) + (c->ram.dat[s+1] & 0xff); }
+void wspush8(Cpu *c, Uint8 b) { c->wst.dat[c->wst.ptr++] = b; }
+void wspush16(Cpu *c, Uint16 s) { wspush8(c,s >> 8); wspush8(c,s & 0xff); }
+Uint8 wspop8(Cpu *c) { return c->wst.dat[--c->wst.ptr]; }
+Uint16 wspop16(Cpu *c) { return wspop8(c) + (wspop8(c) << 8); }
+Uint8 wspeek8(Cpu *c, Uint8 o) { return c->wst.dat[c->wst.ptr - o]; }
+Uint16 wspeek16(Cpu *c, Uint8 o) { return bytes2short(c->wst.dat[c->wst.ptr - o], c->wst.dat[c->wst.ptr - o + 1]); }
+Uint16 rspop16(Cpu *c) { return c->rst.dat[--c->rst.ptr]; }
+void rspush16(Cpu *c, Uint16 a) { c->rst.dat[c->rst.ptr++] = a; }
 
 /* I/O */
-void op_brk() { setflag(FLAG_HALT, 1); }
-void op_lit() { cpu.literal += cpu.ram.dat[cpu.ram.ptr++]; }
-void op_nop() { printf("NOP");}
-void op_ldr() { wspush8(cpu.ram.dat[wspop16()]); }
-void op_str() { cpu.ram.dat[wspop16()] = wspop8(); }
+void op_brk(Cpu *c) { setflag(c,FLAG_HALT, 1); }
+void op_lit(Cpu *c) { c->literal += c->ram.dat[c->ram.ptr++]; }
+void op_nop(Cpu *c) { printf("NOP");}
+void op_ldr(Cpu *c) { wspush8(c,c->ram.dat[wspop16(c)]); }
+void op_str(Cpu *c) { c->ram.dat[wspop16(c)] = wspop8(c); }
 /* Logic */
-void op_jmp() { cpu.ram.ptr = wspop16(); }
-void op_jsr() { rspush16(cpu.ram.ptr); cpu.ram.ptr = wspop16(); }
-void op_rts() {	cpu.ram.ptr = rspop16(); }
+void op_jmp(Cpu *c) { c->ram.ptr = wspop16(c); }
+void op_jsr(Cpu *c) { rspush16(c,c->ram.ptr); c->ram.ptr = wspop16(c); }
+void op_rts(Cpu *c) {	c->ram.ptr = rspop16(c); }
 /* Stack */
-void op_pop() { wspop8(); }
-void op_dup() { wspush8(wspeek8(1)); }
-void op_swp() { Uint8 b = wspop8(), a = wspop8(); wspush8(b); wspush8(a); }
-void op_ovr() { Uint8 a = wspeek8(2); wspush8(a); }
-void op_rot() { Uint8 c = wspop8(),b = wspop8(),a = wspop8(); wspush8(b); wspush8(c); wspush8(a); }
-void op_and() { Uint8 a = wspop8(), b = wspop8(); wspush8(a & b); }
-void op_ora() { Uint8 a = wspop8(), b = wspop8(); wspush8(a | b); }
-void op_rol() { Uint8 a = wspop8(), b = wspop8(); wspush8(a << b); }
+void op_pop(Cpu *c) { wspop8(c); }
+void op_dup(Cpu *c) { wspush8(c,wspeek8(c,1)); }
+void op_swp(Cpu *c) { Uint8 b = wspop8(c), a = wspop8(c); wspush8(c,b); wspush8(c,a); }
+void op_ovr(Cpu *c) { Uint8 a = wspeek8(c,2); wspush8(c,a); }
+void op_rot(Cpu *c) { Uint8 c1 = wspop8(c),b = wspop8(c),a = wspop8(c); wspush8(c,b); wspush8(c,c1); wspush8(c,a); }
+void op_and(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a & b); }
+void op_ora(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a | b); }
+void op_rol(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,a << b); }
 /* Arithmetic */
-void op_add() { Uint8 a = wspop8(), b = wspop8(); wspush8(b + a); }
-void op_sub() { Uint8 a = wspop8(), b = wspop8(); wspush8(b - a); }
-void op_mul() { Uint8 a = wspop8(), b = wspop8(); wspush8(b * a); }
-void op_div() { Uint8 a = wspop8(), b = wspop8(); wspush8(b / a); }
-void op_equ() { Uint8 a = wspop8(), b = wspop8(); wspush8(b == a); }
-void op_neq() { Uint8 a = wspop8(), b = wspop8(); wspush8(b != a); }
-void op_gth() { Uint8 a = wspop8(), b = wspop8(); wspush8(b > a); }
-void op_lth() { Uint8 a = wspop8(), b = wspop8(); wspush8(b < a); }
+void op_add(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b + a); }
+void op_sub(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b - a); }
+void op_mul(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b * a); }
+void op_div(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b / a); }
+void op_equ(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b == a); }
+void op_neq(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b != a); }
+void op_gth(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b > a); }
+void op_lth(Cpu *c) { Uint8 a = wspop8(c), b = wspop8(c); wspush8(c,b < a); }
 /* Stack(16-bits) */
-void op_pop16() { wspop16(); }
-void op_dup16() { wspush16(wspeek16(2)); }
-void op_swp16() { Uint16 b = wspop16(), a = wspop16(); wspush16(b); wspush16(a); }
-void op_ovr16() { Uint16 a = wspeek16(4); wspush16(a); }
-void op_rot16() { Uint16 c = wspop16(), b = wspop16(), a = wspop16(); wspush16(b); wspush16(c); wspush16(a); }
-void op_and16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a & b); }
-void op_ora16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a | b); }
-void op_rol16() { Uint16 a = wspop16(), b = wspop16(); wspush16(a << b); }
+void op_pop16(Cpu *c) { wspop16(c); }
+void op_dup16(Cpu *c) { wspush16(c,wspeek16(c,2)); }
+void op_swp16(Cpu *c) { Uint16 b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c,a); }
+void op_ovr16(Cpu *c) { Uint16 a = wspeek16(c, 4); wspush16(c,a); }
+void op_rot16(Cpu *c) { Uint16 c1 = wspop16(c), b = wspop16(c), a = wspop16(c); wspush16(c,b); wspush16(c,c1); wspush16(c,a); }
+void op_and16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a & b); }
+void op_ora16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a | b); }
+void op_rol16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,a << b); }
 /* Arithmetic(16-bits) */
-void op_add16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b + a); }
-void op_sub16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b - a); }
-void op_mul16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b * a); }
-void op_div16() { Uint16 a = wspop16(), b = wspop16(); wspush16(b / a); }
-void op_equ16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b == a); }
-void op_neq16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b != a); }
-void op_gth16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b > a); }
-void op_lth16() { Uint16 a = wspop16(), b = wspop16(); wspush8(b < a); }
+void op_add16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b + a); }
+void op_sub16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b - a); }
+void op_mul16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b * a); }
+void op_div16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush16(c,b / a); }
+void op_equ16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b == a); }
+void op_neq16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b != a); }
+void op_gth16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b > a); }
+void op_lth16(Cpu *c) { Uint16 a = wspop16(c), b = wspop16(c); wspush8(c,b < a); }
 
-void (*ops[])() = {
+void (*ops[])(Cpu *c) = {
 	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
@@ -146,95 +146,105 @@ Uint8 opr[][2] = {
 /* clang-format on */
 
 int
-error(char *name, int id)
+error(Cpu *c, char *name, int id)
 {
-	printf("Error: %s[%04x], at 0x%04x\n", name, id, cpu.counter);
+	printf("Error: %s[%04x], at 0x%04x\n", name, id, c->counter);
 	return 0;
 }
 
 int
-doliteral(Uint8 instr)
+doliteral(Cpu *c, Uint8 instr)
 {
-	if(cpu.wst.ptr >= 255)
-		return error("Stack overflow", instr);
-	wspush8(instr);
-	cpu.literal--;
+	if(c->wst.ptr >= 255)
+		return error(c, "Stack overflow", instr);
+	wspush8(c, instr);
+	c->literal--;
 	return 1;
 }
 
 int
-dodevices(void) /* experimental */
+dodevices(Cpu *c) /* experimental */
 {
-	if(cpu.ram.dat[0xfff1]) {
-		printf("%c", cpu.ram.dat[0xfff1]);
-		cpu.ram.dat[0xfff1] = 0x00;
+	if(c->ram.dat[0xfff1]) {
+		printf("%c", c->ram.dat[0xfff1]);
+		c->ram.dat[0xfff1] = 0x00;
 	}
 	return 1;
 }
 
 int
-doopcode(Uint8 instr)
+doopcode(Cpu *c, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
-	setflag(FLAG_SHORT, (instr >> 5) & 1);
-	setflag(FLAG_SIGN, (instr >> 6) & 1); /* usused */
-	setflag(FLAG_COND, (instr >> 7) & 1);
-	if(getflag(FLAG_SHORT))
+	setflag(c, FLAG_SHORT, (instr >> 5) & 1);
+	setflag(c, FLAG_SIGN, (instr >> 6) & 1); /* usused */
+	setflag(c, FLAG_COND, (instr >> 7) & 1);
+	if(getflag(c, FLAG_SHORT))
 		op += 16;
-	if(cpu.wst.ptr < opr[op][0])
-		return error("Stack underflow", op);
-	if(cpu.wst.ptr + opr[op][1] - opr[op][0] >= 255)
-		return error("Stack overflow", instr);
-	if(!getflag(FLAG_COND) || (getflag(FLAG_COND) && wspop8()))
-		(*ops[op])();
-	dodevices();
+	if(c->wst.ptr < opr[op][0])
+		return error(c, "Stack underflow", op);
+	if(c->wst.ptr + opr[op][1] - opr[op][0] >= 255)
+		return error(c, "Stack overflow", instr);
+	if(!getflag(c, FLAG_COND) || (getflag(c, FLAG_COND) && wspop8(c)))
+		(*ops[op])(c);
+	dodevices(c);
 	return 1;
 }
 
 int
-eval(void)
+eval(Cpu *c)
 {
-	Uint8 instr = cpu.ram.dat[cpu.ram.ptr++];
-	if(cpu.literal > 0)
-		return doliteral(instr);
+	Uint8 instr = c->ram.dat[c->ram.ptr++];
+	if(c->literal > 0)
+		return doliteral(c, instr);
 	else
-		return doopcode(instr);
+		return doopcode(c, instr);
 	return 1;
 }
 
 int
-load(FILE *f)
+load(Cpu *c, FILE *f)
 {
-	fread(cpu.ram.dat, sizeof(cpu.ram.dat), 1, f);
+	fread(c->ram.dat, sizeof(c->ram.dat), 1, f);
 	return 1;
 }
 
 void
-echof(void)
+echof(Cpu *c)
 {
 	printf("ended @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
-		cpu.counter,
-		getflag(FLAG_HALT) != 0,
-		getflag(FLAG_SHORT) != 0,
-		getflag(FLAG_SIGN) != 0,
-		getflag(FLAG_COND) != 0);
+		c->counter,
+		getflag(c, FLAG_HALT) != 0,
+		getflag(c, FLAG_SHORT) != 0,
+		getflag(c, FLAG_SIGN) != 0,
+		getflag(c, FLAG_COND) != 0);
+}
+
+void
+reset(Cpu *c)
+{
+	size_t i;
+	char *cptr = (char *)c;
+	for(i = 0; i < sizeof c; i++)
+		cptr[i] = 0;
 }
 
 int
-boot(void)
+boot(Cpu *c)
 {
-	cpu.vreset = mempeek16(0xfffa);
-	cpu.vframe = mempeek16(0xfffc);
-	cpu.verror = mempeek16(0xfffe);
+	reset(c);
+	c->vreset = mempeek16(c, 0xfffa);
+	c->vframe = mempeek16(c, 0xfffc);
+	c->verror = mempeek16(c, 0xfffe);
 	/* eval reset */
-	cpu.ram.ptr = cpu.vreset;
-	setflag(FLAG_HALT, 0);
-	while(!(cpu.status & FLAG_HALT) && eval())
-		cpu.counter++;
+	c->ram.ptr = c->vreset;
+	setflag(c, FLAG_HALT, 0);
+	while(!(c->status & FLAG_HALT) && eval(c))
+		c->counter++;
 	/*eval frame */
-	cpu.ram.ptr = cpu.vframe;
-	setflag(FLAG_HALT, 0);
-	while(!(cpu.status & FLAG_HALT) && eval())
-		cpu.counter++;
+	c->ram.ptr = c->vframe;
+	setflag(c, FLAG_HALT, 0);
+	while(!(c->status & FLAG_HALT) && eval(c))
+		c->counter++;
 	return 1;
 }
