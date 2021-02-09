@@ -137,14 +137,26 @@ void
 domouse(SDL_Event *event)
 {
 	(void)event;
-	printf("mouse\n");
+	/* printf("mouse\n"); */
 }
 
 void
 dokey(SDL_Event *event)
 {
 	(void)event;
-	printf("key\n");
+	/* printf("key\n"); */
+}
+
+#pragma mark - Devices
+
+void
+console_onread(void)
+{
+}
+
+void
+console_onwrite(void)
+{
 }
 
 int
@@ -175,11 +187,11 @@ start(Uxn *u)
 	}
 }
 
+Uxn u;
+
 int
 main(int argc, char **argv)
 {
-	Uxn u;
-
 	if(argc < 2)
 		return error("Input", "Missing");
 	if(!bootuxn(&u))
@@ -188,6 +200,8 @@ main(int argc, char **argv)
 		return error("Load", "Failed");
 	if(!init())
 		return error("Init", "Failed");
+
+	portuxn(&u, 0xfff0, 0xfff1, console_onread, console_onwrite);
 
 	start(&u);
 

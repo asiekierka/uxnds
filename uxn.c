@@ -103,26 +103,6 @@ haltuxn(Uxn *u, char *name, int id)
 	return 0;
 }
 
-void
-inituxn(Uxn *u)
-{
-	size_t i;
-	char *cptr = (char *)u;
-	for(i = 0; i < sizeof u; i++)
-		cptr[i] = 0;
-}
-
-int
-loaduxn(Uxn *u, char *filepath)
-{
-	FILE *f;
-	if(!(f = fopen(filepath, "rb")))
-		return haltuxn(u, "Missing input.", 0);
-	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
-	printf("Uxn Loaded: %s\n", filepath);
-	return 1;
-}
-
 int
 lituxn(Uxn *u, Uint8 instr)
 {
@@ -136,9 +116,13 @@ lituxn(Uxn *u, Uint8 instr)
 int
 devuxn(Uxn *u) /* experimental */
 {
-	if(u->ram.dat[0xfff1]) {
-		printf("%c", u->ram.dat[0xfff1]);
-		u->ram.dat[0xfff1] = 0x00;
+	int i;
+	for(i = 0; i < u->devices; ++i) {
+		Uint16 addr = u->dev[i].w;
+		if(u->ram.dat[addr]) {
+			printf("%c", u->ram.dat[addr]);
+			u->ram.dat[addr] = 0;
+		}
 	}
 	return 1;
 }
@@ -163,30 +147,64 @@ opcuxn(Uxn *u, Uint8 instr)
 }
 
 int
+parse(Uxn *u) /* TODO: Rename */
+{
+	Uint8 instr = u->ram.dat[u->ram.ptr++];
+	u->counter++;
+	if(u->literal > 0)
+		return lituxn(u, instr);
+	else
+		return opcuxn(u, instr);
+}
+
+int
 evaluxn(Uxn *u, Uint16 vec)
 {
 	u->ram.ptr = vec;
 	setflag(&u->status, FLAG_HALT, 0);
-	while(!(u->status & FLAG_HALT)) {
-		Uint8 instr = u->ram.dat[u->ram.ptr++];
-		u->counter++;
-		if(u->literal > 0)
-			return lituxn(u, instr);
-		else
-			return opcuxn(u, instr);
-	}
+	while(!(u->status & FLAG_HALT) && parse(u))
+		;
 	return 1;
 }
 
 int
 bootuxn(Uxn *u)
 {
-	inituxn(u);
+	size_t i;
+	char *cptr = (char *)u;
+	for(i = 0; i < sizeof u; i++)
+		cptr[i] = 0;
+	return 1;
+}
+
+int
+loaduxn(Uxn *u, char *filepath)
+{
+	FILE *f;
+	if(!(f = fopen(filepath, "rb")))
+		return haltuxn(u, "Missing input.", 0);
+	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
 	u->vreset = mempeek16(u, 0xfffa);
 	u->vframe = mempeek16(u, 0xfffc);
 	u->verror = mempeek16(u, 0xfffe);
-	printf("Uxn Ready.\n");
+	printf("Uxn loaded[%s] vrst:%04x vfrm:%04x verr:%04x.\n",
+		filepath,
+		u->vreset,
+		u->vframe,
+		u->verror);
 	return 1;
 }
 
 /* to start: evaluxn(u, u->vreset); */
+
+int
+portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(), void (*onwrite)())
+{
+	Device *d = &u->dev[u->devices++];
+	d->r = r;
+	d->w = w;
+	d->rfn = onread;
+	d->wfn = onwrite;
+	printf("Created device: #%d, at r:%04x w:%04x\n", u->devices, r, w);
+	return 1;
+}
