@@ -20,19 +20,19 @@ error(char *msg, const char *err)
 	return 0;
 }
 
-void
-console_onread(Uint8 *b)
+Uint8
+console_onread(Uint8 b)
 {
 	(void)b;
+	return 0;
 }
 
-void
-console_onwrite(Uint8 *b)
+Uint8
+console_onwrite(Uint8 b)
 {
-	if(b) {
-		printf("%c", *b);
-		*b = 0x00;
-	}
+	if(b)
+		printf("%c", b);
+	return 0;
 }
 
 void
@@ -64,7 +64,7 @@ echom(Memory *m, Uint16 len, char *name)
 void
 echof(Uxn *c)
 {
-	printf("ended @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
+	printf("\nEnded @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
 		c->counter,
 		getflag(&c->status, FLAG_HALT) != 0,
 		getflag(&c->status, FLAG_SHORT) != 0,
@@ -82,14 +82,14 @@ main(int argc, char **argv)
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
-	portuxn(&u, 0xfff0, 0xfff1, console_onread, console_onwrite);
+	portuxn(&u, "console", console_onread, console_onwrite);
 	evaluxn(&u, u.vreset);
 	evaluxn(&u, u.vframe);
-	
-/*
+
+	/*
 	echos(&u.wst, 0x40, "stack");
 	echom(&u.ram, 0x40, "ram");
-	echof(&u);
 */
+	echof(&u);
 	return 0;
 }

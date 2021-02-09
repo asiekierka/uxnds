@@ -1,0 +1,20 @@
+( hello world )
+
+:stdr FFF0
+:stdw FFF1
+:ppur FFF2
+:ppuw FFF3
+
+|0100 @RESET
+
+	,11 ,ppuw STR ( x0 )
+	,23 ,ppuw STR ( x1 )
+	,12 ,ppuw STR ( y0 )
+	,34 ,ppuw STR ( y1 )
+	,01 ,ppuw STR ( clr )
+
+BRK
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR

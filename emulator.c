@@ -150,13 +150,33 @@ dokey(SDL_Event *event)
 #pragma mark - Devices
 
 void
-console_onread(void)
+console_onread(Uint8 *b)
+{
+	(void)b;
+}
+
+void
+console_onwrite(Uint8 *b)
+{
+	if(b) {
+		printf("%c", *b);
+		fflush(stdout);
+		*b = 0x00;
+	}
+}
+
+Uint8 ppumem[5];
+
+void
+ppur(Uint8 *b)
 {
 }
 
 void
-console_onwrite(void)
+ppuw(Uint8 *b)
 {
+
+	printf("%02x\n", *b);
 }
 
 int
@@ -201,7 +221,8 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, 0xfff0, 0xfff1, console_onread, console_onwrite);
+	portuxn(&u, 0xfff0, console_onread, console_onwrite);
+	portuxn(&u, 0xfff2, ppur, ppuw);
 
 	start(&u);
 

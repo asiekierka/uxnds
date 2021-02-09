@@ -1,11 +1,15 @@
 ( my default test file )
 
 ;iterator
-:dev1r FFF0
-:dev1w FFF1
 
 |0100 @RESET 
-,01 ,02 ,03
+
+	,01 ,00 IOW
+	,02 ,00 IOW
+	,03 ,00 IOW
+	,04 ,00 IOW
+	,05 ,00 IOW
+
 BRK
 
 |c000 @FRAME BRK

@@ -33,8 +33,10 @@ Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("NOP"); (void)u; }
-void op_ldr(Uxn *u) { wspush8(u, u->ram.dat[wspop16(u)]); }
-void op_str(Uxn *u) { u->ram.dat[wspop16(u)] = wspop8(u); }
+void op_ior(Uxn *u) { Uint8 devid = wspop8(u); Uint8 devop = wspop8(u); Device *dev = &u->dev[devid]; if(dev) wspush8(u, dev->rfn(devop)); }
+void op_iow(Uxn *u) { Uint8 devid = wspop8(u); Uint8 devop = wspop8(u); Device *dev = &u->dev[devid]; if(dev) dev->wfn(devop); }
+void op_ldr(Uxn *u) { Uint16 a = wspop16(u); wspush8(u, u->ram.dat[a]); }
+void op_str(Uxn *u) { Uint16 a = wspop16(u); Uint8 b = wspop8(u); u->ram.dat[a] = b; }
 /* Logic */
 void op_jmp(Uxn *u) { u->ram.ptr = wspop16(u); }
 void op_jsr(Uxn *u) { u->rst.dat[u->rst.ptr++] = u->ram.ptr; u->ram.ptr = wspop16(u); }
@@ -77,7 +79,7 @@ void op_gth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b > a)
 void op_lth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_lit, op_nop, op_nop, op_nop, op_nop, op_ldr, op_str, 
+	op_brk, op_lit, op_nop, op_nop, op_ior, op_iow, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
@@ -86,7 +88,7 @@ void (*ops[])(Uxn *u) = {
 };
 
 Uint8 opr[][2] = { 
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {2,1}, {3,0},
+	{0,0}, {0,0}, {0,0}, {0,0}, {2,1}, {2,0}, {2,1}, {3,0},
 	{2,0}, {2,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
 	{1,0}, {1,2}, {2,2}, {3,3}, {3,3}, {2,1}, {2,1}, {2,1},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
@@ -114,17 +116,6 @@ lituxn(Uxn *u, Uint8 instr)
 }
 
 int
-devuxn(Uxn *u)
-{
-	int i;
-	for(i = 0; i < u->devices; ++i) {
-		u->dev[i].wfn(&u->ram.dat[u->dev[i].w]);
-		u->dev[i].rfn(&u->ram.dat[u->dev[i].r]);
-	}
-	return 1;
-}
-
-int
 opcuxn(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
@@ -139,7 +130,6 @@ opcuxn(Uxn *u, Uint8 instr)
 		return haltuxn(u, "Stack overflow", instr);
 	if(!getflag(&u->status, FLAG_COND) || (getflag(&u->status, FLAG_COND) && wspop8(u)))
 		(*ops[op])(u);
-	devuxn(u);
 	return 1;
 }
 
@@ -197,13 +187,11 @@ loaduxn(Uxn *u, char *filepath)
 /* to start: evaluxn(u, u->vreset); */
 
 int
-portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(Uint8 *), void (*onwrite)(Uint8 *))
+portuxn(Uxn *u, char *name, Uint8 (*onread)(Uint8), Uint8 (*onwrite)(Uint8))
 {
 	Device *d = &u->dev[u->devices++];
-	d->r = r;
-	d->w = w;
 	d->rfn = onread;
 	d->wfn = onwrite;
-	printf("Created device: #%d, at r:%04x w:%04x\n", u->devices, r, w);
+	printf("Device#%d: %s \n", u->devices, name);
 	return 1;
 }

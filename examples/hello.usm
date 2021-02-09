@@ -1,15 +1,13 @@
 ( hello world )
 
 ;iterator
-:dev1r FFF0
-:dev1w FFF1
 
 |0100 @RESET
 
 @word1 "hello_word ( len: 0x0b )
 
 @loop
-	,dev1w STR ( write to stdout )
+	,00 IOW ( write to device#0 )
 	,incr JSR ( increment itr )
 	,word1 ,strlen JSR ( get strlen )
 	NEQ ,loop ROT JSR? ( loop != strlen )

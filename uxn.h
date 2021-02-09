@@ -35,9 +35,9 @@ typedef struct {
 } Memory;
 
 typedef struct {
-	Uint16 r, w;
-	void (*rfn)(Uint8 *);
-	void (*wfn)(Uint8 *);
+	Uint16 index;
+	Uint8 (*rfn)(Uint8);
+	Uint8 (*wfn)(Uint8);
 } Device;
 
 typedef struct {
@@ -46,7 +46,7 @@ typedef struct {
 	Stack8 wst;
 	Stack16 rst;
 	Memory ram;
-	Device dev[64];
+	Device dev[256];
 } Uxn;
 
 void setflag(Uint8 *status, char flag, int b);
@@ -54,4 +54,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-int portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(Uint8 *), void (*onwrite)(Uint8 *));
+int portuxn(Uxn *u, char *name, Uint8 (*onread)(Uint8), Uint8 (*onwrite)(Uint8));
