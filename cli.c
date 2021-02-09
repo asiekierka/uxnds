@@ -72,28 +72,24 @@ echof(Uxn *c)
 		getflag(&c->status, FLAG_COND) != 0);
 }
 
-Uxn u;
-
 int
 main(int argc, char **argv)
 {
+	Uxn u;
 	if(argc < 2)
 		return error("Input", "Missing");
 	if(!bootuxn(&u))
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
-
 	portuxn(&u, 0xfff0, 0xfff1, console_onread, console_onwrite);
-
-	printf("VRESET\n");
 	evaluxn(&u, u.vreset);
-	printf("VFRAME\n");
 	evaluxn(&u, u.vframe);
-
+	
+/*
 	echos(&u.wst, 0x40, "stack");
 	echom(&u.ram, 0x40, "ram");
 	echof(&u);
-
+*/
 	return 0;
 }

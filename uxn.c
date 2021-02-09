@@ -170,7 +170,7 @@ int
 bootuxn(Uxn *u)
 {
 	size_t i;
-	char *cptr = (char *)u;
+	char *cptr = (char *)&u;
 	for(i = 0; i < sizeof u; i++)
 		cptr[i] = 0;
 	return 1;
