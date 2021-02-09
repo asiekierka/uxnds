@@ -36,8 +36,8 @@ typedef struct {
 
 typedef struct {
 	Uint16 r, w;
-	void (*rfn)(void);
-	void (*wfn)(void);
+	void (*rfn)(Uint8 *);
+	void (*wfn)(Uint8 *);
 } Device;
 
 typedef struct {
@@ -54,4 +54,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-int portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(), void (*onwrite)());
+int portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(Uint8 *), void (*onwrite)(Uint8 *));

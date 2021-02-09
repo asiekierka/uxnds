@@ -114,15 +114,12 @@ lituxn(Uxn *u, Uint8 instr)
 }
 
 int
-devuxn(Uxn *u) /* experimental */
+devuxn(Uxn *u)
 {
 	int i;
 	for(i = 0; i < u->devices; ++i) {
-		Uint16 addr = u->dev[i].w;
-		if(u->ram.dat[addr]) {
-			printf("%c", u->ram.dat[addr]);
-			u->ram.dat[addr] = 0;
-		}
+		u->dev[i].wfn(&u->ram.dat[u->dev[i].w]);
+		u->dev[i].rfn(&u->ram.dat[u->dev[i].r]);
 	}
 	return 1;
 }
@@ -147,10 +144,8 @@ opcuxn(Uxn *u, Uint8 instr)
 }
 
 int
-parse(Uxn *u) /* TODO: Rename */
+stepuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 instr = u->ram.dat[u->ram.ptr++];
-	u->counter++;
 	if(u->literal > 0)
 		return lituxn(u, instr);
 	else
@@ -162,8 +157,12 @@ evaluxn(Uxn *u, Uint16 vec)
 {
 	u->ram.ptr = vec;
 	setflag(&u->status, FLAG_HALT, 0);
-	while(!(u->status & FLAG_HALT) && parse(u))
-		;
+	while(!(u->status & FLAG_HALT)) {
+		Uint8 instr = u->ram.dat[u->ram.ptr++];
+		if(!stepuxn(u, instr))
+			return 0;
+		u->counter++;
+	}
 	return 1;
 }
 
@@ -198,7 +197,7 @@ loaduxn(Uxn *u, char *filepath)
 /* to start: evaluxn(u, u->vreset); */
 
 int
-portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(), void (*onwrite)())
+portuxn(Uxn *u, Uint16 r, Uint16 w, void (*onread)(Uint8 *), void (*onwrite)(Uint8 *))
 {
 	Device *d = &u->dev[u->devices++];
 	d->r = r;

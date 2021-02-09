@@ -21,13 +21,18 @@ error(char *msg, const char *err)
 }
 
 void
-console_onread(void)
+console_onread(Uint8 *b)
 {
+	(void)b;
 }
 
 void
-console_onwrite(void)
+console_onwrite(Uint8 *b)
 {
+	if(b) {
+		printf("%c", *b);
+		*b = 0x00;
+	}
 }
 
 void
