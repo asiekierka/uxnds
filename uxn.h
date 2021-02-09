@@ -34,10 +34,10 @@ typedef struct {
 	Uint8 dat[65536];
 } Memory;
 
-typedef struct {
-	Uint16 index;
-	Uint8 (*rfn)(Uint8);
-	Uint8 (*wfn)(Uint8);
+typedef struct Device {
+	Uint8 len, mem[8];
+	Uint8 (*rfn)(struct Device *, Uint8);
+	Uint8 (*wfn)(struct Device *, Uint8);
 } Device;
 
 typedef struct {
@@ -54,4 +54,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-int portuxn(Uxn *u, char *name, Uint8 (*onread)(Uint8), Uint8 (*onwrite)(Uint8));
+int portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(Device *, Uint8));

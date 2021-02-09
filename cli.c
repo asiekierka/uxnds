@@ -21,15 +21,17 @@ error(char *msg, const char *err)
 }
 
 Uint8
-console_onread(Uint8 b)
+console_onread(Device *d, Uint8 b)
 {
+	(void)d;
 	(void)b;
 	return 0;
 }
 
 Uint8
-console_onwrite(Uint8 b)
+console_onwrite(Device *d, Uint8 b)
 {
+	(void)d;
 	if(b)
 		printf("%c", b);
 	return 0;

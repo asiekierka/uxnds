@@ -33,8 +33,8 @@ Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("NOP"); (void)u; }
-void op_ior(Uxn *u) { Uint8 devid = wspop8(u); Uint8 devop = wspop8(u); Device *dev = &u->dev[devid]; if(dev) wspush8(u, dev->rfn(devop)); }
-void op_iow(Uxn *u) { Uint8 devid = wspop8(u); Uint8 devop = wspop8(u); Device *dev = &u->dev[devid]; if(dev) dev->wfn(devop); }
+void op_ior(Uxn *u) { Uint8 devid = wspop8(u); Uint16 devop = wspop8(u); Device *dev = &u->dev[devid]; if(devid < u->devices) wspush8(u, dev->rfn(dev,devop)); }
+void op_iow(Uxn *u) { Uint8 devid = wspop8(u); Uint16 devop = wspop8(u); Device *dev = &u->dev[devid]; if(devid < u->devices) dev->wfn(dev,devop); }
 void op_ldr(Uxn *u) { Uint16 a = wspop16(u); wspush8(u, u->ram.dat[a]); }
 void op_str(Uxn *u) { Uint16 a = wspop16(u); Uint8 b = wspop8(u); u->ram.dat[a] = b; }
 /* Logic */
@@ -187,11 +187,12 @@ loaduxn(Uxn *u, char *filepath)
 /* to start: evaluxn(u, u->vreset); */
 
 int
-portuxn(Uxn *u, char *name, Uint8 (*onread)(Uint8), Uint8 (*onwrite)(Uint8))
+portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(Device *, Uint8))
 {
 	Device *d = &u->dev[u->devices++];
 	d->rfn = onread;
 	d->wfn = onwrite;
+	d->len = 0;
 	printf("Device#%d: %s \n", u->devices, name);
 	return 1;
 }

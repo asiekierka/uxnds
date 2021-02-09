@@ -54,6 +54,13 @@ clear(Uint32 *dst)
 }
 
 void
+putpixel(Uint32 *dst, int x, int y, int color)
+{
+	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
+		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
+}
+
+void
 redraw(Uint32 *dst)
 {
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
@@ -149,34 +156,46 @@ dokey(SDL_Event *event)
 
 #pragma mark - Devices
 
-void
-console_onread(Uint8 *b)
+Uint8
+console_onread(Device *d, Uint8 b)
 {
 	(void)b;
+	(void)d;
+	return 0;
 }
 
-void
-console_onwrite(Uint8 *b)
+Uint8
+console_onwrite(Device *d, Uint8 b)
 {
-	if(b) {
-		printf("%c", *b);
-		fflush(stdout);
-		*b = 0x00;
+	(void)d;
+	if(b)
+		printf("%c", b);
+	fflush(stdout);
+	return 0;
+}
+
+Uint8
+ppur(Device *d, Uint8 b)
+{
+	(void)b;
+	(void)d;
+	return 0;
+}
+
+Uint8
+ppuw(Device *d, Uint8 b)
+{
+	d->mem[d->len++] = b;
+	if(d->len > 5) {
+		putpixel(pixels,
+			(d->mem[0] << 8) + d->mem[1],
+			(d->mem[2] << 8) + d->mem[3],
+			d->mem[4]);
+		if(d->mem[5])
+			redraw(pixels);
+		d->len = 0;
 	}
-}
-
-Uint8 ppumem[5];
-
-void
-ppur(Uint8 *b)
-{
-}
-
-void
-ppuw(Uint8 *b)
-{
-
-	printf("%02x\n", *b);
+	return 0;
 }
 
 int
@@ -207,11 +226,11 @@ start(Uxn *u)
 	}
 }
 
-Uxn u;
-
 int
 main(int argc, char **argv)
 {
+	Uxn u;
+
 	if(argc < 2)
 		return error("Input", "Missing");
 	if(!bootuxn(&u))
@@ -221,8 +240,8 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, 0xfff0, console_onread, console_onwrite);
-	portuxn(&u, 0xfff2, ppur, ppuw);
+	portuxn(&u, "console", console_onread, console_onwrite);
+	portuxn(&u, "PPU", ppur, ppuw);
 
 	start(&u);
 

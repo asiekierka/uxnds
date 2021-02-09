@@ -1,17 +1,27 @@
-( hello world )
-
-:stdr FFF0
-:stdw FFF1
-:ppur FFF2
-:ppuw FFF3
+( draw pixel )
 
 |0100 @RESET
 
-	,11 ,ppuw STR ( x0 )
-	,23 ,ppuw STR ( x1 )
-	,12 ,ppuw STR ( y0 )
-	,34 ,ppuw STR ( y1 )
-	,01 ,ppuw STR ( clr )
+	,0001 IOW ( x0 )
+	,0001 IOW ( x1 )
+	,0001 IOW ( y0 )
+	,0001 IOW ( y1 )
+	,0101 IOW ( clr )
+	,0001 IOW ( noredraw )
+
+	,0001 IOW ( x0 )
+	,0101 IOW ( x1 )
+	,0001 IOW ( y0 )
+	,0001 IOW ( y1 )
+	,0201 IOW ( clr )
+	,0001 IOW ( noredraw )
+
+	,0001 IOW ( x0 )
+	,0201 IOW ( x1 )
+	,0001 IOW ( y0 )
+	,0001 IOW ( y1 )
+	,0301 IOW ( clr )
+	,0101 IOW ( redraw! )
 
 BRK
 
