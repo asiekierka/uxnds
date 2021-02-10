@@ -54,4 +54,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-int portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(Device *, Uint8));
+Device *portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(Device *, Uint8));

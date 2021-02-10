@@ -2,12 +2,19 @@
 
 |0100 @RESET
 	
-	( redraw - color - x - y )
+	( draw 3 pixels )
 	,00 ,01 ,0000 ,0000 ,putpixel JSR
 	,00 ,02 ,0001 ,0001 ,putpixel JSR
 	,01 ,03 ,0002 ,0002 ,putpixel JSR
 
 BRK
+
+|c000 @FRAME 
+	,01 ,01 ( redraw color )
+	,00 ,01 ,02 IOR ( grab y )
+	,00 ,00 ,02 IOR ( grab x )
+	,putpixel JSR
+BRK 
 
 @putpixel 
 	SWP ,01 IOW ,01 IOW ( y )
@@ -16,6 +23,5 @@ BRK
 	,01 IOW ( redraw )
 	RTS
 
-|c000 @FRAME BRK 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR

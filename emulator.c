@@ -37,6 +37,8 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
+Device *devscreen, *devmouse, *devkey;
+
 int
 error(char *msg, const char *err)
 {
@@ -143,8 +145,15 @@ echof(Uxn *c)
 void
 domouse(SDL_Event *event)
 {
-	(void)event;
-	/* printf("mouse\n"); */
+	int x = event->motion.x / ZOOM - PAD * 8;
+	int y = event->motion.y / ZOOM - PAD * 8;
+	switch(event->type) {
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEBUTTONDOWN:
+		devmouse->mem[0] = x;
+		devmouse->mem[1] = y;
+		devmouse->mem[2] = event->button.button == SDL_BUTTON_LEFT;
+	}
 }
 
 void
@@ -157,7 +166,7 @@ dokey(SDL_Event *event)
 #pragma mark - Devices
 
 Uint8
-console_onread(Device *d, Uint8 b)
+consoler(Device *d, Uint8 b)
 {
 	(void)b;
 	(void)d;
@@ -165,7 +174,7 @@ console_onread(Device *d, Uint8 b)
 }
 
 Uint8
-console_onwrite(Device *d, Uint8 b)
+consolew(Device *d, Uint8 b)
 {
 	(void)d;
 	if(b)
@@ -175,7 +184,7 @@ console_onwrite(Device *d, Uint8 b)
 }
 
 Uint8
-ppur(Device *d, Uint8 b)
+screenr(Device *d, Uint8 b)
 {
 	(void)b;
 	(void)d;
@@ -183,7 +192,7 @@ ppur(Device *d, Uint8 b)
 }
 
 Uint8
-ppuw(Device *d, Uint8 b)
+screenw(Device *d, Uint8 b)
 {
 	d->mem[d->len++] = b;
 	if(d->len > 5) {
@@ -197,6 +206,32 @@ ppuw(Device *d, Uint8 b)
 	}
 	return 0;
 }
+
+Uint8
+mouser(Device *d, Uint8 b)
+{
+	return d->mem[b];
+}
+
+Uint8
+mousew(Device *d, Uint8 b)
+{
+	return 0;
+}
+
+Uint8
+keyr(Device *d, Uint8 b)
+{
+	return 0;
+}
+
+Uint8
+keyw(Device *d, Uint8 b)
+{
+	return 0;
+}
+
+#pragma mark - Generics
 
 int
 start(Uxn *u)
@@ -240,8 +275,10 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, "console", console_onread, console_onwrite);
-	portuxn(&u, "PPU", ppur, ppuw);
+	portuxn(&u, "console", consoler, consolew);
+	devscreen = portuxn(&u, "screen", screenr, screenw);
+	devmouse = portuxn(&u, "mouse", mouser, mousew);
+	devkey = portuxn(&u, "key", keyr, keyw);
 
 	start(&u);
 

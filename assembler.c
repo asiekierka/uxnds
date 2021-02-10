@@ -196,9 +196,9 @@ pass2(FILE *f)
 			fscanf(f, "%s", w);
 		else if(w[0] == '"')
 			pushtext(w + 1);
-		else if(w[0] == '#') {
+		else if(w[0] == '#')
 			pushshort(shex(w + 1) & 0xff, 1);
-		} else if((l = findlabel(w + 1)))
+		else if((l = findlabel(w + 1)))
 			pushshort(l->addr, w[0] == ',');
 		else if((op = findoperator(w)) || scmp(w, "BRK"))
 			pushbyte(op, 0);

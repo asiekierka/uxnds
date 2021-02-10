@@ -186,7 +186,7 @@ loaduxn(Uxn *u, char *filepath)
 
 /* to start: evaluxn(u, u->vreset); */
 
-int
+Device *
 portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(Device *, Uint8))
 {
 	Device *d = &u->dev[u->devices++];
@@ -194,5 +194,5 @@ portuxn(Uxn *u, char *name, Uint8 (*onread)(Device *, Uint8), Uint8 (*onwrite)(D
 	d->wfn = onwrite;
 	d->len = 0;
 	printf("Device#%d: %s \n", u->devices, name);
-	return 1;
+	return d;
 }
