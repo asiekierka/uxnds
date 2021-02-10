@@ -147,11 +147,14 @@ domouse(SDL_Event *event)
 {
 	int x = event->motion.x / ZOOM - PAD * 8;
 	int y = event->motion.y / ZOOM - PAD * 8;
+
+	devmouse->mem[0] = x;
+	devmouse->mem[1] = y;
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
+		devmouse->mem[2] = 0;
+		break;
 	case SDL_MOUSEBUTTONDOWN:
-		devmouse->mem[0] = x;
-		devmouse->mem[1] = y;
 		devmouse->mem[2] = event->button.button == SDL_BUTTON_LEFT;
 	}
 }

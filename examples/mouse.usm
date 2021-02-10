@@ -10,9 +10,20 @@
 BRK
 
 |c000 @FRAME 
-	,01 ,01 ( redraw color )
-	,00 ,01 ,02 IOR ( grab y )
-	,00 ,00 ,02 IOR ( grab x )
+	
+	( get mouse button, or break )
+	,02 ,02 IOR
+	,01 NEQ
+	BRK?
+
+	( print A to console on click )
+	,02 ,02 IOR
+	,41 ADD 
+	,putbyte JSR
+
+	( paint a white pixel )
+	,01 ,01 
+	,getmouse JSR
 	,putpixel JSR
 BRK 
 
@@ -22,6 +33,14 @@ BRK
 	,01 IOW ( color )
 	,01 IOW ( redraw )
 	RTS
+
+@getmouse ( push y,x to stack )
+	,00 ,01 ,02 IOR ( grab y )
+	,00 ,00 ,02 IOR ( grab x )
+	RTS
+
+@putbyte ( print to console )
+	,00 IOW RTS 
 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR
