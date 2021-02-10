@@ -21,7 +21,7 @@ error(char *msg, const char *err)
 }
 
 Uint8
-console_onread(Device *d, Uint8 b)
+consoler(Device *d, Uint8 b)
 {
 	(void)d;
 	(void)b;
@@ -29,7 +29,7 @@ console_onread(Device *d, Uint8 b)
 }
 
 Uint8
-console_onwrite(Device *d, Uint8 b)
+consolew(Device *d, Uint8 b)
 {
 	(void)d;
 	if(b)
@@ -84,14 +84,13 @@ main(int argc, char **argv)
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
-	portuxn(&u, "console", console_onread, console_onwrite);
+	portuxn(&u, "console", consoler, consolew);
 	evaluxn(&u, u.vreset);
 	evaluxn(&u, u.vframe);
 
-	/*
 	echos(&u.wst, 0x40, "stack");
 	echom(&u.ram, 0x40, "ram");
-*/
+
 	echof(&u);
 	return 0;
 }

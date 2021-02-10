@@ -31,7 +31,8 @@ Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s
 
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
-void op_lit(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
+void op_li1(Uxn *u) { u->literal += 1; }
+void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("NOP"); (void)u; }
 void op_ior(Uxn *u) { Uint8 devid = wspop8(u); Uint16 devop = wspop8(u); Device *dev = &u->dev[devid]; if(devid < u->devices) wspush8(u, dev->rfn(dev,devop)); }
 void op_iow(Uxn *u) { Uint8 devid = wspop8(u); Uint16 devop = wspop8(u); Device *dev = &u->dev[devid]; if(devid < u->devices) dev->wfn(dev,devop); }
@@ -79,7 +80,7 @@ void op_gth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b > a)
 void op_lth16(Uxn *u) { Uint16 a = wspop16(u), b = wspop16(u); wspush8(u, b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_lit, op_nop, op_nop, op_ior, op_iow, op_ldr, op_str, 
+	op_brk, op_nop, op_li1, op_lix, op_ior, op_iow, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,

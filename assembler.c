@@ -31,7 +31,7 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "LIT", "---", "---", "IOR", "IOW", "LDR", "STR",
+	"BRK", "---", "LI1", "LIX", "IOR", "IOW", "LDR", "STR",
 	"JMP", "JSR", "RTI", "RTS", "---", "---", "---", "---",
 	"POP", "DUP", "SWP", "OVR", "ROT", "AND", "ORA", "ROL",
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
@@ -53,10 +53,8 @@ char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) &
 void
 pushbyte(Uint8 b, int lit)
 {
-	if(lit) {
-		pushbyte(0x01, 0);
-		pushbyte(0x01, 0);
-	}
+	if(lit)
+		pushbyte(0x02, 0);
 	p.data[p.ptr++] = b;
 }
 
@@ -64,7 +62,7 @@ void
 pushshort(Uint16 s, int lit)
 {
 	if(lit) {
-		pushbyte(0x01, 0);
+		pushbyte(0x03, 0);
 		pushbyte(0x02, 0);
 	}
 	pushbyte((s >> 8) & 0xff, 0);
@@ -75,7 +73,7 @@ void
 pushtext(char *w)
 {
 	int i = slen(w);
-	pushbyte(0x01, 0);
+	pushbyte(0x03, 0);
 	pushbyte(slen(w), 0);
 	while(i > 0)
 		pushbyte(w[--i], 0);
@@ -167,10 +165,13 @@ pass1(FILE *f)
 			case '|': addr = shex(w + 1); break;
 			case '@':
 			case ';': break;
-			case '.': addr += 2; break;
-			case '#': addr += 4; break;
 			case '"': addr += slen(w + 1) + 2; break;
-			case ',': addr += 2 + (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2); break;
+			case '#': addr += 4; break;
+			case '.': addr += 2; break;
+			case ',':
+				addr += (slen(w + 1) == 2 ? 1 : 2);
+				addr += (sihx(w + 1) ? slen(w + 1) / 2 : 2);
+				break;
 			default: return error("Unknown label", w);
 			}
 		}

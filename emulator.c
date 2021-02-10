@@ -145,11 +145,8 @@ echof(Uxn *c)
 void
 domouse(SDL_Event *event)
 {
-	int x = event->motion.x / ZOOM - PAD * 8;
-	int y = event->motion.y / ZOOM - PAD * 8;
-
-	devmouse->mem[0] = x;
-	devmouse->mem[1] = y;
+	devmouse->mem[0] = event->motion.x / ZOOM - PAD * 8;
+	devmouse->mem[1] = event->motion.y / ZOOM - PAD * 8;
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
 		devmouse->mem[2] = 0;
@@ -219,18 +216,24 @@ mouser(Device *d, Uint8 b)
 Uint8
 mousew(Device *d, Uint8 b)
 {
+	(void)d;
+	(void)b;
 	return 0;
 }
 
 Uint8
 keyr(Device *d, Uint8 b)
 {
+	(void)d;
+	(void)b;
 	return 0;
 }
 
 Uint8
 keyw(Device *d, Uint8 b)
 {
+	(void)d;
+	(void)b;
 	return 0;
 }
 
