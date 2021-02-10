@@ -1,46 +1,40 @@
-( draw pixel )
+( mouse )
 
-|0100 @RESET
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+|0100 @RESET 
 	
-	( draw 3 pixels )
-	,00 ,01 ,0000 ,0000 ,putpixel JSR
-	,00 ,02 ,0001 ,0001 ,putpixel JSR
-	,01 ,03 ,0002 ,0002 ,putpixel JSR
+	,02 ,dev/r STR ( set dev/read mouse#02 )
+	,01 ,dev/w STR ( set dev/write screen#01 )
 
 BRK
 
-|c000 @FRAME 
-	
+|c000 @FRAME
+
 	( get mouse button, or break )
-	,02 ,02 IOR
+	,04 IOR
 	,01 NEQ
 	BRK?
-
-	( print A to console on click )
-	,02 ,02 IOR
-	,41 ADD 
-	,putbyte JSR
-
+		
 	( paint a white pixel )
 	,01 ,01 
 	,getmouse JSR
 	,putpixel JSR
-BRK 
+
+BRK
+
+@getmouse
+	,00 IOR^ ( get mouse x )
+	,02 IOR^ ( get mouse y )
+	RTS
 
 @putpixel 
-	SWP ,01 IOW ,01 IOW ( y )
-	SWP ,01 IOW ,01 IOW ( x )
-	,01 IOW ( color )
-	,01 IOW ( redraw )
+	IOW^ ( y short )
+	IOW^ ( x short )
+	IOW ( color byte )
+	IOW ( redraw byte )
 	RTS
-
-@getmouse ( push y,x to stack )
-	,00 ,01 ,02 IOR ( grab y )
-	,00 ,00 ,02 IOR ( grab x )
-	RTS
-
-@putbyte ( print to console )
-	,00 IOW RTS 
 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR

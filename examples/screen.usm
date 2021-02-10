@@ -1,0 +1,38 @@
+( screen )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+;width0
+;width1
+;height0
+;height1
+
+|0100 @RESET 
+	
+	( set read/write to dev/screen )
+	,01 DUP ,dev/r STR ,dev/w STR 
+
+	( load screen size )
+	,00 IOR^ ,width0 STR^
+	,02 IOR^ ,height0 STR^
+
+	( draw pixel at screen center )
+
+	,0101 
+	,width0 LDR^ ,0002 DIV^ 
+	,height0 LDR^ ,0002 DIV^ 
+	,putpixel JSR
+
+BRK
+
+|c000 @FRAME BRK
+
+@putpixel 
+	IOW^ ( y short )
+	IOW^ ( x short )
+	IOW ( color byte )
+	IOW ( redraw byte )
+	RTS
+
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR

@@ -31,15 +31,13 @@ A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C.
 ( hello world )
 
 ;iterator
-:dev1r FFF0
-:dev1w FFF1
 
 |0100 @RESET
 
-@word1 "hello_word ( len: 0x0b )
+@word1 "hello_world ( len: 0x0b )
 
 @loop
-	,dev1w STR ( write to stdout )
+	,00 IOW ( write to device#0 )
 	,incr JSR ( increment itr )
 	,word1 ,strlen JSR ( get strlen )
 	NEQ ,loop ROT JSR? ( loop != strlen )
@@ -64,25 +62,11 @@ BRK
 
 ## TODOs
 
-### Assembler
-
-- Implement shorthand operators
-- Signed operations
-
-### CPU
-
-- Signed operations
-- Catch overflow/underflow
-- A Three-Way Decision Routine(http://www.6502.org/tutorials/compare_instructions.html)
-- Draw pixel to screen
-- Redo overflow/underflow mappping
-- Detect mouse click
-- SDL Layer Emulator
-- Build PPU
-
-### Devices
-
-- Devices each have an input byte, an output byte and two request bytes.
+- Implement signed flag to operators.
+- On-screen debugger.
+- 16b mode for str/ldr
+- Auto-advance ldr?
+- Getting rid of IOR/IOW would be nice..
 
 ## Refs
 

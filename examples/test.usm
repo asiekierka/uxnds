@@ -1,13 +1,45 @@
 ( my default test file )
 
-;iterator
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
 
 |0100 @RESET 
+	
+	,02 ,dev/r STR ( set dev/read mouse#02 )
+	,01 ,dev/w STR ( set dev/write screen#01 )
 
-	,1234
+	,00 ,01 ,0001 ,0000 ,putpixel JSR
+	,00 ,01 ,0000 ,0001 ,putpixel JSR
+	,00 ,01 ,0002 ,0001 ,putpixel JSR
+	,01 ,02 ,0001 ,0002 ,putpixel JSR
 
 BRK
 
-|c000 @FRAME BRK
+|c000 @FRAME
+
+	( get mouse button, or break )
+	,04 IOR
+	,01 NEQ
+	BRK?
+		
+	( paint a white pixel )
+	,01 ,01 
+	,getmouse JSR
+	,putpixel JSR
+
+BRK
+
+@getmouse
+	,02 IOR^ ( get mouse y )
+	,00 IOR^ ( get mouse x )
+	RTS
+
+@putpixel 
+	IOW^ ( y short )
+	IOW^ ( x short )
+	IOW ( color byte )
+	IOW ( redraw byte )
+	RTS
+
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR

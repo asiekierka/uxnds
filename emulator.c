@@ -59,7 +59,7 @@ void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
-		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
+		dst[y * WIDTH + x] = theme[color];
 }
 
 void
@@ -145,14 +145,18 @@ echof(Uxn *c)
 void
 domouse(SDL_Event *event)
 {
-	devmouse->mem[0] = event->motion.x / ZOOM - PAD * 8;
-	devmouse->mem[1] = event->motion.y / ZOOM - PAD * 8;
+	int x = event->motion.x / ZOOM;
+	int y = event->motion.y / ZOOM;
+	devmouse->mem[0] = (x >> 8) & 0xff;
+	devmouse->mem[1] = x & 0xff;
+	devmouse->mem[2] = (y >> 8) & 0xff;
+	devmouse->mem[3] = y & 0xff;
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
-		devmouse->mem[2] = 0;
+		devmouse->mem[4] = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		devmouse->mem[2] = event->button.button == SDL_BUTTON_LEFT;
+		devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
 	}
 }
 
@@ -186,9 +190,7 @@ consolew(Device *d, Uint8 b)
 Uint8
 screenr(Device *d, Uint8 b)
 {
-	(void)b;
-	(void)d;
-	return 0;
+	return d->mem[b];
 }
 
 Uint8
@@ -197,8 +199,8 @@ screenw(Device *d, Uint8 b)
 	d->mem[d->len++] = b;
 	if(d->len > 5) {
 		putpixel(pixels,
-			(d->mem[0] << 8) + d->mem[1],
 			(d->mem[2] << 8) + d->mem[3],
+			(d->mem[0] << 8) + d->mem[1],
 			d->mem[4]);
 		if(d->mem[5])
 			redraw(pixels);
@@ -244,6 +246,11 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
+
+	echos(&u->wst, 0x40, "stack");
+	echom(&u->ram, 0x40, "ram");
+	echof(u);
+
 	while(1) {
 		int tick = SDL_GetTicks();
 		SDL_Event event;
@@ -285,6 +292,11 @@ main(int argc, char **argv)
 	devscreen = portuxn(&u, "screen", screenr, screenw);
 	devmouse = portuxn(&u, "mouse", mouser, mousew);
 	devkey = portuxn(&u, "key", keyr, keyw);
+
+	devscreen->mem[0] = (WIDTH >> 8) & 0xff;
+	devscreen->mem[1] = WIDTH & 0xff;
+	devscreen->mem[2] = (HEIGHT >> 8) & 0xff;
+	devscreen->mem[3] = HEIGHT & 0xff;
 
 	start(&u);
 
