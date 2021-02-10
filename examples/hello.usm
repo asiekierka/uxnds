@@ -7,7 +7,7 @@
 @word1 "hello_world ( len: 0x0b )
 
 @loop
-	,00 IOW ( write to device#0 )
+	IOW ( write to device#0 )
 	,incr JSR ( increment itr )
 	,word1 ,strlen JSR ( get strlen )
 	NEQ ,loop ROT JSR? ( loop != strlen )

@@ -157,6 +157,7 @@ stepuxn(Uxn *u, Uint8 instr)
 int
 evaluxn(Uxn *u, Uint16 vec)
 {
+	u->literal = 0;
 	u->ram.ptr = vec;
 	setflag(&u->status, FLAG_HALT, 0);
 	while(!(u->status & FLAG_HALT)) {

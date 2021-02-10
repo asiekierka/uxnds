@@ -3,35 +3,26 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
+;i ;x0 ;x1 ;y0 ;y1
+
 |0100 @RESET 
 	
-	,02 ,dev/r STR ( set dev/read mouse#02 )
-	,01 ,dev/w STR ( set dev/write screen#01 )
-
-	,00 ,01 ,0001 ,0000 ,putpixel JSR
-	,00 ,01 ,0000 ,0001 ,putpixel JSR
-	,00 ,01 ,0002 ,0001 ,putpixel JSR
-	,01 ,02 ,0001 ,0002 ,putpixel JSR
+	,01 ,dev/w STR ( set dev/write screen#01 ) 
 
 BRK
 
-|c000 @FRAME
+|c000 @FRAME 
+	
+	,i LDR ,01 ADD ,i STR ( incr i )
 
-	( get mouse button, or break )
-	,04 IOR
-	,01 NEQ
-	BRK?
-		
-	( paint a white pixel )
-	,01 ,01 
-	,getmouse JSR
-	,putpixel JSR
+	,i LDR ,x1 STR ( set x )
+
+	,01 ,02 ,x0 LDR^ ,y0 LDR^ ,putpixel JSR
 
 BRK
 
-@getmouse
-	,02 IOR^ ( get mouse y )
-	,00 IOR^ ( get mouse x )
+@onrow
+	,y1 LDR ,01 ADD ,y1 STR
 	RTS
 
 @putpixel 

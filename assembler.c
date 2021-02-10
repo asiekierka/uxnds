@@ -169,7 +169,7 @@ pass1(FILE *f)
 			case '#': addr += 4; break;
 			case '.': addr += 2; break;
 			case ',':
-				addr += (slen(w + 1) == 2 ? 1 : 2);
+				addr += (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2);
 				addr += (sihx(w + 1) ? slen(w + 1) / 2 : 2);
 				break;
 			default: return error("Unknown label", w);
