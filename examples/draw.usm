@@ -3,18 +3,12 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;x_ 2 ;y_ 2
-
-;x 2 ;y 2 ;w 2 ;h 2
-;color 1
+;x_ 2 ;y_ 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
 
 |0100 @RESET
 
 	( set dev/write to screen ) 
 	,01 ,dev/w STR 
-
-	( set color 1 )
-	,03 ,color STR
 
 	,01 ,color STR
 	( fill rect x y w h )
@@ -28,9 +22,27 @@
 	( fill rect x y w h )
 	,0040 ,0040 ,0060 ,0040 ,fillrect JSR
 
+
+	,01 ,color STR
+	( fill rect x y w h )
+	,00a0 ,0010 ,0020 ,0020 ,fillrect JSR
+
 	,redraw JSR
 
 BRK
+
+@fillrect
+	,h STR^ ,w STR^ ,y STR^ ,x STR^
+	,x LDR^ ,x_ STR^ ,y LDR^ ,y_ STR^
+	@fillrectrow
+		,x LDR^ ,x_ STR^
+		@fillrectcol
+			,x_ LDR^ ,y_ LDR^ ,putpixel JSR
+			,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
+			,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ LTH^ ,fillrectcol ROT JMP? POP^
+		,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
+		,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ LTH^ ,fillrectrow ROT JMP? POP^
+	RTS
 
 @redraw
 	,0000 IOW^
@@ -44,34 +56,6 @@ BRK
 	IOW^ ( x short )
 	,color LDR IOW  ( color byte )
 	,00 IOW  ( redraw byte )
-	RTS
-
-@fillrect
-	( store shape )
-	,h STR^ ,w STR^ ,y STR^ ,x STR^
-	( set head )
-	,x LDR^ ,x_ STR^ ,y LDR^ ,y_ STR^
-	( paint row )
-	,fillrectrow JSR
-	RTS
-
-@fillrectcol
-	,x_ LDR^ ,y_ LDR^ ,putpixel JSR
-	( incr x )
-	,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
-	( check if greater than w )
-	,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ GTH^ RTS?
-	,fillrectcol JMP
-	RTS
-
-@fillrectrow
-	,x LDR^ ,x_ STR^
-	,fillrectcol JSR
-	( incr x )
-	,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
-	( check if greater than w )
-	,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ GTH^ RTS?
-	,fillrectrow JMP
 	RTS
 
 |c000 @FRAME BRK 
