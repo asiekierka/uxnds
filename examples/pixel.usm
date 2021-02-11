@@ -1,4 +1,4 @@
-( draw pixel )
+( draw a single pixel )
 
 :dev/w fff9 ( keep write port in a const )
 ;x 2

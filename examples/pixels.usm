@@ -3,7 +3,7 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;x 2 ;y 2 ;color 1 
+;x 2 ;y 2 ;color 1 ;alive 1
 
 |0100 @RESET 
 	
@@ -11,36 +11,34 @@
 	,01 ,color STR ( set color ) 	
 	,0020 ,x STR^ ( set x-pos )
 	,0030 ,y STR^ ( set y-pos )
+	,01 ,alive STR ( set alive = true )
 
 BRK
 
 |c000 @FRAME 
 
-	,colorize JSR
-	,move JSR
-	( draw )
+	,alive LDR ,00 EQU BRK?
 	,01 ,color LDR ,x LDR^ ,y LDR^ ,putpixel JSR
+	,move JSR
 
 BRK
 
-@colorize
-	,color LDR ,01 ADD ,color STR ( incr color )
-	,color LDR ,04 LTH RTS?
-	,01 ,color STR 
-	RTS
-
 @move
 	,x LDR^ ,0001 ADD^ ,x STR^ ( incr x )
-	,x LDR^ ,0060 LTH^ RTS?    ( if x > 60 )
+	,x LDR^ ,0040 LTH^ RTS?    ( if x > 60 )
 	,0020 ,x STR^              ( x = 0x0020 )
 	,y LDR^ ,0001 ADD^ ,y STR^ ( incr y )
+
+	,y LDR^ ,0050 LTH^ RTS?    ( y > 50 )
+	,00 ,alive STR             ( alive = 0 )
+
 	RTS
 
 @putpixel 
 	IOW^ ( y short )
 	IOW^ ( x short )
-	IOW ( color byte )
-	IOW ( redraw byte )
+	IOW  ( color byte )
+	IOW  ( redraw byte )
 	RTS
 
 |d000 @ERROR BRK 

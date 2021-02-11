@@ -1,11 +1,9 @@
-( my default test file )
+( my test file, junk )
 
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
 |0100 @RESET 
-	
-	,01 ,dev/w STR ( set dev/write screen#01 ) 
 
 BRK
 

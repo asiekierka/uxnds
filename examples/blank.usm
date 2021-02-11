@@ -1,5 +1,8 @@
 ( blank )
 
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
 |0100 @RESET BRK
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

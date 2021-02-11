@@ -1,29 +1,25 @@
-( hello world )
+( hello world, to console )
 
-;iterator
+:dev/w fff9 ( const write port )
+;i 1 ( var iterator )
 
 |0100 @RESET
 
-@word1 "hello_world ( len: 0x0b )
+	,00 ,dev/w STR ( set dev/write to console ) 
 
-@loop
-	IOW ( write to device#0 )
-	,incr JSR ( increment itr )
-	,word1 ,strlen JSR ( get strlen )
-	NEQ ,loop ROT JSR? ( loop != strlen )
+	@word1 "hello_world ( len: 0x0b )
+
+	@loop
+		IOW ( write to device#0 )
+		,incr JSR ( increment itr )
+		,i LDR ( a = i )
+		,word1 ,strlen JSR ( b = string length )
+		NEQ ,loop ROT JSR? ( a != b ? loop )
 
 BRK
 
-@strlen
-	,0001 ADD^ LDR
-	RTS
-
-@incr
-	,iterator LDR
-	,01 ADD
-	,iterator STR 
-	,iterator LDR
-	RTS
+@strlen ,0001 ADD^ LDR RTS
+@incr ,i LDR ,01 ADD ,i STR RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
