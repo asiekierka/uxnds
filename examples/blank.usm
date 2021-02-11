@@ -1,9 +1,5 @@
 ( blank )
 
-;iterator
-:dev1r FFF0
-:dev1w FFF1
-
 |0100 @RESET BRK
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

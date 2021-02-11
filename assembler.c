@@ -140,31 +140,39 @@ makeconst(char *id, FILE *f)
 }
 
 int
+makevariable(char *id, Uint16 *addr, FILE *f)
+{
+	char wv[64];
+	Uint8 origin;
+	fscanf(f, "%s", wv);
+	origin = *addr;
+	*addr += shex(wv);
+	return makelabel(id, origin);
+}
+
+int
 pass1(FILE *f)
 {
-	int skip = 0, vars = 0;
+	int skip = 0;
 	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		if(cmnt(w, &skip))
 			continue;
-		if(w[0] == '@' && !makelabel(w + 1, addr))
-			return error("Pass1 failed", w);
-		if(w[0] == ';' && !makelabel(w + 1, vars++))
-			return error("Pass1 failed", w);
-		if(w[0] == ':') {
+		if(w[0] == '@') {
+			if(!makelabel(w + 1, addr))
+				return error("Pass1 failed", w);
+		} else if(w[0] == ';') {
+			if(!makevariable(w + 1, &addr, f))
+				return error("Pass1 failed", w);
+		} else if(w[0] == ':') {
 			if(!makeconst(w + 1, f))
 				return error("Pass1 failed", w);
-			else
-				continue;
-		}
-		if(findoperator(w) || scmp(w, "BRK"))
+		} else if(findoperator(w) || scmp(w, "BRK"))
 			addr += 1;
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
-			case '@':
-			case ';': break;
 			case '"': addr += slen(w + 1) + 2; break;
 			case '#': addr += 4; break;
 			case '.': addr += 2; break;
@@ -189,11 +197,12 @@ pass2(FILE *f)
 		Uint8 op = 0;
 		Label *l;
 		if(w[0] == '@') continue;
-		if(w[0] == ';') continue;
 		if(cmnt(w, &skip)) continue;
 		if(w[0] == '|')
 			p.ptr = shex(w + 1);
 		else if(w[0] == ':')
+			fscanf(f, "%s", w);
+		else if(w[0] == ';')
 			fscanf(f, "%s", w);
 		else if(w[0] == '"')
 			pushtext(w + 1);

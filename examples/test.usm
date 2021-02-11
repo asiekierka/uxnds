@@ -3,34 +3,12 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;i ;x0 ;x1 ;y0 ;y1
-
 |0100 @RESET 
 	
 	,01 ,dev/w STR ( set dev/write screen#01 ) 
 
 BRK
 
-|c000 @FRAME 
-	
-	,i LDR ,04 ADD ,i STR ( incr i )
-	,i LDR ,x1 STR ( set x )
-	,changerow JSR ( update y )
-	,01 ,02 ,x0 LDR^ ,y0 LDR^ ,putpixel JSR
-
-BRK
-
-@changerow
-	,i LDR ,00 NEQ RTS?
-	,y1 LDR ,04 ADD ,y1 STR
-	RTS
-
-@putpixel 
-	IOW^ ( y short )
-	IOW^ ( x short )
-	IOW ( color byte )
-	IOW ( redraw byte )
-	RTS
-
+|c000 @FRAME BRK
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR

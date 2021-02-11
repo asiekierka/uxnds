@@ -1,20 +1,26 @@
 ( draw pixel )
 
+:dev/w fff9 ( keep write port in a const )
+;x 2
+;y 2
+
 |0100 @RESET
 	
-	( redraw - color - x - y )
-	,00 ,01 ,0000 ,0000 ,putpixel JSR
-	,00 ,02 ,0001 ,0001 ,putpixel JSR
-	,01 ,03 ,0002 ,0002 ,putpixel JSR
+	( set dev/write to screen ) 
+
+	,01 ,dev/w STR 
+
+	,0020 ,x STR^ ( set x-pos )
+	,0030 ,y STR^ ( set y-pos )
+
+	( IOW will now send to screen ) 
+
+	,y LDR^ IOW^ ( y-pos )
+	,x LDR^ IOW^ ( x-pos )
+	,02 IOW ( color )
+	,01 IOW ( redraw )
 
 BRK
-
-@putpixel 
-	SWP ,01 IOW ,01 IOW ( y )
-	SWP ,01 IOW ,01 IOW ( x )
-	,01 IOW ( color )
-	,01 IOW ( redraw )
-	RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

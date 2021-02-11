@@ -62,9 +62,9 @@ BRK
 
 ## TODOs
 
+- short variable
 - Implement signed flag to operators.
 - On-screen debugger.
-- 16b mode for str/ldr
 - Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
 

@@ -2,10 +2,8 @@
 
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
-;width0
-;width1
-;height0
-;height1
+;width 2
+;height 2
 
 |0100 @RESET 
 	
@@ -13,14 +11,14 @@
 	,01 DUP ,dev/r STR ,dev/w STR 
 
 	( load screen size )
-	,00 IOR^ ,width0 STR^
-	,02 IOR^ ,height0 STR^
+	,00 IOR^ ,width STR^
+	,02 IOR^ ,height STR^
 
 	( draw pixel at screen center )
 
 	,0101 
-	,width0 LDR^ ,0002 DIV^ 
-	,height0 LDR^ ,0002 DIV^ 
+	,width LDR^ ,0002 DIV^ 
+	,height LDR^ ,0002 DIV^ 
 	,putpixel JSR
 
 BRK

@@ -37,7 +37,7 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
-Device *devscreen, *devmouse, *devkey;
+Device *devconsole, *devscreen, *devmouse, *devkey;
 
 int
 error(char *msg, const char *err)
@@ -288,7 +288,7 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, "console", consoler, consolew);
+	devconsole = portuxn(&u, "console", consoler, consolew);
 	devscreen = portuxn(&u, "screen", screenr, screenw);
 	devmouse = portuxn(&u, "mouse", mouser, mousew);
 	devkey = portuxn(&u, "key", keyr, keyw);

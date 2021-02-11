@@ -1,9 +1,5 @@
 ( benchmark )
 
-;iterator
-:dev1r FFF0
-:dev1w FFF1
-
 |0100 @RESET
 
 ( arithmetic ) 

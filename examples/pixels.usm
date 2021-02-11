@@ -1,0 +1,47 @@
+( my default test file )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;x 2 ;y 2 ;color 1 
+
+|0100 @RESET 
+	
+	,01 ,dev/w STR ( set dev/write to screen ) 
+	,01 ,color STR ( set color ) 	
+	,0020 ,x STR^ ( set x-pos )
+	,0030 ,y STR^ ( set y-pos )
+
+BRK
+
+|c000 @FRAME 
+
+	,colorize JSR
+	,move JSR
+	( draw )
+	,01 ,color LDR ,x LDR^ ,y LDR^ ,putpixel JSR
+
+BRK
+
+@colorize
+	,color LDR ,01 ADD ,color STR ( incr color )
+	,color LDR ,04 LTH RTS?
+	,01 ,color STR 
+	RTS
+
+@move
+	,x LDR^ ,0001 ADD^ ,x STR^ ( incr x )
+	,x LDR^ ,0060 LTH^ RTS?    ( if x > 60 )
+	,0020 ,x STR^              ( x = 0x0020 )
+	,y LDR^ ,0001 ADD^ ,y STR^ ( incr y )
+	RTS
+
+@putpixel 
+	IOW^ ( y short )
+	IOW^ ( x short )
+	IOW ( color byte )
+	IOW ( redraw byte )
+	RTS
+
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR

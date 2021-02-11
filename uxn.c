@@ -208,6 +208,6 @@ portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Uint8), Uint8 (*wfn)(Device *
 	d->read = rfn;
 	d->write = wfn;
 	d->len = 0;
-	printf("Device#%d: %s \n", u->devices, name);
+	printf("Device #%d: %s \n", u->devices - 1, name);
 	return d;
 }
