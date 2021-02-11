@@ -62,11 +62,11 @@ BRK
 
 ## TODOs
 
-- short variable
 - Implement signed flag to operators.
 - On-screen debugger.
 - Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
+- Sending from the wst to the rst, balance mode/flag?
 
 ## Refs
 
