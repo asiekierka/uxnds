@@ -22,12 +22,7 @@ typedef unsigned short Uint16;
 typedef struct {
 	Uint8 ptr;
 	Uint8 dat[256];
-} Stack8;
-
-typedef struct {
-	Uint8 ptr;
-	Uint16 dat[256];
-} Stack16;
+} St8;
 
 typedef struct {
 	Uint16 ptr;
@@ -43,8 +38,7 @@ typedef struct Device {
 typedef struct {
 	Uint8 literal, status, devices;
 	Uint16 counter, devr, devw, vreset, vframe, verror;
-	Stack8 wst;
-	Stack16 rst;
+	St8 wst, rst;
 	Memory ram;
 	Device dev[256];
 } Uxn;

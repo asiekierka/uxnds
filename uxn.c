@@ -19,15 +19,32 @@ WITH REGARD TO THIS SOFTWARE.
 
 void   setflag(Uint8 *st, char flag, int b) { if(b) *st |= flag; else *st &= (~flag); }
 int    getflag(Uint8 *st, char flag) { return *st & flag; }
+Uint8  mempeek8(Uxn *u, Uint16 s) { return u->ram.dat[s]; }
+Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s + 1] & 0xff); }
+
 void   wspush8(Uxn *u, Uint8 b) { u->wst.dat[u->wst.ptr++] = b; }
 Uint8  wspop8(Uxn *u) { return u->wst.dat[--u->wst.ptr]; }
 Uint8  wspeek8(Uxn *u, Uint8 o) { return u->wst.dat[u->wst.ptr - o]; }
-Uint8  mempeek8(Uxn *u, Uint16 s) { return u->ram.dat[s]; }
 void   wspush16(Uxn *u, Uint16 s) { wspush8(u,s >> 8); wspush8(u,s & 0xff); }
 Uint16 wspop16(Uxn *u) { return wspop8(u) + (wspop8(u) << 8); }
 Uint16 wspeek16(Uxn *u, Uint8 o) { return (u->wst.dat[u->wst.ptr - o] << 8) + u->wst.dat[u->wst.ptr - o + 1]; }
-void   rspush16(Uxn *u, Uint16 a) { u->rst.dat[u->rst.ptr++] = a; }
-Uint16 mempeek16(Uxn *u, Uint16 s) { return (u->ram.dat[s] << 8) + (u->ram.dat[s + 1] & 0xff); }
+
+
+Uint8 rspop8(Uxn *u){
+	return u->rst.dat[--u->rst.ptr];
+}
+
+void   rspush16(Uxn *u, Uint16 a) { 
+
+
+	u->rst.dat[u->rst.ptr++] = (a >> 8) & 0xff;  
+	u->rst.dat[u->rst.ptr++] = a & 0xff;  
+
+}
+Uint16 rspop16(Uxn *u) { 
+	return rspop8(u) + (rspop8(u) << 8); 
+}
+
 
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
@@ -40,8 +57,8 @@ void op_ldr(Uxn *u) { Uint16 a = wspop16(u); wspush8(u, u->ram.dat[a]); }
 void op_str(Uxn *u) { Uint16 a = wspop16(u); Uint8 b = wspop8(u); u->ram.dat[a] = b; }
 /* Logic */
 void op_jmp(Uxn *u) { u->ram.ptr = wspop16(u); }
-void op_jsr(Uxn *u) { u->rst.dat[u->rst.ptr++] = u->ram.ptr; u->ram.ptr = wspop16(u); }
-void op_rts(Uxn *u) { u->ram.ptr = u->rst.dat[--u->rst.ptr]; }
+void op_jsr(Uxn *u) { rspush16(u, u->ram.ptr); u->ram.ptr = wspop16(u); }
+void op_rts(Uxn *u) { u->ram.ptr = rspop16(u); }
 /* Stack */
 void op_pop(Uxn *u) { wspop8(u); }
 void op_dup(Uxn *u) { wspush8(u, wspeek8(u, 1)); }

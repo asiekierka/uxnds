@@ -38,7 +38,7 @@ consolew(Device *d, Uint8 b)
 }
 
 void
-echos(Stack8 *s, Uint8 len, char *name)
+echos(St8 *s, Uint8 len, char *name)
 {
 	int i;
 	printf("\n%s\n", name);
