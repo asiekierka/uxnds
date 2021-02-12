@@ -5,6 +5,9 @@
 
 |0100 @RESET 
 
+	,00 ,dev/w STR ( set dev/write to console ) 
+
+
 BRK
 
 |c000 @FRAME BRK

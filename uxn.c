@@ -25,15 +25,15 @@ void   mempoke16(Memory *m, Uint16 a, Uint16 b) { mempoke8(m, a, b >> 8); mempok
 Uint16 mempeek16(Memory *m, Uint16 a) { return (mempeek8(m, a) << 8) + mempeek8(m, a + 1); }
 void   push8(St8 *s, Uint8 a) { s->dat[s->ptr++] = a; }
 Uint8  pop8(St8 *s) { return s->dat[--s->ptr]; }
-Uint8  peek8(St8 *s, Uint8 a) { return s->dat[s->ptr - a]; }
+Uint8  peek8(St8 *s, Uint8 a) { return s->dat[s->ptr - a - 1]; }
 void   push16(St8 *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(St8 *s) { return pop8(s) + (pop8(s) << 8); }
-Uint16 peek16(St8 *s, Uint8 a) { return (peek8(s, a) << 8) + peek8(s, a + 1); }
+Uint16 peek16(St8 *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
 void op_li1(Uxn *u) { u->literal += 1; }
 void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
-void op_nop(Uxn *u) { printf("NOP"); (void)u; }
+void op_nop(Uxn *u) { printf("%02x\n", pop8(&u->wst)); }
 void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, pop8(&u->wst))); }
 void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, a); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram, a)); }
@@ -44,9 +44,9 @@ void op_jsr(Uxn *u) { push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); 
 void op_rts(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
 /* Stack */
 void op_pop(Uxn *u) { pop8(&u->wst); }
-void op_dup(Uxn *u) { push8(&u->wst, peek8(&u->wst, 1)); }
+void op_dup(Uxn *u) { push8(&u->wst, peek8(&u->wst, 0)); }
 void op_swp(Uxn *u) { Uint8 b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, a); }
-void op_ovr(Uxn *u) { Uint8 a = peek8(&u->wst,2); push8(&u->wst, a); }
+void op_ovr(Uxn *u) { push8(&u->wst, peek8(&u->wst, 1)); }
 void op_rot(Uxn *u) { Uint8 c = pop8(&u->wst), b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, c); push8(&u->wst, a); }
 void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
 void op_ora(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
@@ -61,15 +61,16 @@ void op_neq(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst,
 void op_gth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b > a); }
 void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b < a); }
 /* --- */
+void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
 void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, a) << 8) + dev->read(dev, a + 1)); }
 void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) { dev->write(dev, b); dev->write(dev, a); } }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(&u->ram, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(&u->ram, a, b); }
 /* Stack(16-bits) */
 void op_pop16(Uxn *u) { pop16(&u->wst); }
-void op_dup16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 2)); }
+void op_dup16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 0)); }
 void op_swp16(Uxn *u) { Uint16 b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, a); }
-void op_ovr16(Uxn *u) { Uint16 a = peek16(&u->wst, 4); push16(&u->wst, a); }
+void op_ovr16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 1)); }
 void op_rot16(Uxn *u) { Uint16 c = pop16(&u->wst), b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, c); push16(&u->wst, a); }
 void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
 void op_ora16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b | a); }
@@ -90,7 +91,7 @@ void (*ops[])(Uxn *u) = {
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
-	op_brk, op_nop, op_li1, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
+	op_brk, op_nop16, op_li1, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_and16, op_ora16, op_rol16,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
@@ -99,7 +100,7 @@ void (*ops[])(Uxn *u) = {
 Uint8 opr[][2] = { 
 	{0,0}, {0,0}, {0,0}, {0,0}, {1,1}, {1,0}, {2,1}, {3,0},
 	{2,0}, {2,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{1,0}, {1,2}, {2,2}, {3,3}, {3,3}, {2,1}, {2,1}, {2,1},
+	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {2,1}, {2,1}, {2,1},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
 	/* 16-bit */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */

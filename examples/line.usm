@@ -1,0 +1,44 @@
+( draw routines )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;x_ 2 ;y_ 2 ;x0 2 ;y0 2 ;x1 2 ;y1 2 ;color 1
+
+|0100 @RESET
+
+	( set dev/write to screen ) 
+	,01 ,dev/w STR 
+	,01 ,color STR
+
+	( init positions )
+	,0020 ,x0 STR^ ,0018 ,y0 STR^
+	,0030 ,x1 STR^ ,0048 ,y1 STR^
+	,x0 LDR^ ,x_ STR^ ,y0 LDR^ ,y_ STR^
+
+	( draw control points )
+	,02 ,color STR
+	,x0 LDR^ ,y0 LDR^ ,putpixel JSR
+	,x1 LDR^ ,y1 LDR^ ,putpixel JSR
+
+	,redraw JSR
+
+BRK
+
+@redraw
+	,0000 IOW^
+	,0000 IOW^
+	,00 IOW
+	,01 IOW
+	RTS
+
+@putpixel 
+	IOW^ ( y short )
+	IOW^ ( x short )
+	,color LDR IOW  ( color byte )
+	,00 IOW  ( redraw byte )
+	RTS
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR
