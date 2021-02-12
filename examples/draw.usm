@@ -22,10 +22,21 @@
 	( fill rect x y w h )
 	,0040 ,0040 ,0060 ,0040 ,fillrect JSR
 
-
 	,01 ,color STR
 	( fill rect x y w h )
 	,00a0 ,0010 ,0020 ,0020 ,fillrect JSR
+
+	,02 ,color STR
+	( fill rect x y w h )
+	,00b0 ,0040 ,0020 ,0020 ,linerect JSR
+
+	,03 ,color STR
+	( fill rect x y w h )
+	,0058 ,0028 ,0050 ,0050 ,linerect JSR
+
+	,01 ,color STR
+	( fill rect x y w h )
+	,0028 ,0038 ,0050 ,0030 ,linerect JSR
 
 	,redraw JSR
 
@@ -37,11 +48,26 @@ BRK
 	@fillrectrow
 		,x LDR^ ,x_ STR^
 		@fillrectcol
-			,x_ LDR^ ,y_ LDR^ ,putpixel JSR
+			( draw ) ,x_ LDR^ ,y_ LDR^ ,putpixel JSR
 			,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
 			,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ LTH^ ,fillrectcol ROT JMP? POP^
 		,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
 		,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ LTH^ ,fillrectrow ROT JMP? POP^
+	RTS
+
+@linerect
+	,h STR^ ,w STR^ ,y STR^ ,x STR^
+	,x LDR^ ,x_ STR^ ,y LDR^ ,y_ STR^
+	@linerectcol
+		( draw ) ,x LDR^ ,y_ LDR^ ,putpixel JSR
+		( draw ) ,x LDR^ ,w LDR^ ADD^ ,y_ LDR^ ,putpixel JSR
+		,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
+		,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ LTH^ ,linerectcol ROT JMP? POP^
+	@linerectrow
+		( draw ) ,x_ LDR^ ,y LDR^ ,putpixel JSR
+		( draw ) ,x_ LDR^ ,y LDR^ ,h LDR^ ADD^ ,putpixel JSR
+		,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
+		,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ ,0001 ADD^ LTH^ ,linerectrow ROT JMP? POP^
 	RTS
 
 @redraw

@@ -2,6 +2,26 @@
 
 A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C.
 
+## Setup
+
+If you wish to build your own emulator, you can create a new instance of Uxn like:
+
+```
+#include "uxn.h"
+
+Uxn u;
+
+if(!bootuxn(&u))
+	return error("Boot", "Failed");
+if(!loaduxn(&u, argv[1]))
+	return error("Load", "Failed");
+if(!init())
+	return error("Init", "Failed");
+
+evaluxn(u, u->vreset); /* Once on start */
+evaluxn(u, u->vframe); /* Each frame
+```
+
 ## Assembly Syntax
 
 ### Write
@@ -67,6 +87,10 @@ BRK
 - Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
 - Sending from the wst to the rst, balance mode/flag?
+- Device that works like an extra memory bank
+- Line routine
+- LineRect routine
+- Draw a chr sprite.
 
 ## Refs
 

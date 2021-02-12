@@ -190,6 +190,12 @@ consolew(Device *d, Uint8 b)
 Uint8
 screenr(Device *d, Uint8 b)
 {
+	switch(b) {
+	case 0: return (WIDTH >> 8) & 0xff;
+	case 1: return WIDTH & 0xff;
+	case 2: return (HEIGHT >> 8) & 0xff;
+	case 3: return HEIGHT & 0xff;
+	}
 	return d->mem[b];
 }
 
@@ -292,11 +298,6 @@ main(int argc, char **argv)
 	devscreen = portuxn(&u, "screen", screenr, screenw);
 	devmouse = portuxn(&u, "mouse", mouser, mousew);
 	devkey = portuxn(&u, "key", keyr, keyw);
-
-	devscreen->mem[0] = (WIDTH >> 8) & 0xff;
-	devscreen->mem[1] = WIDTH & 0xff;
-	devscreen->mem[2] = (HEIGHT >> 8) & 0xff;
-	devscreen->mem[3] = HEIGHT & 0xff;
 
 	start(&u);
 

@@ -199,8 +199,6 @@ loaduxn(Uxn *u, char *filepath)
 	return 1;
 }
 
-/* to start: evaluxn(u, u->vreset); */
-
 Device *
 portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Uint8), Uint8 (*wfn)(Device *, Uint8))
 {
