@@ -34,6 +34,8 @@ evaluxn(u, u->vframe); /* Each frame
 
 - `,literal`, push label value to stack, prefixed with `LIT LEN`.
 - `.pointer`, push label value to stack.
+- `+1234`, push positive lit signed value to stack.
+- `-abcd`, push negative lit signed value to stack.
 
 ### Special
 
@@ -82,14 +84,12 @@ BRK
 
 ## TODOs
 
-- Implement signed flag to operators.
+- Line routine
 - On-screen debugger.
 - Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
 - Sending from the wst to the rst, balance mode/flag?
 - Device that works like an extra memory bank
-- Line routine
-- LineRect routine
 - Draw a chr sprite.
 
 ## Refs

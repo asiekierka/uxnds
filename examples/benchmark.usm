@@ -22,6 +22,18 @@
 ,1234 ,1233 GTH^ #0e STR
 ,1234 ,1235 LTH^ #0f STR
 
+BRK
+
+@diff8 ( result of abs sub )
+	OVR OVR GTH ,diff8sub ROT JMP? POP^
+	SWP @diff8sub SUB
+RTS
+
+@diff16 ( result of abs sub16 )
+	OVR^ OVR^ GTH^ ,diff16sub ROT JMP? POP^
+	SWP^ @diff16sub SUB^
+RTS
+
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR

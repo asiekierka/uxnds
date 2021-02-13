@@ -12,7 +12,9 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 typedef unsigned char Uint8;
+typedef signed char Sint8;
 typedef unsigned short Uint16;
+typedef signed short Sint16;
 
 typedef struct {
 	int ptr;
@@ -61,6 +63,7 @@ pushbyte(Uint8 b, int lit)
 void
 pushshort(Uint16 s, int lit)
 {
+	printf("%04x[%d]\n", s, lit);
 	if(lit) {
 		pushbyte(0x03, 0);
 		pushbyte(0x02, 0);
@@ -100,7 +103,7 @@ findoperator(char *s)
 			continue;
 		while(s[3 + m]) {
 			if(s[3 + m] == '^') i |= (1 << 5); /* mode: 16 bits */
-			if(s[3 + m] == '~') i |= (1 << 6); /* mode: signed */
+			if(s[3 + m] == '!') i |= (1 << 6); /* mode: signed */
 			if(s[3 + m] == '?') i |= (1 << 7); /* mode: conditional */
 			m++;
 		}
@@ -124,6 +127,8 @@ makelabel(char *name, Uint16 addr)
 	Label *l;
 	if(findlabel(name))
 		return error("Label duplicate", name);
+	if(sihx(name))
+		return error("Label name is hex number", name);
 	l = &labels[labelslen++];
 	l->addr = addr;
 	scpy(name, l->name, 64);
@@ -176,6 +181,8 @@ pass1(FILE *f)
 			case '"': addr += slen(w + 1) + 2; break;
 			case '#': addr += 4; break;
 			case '.': addr += 2; break;
+			case '+': /* signed positive */
+			case '-': /* signed negative */
 			case ',':
 				addr += (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2);
 				addr += (sihx(w + 1) ? slen(w + 1) / 2 : 2);
@@ -198,26 +205,22 @@ pass2(FILE *f)
 		Label *l;
 		if(w[0] == '@') continue;
 		if(cmnt(w, &skip)) continue;
-		if(w[0] == '|')
-			p.ptr = shex(w + 1);
-		else if(w[0] == ':')
-			fscanf(f, "%s", w);
-		else if(w[0] == ';')
-			fscanf(f, "%s", w);
-		else if(w[0] == '"')
-			pushtext(w + 1);
-		else if(w[0] == '#')
-			pushshort(shex(w + 1) & 0xff, 1);
-		else if((l = findlabel(w + 1)))
-			pushshort(l->addr, w[0] == ',');
-		else if((op = findoperator(w)) || scmp(w, "BRK"))
-			pushbyte(op, 0);
-		else if(sihx(w + 1) && slen(w + 1) == 2)
-			pushbyte(shex(w + 1), w[0] == ',');
-		else if(sihx(w + 1) && slen(w + 1) == 4)
-			pushshort(shex(w + 1), w[0] == ',');
-		else
-			return error("Unknown label", w);
+		/* clang-format off */
+		if(w[0] == '|') p.ptr = shex(w + 1);
+		else if(w[0] == ':') fscanf(f, "%s", w);
+		else if(w[0] == ';') fscanf(f, "%s", w);
+		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
+		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
+		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
+		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
+		else if(w[0] == '"') pushtext(w + 1);
+		else if(w[0] == '#') pushshort(shex(w + 1) & 0xff, 1);
+		else if((l = findlabel(w + 1))) pushshort(l->addr, w[0] == ',');
+		else if((op = findoperator(w)) || scmp(w, "BRK")) pushbyte(op, 0);
+		else if(sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), w[0] == ',');
+		else if(sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), w[0] == ',');
+		else return error("Unknown label", w);
+		/* clang-format on */
 	}
 	return 1;
 }

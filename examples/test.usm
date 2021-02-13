@@ -3,12 +3,16 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
+;x 2
+
 |0100 @RESET 
 
-	,00 ,dev/w STR ( set dev/write to console ) 
+	,00 ,dev/w STR ( set dev/write to console )
 
+	-12 +02 LTH!
 
 BRK
+
 
 |c000 @FRAME BRK
 |d000 @ERROR BRK 

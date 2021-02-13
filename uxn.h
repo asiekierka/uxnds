@@ -12,7 +12,9 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 typedef unsigned char Uint8;
+typedef signed char Sint8;
 typedef unsigned short Uint16;
+typedef signed short Sint16;
 
 #define FLAG_HALT 0x01
 #define FLAG_SHORT 0x02

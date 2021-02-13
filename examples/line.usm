@@ -5,6 +5,8 @@
 
 ;x_ 2 ;y_ 2 ;x0 2 ;y0 2 ;x1 2 ;y1 2 ;color 1
 
+;dx 2 ;dy 2 ;err 2 ;err2 2
+
 |0100 @RESET
 
 	( set dev/write to screen ) 
@@ -13,8 +15,9 @@
 
 	( init positions )
 	,0020 ,x0 STR^ ,0018 ,y0 STR^
-	,0030 ,x1 STR^ ,0048 ,y1 STR^
+	,0060 ,x1 STR^ ,0048 ,y1 STR^
 	,x0 LDR^ ,x_ STR^ ,y0 LDR^ ,y_ STR^
+
 
 	( draw control points )
 	,02 ,color STR
@@ -38,6 +41,11 @@ BRK
 	,color LDR IOW  ( color byte )
 	,00 IOW  ( redraw byte )
 	RTS
+
+@diff16
+	OVR^ OVR^ GTH^ ,diff16sub ROT JMP? POP^
+	SWP^ @diff16sub SUB^
+RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

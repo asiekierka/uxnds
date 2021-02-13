@@ -33,7 +33,7 @@ Uint16 peek16(St8 *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) <
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
 void op_li1(Uxn *u) { u->literal += 1; }
 void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
-void op_nop(Uxn *u) { printf("%02x\n", pop8(&u->wst)); }
+void op_nop(Uxn *u) { printf("0x%02x ", pop8(&u->wst)); }
 void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, pop8(&u->wst))); }
 void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, a); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram, a)); }
@@ -52,14 +52,14 @@ void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst,
 void op_ora(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
 void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << a); }
 /* Arithmetic */
-void op_add(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b + a); }
-void op_sub(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b - a); }
-void op_mul(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b * a); }
-void op_div(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b / a); }
-void op_equ(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b == a); }
-void op_neq(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b != a); }
-void op_gth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b > a); }
-void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b < a); }
+void op_add(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b + (Sint8)a : b + a); }
+void op_sub(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b - (Sint8)a : b - a); }
+void op_mul(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b * (Sint8)a : b * a); }
+void op_div(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b / (Sint8)a : b / a); }
+void op_equ(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b == (Sint8)a : b == a); }
+void op_neq(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b != (Sint8)a : b != a); }
+void op_gth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b > (Sint8)a : b > a); }
+void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b < (Sint8)a : b < a); }
 /* --- */
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
 void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, a) << 8) + dev->read(dev, a + 1)); }
@@ -76,14 +76,14 @@ void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u
 void op_ora16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b | a); }
 void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << a); }
 /* Arithmetic(16-bits) */
-void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b + a); }
-void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b - a); }
-void op_mul16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b * a); }
-void op_div16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b / a); }
-void op_equ16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, b == a); }
-void op_neq16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, b != a); }
-void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, b > a); }
-void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, b < a); }
+void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b + (Sint8)a : b + a); }
+void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b - (Sint8)a : b - a); }
+void op_mul16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b * (Sint8)a : b * a); }
+void op_div16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b / (Sint8)a : b / a); }
+void op_equ16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b == (Sint8)a : b == a); }
+void op_neq16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b != (Sint8)a : b != a); }
+void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b > (Sint8)a : b > a); }
+void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b < (Sint8)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_li1, op_lix, op_ior, op_iow, op_ldr, op_str, 
@@ -133,7 +133,7 @@ opcuxn(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x1f;
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
-	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1); /* usused */
+	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1);
 	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;

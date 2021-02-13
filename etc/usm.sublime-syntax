@@ -21,6 +21,12 @@ contexts:
     - match: '\|(\S+)\s?'
       scope: punctuation.definition
       pop: true
+    - match: '\+(\S+)\s?'
+      scope: keyword.control
+      pop: true
+    - match: '\-(\S+)\s?'
+      scope: keyword.control
+      pop: true
 
   strings:
     - match: '\:(\S+)\s?'
@@ -33,6 +39,9 @@ contexts:
       scope: string.control
       pop: true
     - match: '\,(\S+)\s?'
+      scope: keyword.control
+      pop: true
+    - match: '\#(\S+)\s?'
       scope: keyword.control
       pop: true
     - match: '\.(\S+)\s?'
