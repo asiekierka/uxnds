@@ -76,14 +76,14 @@ void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u
 void op_ora16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b | a); }
 void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << a); }
 /* Arithmetic(16-bits) */
-void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b + (Sint8)a : b + a); }
-void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b - (Sint8)a : b - a); }
-void op_mul16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b * (Sint8)a : b * a); }
-void op_div16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b / (Sint8)a : b / a); }
-void op_equ16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b == (Sint8)a : b == a); }
-void op_neq16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b != (Sint8)a : b != a); }
-void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b > (Sint8)a : b > a); }
-void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b < (Sint8)a : b < a); }
+void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b + (Sint16)a : b + a); }
+void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b - (Sint16)a : b - a); }
+void op_mul16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b * (Sint16)a : b * a); }
+void op_div16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b / (Sint16)a : b / a); }
+void op_equ16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b == (Sint16)a : b == a); }
+void op_neq16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b != (Sint16)a : b != a); }
+void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b > (Sint16)a : b > a); }
+void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_li1, op_lix, op_ior, op_iow, op_ldr, op_str, 
@@ -106,7 +106,7 @@ Uint8 opr[][2] = {
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}  /* TODO */
+	{4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}
 };
 
 /* clang-format on */

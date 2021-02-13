@@ -9,7 +9,7 @@
 
 	,00 ,dev/w STR ( set dev/write to console )
 
-	-12 +02 LTH!
+	+1234 -0012 ADD^!
 
 BRK
 

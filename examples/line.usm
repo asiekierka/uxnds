@@ -14,13 +14,16 @@
 	,01 ,color STR
 	+0030 ,x0 STR^ +0040 ,y0 STR^
 	+0050 ,x1 STR^ +0060 ,y1 STR^
-
 	,line JSR
 
 	,02 ,color STR
 	+0020 ,x0 STR^ +0010 ,y0 STR^
 	+0060 ,x1 STR^ +0070 ,y1 STR^
+	,line JSR
 
+	,03 ,color STR
+	+0010 ,x0 STR^ +0040 ,y0 STR^
+	+0080 ,x1 STR^ +0060 ,y1 STR^
 	,line JSR
 
 	( draw control points )
