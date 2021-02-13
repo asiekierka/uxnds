@@ -5,28 +5,28 @@
 
 |0100 @RESET 
 	
-	,02 ,dev/r STR ( set dev/read mouse#02 )
-	,01 ,dev/w STR ( set dev/write screen#01 )
+	#02 ,dev/r STR ( set dev/read mouse#02 )
+	#01 ,dev/w STR ( set dev/write screen#01 )
 
 BRK
 
 |c000 @FRAME
 
 	( get mouse button, or break )
-	,04 IOR
-	,01 NEQ
+	#04 IOR
+	#01 NEQ
 	BRK?
 		
 	( paint a white pixel )
-	,01 ,01 
+	#01 #01 
 	,getmouse JSR
 	,putpixel JSR
 
 BRK
 
 @getmouse
-	,00 IOR2 ( get mouse x )
-	,02 IOR2 ( get mouse y )
+	#00 IOR2 ( get mouse x )
+	#02 IOR2 ( get mouse y )
 	RTS
 
 @putpixel 
