@@ -2,7 +2,7 @@
 
 |0100 @RESET
 
-,06 ,05 GTH ,there ROT JMP? POP^
+,06 ,05 GTH ,there ROT JMP? POP2
 
 @here ( when lesser or equal )
 	,ee

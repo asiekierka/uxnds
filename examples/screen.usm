@@ -11,14 +11,14 @@
 	,01 DUP ,dev/r STR ,dev/w STR 
 
 	( load screen size )
-	,00 IOR^ ,width STR^
-	,02 IOR^ ,height STR^
+	,00 IOR2 ,width STR2
+	,02 IOR2 ,height STR2
 
 	( draw pixel at screen center )
 
 	,0101 
-	,width LDR^ ,0002 DIV^ 
-	,height LDR^ ,0002 DIV^ 
+	,width LDR2 ,0002 DIV2 
+	,height LDR2 ,0002 DIV2 
 	,putpixel JSR
 
 BRK
@@ -26,8 +26,8 @@ BRK
 |c000 @FRAME BRK
 
 @putpixel 
-	IOW^ ( y short )
-	IOW^ ( x short )
+	IOW2 ( y short )
+	IOW2 ( x short )
 	IOW ( color byte )
 	IOW ( redraw byte )
 	RTS

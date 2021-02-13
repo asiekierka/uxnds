@@ -10,13 +10,13 @@
 
 	,01 ,dev/w STR 
 
-	,0020 ,x STR^ ( set x-pos )
-	,0030 ,y STR^ ( set y-pos )
+	,0020 ,x STR2 ( set x-pos )
+	,0030 ,y STR2 ( set y-pos )
 
 	( IOW will now send to screen ) 
 
-	,y LDR^ IOW^ ( y-pos )
-	,x LDR^ IOW^ ( x-pos )
+	,y LDR2 IOW2 ( y-pos )
+	,x LDR2 IOW2 ( x-pos )
 	,02 IOW ( color )
 	,01 IOW ( redraw )
 

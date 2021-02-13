@@ -9,7 +9,7 @@
 
 	,00 ,dev/w STR ( set dev/write to console )
 
-	+1234 -0012 ADD^!
+	+1234 -0012 ADDS2
 
 BRK
 

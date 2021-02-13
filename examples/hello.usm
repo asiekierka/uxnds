@@ -18,7 +18,7 @@
 
 BRK
 
-@strlen ,0001 ADD^ LDR RTS
+@strlen ,0001 ADD2 LDR RTS
 @incr ,i LDR ,01 ADD ,i STR RTS
 
 |c000 @FRAME BRK 

@@ -9,8 +9,8 @@
 	
 	,01 ,dev/w STR ( set dev/write to screen ) 
 	,01 ,color STR ( set color ) 	
-	,0020 ,x STR^ ( set x-pos )
-	,0030 ,y STR^ ( set y-pos )
+	,0020 ,x STR2 ( set x-pos )
+	,0030 ,y STR2 ( set y-pos )
 	,01 ,alive STR ( set alive = true )
 
 BRK
@@ -18,25 +18,25 @@ BRK
 |c000 @FRAME 
 
 	,alive LDR ,00 EQU BRK?
-	,01 ,color LDR ,x LDR^ ,y LDR^ ,putpixel JSR
+	,01 ,color LDR ,x LDR2 ,y LDR2 ,putpixel JSR
 	,move JSR
 
 BRK
 
 @move
-	,x LDR^ ,0001 ADD^ ,x STR^ ( incr x )
-	,x LDR^ ,0040 LTH^ RTS?    ( if x > 60 )
-	,0020 ,x STR^              ( x = 0x0020 )
-	,y LDR^ ,0001 ADD^ ,y STR^ ( incr y )
+	,x LDR2 ,0001 ADD2 ,x STR2 ( incr x )
+	,x LDR2 ,0040 LTH2 RTS?    ( if x > 60 )
+	,0020 ,x STR2              ( x = 0x0020 )
+	,y LDR2 ,0001 ADD2 ,y STR2 ( incr y )
 
-	,y LDR^ ,0050 LTH^ RTS?    ( y > 50 )
+	,y LDR2 ,0050 LTH2 RTS?    ( y > 50 )
 	,00 ,alive STR             ( alive = 0 )
 
 	RTS
 
 @putpixel 
-	IOW^ ( y short )
-	IOW^ ( x short )
+	IOW2 ( y short )
+	IOW2 ( x short )
 	IOW  ( color byte )
 	IOW  ( redraw byte )
 	RTS

@@ -42,12 +42,12 @@ evaluxn(u, u->vframe); /* Each frame
 - `( comment )`, toggle parsing on/off.
 - `|0010`, move to position in the program.
 - `"hello`, push literal bytes for word "hello".
-- `#04`, a zero-page address, equivalent to `,0004`.
 
 ### Operator modes
 
-- `,1234 ,0001 ADD^`, 16-bits operators have the short flag `^`.
+- `,1234 ,0001 ADD2`, 16-bits operators have the short flag `2`.
 - `,12 ,11 GTH JMP?`, conditional operators have the cond flag `?`.
+- `+21 -03 MULS`, signed operators have the cond flag `S`.
 
 ```
 ( hello world )

@@ -42,18 +42,18 @@
 
 	( positive )
 	,01 ,color STR
-	+0030 ,x0 STR^ +0040 ,y0 STR^
-	+0100 ,x1 STR^ +0060 ,y1 STR^
+	+0030 ,x0 STR2 +0040 ,y0 STR2
+	+0100 ,x1 STR2 +0060 ,y1 STR2
 	,line JSR
 
 	,02 ,color STR
-	+0020 ,x0 STR^ +0010 ,y0 STR^
-	+0090 ,x1 STR^ +0070 ,y1 STR^
+	+0020 ,x0 STR2 +0010 ,y0 STR2
+	+0090 ,x1 STR2 +0070 ,y1 STR2
 	,line JSR
 
 	,03 ,color STR
-	+0010 ,x0 STR^ +0040 ,y0 STR^
-	+0070 ,x1 STR^ +0060 ,y1 STR^
+	+0010 ,x0 STR2 +0040 ,y0 STR2
+	+0070 ,x1 STR2 +0060 ,y1 STR2
 	,line JSR
 
 	,redraw JSR
@@ -61,68 +61,68 @@
 BRK
 
 @fillrect
-	,h STR^ ,w STR^ ,y STR^ ,x STR^
-	,x LDR^ ,x_ STR^ ,y LDR^ ,y_ STR^
+	,h STR2 ,w STR2 ,y STR2 ,x STR2
+	,x LDR2 ,x_ STR2 ,y LDR2 ,y_ STR2
 	@fillrectrow
-		,x LDR^ ,x_ STR^
+		,x LDR2 ,x_ STR2
 		@fillrectcol
-			( draw ) ,x_ LDR^ ,y_ LDR^ ,putpixel JSR
-			,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
-			,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ LTH^ ,fillrectcol ROT JMP? POP^
-		,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
-		,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ LTH^ ,fillrectrow ROT JMP? POP^
+			( draw ) ,x_ LDR2 ,y_ LDR2 ,putpixel JSR
+			,x_ LDR2 ,0001 ADD2 ,x_ STR2 
+			,x_ LDR2 ,w LDR2 ,x LDR2 ADD2 LTH2 ,fillrectcol ROT JMP? POP2
+		,y_ LDR2 ,0001 ADD2 ,y_ STR2 
+		,y_ LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,fillrectrow ROT JMP? POP2
 	RTS
 
 @linerect
-	,h STR^ ,w STR^ ,y STR^ ,x STR^
-	,x LDR^ ,x_ STR^ ,y LDR^ ,y_ STR^
+	,h STR2 ,w STR2 ,y STR2 ,x STR2
+	,x LDR2 ,x_ STR2 ,y LDR2 ,y_ STR2
 	@linerectcol
-		( draw ) ,x LDR^ ,y_ LDR^ ,putpixel JSR
-		( draw ) ,x LDR^ ,w LDR^ ADD^ ,y_ LDR^ ,putpixel JSR
-		,y_ LDR^ ,0001 ADD^ ,y_ STR^ 
-		,y_ LDR^ ,h LDR^ ,y LDR^ ADD^ LTH^ ,linerectcol ROT JMP? POP^
+		( draw ) ,x LDR2 ,y_ LDR2 ,putpixel JSR
+		( draw ) ,x LDR2 ,w LDR2 ADD2 ,y_ LDR2 ,putpixel JSR
+		,y_ LDR2 ,0001 ADD2 ,y_ STR2 
+		,y_ LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,linerectcol ROT JMP? POP2
 	@linerectrow
-		( draw ) ,x_ LDR^ ,y LDR^ ,putpixel JSR
-		( draw ) ,x_ LDR^ ,y LDR^ ,h LDR^ ADD^ ,putpixel JSR
-		,x_ LDR^ ,0001 ADD^ ,x_ STR^ 
-		,x_ LDR^ ,w LDR^ ,x LDR^ ADD^ ,0001 ADD^ LTH^ ,linerectrow ROT JMP? POP^
+		( draw ) ,x_ LDR2 ,y LDR2 ,putpixel JSR
+		( draw ) ,x_ LDR2 ,y LDR2 ,h LDR2 ADD2 ,putpixel JSR
+		,x_ LDR2 ,0001 ADD2 ,x_ STR2 
+		,x_ LDR2 ,w LDR2 ,x LDR2 ADD2 ,0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
 	RTS
 
 @line
-	,x0 LDR^ ,x_ STR^ ,y0 LDR^ ,y_ STR^                   ( start at x0,y0 )
-	,x1 LDR^ ,x0 LDR^ ,diff16sub JSR ,dx STR^             ( int dx = abs[x1 - x0] )
-	,y1 LDR^ ,y0 LDR^ ,diff16sub JSR -0001 MUL!^ ,dy STR^ ( int dy = -abs[y1 - y0] )
-	,dx LDR^ ,dy LDR^ ADD!^ ,err1 STR^                    ( int err1 = dx + dy, e2; )
+	,x0 LDR2 ,x_ STR2 ,y0 LDR2 ,y_ STR2                   ( start at x0,y0 )
+	,x1 LDR2 ,x0 LDR2 ,diff16sub JSR ,dx STR2             ( int dx = abs[x1 - x0] )
+	,y1 LDR2 ,y0 LDR2 ,diff16sub JSR -0001 MULS2 ,dy STR2 ( int dy = -abs[y1 - y0] )
+	,dx LDR2 ,dy LDR2 ADDS2 ,err1 STR2                    ( int err1 = dx + dy, e2; )
 	@lineloop
-	,x_ LDR^ ,y_ LDR^ ,putpixel JSR                       ( draw )
+	,x_ LDR2 ,y_ LDR2 ,putpixel JSR                       ( draw )
 	@line-x
-	,err1 LDR^ +0002 MUL!^ ,err2 STR^                     ( e2 = 2 * err; )
-	,err2 LDR^ ,dy LDR^ LTH!^ ,line-y ROT JMP? POP^ 	  ( e2 >= dy )
-		,err1 LDR^ ,dy LDR^ ADD!^ ,err1 STR^ 			  ( err1 += dy; )
-		,x_ LDR^ +0001 ADD!^ ,x_ STR^                     ( y0 += y0 < y1 ? 1 : -1; )
+	,err1 LDR2 +0002 MULS2 ,err2 STR2                     ( e2 = 2 * err; )
+	,err2 LDR2 ,dy LDR2 LTHS2 ,line-y ROT JMP? POP2 	  ( e2 >= dy )
+		,err1 LDR2 ,dy LDR2 ADDS2 ,err1 STR2 			  ( err1 += dy; )
+		,x_ LDR2 +0001 ADDS2 ,x_ STR2                     ( y0 += y0 < y1 ? 1 : -1; )
 	@line-y
-	,err2 LDR^ ,dx LDR^ GTH!^ ,line-end ROT JMP? POP^     ( e2 <= dx )
-		,err1 LDR^ ,dx LDR^ ADD!^ ,err1 STR^              ( err1 += dx; )
-		,y_ LDR^ +0001 ADD!^ ,y_ STR^                     ( y0 += y0 < y1 ? 1 : -1; )
+	,err2 LDR2 ,dx LDR2 GTHS2 ,line-end ROT JMP? POP2     ( e2 <= dx )
+		,err1 LDR2 ,dx LDR2 ADDS2 ,err1 STR2              ( err1 += dx; )
+		,y_ LDR2 +0001 ADDS2 ,y_ STR2                     ( y0 += y0 < y1 ? 1 : -1; )
 	@line-end
-	,x_ LDR^ ,x1 LDR^ NEQ!^ ,lineloop ROT JMP? POP^       ( loop )
+	,x_ LDR2 ,x1 LDR2 NEQS2 ,lineloop ROT JMP? POP2       ( loop )
 	RTS
 
 @diff16
-	OVR^ OVR^ GTH^ ,diff16sub ROT JMP? POP^
-	SWP^ @diff16sub SUB^
+	OVR2 OVR2 GTH2 ,diff16sub ROT JMP? POP2
+	SWP2 @diff16sub SUB2
 RTS
 
 @redraw
-	,0000 IOW^
-	,0000 IOW^
+	,0000 IOW2
+	,0000 IOW2
 	,00 IOW
 	,01 IOW
 	RTS
 
 @putpixel 
-	IOW^ ( y short )
-	IOW^ ( x short )
+	IOW2 ( y short )
+	IOW2 ( x short )
 	,color LDR IOW  ( color byte )
 	,00 IOW  ( redraw byte )
 	RTS
