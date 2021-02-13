@@ -63,7 +63,6 @@ pushbyte(Uint8 b, int lit)
 void
 pushshort(Uint16 s, int lit)
 {
-	printf("%04x[%d]\n", s, lit);
 	if(lit) {
 		pushbyte(0x03, 0);
 		pushbyte(0x02, 0);
