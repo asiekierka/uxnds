@@ -1,18 +1,15 @@
-( my test file, junk )
+( comment )
 
-:dev/r fff8 ( std read port )
-:dev/w fff9 ( std write port )
-
-;x 2
+:const abcd
+;byte 1
+;short 2
 
 |0100 @RESET 
 
-	,00 ,dev/w STR ( set dev/write to console )
-
-	+1234 -0012 ADDS2
+	12 34 ADD
+	1234 0001 ADD2
 
 BRK
-
 
 |c000 @FRAME BRK
 |d000 @ERROR BRK 

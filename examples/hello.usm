@@ -5,21 +5,20 @@
 
 |0100 @RESET
 
-	,00 ,dev/w STR ( set dev/write to console ) 
+	#00 ,dev/w STR              ( set dev/write to console ) 
 
-	@word1 "hello_world ( len: 0x0b )
+	@word1 "hello_world         ( len: 0x0b )
 
 	@loop
-		IOW ( write to device#0 )
-		,incr JSR ( increment itr )
-		,i LDR ( a = i )
-		,word1 ,strlen JSR ( b = string length )
-		NEQ ,loop ROT JSR? ( a != b ? loop )
+		IOW                     ( write to device#0 )
+		,i LDR #01 ADD ,i STR   ( increment itr )
+		,i LDR                  ( a = i )
+		,word1 ,strlen JSR      ( b = string length )
+		NEQ ,loop ROT JSR? POP^ ( a != b ? loop )
 
 BRK
 
-@strlen ,0001 ADD2 LDR RTS
-@incr ,i LDR ,01 ADD ,i STR RTS
+@strlen #0001 ADD2 LDR RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

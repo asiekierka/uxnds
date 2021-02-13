@@ -7,31 +7,29 @@
 
 |0100 @RESET 
 	
-	,01 ,dev/w STR ( set dev/write to screen ) 
-	,01 ,color STR ( set color ) 	
-	,0020 ,x STR2 ( set x-pos )
-	,0030 ,y STR2 ( set y-pos )
-	,01 ,alive STR ( set alive = true )
+	#01 ,dev/w STR ( set dev/write to screen ) 
+	#01 ,color STR ( set color ) 	
+	#0020 ,x STR2 ( set x-pos )
+	#0030 ,y STR2 ( set y-pos )
+	#01 ,alive STR ( set alive = true )
 
 BRK
 
 |c000 @FRAME 
 
-	,alive LDR ,00 EQU BRK?
-	,01 ,color LDR ,x LDR2 ,y LDR2 ,putpixel JSR
+	,alive LDR #00 EQU BRK?
+	#01 ,color LDR ,x LDR2 ,y LDR2 ,putpixel JSR
 	,move JSR
 
 BRK
 
 @move
-	,x LDR2 ,0001 ADD2 ,x STR2 ( incr x )
-	,x LDR2 ,0040 LTH2 RTS?    ( if x > 60 )
-	,0020 ,x STR2              ( x = 0x0020 )
-	,y LDR2 ,0001 ADD2 ,y STR2 ( incr y )
-
-	,y LDR2 ,0050 LTH2 RTS?    ( y > 50 )
-	,00 ,alive STR             ( alive = 0 )
-
+	,x LDR2 #0001 ADD2 ,x STR2 ( incr x )
+	,x LDR2 #0040 LTH2 RTS?    ( if x > 60 )
+	#0020 ,x STR2              ( x = 0x0020 )
+	,y LDR2 #0001 ADD2 ,y STR2 ( incr y )
+	,y LDR2 #0050 LTH2 RTS?    ( y > 50 )
+	#00 ,alive STR             ( alive = 0 )
 	RTS
 
 @putpixel 

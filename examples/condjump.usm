@@ -2,14 +2,14 @@
 
 |0100 @RESET
 
-,06 ,05 GTH ,there ROT JMP? POP2
+#06 #05 GTH ,there ROT JMP? POP2
 
 @here ( when lesser or equal )
-	,ee
+	#ee
 	BRK
 
 @there ( when greater )
-	,ff
+	#ff
 	BRK
 
 |c000 @FRAME BRK 

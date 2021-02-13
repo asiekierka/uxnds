@@ -39,7 +39,6 @@
 	( fill rect x y w h )
 	,0028 ,0038 ,0050 ,0030 ,linerect JSR
 
-
 	( positive )
 	,01 ,color STR
 	+0030 ,x0 STR2 +0040 ,y0 STR2

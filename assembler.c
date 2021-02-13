@@ -92,7 +92,7 @@ findlabel(char *s)
 }
 
 Uint8
-findoperator(char *s)
+findopcode(char *s)
 {
 	int i;
 	for(i = 0; i < 0x20; ++i) {
@@ -128,7 +128,7 @@ makelabel(char *name, Uint16 addr)
 		return error("Label duplicate", name);
 	if(sihx(name))
 		return error("Label name is hex number", name);
-	if(findoperator(name))
+	if(findopcode(name))
 		return error("Label name is invalid", name);
 	l = &labels[labelslen++];
 	l->addr = addr;
@@ -174,20 +174,18 @@ pass1(FILE *f)
 		} else if(w[0] == ':') {
 			if(!makeconst(w + 1, f))
 				return error("Pass1 failed", w);
-		} else if(findoperator(w) || scmp(w, "BRK"))
+		} else if(findopcode(w) || scmp(w, "BRK"))
 			addr += 1;
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
 			case '"': addr += slen(w + 1) + 2; break;
 			case '.': addr += 2; break;
+			case ',': addr += 4; break;
 			case '+': /* signed positive */
 			case '-': /* signed negative */
-			case ',':
-				addr += (sihx(w + 1) && slen(w + 1) == 2 ? 1 : 2);
-				addr += (sihx(w + 1) ? slen(w + 1) / 2 : 2);
-				break;
-			default: return error("Unknown label", w);
+			case '#': addr += (slen(w + 1) == 2 ? 2 : 4); break;
+			default: return error("Unknown label in first pass", w);
 			}
 		}
 	}
@@ -207,18 +205,18 @@ pass2(FILE *f)
 		if(cmnt(w, &skip)) continue;
 		/* clang-format off */
 		if(w[0] == '|') p.ptr = shex(w + 1);
+		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
+		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w), 1); 
+		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
 		else if(w[0] == '"') pushtext(w + 1);
 		else if((l = findlabel(w + 1))) pushshort(l->addr, w[0] == ',');
-		else if((op = findoperator(w)) || scmp(w, "BRK")) pushbyte(op, 0);
-		else if(sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), w[0] == ',');
-		else if(sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), w[0] == ',');
-		else return error("Unknown label", w);
+		else return error("Unknown label in second pass", w);
 		/* clang-format on */
 	}
 	return 1;
