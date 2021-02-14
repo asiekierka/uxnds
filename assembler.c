@@ -213,8 +213,8 @@ pass1(FILE *f)
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
-			case '.': addr += 2; break;
 			case ',': addr += 3; break;
+			case '.': addr += (slen(w + 1) == 2 ? 1 : 2); break;
 			case '+': /* signed positive */
 			case '-': /* signed negative */
 			case '#': addr += (slen(w + 1) == 2 ? 2 : 3); break;
@@ -242,8 +242,10 @@ pass2(FILE *f)
 		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
-		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w), 1); 
-		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w), 1);
+		else if(w[0] == '.' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 0);
+		else if(w[0] == '.' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 0);
+		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
+		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);

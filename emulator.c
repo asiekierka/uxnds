@@ -37,14 +37,9 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
-Device *devconsole, *devscreen, *devmouse, *devkey;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite;
 
-int
-error(char *msg, const char *err)
-{
-	printf("Error %s: %s\n", msg, err);
-	return 0;
-}
+#pragma mark - Helpers
 
 void
 clear(Uint32 *dst)
@@ -59,7 +54,41 @@ void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
-		dst[y * WIDTH + x] = theme[color];
+		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
+}
+
+void
+drawchr(Uint32 *dst, int x, int y, Uint8 *sprite)
+{
+	int v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			int ch1 = ((sprite[v] >> h) & 0x1);
+			int ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+			int clr = ch1 + ch2;
+			int guides = GUIDES && !clr && ((x + y) / 8) % 2;
+			putpixel(dst, x + 7 - h, y + v, guides ? 4 : clr);
+		}
+}
+
+void
+drawicn(Uint32 *dst, int x, int y, Uint8 *sprite, int fg, int bg)
+{
+	int v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			int ch1 = (sprite[v] >> (7 - h)) & 0x1;
+			putpixel(dst, x + h, y + v, ch1 ? fg : bg);
+		}
+}
+
+#pragma mark - Core
+
+int
+error(char *msg, const char *err)
+{
+	printf("Error %s: %s\n", msg, err);
+	return 0;
 }
 
 void
@@ -170,7 +199,7 @@ dokey(SDL_Event *event)
 #pragma mark - Devices
 
 Uint8
-consoler(Device *d, Uint8 b)
+consoler(Device *d, Memory *m, Uint8 b)
 {
 	(void)b;
 	(void)d;
@@ -178,7 +207,7 @@ consoler(Device *d, Uint8 b)
 }
 
 Uint8
-consolew(Device *d, Uint8 b)
+consolew(Device *d, Memory *m, Uint8 b)
 {
 	(void)d;
 	if(b)
@@ -188,7 +217,7 @@ consolew(Device *d, Uint8 b)
 }
 
 Uint8
-screenr(Device *d, Uint8 b)
+ppur(Device *d, Memory *m, Uint8 b)
 {
 	switch(b) {
 	case 0: return (WIDTH >> 8) & 0xff;
@@ -200,7 +229,7 @@ screenr(Device *d, Uint8 b)
 }
 
 Uint8
-screenw(Device *d, Uint8 b)
+ppuw(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->len++] = b;
 	if(d->len > 5) {
@@ -216,13 +245,35 @@ screenw(Device *d, Uint8 b)
 }
 
 Uint8
-mouser(Device *d, Uint8 b)
+ppusr(Device *d, Memory *m, Uint8 b)
+{
+	return 0;
+}
+
+Uint8
+ppusw(Device *d, Memory *m, Uint8 b)
+{
+	d->mem[d->len++] = b;
+	if(d->len > 6) {
+		Uint16 x = (d->mem[2] << 8) + d->mem[3];
+		Uint16 y = (d->mem[0] << 8) + d->mem[1];
+		Uint8 *chr = &m->dat[(d->mem[4] << 8) + d->mem[5]];
+		drawchr(pixels, x, y, chr);
+		if(d->mem[6])
+			redraw(pixels);
+		d->len = 0;
+	}
+	return 0;
+}
+
+Uint8
+mouser(Device *d, Memory *m, Uint8 b)
 {
 	return d->mem[b];
 }
 
 Uint8
-mousew(Device *d, Uint8 b)
+mousew(Device *d, Memory *m, Uint8 b)
 {
 	(void)d;
 	(void)b;
@@ -230,7 +281,7 @@ mousew(Device *d, Uint8 b)
 }
 
 Uint8
-keyr(Device *d, Uint8 b)
+keyr(Device *d, Memory *m, Uint8 b)
 {
 	(void)d;
 	(void)b;
@@ -238,7 +289,7 @@ keyr(Device *d, Uint8 b)
 }
 
 Uint8
-keyw(Device *d, Uint8 b)
+keyw(Device *d, Memory *m, Uint8 b)
 {
 	(void)d;
 	(void)b;
@@ -295,9 +346,10 @@ main(int argc, char **argv)
 		return error("Init", "Failed");
 
 	devconsole = portuxn(&u, "console", consoler, consolew);
-	devscreen = portuxn(&u, "screen", screenr, screenw);
+	devscreen = portuxn(&u, "ppu", ppur, ppuw);
 	devmouse = portuxn(&u, "mouse", mouser, mousew);
 	devkey = portuxn(&u, "key", keyr, keyw);
+	devsprite = portuxn(&u, "ppu-sprite", ppusr, ppusw);
 
 	start(&u);
 

@@ -34,8 +34,8 @@ void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("0x%02x ", pop8(&u->wst)); }
-void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, pop8(&u->wst))); }
-void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, a); }
+void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, &u->ram, pop8(&u->wst))); }
+void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, &u->ram, a); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram, a)); }
 void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempoke8(&u->ram, a, b); }
 /* Logic */
@@ -63,8 +63,8 @@ void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst,
 /* --- */
 void op_lit16(Uxn *u) { u->literal += 2; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
-void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, a) << 8) + dev->read(dev, a + 1)); }
-void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) { dev->write(dev, b); dev->write(dev, a); } }
+void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, &u->ram, a) << 8) + dev->read(dev, &u->ram, a + 1)); }
+void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) { dev->write(dev, &u->ram, b); dev->write(dev, &u->ram, a); } }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(&u->ram, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(&u->ram, a, b); }
 /* Stack(16-bits) */
@@ -202,7 +202,7 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Uint8), Uint8 (*wfn)(Device *, Uint8))
+portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Memory *, Uint8), Uint8 (*wfn)(Device *, Memory *, Uint8))
 {
 	Device *d = &u->dev[u->devices++];
 	d->read = rfn;
