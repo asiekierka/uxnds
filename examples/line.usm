@@ -9,26 +9,26 @@
 |0100 @RESET
 
 	( set dev/write to screen ) 
-	,01 ,dev/w STR 
+	#01 ,dev/w STR 
 
 	( positive )
-	,01 ,color STR
+	#01 ,color STR
 	+0030 ,x0 STR2 +0040 ,y0 STR2
 	+0100 ,x1 STR2 +0060 ,y1 STR2
 	,line JSR
 
-	,02 ,color STR
+	#02 ,color STR
 	+0020 ,x0 STR2 +0010 ,y0 STR2
 	+0090 ,x1 STR2 +0070 ,y1 STR2
 	,line JSR
 
-	,03 ,color STR
+	#03 ,color STR
 	+0010 ,x0 STR2 +0040 ,y0 STR2
 	+0070 ,x1 STR2 +0060 ,y1 STR2
 	,line JSR
 
 	( draw control points )
-	,02 ,color STR
+	#02 ,color STR
 	,x0 LDR2 ,y0 LDR2 ,putpixel JSR
 	,x1 LDR2 ,y1 LDR2 ,putpixel JSR
 
@@ -57,17 +57,17 @@ BRK
 	RTS
 
 @redraw
-	,0000 IOW2
-	,0000 IOW2
-	,00 IOW
-	,01 IOW
+	#0000 IOW2
+	#0000 IOW2
+	#00 IOW
+	#01 IOW
 	RTS
 
 @putpixel 
 	IOW2 ( y short )
 	IOW2 ( x short )
 	,color LDR IOW  ( color byte )
-	,00 IOW  ( redraw byte )
+	#00 IOW  ( redraw byte )
 	RTS
 
 @diff16

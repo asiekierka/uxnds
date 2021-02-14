@@ -4,8 +4,8 @@
 
 |0100 @RESET 
 
-	#00 ,dev/w STR                        ( set dev/write to console ) 
-	,string                               ( add string pointer to stack )
+	#00 ,dev/w STR                           ( set dev/write to console ) 
+	,string                                  ( add string pointer to stack )
 	@loop
 		DUP2 LDR IOW                         ( write pointer value to console )
 		#0001 ADD2                           ( increment string pointer )
@@ -13,7 +13,7 @@
 
 BRK
 
-@string " Hello World "                ( add string to memory )
+@string " Hello World "                      ( add string to memory )
 
 |c000 @FRAME BRK
 |d000 @ERROR BRK 

@@ -83,7 +83,6 @@ BRK
 
 ## TODOs
 
-- Li1 short mode
 - Defines?
 - LDR/STR helpers
 - Keyboard example
