@@ -44,6 +44,8 @@ evaluxn(u, u->vframe); /* Each frame
 - `+12ef`, a literal signed short.
 - `-1a`, a literal signed byte(negative).
 - `-12ef`, a literal signed short(negative).
+- `.ab`, a raw byte in memory.
+- `.abcd`, a raw short in memory.
 
 ### Special
 
@@ -80,6 +82,21 @@ BRK
 
 |FFFA .RESET .FRAME .ERROR
 ```
+
+## Emulator
+
+### Controller(dev/ctrl)
+
+A device that works like a NES controller, each button is a bit from a single byte.
+
+- Ctrl
+- Alt
+- Escape
+- Return
+- Up
+- Down
+- Left
+- Right
 
 ## TODOs
 

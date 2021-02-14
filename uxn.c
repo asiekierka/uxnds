@@ -30,10 +30,10 @@ void   push16(St8 *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(St8 *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(St8 *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
 /* I/O */
-void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
+void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
-void op_nop(Uxn *u) { printf("0x%02x ", pop8(&u->wst)); }
+void op_nop(Uxn *u) { printf("0x%02x \n", pop8(&u->wst)); fflush(stdout); }
 void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, &u->ram, pop8(&u->wst))); }
 void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, &u->ram, a); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram, a)); }

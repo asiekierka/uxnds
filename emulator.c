@@ -37,7 +37,7 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl;
 
 #pragma mark - Helpers
 
@@ -65,9 +65,7 @@ drawchr(Uint32 *dst, int x, int y, Uint8 *sprite)
 		for(h = 0; h < 8; h++) {
 			int ch1 = ((sprite[v] >> h) & 0x1);
 			int ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-			int clr = ch1 + ch2;
-			int guides = GUIDES && !clr && ((x + y) / 8) % 2;
-			putpixel(dst, x + 7 - h, y + v, guides ? 4 : clr);
+			putpixel(dst, x + 7 - h, y + v, ch1 + ch2);
 		}
 }
 
@@ -192,8 +190,25 @@ domouse(SDL_Event *event)
 void
 dokey(SDL_Event *event)
 {
-	(void)event;
-	/* printf("key\n"); */
+}
+
+void
+doctrl(SDL_Event *event, int z)
+{
+	Uint8 flag = 0x00;
+	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
+		flag = 0x01;
+	if(SDL_GetModState() & KMOD_LALT || SDL_GetModState() & KMOD_RALT)
+		flag = 0x02;
+	switch(event->key.keysym.sym) {
+	case SDLK_ESCAPE: flag = 0x04; break;
+	case SDLK_RETURN: flag = 0x08; break;
+	case SDLK_UP: flag = 0x10; break;
+	case SDLK_DOWN: flag = 0x20; break;
+	case SDLK_LEFT: flag = 0x40; break;
+	case SDLK_RIGHT: flag = 0x80; break;
+	}
+	setflag(&devctrl->mem[0], flag, z);
 }
 
 #pragma mark - Devices
@@ -296,6 +311,20 @@ keyw(Device *d, Memory *m, Uint8 b)
 	return 0;
 }
 
+Uint8
+ctrlr(Device *d, Memory *m, Uint8 b)
+{
+	return d->mem[b];
+}
+
+Uint8
+ctrlw(Device *d, Memory *m, Uint8 b)
+{
+	(void)d;
+	(void)b;
+	return 0;
+}
+
 #pragma mark - Generics
 
 int
@@ -314,20 +343,21 @@ start(Uxn *u)
 		if(tick < ticknext)
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
-		evaluxn(u, u->vframe);
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT: quit(); break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION: domouse(&event); break;
-			case SDL_KEYDOWN: dokey(&event); break;
+			case SDL_KEYDOWN: doctrl(&event, 1); break;
+			case SDL_KEYUP: doctrl(&event, 0); break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
 					redraw(pixels);
 				break;
 			}
 		}
+		evaluxn(u, u->vframe);
 	}
 }
 
@@ -350,6 +380,7 @@ main(int argc, char **argv)
 	devmouse = portuxn(&u, "mouse", mouser, mousew);
 	devkey = portuxn(&u, "key", keyr, keyw);
 	devsprite = portuxn(&u, "ppu-sprite", ppusr, ppusw);
+	devctrl = portuxn(&u, "ctrl", ctrlr, ctrlw);
 
 	start(&u);
 
