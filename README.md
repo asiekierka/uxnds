@@ -58,40 +58,43 @@ evaluxn(u, u->vframe); /* Each frame
 - `+21 -03 MULS`, signed operators have the cond flag `S`.
 
 ```
+( comment )
+
 :dev/w fff9 ( const write port )
-;i 1 ( var iterator )
 
-|0100 @RESET
+|0100 @RESET 
 
-	#00 ,dev/w STR              ( set dev/write to console ) 
-
-	@word1 "hello_world         ( len: 0x0b )
-
+	#00 ,dev/w STR                        ( set dev/write to console ) 
+	,string                               ( add string pointer to stack )
 	@loop
-		IOW                     ( write to device#0 )
-		,i LDR #01 ADD ,i STR   ( increment itr )
-		,i LDR                  ( a = i )
-		,word1 ,strlen JSR      ( b = string length )
-		NEQ ,loop ROT JSR? POP^ ( a != b ? loop )
+		DUP2 LDR IOW                         ( write pointer value to console )
+		#0001 ADD2                           ( increment string pointer )
+		DUP2 LDR #00 NEQ ,loop ROT JMP? POP2 ( while *ptr!=0 goto loop )
 
 BRK
 
-@strlen #0001 ADD2 LDR RTS
+@string " Hello World "                ( add string to memory )
 
-|c000 @FRAME BRK 
+|c000 @FRAME BRK
 |d000 @ERROR BRK 
+
 |FFFA .RESET .FRAME .ERROR
 ```
 
 ## TODOs
 
+- Li1 short mode
+- Defines?
+- LDR/STR helpers
+- Keyboard example
+- PPU chr device
 - Line routine
 - On-screen debugger.
 - Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
 - Sending from the wst to the rst, balance mode/flag?
 - Device that works like an extra memory bank
-- Draw a chr sprite.
+- [debug]Print unused labels
 
 ## Refs
 

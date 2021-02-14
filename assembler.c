@@ -33,7 +33,7 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LI1", "LIX", "IOR", "IOW", "LDR", "STR",
+	"BRK", "NOP", "LIT", "LIX", "IOR", "IOW", "LDR", "STR",
 	"JMP", "JSR", "RTI", "RTS", "---", "---", "---", "---",
 	"POP", "DUP", "SWP", "OVR", "ROT", "AND", "ORA", "ROL",
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
@@ -43,7 +43,6 @@ int scmp(char *a, char *b) { int i = 0; while(a[i] == b[i]) if(!a[i++]) return 1
 int slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
 int sihx(char *s) { int i = 0; char c; while((c = s[i++])) if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F')) return 0; return 1; } /* string is hexadecimal */
 int shex(char *s) { int n = 0, i = 0; char c; while((c = s[i++])) if(c >= '0' && c <= '9') n = n * 16 + (c - '0'); else if(c >= 'A' && c <= 'F') n = n * 16 + 10 + (c - 'A'); else if(c >= 'a' && c <= 'f') n = n * 16 + 10 + (c - 'a'); return n; } /* string to num */
-int cmnt(char *w, int *skip) { if(w[0] == ')') { *skip = 0; return 1; } if(w[0] == '(') *skip = 1; if(*skip) return 1; return 0; } /* comment helper */
 char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) && i < len - 2) i++; dst[i + 1] = '\0'; return dst; } /* string copy */
 
 #pragma mark - Helpers
@@ -63,22 +62,10 @@ pushbyte(Uint8 b, int lit)
 void
 pushshort(Uint16 s, int lit)
 {
-	if(lit) {
-		pushbyte(0x03, 0);
-		pushbyte(0x02, 0);
-	}
+	if(lit)
+		pushbyte(0x22, 0);
 	pushbyte((s >> 8) & 0xff, 0);
 	pushbyte(s & 0xff, 0);
-}
-
-void
-pushtext(char *w)
-{
-	int i = slen(w);
-	pushbyte(0x03, 0);
-	pushbyte(slen(w), 0);
-	while(i > 0)
-		pushbyte(w[--i], 0);
 }
 
 Label *
@@ -157,14 +144,61 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 }
 
 int
+skipcomment(char *w, int *cap)
+{
+	if(w[0] == ')') {
+		*cap = 0;
+		return 1;
+	}
+	if(w[0] == '(') *cap = 1;
+	if(*cap) return 1;
+	return 0;
+}
+
+int
+skipstring(char *w, int *cap, Uint16 *addr)
+{
+	if(w[0] == '"') {
+		if(*cap)
+			*addr += 1;
+		*cap = !(*cap);
+		return 1;
+	}
+	if(*cap) {
+		*addr += slen(w) + 1;
+		return 1;
+	}
+	return 0;
+}
+
+int
+capturestring(char *w, int *cap)
+{
+	if(w[0] == '"') {
+		if(*cap)
+			pushbyte(0x00, 0);
+		*cap = !(*cap);
+		return 1;
+	}
+	if(*cap) {
+		int i;
+		for(i = 0; i < slen(w); ++i)
+			pushbyte(w[i], 0);
+		pushbyte(' ', 0);
+		return 1;
+	}
+	return 0;
+}
+
+int
 pass1(FILE *f)
 {
-	int skip = 0;
+	int ccmnt = 0, cstrg = 0;
 	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
-		if(cmnt(w, &skip))
-			continue;
+		if(skipcomment(w, &ccmnt)) continue;
+		if(skipstring(w, &cstrg, &addr)) continue;
 		if(w[0] == '@') {
 			if(!makelabel(w + 1, addr))
 				return error("Pass1 failed", w);
@@ -179,12 +213,11 @@ pass1(FILE *f)
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
-			case '"': addr += slen(w + 1) + 2; break;
 			case '.': addr += 2; break;
-			case ',': addr += 4; break;
+			case ',': addr += 3; break;
 			case '+': /* signed positive */
 			case '-': /* signed negative */
-			case '#': addr += (slen(w + 1) == 2 ? 2 : 4); break;
+			case '#': addr += (slen(w + 1) == 2 ? 2 : 3); break;
 			default: return error("Unknown label in first pass", w);
 			}
 		}
@@ -196,13 +229,14 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int skip = 0;
+	int ccmnt = 0, cstrg = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
 		if(w[0] == '@') continue;
-		if(cmnt(w, &skip)) continue;
+		if(skipcomment(w, &ccmnt)) continue;
+		if(capturestring(w, &cstrg)) continue;
 		/* clang-format off */
 		if(w[0] == '|') p.ptr = shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
@@ -214,7 +248,6 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '"') pushtext(w + 1);
 		else if((l = findlabel(w + 1))) pushshort(l->addr, w[0] == ',');
 		else return error("Unknown label in second pass", w);
 		/* clang-format on */

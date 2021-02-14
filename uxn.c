@@ -31,7 +31,7 @@ Uint16 pop16(St8 *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(St8 *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status,FLAG_HALT, 1); }
-void op_li1(Uxn *u) { u->literal += 1; }
+void op_lit(Uxn *u) { u->literal += 1; }
 void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("0x%02x ", pop8(&u->wst)); }
 void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, pop8(&u->wst))); }
@@ -61,6 +61,7 @@ void op_neq(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst,
 void op_gth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b > (Sint8)a : b > a); }
 void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b < (Sint8)a : b < a); }
 /* --- */
+void op_lit16(Uxn *u) { u->literal += 2; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
 void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, a) << 8) + dev->read(dev, a + 1)); }
 void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) { dev->write(dev, b); dev->write(dev, a); } }
@@ -86,12 +87,12 @@ void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_nop, op_li1, op_lix, op_ior, op_iow, op_ldr, op_str, 
+	op_brk, op_nop, op_lit, op_lix, op_ior, op_iow, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
-	op_brk, op_nop16, op_li1, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
+	op_brk, op_nop16, op_lit16, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
 	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_and16, op_ora16, op_rol16,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16

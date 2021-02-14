@@ -9,51 +9,35 @@
 |0100 @RESET
 
 	( set dev/write to screen ) 
-	,01 ,dev/w STR 
+	#01 ,dev/w STR 
 
-	,01 ,color STR
+	#01 ,color STR
 	( fill rect x y w h )
-	,0020 ,0020 ,0060 ,0040 ,fillrect JSR
+	#0020 #0020 #0060 #0040 ,fillrect JSR
 
-	,02 ,color STR
+	#02 ,color STR
 	( fill rect x y w h )
-	,0030 ,0030 ,0040 ,0060 ,fillrect JSR
+	#0030 #0030 #0040 #0060 ,fillrect JSR
 
-	,03 ,color STR
+	#03 ,color STR
 	( fill rect x y w h )
-	,0040 ,0040 ,0060 ,0040 ,fillrect JSR
+	#0040 #0040 #0060 #0040 ,fillrect JSR
 
-	,01 ,color STR
+	#01 ,color STR
 	( fill rect x y w h )
-	,00a0 ,0010 ,0020 ,0020 ,fillrect JSR
+	#00a0 #0010 #0020 #0020 ,fillrect JSR
 
-	,02 ,color STR
+	#02 ,color STR
 	( fill rect x y w h )
-	,00b0 ,0040 ,0020 ,0020 ,linerect JSR
+	#00b0 #0040 #0020 #0020 ,linerect JSR
 
-	,03 ,color STR
+	#03 ,color STR
 	( fill rect x y w h )
-	,0058 ,0028 ,0050 ,0050 ,linerect JSR
+	#0058 #0028 #0050 #0050 ,linerect JSR
 
-	,01 ,color STR
+	#01 ,color STR
 	( fill rect x y w h )
-	,0028 ,0038 ,0050 ,0030 ,linerect JSR
-
-	( positive )
-	,01 ,color STR
-	+0030 ,x0 STR2 +0040 ,y0 STR2
-	+0100 ,x1 STR2 +0060 ,y1 STR2
-	,line JSR
-
-	,02 ,color STR
-	+0020 ,x0 STR2 +0010 ,y0 STR2
-	+0090 ,x1 STR2 +0070 ,y1 STR2
-	,line JSR
-
-	,03 ,color STR
-	+0010 ,x0 STR2 +0040 ,y0 STR2
-	+0070 ,x1 STR2 +0060 ,y1 STR2
-	,line JSR
+	#0028 #0038 #0050 #0030 ,linerect JSR
 
 	,redraw JSR
 
@@ -66,9 +50,9 @@ BRK
 		,x LDR2 ,x_ STR2
 		@fillrectcol
 			( draw ) ,x_ LDR2 ,y_ LDR2 ,putpixel JSR
-			,x_ LDR2 ,0001 ADD2 ,x_ STR2 
+			,x_ LDR2 #0001 ADD2 ,x_ STR2 
 			,x_ LDR2 ,w LDR2 ,x LDR2 ADD2 LTH2 ,fillrectcol ROT JMP? POP2
-		,y_ LDR2 ,0001 ADD2 ,y_ STR2 
+		,y_ LDR2 #0001 ADD2 ,y_ STR2 
 		,y_ LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,fillrectrow ROT JMP? POP2
 	RTS
 
@@ -78,33 +62,13 @@ BRK
 	@linerectcol
 		( draw ) ,x LDR2 ,y_ LDR2 ,putpixel JSR
 		( draw ) ,x LDR2 ,w LDR2 ADD2 ,y_ LDR2 ,putpixel JSR
-		,y_ LDR2 ,0001 ADD2 ,y_ STR2 
+		,y_ LDR2 #0001 ADD2 ,y_ STR2 
 		,y_ LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,linerectcol ROT JMP? POP2
 	@linerectrow
 		( draw ) ,x_ LDR2 ,y LDR2 ,putpixel JSR
 		( draw ) ,x_ LDR2 ,y LDR2 ,h LDR2 ADD2 ,putpixel JSR
-		,x_ LDR2 ,0001 ADD2 ,x_ STR2 
-		,x_ LDR2 ,w LDR2 ,x LDR2 ADD2 ,0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
-	RTS
-
-@line
-	,x0 LDR2 ,x_ STR2 ,y0 LDR2 ,y_ STR2                   ( start at x0,y0 )
-	,x1 LDR2 ,x0 LDR2 ,diff16sub JSR ,dx STR2             ( int dx = abs[x1 - x0] )
-	,y1 LDR2 ,y0 LDR2 ,diff16sub JSR -0001 MULS2 ,dy STR2 ( int dy = -abs[y1 - y0] )
-	,dx LDR2 ,dy LDR2 ADDS2 ,err1 STR2                    ( int err1 = dx + dy, e2; )
-	@lineloop
-	,x_ LDR2 ,y_ LDR2 ,putpixel JSR                       ( draw )
-	@line-x
-	,err1 LDR2 +0002 MULS2 ,err2 STR2                     ( e2 = 2 * err; )
-	,err2 LDR2 ,dy LDR2 LTHS2 ,line-y ROT JMP? POP2 	  ( e2 >= dy )
-		,err1 LDR2 ,dy LDR2 ADDS2 ,err1 STR2 			  ( err1 += dy; )
-		,x_ LDR2 +0001 ADDS2 ,x_ STR2                     ( y0 += y0 < y1 ? 1 : -1; )
-	@line-y
-	,err2 LDR2 ,dx LDR2 GTHS2 ,line-end ROT JMP? POP2     ( e2 <= dx )
-		,err1 LDR2 ,dx LDR2 ADDS2 ,err1 STR2              ( err1 += dx; )
-		,y_ LDR2 +0001 ADDS2 ,y_ STR2                     ( y0 += y0 < y1 ? 1 : -1; )
-	@line-end
-	,x_ LDR2 ,x1 LDR2 NEQS2 ,lineloop ROT JMP? POP2       ( loop )
+		,x_ LDR2 #0001 ADD2 ,x_ STR2 
+		,x_ LDR2 ,w LDR2 ,x LDR2 ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
 	RTS
 
 @diff16
@@ -113,17 +77,17 @@ BRK
 RTS
 
 @redraw
-	,0000 IOW2
-	,0000 IOW2
-	,00 IOW
-	,01 IOW
+	#0000 IOW2
+	#0000 IOW2
+	#00 IOW
+	#01 IOW
 	RTS
 
 @putpixel 
 	IOW2 ( y short )
 	IOW2 ( x short )
 	,color LDR IOW  ( color byte )
-	,00 IOW  ( redraw byte )
+	#00 IOW  ( redraw byte )
 	RTS
 
 |c000 @FRAME BRK 
