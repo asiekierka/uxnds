@@ -158,6 +158,18 @@ skipcomment(char *w, int *cap)
 }
 
 int
+skipbinary(char *w, int *cap)
+{
+	if(w[0] == ']') {
+		*cap = 0;
+		return 1;
+	}
+	if(w[0] == '[') *cap = 1;
+	if(*cap) return 1;
+	return 0;
+}
+
+int
 skipstring(char *w, int *cap, Uint16 *addr)
 {
 	if(w[0] == '"') {
@@ -195,13 +207,15 @@ capturestring(char *w, int *cap)
 int
 pass1(FILE *f)
 {
-	int ccmnt = 0, cstrg = 0;
+	int ccmnt = 0, cstrg = 0, cbits = 0;
 	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipcomment(w, &ccmnt)) continue;
 		if(skipstring(w, &cstrg, &addr)) continue;
-		if(w[0] == '@') {
+		if(skipbinary(w, &cbits))
+			addr += w[0] != '[' && w[0] != ']' ? 2 : 0;
+		else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
@@ -233,7 +247,7 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, cstrg = 0;
+	int ccmnt = 0, cstrg = 0, cbits = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
@@ -242,7 +256,8 @@ pass2(FILE *f)
 		if(skipcomment(w, &ccmnt)) continue;
 		if(capturestring(w, &cstrg)) continue;
 		/* clang-format off */
-		if(w[0] == '|') p.ptr = shex(w + 1);
+		if(skipbinary(w, &cbits)) { if(w[0] != '[' && w[0] != ']') { pushshort(shex(w), 0); } }
+		else if(w[0] == '|') p.ptr = shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);

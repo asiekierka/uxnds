@@ -13,11 +13,6 @@ cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werr
 clang-format -i uxn.h
 clang-format -i uxn.c
 
-# Cli
-clang-format -i cli.c
-# rm -f ./bin/cli
-# cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c cli.c -o bin/cli
-
 # Emulator
 clang-format -i emulator.c
 rm -f ./bin/emulator

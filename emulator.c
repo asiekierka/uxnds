@@ -264,12 +264,15 @@ Uint8
 spritew(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->ptr++] = b;
-	if(d->ptr > 6) {
+	if(d->ptr > 7) {
 		Uint16 x = (d->mem[2] << 8) + d->mem[3];
 		Uint16 y = (d->mem[0] << 8) + d->mem[1];
 		Uint8 *chr = &m->dat[(d->mem[4] << 8) + d->mem[5]];
-		drawchr(pixels, x, y, chr);
-		if(d->mem[6])
+		if(!d->mem[6])
+			drawchr(pixels, x, y, chr);
+		else
+			drawicn(pixels, x, y, chr, d->mem[6], 0);
+		if(d->mem[7])
 			REQDRAW = 1;
 		d->ptr = 0;
 	}
