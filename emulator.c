@@ -23,7 +23,7 @@ typedef unsigned char Uint8;
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
 int HEIGHT = 8 * (VER + 2) + 8 * PAD * 2;
-int FPS = 30, GUIDES = 1, BIGPIXEL = 0, ZOOM = 2;
+int FPS = 30, GUIDES = 1, REQDRAW = 0, ZOOM = 2;
 
 Uint32 theme[] = {
 	0x000000,
@@ -31,6 +31,24 @@ Uint32 theme[] = {
 	0x72DEC2,
 	0x666666,
 	0x222222};
+
+Uint8 icons[][8] = {
+	{0x00, 0x3c, 0x46, 0x4a, 0x52, 0x62, 0x3c, 0x00},
+	{0x00, 0x18, 0x28, 0x08, 0x08, 0x08, 0x3e, 0x00},
+	{0x00, 0x3c, 0x42, 0x02, 0x3c, 0x40, 0x7e, 0x00},
+	{0x00, 0x3c, 0x42, 0x1c, 0x02, 0x42, 0x3c, 0x00},
+	{0x00, 0x08, 0x18, 0x28, 0x48, 0x7e, 0x08, 0x00},
+	{0x00, 0x7e, 0x40, 0x7c, 0x02, 0x42, 0x3c, 0x00},
+	{0x00, 0x3c, 0x40, 0x7c, 0x42, 0x42, 0x3c, 0x00},
+	{0x00, 0x7e, 0x02, 0x04, 0x08, 0x10, 0x10, 0x00},
+	{0x00, 0x3c, 0x42, 0x3c, 0x42, 0x42, 0x3c, 0x00},
+	{0x00, 0x3c, 0x42, 0x42, 0x3e, 0x02, 0x3c, 0x00},
+	{0x00, 0x3c, 0x42, 0x42, 0x7e, 0x42, 0x42, 0x00},
+	{0x00, 0x7c, 0x42, 0x7c, 0x42, 0x42, 0x7c, 0x00},
+	{0x00, 0x3c, 0x42, 0x40, 0x40, 0x42, 0x3c, 0x00},
+	{0x00, 0x78, 0x44, 0x42, 0x42, 0x44, 0x78, 0x00},
+	{0x00, 0x7e, 0x40, 0x7c, 0x40, 0x40, 0x7e, 0x00},
+	{0x00, 0x7e, 0x40, 0x40, 0x7c, 0x40, 0x40, 0x00}};
 
 SDL_Window *gWindow;
 SDL_Renderer *gRenderer;
@@ -90,12 +108,35 @@ error(char *msg, const char *err)
 }
 
 void
-redraw(Uint32 *dst)
+drawdebugger(Uint32 *dst, Uxn *u)
 {
+	Uint8 i;
+	for(i = 0; i < 0x10; ++i) { /* memory */
+		Uint8 x = (i % 8) * 3 + 1, y = i / 8 + 1, b = u->ram.dat[i];
+		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
+		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
+	}
+	for(i = 0; i < 0x10; ++i) { /* memory */
+		Uint8 x = (i % 8) * 3 + 1, y = i / 8 + 0x13, b = u->wst.dat[i];
+		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
+		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
+	}
+	drawicn(dst, 25 * 8, 8, icons[getflag(&u->status, FLAG_HALT) != 0], 2, 0);
+	drawicn(dst, 26 * 8, 8, icons[getflag(&u->status, FLAG_SHORT) != 0], 2, 0);
+	drawicn(dst, 27 * 8, 8, icons[getflag(&u->status, FLAG_SIGN) != 0], 2, 0);
+	drawicn(dst, 28 * 8, 8, icons[getflag(&u->status, FLAG_COND) != 0], 2, 0);
+}
+
+void
+redraw(Uint32 *dst, Uxn *u)
+{
+	if(GUIDES)
+		drawdebugger(dst, u);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
+	REQDRAW = 0;
 }
 
 void
@@ -130,43 +171,6 @@ init(void)
 		return error("Pixels", "Failed to allocate memory");
 	clear(pixels);
 	return 1;
-}
-
-void
-echos(St8 *s, Uint8 len, char *name)
-{
-	int i;
-	printf("\n%s\n", name);
-	for(i = 0; i < len; ++i) {
-		if(i % 16 == 0)
-			printf("\n");
-		printf("%02x%c", s->dat[i], s->ptr == i ? '<' : ' ');
-	}
-	printf("\n\n");
-}
-
-void
-echom(Memory *m, Uint8 len, char *name)
-{
-	int i;
-	printf("\n%s\n", name);
-	for(i = 0; i < len; ++i) {
-		if(i % 16 == 0)
-			printf("\n");
-		printf("%02x ", m->dat[i]);
-	}
-	printf("\n\n");
-}
-
-void
-echof(Uxn *c)
-{
-	printf("ended @ %d steps | hf: %x sf: %x sf: %x cf: %x\n",
-		c->counter,
-		getflag(&c->status, FLAG_HALT) != 0,
-		getflag(&c->status, FLAG_SHORT) != 0,
-		getflag(&c->status, FLAG_SIGN) != 0,
-		getflag(&c->status, FLAG_COND) != 0);
 }
 
 void
@@ -242,15 +246,15 @@ screenr(Device *d, Memory *m, Uint8 b)
 Uint8
 screenw(Device *d, Memory *m, Uint8 b)
 {
-	d->mem[d->len++] = b;
-	if(d->len > 5) {
+	d->mem[d->ptr++] = b;
+	if(d->ptr > 5) {
 		putpixel(pixels,
 			(d->mem[2] << 8) + d->mem[3],
 			(d->mem[0] << 8) + d->mem[1],
 			d->mem[4]);
 		if(d->mem[5])
-			redraw(pixels);
-		d->len = 0;
+			REQDRAW = 1;
+		d->ptr = 0;
 	}
 	(void)m;
 	return 0;
@@ -259,15 +263,15 @@ screenw(Device *d, Memory *m, Uint8 b)
 Uint8
 spritew(Device *d, Memory *m, Uint8 b)
 {
-	d->mem[d->len++] = b;
-	if(d->len > 6) {
+	d->mem[d->ptr++] = b;
+	if(d->ptr > 6) {
 		Uint16 x = (d->mem[2] << 8) + d->mem[3];
 		Uint16 y = (d->mem[0] << 8) + d->mem[1];
 		Uint8 *chr = &m->dat[(d->mem[4] << 8) + d->mem[5]];
 		drawchr(pixels, x, y, chr);
 		if(d->mem[6])
-			redraw(pixels);
-		d->len = 0;
+			REQDRAW = 1;
+		d->ptr = 0;
 	}
 	return 0;
 }
@@ -279,11 +283,6 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
-
-	echos(&u->wst, 0x40, "stack");
-	echom(&u->ram, 0x40, "ram");
-	echof(u);
-
 	while(1) {
 		int tick = SDL_GetTicks();
 		SDL_Event event;
@@ -300,11 +299,13 @@ start(Uxn *u)
 			case SDL_KEYUP: doctrl(&event, 0); break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(pixels);
+					redraw(pixels, u);
 				break;
 			}
 		}
 		evaluxn(u, u->vframe);
+		if(REQDRAW)
+			redraw(pixels, u);
 	}
 }
 

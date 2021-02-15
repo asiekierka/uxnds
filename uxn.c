@@ -18,21 +18,19 @@ WITH REGARD TO THIS SOFTWARE.
 /* clang-format off */
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
-void   warn(char *s, Uint8 b) { printf("Warning: %s(%d)\n", s, b);}
 void   mempoke8(Memory *m, Uint16 a, Uint8 b) { m->dat[a] = b; }
 Uint8  mempeek8(Memory *m, Uint16 a) { return m->dat[a]; }
 void   mempoke16(Memory *m, Uint16 a, Uint16 b) { mempoke8(m, a, b >> 8); mempoke8(m, a + 1, b); }
 Uint16 mempeek16(Memory *m, Uint16 a) { return (mempeek8(m, a) << 8) + mempeek8(m, a + 1); }
-void   push8(St8 *s, Uint8 a) { s->dat[s->ptr++] = a; }
-Uint8  pop8(St8 *s) { return s->dat[--s->ptr]; }
-Uint8  peek8(St8 *s, Uint8 a) { return s->dat[s->ptr - a - 1]; }
-void   push16(St8 *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
-Uint16 pop16(St8 *s) { return pop8(s) + (pop8(s) << 8); }
-Uint16 peek16(St8 *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
+void   push8(Stack *s, Uint8 a) { s->dat[s->ptr++] = a; }
+Uint8  pop8(Stack *s) { return s->dat[--s->ptr]; }
+Uint8  peek8(Stack *s, Uint8 a) { return s->dat[s->ptr - a - 1]; }
+void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
+Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
+Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
-void op_lix(Uxn *u) { u->literal += u->ram.dat[u->ram.ptr++]; }
 void op_nop(Uxn *u) { printf("0x%02x \n", pop8(&u->wst)); fflush(stdout); }
 void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(&u->ram, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, &u->ram, pop8(&u->wst))); }
 void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) dev->write(dev, &u->ram, a); }
@@ -40,8 +38,8 @@ void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram
 void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempoke8(&u->ram, a, b); }
 /* Logic */
 void op_jmp(Uxn *u) { u->ram.ptr = pop16(&u->wst); }
-void op_jsr(Uxn *u) { if(u->balance > 0){ warn("Stack unbalance", u->balance); } push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); }
-void op_rts(Uxn *u) { if(u->balance > 0){ warn("Stack unbalance", u->balance); } u->ram.ptr = pop16(&u->rst); }
+void op_jsr(Uxn *u) { push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); }
+void op_rts(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
 void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
 void op_ora(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
 void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << a); }
@@ -93,13 +91,13 @@ void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_nop, op_lit, op_lix, op_ior, op_iow, op_ldr, op_str, 
+	op_brk, op_nop, op_lit, op_nop, op_ior, op_iow, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_and, op_ora, op_rol, op_ror, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_wsr, op_rsw, op_nop,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
-	op_brk, op_nop16, op_lit16, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
-	op_jmp, op_jsr, op_nop, op_rts, op_and16, op_ora16, op_rol16, op_ror16, 
+	op_brk,   op_nop16, op_lit16, op_nop,   op_ior16, op_iow16, op_ldr16, op_str16, 
+	op_jmp,   op_jsr,   op_nop,   op_rts,   op_and16, op_ora16, op_rol16, op_ror16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_wsr16, op_rsw16, op_nop,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
@@ -121,7 +119,7 @@ Uint8 opr[][2] = {
 int
 haltuxn(Uxn *u, char *name, int id)
 {
-	printf("Error: %s#%04x, at 0x%04x\n", name, id, u->counter);
+	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->counter);
 	return 0;
 }
 
@@ -142,6 +140,8 @@ opcuxn(Uxn *u, Uint8 instr)
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
 	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1);
 	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
+	if((op == 0x09 || op == 0x0b) && u->balance)
+		return haltuxn(u, "Stack unbalance", op);
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;
 	if(u->wst.ptr < opr[op][0])
@@ -192,7 +192,7 @@ loaduxn(Uxn *u, char *filepath)
 {
 	FILE *f;
 	if(!(f = fopen(filepath, "rb")))
-		return haltuxn(u, "Missing input.", 0);
+		return haltuxn(u, "Missing input rom.", 0);
 	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
 	u->devr = 0xfff8;
 	u->devw = 0xfff9;
@@ -213,7 +213,7 @@ portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Memory *, Uint8), Uint8 (*wfn
 	Device *d = &u->dev[u->devices++];
 	d->read = rfn;
 	d->write = wfn;
-	d->len = 0;
+	d->ptr = 0;
 	printf("Device #%d: %s \n", u->devices - 1, name);
 	return d;
 }

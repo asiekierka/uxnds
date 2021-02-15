@@ -8,7 +8,6 @@
 |0100 @RESET
 
 	#12 #34 WSR2
-	RSW2
 	,test JSR
 
 BRK

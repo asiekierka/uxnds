@@ -24,7 +24,7 @@ typedef signed short Sint16;
 typedef struct {
 	Uint8 ptr;
 	Uint8 dat[256];
-} St8;
+} Stack;
 
 typedef struct {
 	Uint16 ptr;
@@ -32,7 +32,7 @@ typedef struct {
 } Memory;
 
 typedef struct Device {
-	Uint8 len, mem[8];
+	Uint8 ptr, mem[8];
 	Uint8 (*read)(struct Device *, Memory *, Uint8);
 	Uint8 (*write)(struct Device *, Memory *, Uint8);
 } Device;
@@ -40,7 +40,7 @@ typedef struct Device {
 typedef struct {
 	Uint8 literal, status, balance, devices;
 	Uint16 counter, devr, devw, vreset, vframe, verror;
-	St8 wst, rst;
+	Stack wst, rst;
 	Memory ram;
 	Device dev[256];
 } Uxn;
