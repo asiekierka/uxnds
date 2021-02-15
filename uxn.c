@@ -120,6 +120,7 @@ int
 haltuxn(Uxn *u, char *name, int id)
 {
 	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->counter);
+	op_nop(u);
 	return 0;
 }
 

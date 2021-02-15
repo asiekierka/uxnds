@@ -271,7 +271,7 @@ spritew(Device *d, Memory *m, Uint8 b)
 		if(!d->mem[6])
 			drawchr(pixels, x, y, chr);
 		else
-			drawicn(pixels, x, y, chr, d->mem[6], 0);
+			drawicn(pixels, x, y, chr, d->mem[6] & 0xf, (d->mem[6] >> 4) & 0xf);
 		if(d->mem[7])
 			REQDRAW = 1;
 		d->ptr = 0;

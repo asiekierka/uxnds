@@ -10,14 +10,13 @@
 	#03 =dev/r ( set dev/read to controller ) 
 	#02 =dev/w ( set dev/write to sprite ) 
 	#0080 =x #0040 =y ( origin )
-	#01 ,cursor_icn ~x ~y ,putsprite JSR ( draw sprite )
+	#0101 ,cursor_icn ~x ~y ,putsprite JSR ( draw sprite )
 
 BRK
 
 |0200 @SPRITESHEET
 
-@cursor_icn .80c0 .e0f0 .f8e0 .1000 .0000 .0000 .0000 .0000
-@star_icn   .1054 .28c6 .2854 .1000 .0000 .0000 .0000 .0000
+@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
 
 BRK
 
@@ -49,7 +48,7 @@ BRK
 
 	@end
 	( redraw )
-	#01 ,cursor_icn ~x ~y ,putsprite JSR
+	#0101 ,cursor_icn ~x ~y ,putsprite JSR
 
 BRK
 
@@ -57,7 +56,7 @@ BRK
 	IOW2 ( y short )
 	IOW2 ( x short )
 	IOW2 ( sprite address )
-	IOW  ( redraw byte )
+	IOW2  ( redraw byte )
 	RTS
 
 |d000 @ERROR BRK 

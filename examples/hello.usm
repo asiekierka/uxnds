@@ -12,9 +12,9 @@
 	( print to screen )
 	#0008 =x #0030 =y #01 =color
 	,string ,displaygui JSR 
-	#0010 =x #0038 =y #02 =color
+	#0010 =x #0038 =y #12 =color
 	,string ,displaygui JSR 
-	#0018 =x #0040 =y #03 =color
+	#0018 =x #0040 =y #23 =color
 	,string ,displaygui JSR 
 	
 

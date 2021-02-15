@@ -7,32 +7,24 @@
 	#01 =dev/w                           ( set dev/write to screen ) 
 	#02 =dev/w                           ( set dev/write to sprite ) 
 
-	#00 ,star_icn #0041 #0041 ,putsprite JSR
-	#00 ,star_icn #0031 #0021 ,putsprite JSR
-	#00 ,cursor_icn #0021 #0016 ,putsprite JSR
-	#00 ,star_icn #0055 #0042 ,putsprite JSR
-	#01 ,cursor_icn #0067 #0031 ,putsprite JSR
+	#0110 ,cursor_icn #0020 #0038 ,drawsprite JSR
+	#0010 ,rounds_chr #0028 #0038 ,drawsprite JSR
+	#3210 ,cursor_icn #0020 #0040 ,drawsprite JSR
+	#0010 ,rounds_chr #0028 #0040 ,drawsprite JSR
 
 BRK
 
-@putsprite
+@drawsprite
 	IOW2 ( y short )
 	IOW2 ( x short )
 	IOW2 ( sprite address )
-	IOW  ( redraw byte )
-	RTS
-
-@putpixel 
-	IOW2 ( y short )
-	IOW2 ( x short )
-	IOW  ( color byte )
-	IOW  ( redraw byte )
+	IOW2 ( redraw byte )
 	RTS
 
 |0200 @SPRITESHEET
 
-@cursor_icn [ 80c0 e0f0 f8e0 1000 0000 0000 0000 0000 ]
-@star_icn   [ 1054 28c6 2854 1000 0000 0000 0000 0000 ]
+@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
+@rounds_chr [ 3844 92aa 9244 3800 0038 7c7c 7c38 0000 ]
 
 BRK
 
