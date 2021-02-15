@@ -18,6 +18,7 @@ WITH REGARD TO THIS SOFTWARE.
 /* clang-format off */
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
+void   warn(char *s, Uint8 b) { printf("Warning: %s(%d)\n", s, b);}
 void   mempoke8(Memory *m, Uint16 a, Uint8 b) { m->dat[a] = b; }
 Uint8  mempeek8(Memory *m, Uint16 a) { return m->dat[a]; }
 void   mempoke16(Memory *m, Uint16 a, Uint16 b) { mempoke8(m, a, b >> 8); mempoke8(m, a + 1, b); }
@@ -39,17 +40,20 @@ void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(&u->ram
 void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempoke8(&u->ram, a, b); }
 /* Logic */
 void op_jmp(Uxn *u) { u->ram.ptr = pop16(&u->wst); }
-void op_jsr(Uxn *u) { push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); }
-void op_rts(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
+void op_jsr(Uxn *u) { if(u->balance > 0){ warn("Stack unbalance", u->balance); } push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); }
+void op_rts(Uxn *u) { if(u->balance > 0){ warn("Stack unbalance", u->balance); } u->ram.ptr = pop16(&u->rst); }
+void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
+void op_ora(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
+void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << a); }
+void op_ror(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b >> a); }
 /* Stack */
 void op_pop(Uxn *u) { pop8(&u->wst); }
 void op_dup(Uxn *u) { push8(&u->wst, peek8(&u->wst, 0)); }
 void op_swp(Uxn *u) { Uint8 b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, a); }
 void op_ovr(Uxn *u) { push8(&u->wst, peek8(&u->wst, 1)); }
 void op_rot(Uxn *u) { Uint8 c = pop8(&u->wst), b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, c); push8(&u->wst, a); }
-void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
-void op_ora(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
-void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << a); }
+void op_wsr(Uxn *u) { Uint8 a = pop8(&u->wst); push8(&u->rst, a); u->balance++; }
+void op_rsw(Uxn *u) { Uint8 a = pop8(&u->rst); push8(&u->wst, a); u->balance--; }
 /* Arithmetic */
 void op_add(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b + (Sint8)a : b + a); }
 void op_sub(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b - (Sint8)a : b - a); }
@@ -66,15 +70,18 @@ void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(
 void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(&u->ram, u->devw)]; if(dev) { dev->write(dev, &u->ram, b); dev->write(dev, &u->ram, a); } }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(&u->ram, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(&u->ram, a, b); }
+void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
+void op_ora16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b | a); }
+void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << a); }
+void op_ror16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b >> a); }
 /* Stack(16-bits) */
 void op_pop16(Uxn *u) { pop16(&u->wst); }
 void op_dup16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 0)); }
 void op_swp16(Uxn *u) { Uint16 b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, a); }
 void op_ovr16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 1)); }
 void op_rot16(Uxn *u) { Uint16 c = pop16(&u->wst), b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, c); push16(&u->wst, a); }
-void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
-void op_ora16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b | a); }
-void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << a); }
+void op_wsr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->rst, a); u->balance += 2; }
+void op_rsw16(Uxn *u) { Uint16 a = pop16(&u->rst); push16(&u->wst, a); u->balance -= 2; }
 /* Arithmetic(16-bits) */
 void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b + (Sint16)a : b + a); }
 void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b - (Sint16)a : b - a); }
@@ -87,25 +94,25 @@ void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_lix, op_ior, op_iow, op_ldr, op_str, 
-	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
-	op_pop, op_dup, op_swp, op_ovr, op_rot, op_and, op_ora, op_rol,
+	op_jmp, op_jsr, op_nop, op_rts, op_and, op_ora, op_rol, op_ror, 
+	op_pop, op_dup, op_swp, op_ovr, op_rot, op_wsr, op_rsw, op_nop,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
 	op_brk, op_nop16, op_lit16, op_lix, op_ior16, op_iow16, op_ldr16, op_str16, 
-	op_jmp, op_jsr, op_nop, op_rts, op_nop, op_nop, op_nop, op_nop, 
-	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_and16, op_ora16, op_rol16,
+	op_jmp, op_jsr, op_nop, op_rts, op_and16, op_ora16, op_rol16, op_ror16, 
+	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_wsr16, op_rsw16, op_nop,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
 
 Uint8 opr[][2] = { 
 	{0,0}, {0,0}, {0,0}, {0,0}, {1,1}, {1,0}, {2,1}, {3,0},
-	{2,0}, {2,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0},
-	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {2,1}, {2,1}, {2,1},
+	{2,0}, {2,0}, {0,0}, {0,0}, {2,1}, {2,1}, {2,1}, {2,1},
+	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {1,0}, {0,1}, {2,1},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
 	/* 16-bit */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
+	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {1,0}, {0,1}, {0,0}, /* TODO */
 	{4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}
 };
 

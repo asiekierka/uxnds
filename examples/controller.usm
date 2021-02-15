@@ -23,18 +23,27 @@ BRK
 
 |c000 @FRAME 
 
-	#00 IOR #10 NEQ ,next0 ROT JMP? POP2
-		~y #0001 SUB2 =y
+	#05 =dev/r ( set dev/read to mouse ) 
+
+	#04 IOR #01 NEQ ,next0 ROT JMP? POP2
+		#00 IOR2 =x #02 IOR2 =y
+
 	@next0
 
-	#00 IOR #20 NEQ ,next1 ROT JMP? POP2
+	#03 =dev/r ( set dev/read to controller ) 
+
+	#00 IOR #10 NEQ ,next1 ROT JMP? POP2
+		~y #0001 SUB2 =y
+	@next1
+
+	#00 IOR #20 NEQ ,next2 ROT JMP? POP2
 		~y #0001 ADD2 =y
 
-	@next1
-	#00 IOR #40 NEQ ,next2 ROT JMP? POP2
+	@next2
+	#00 IOR #40 NEQ ,next3 ROT JMP? POP2
 		~x #0001 SUB2 =x
 
-	@next2
+	@next3
 	#00 IOR #80 NEQ ,end ROT JMP? POP2
 		~x #0001 ADD2 =x
 

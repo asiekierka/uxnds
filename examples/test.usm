@@ -3,20 +3,18 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-:test 0010
-
 ;x 1 ;y 2
 
 |0100 @RESET
 
-	#12 =x
-	#1234 =y
-	~x
-	~y
-
-	#ef =test
+	#12 #34 WSR2
+	RSW2
+	,test JSR
 
 BRK
+
+@test
+	RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

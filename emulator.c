@@ -330,11 +330,6 @@ main(int argc, char **argv)
 	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
 
 	start(&u);
-
-	echos(&u.wst, 0x40, "stack");
-	echom(&u.ram, 0x40, "ram");
-	echof(&u);
-
 	quit();
 	return 0;
 }
