@@ -5,7 +5,7 @@
 |0100 @RESET 
 
 	#01 =dev/w                           ( set dev/write to screen ) 
-	#04 =dev/w                           ( set dev/write to ppu-sprite ) 
+	#02 =dev/w                           ( set dev/write to sprite ) 
 
 	#00 ,star_icn #0041 #0041 ,putsprite JSR
 	#00 ,star_icn #0031 #0021 ,putsprite JSR

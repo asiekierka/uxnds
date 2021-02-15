@@ -4,6 +4,7 @@
 
 |0100 @RESET 
 
+	#00 =dev/w ( set dev/write to sprite ) 
 	,string                                  ( add string pointer to stack )
 	@loop
 		DUP2 LDR IOW                         ( write pointer value to console )

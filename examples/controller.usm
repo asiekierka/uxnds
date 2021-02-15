@@ -7,8 +7,8 @@
 
 |0100 @RESET 
 
-	#05 =dev/r ( set dev/read to ctrl ) 
-	#04 =dev/w ( set dev/write to ppu-sprite ) 
+	#03 =dev/r ( set dev/read to controller ) 
+	#02 =dev/w ( set dev/write to sprite ) 
 	#0080 =x #0040 =y ( origin )
 	#01 ,cursor_icn ~x ~y ,putsprite JSR ( draw sprite )
 

@@ -9,7 +9,7 @@
 |0100 @RESET
 
 	( set dev/write to screen ) 
-	#01 ,dev/w STR 
+	#01 =dev/w ( set dev/write to sprite ) 
 
 	( positive )
 	#01 ,color STR

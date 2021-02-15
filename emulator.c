@@ -37,7 +37,7 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller;
 
 #pragma mark - Helpers
 
@@ -188,12 +188,6 @@ domouse(SDL_Event *event)
 }
 
 void
-dokey(SDL_Event *event)
-{
-	(void)event;
-}
-
-void
 doctrl(SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
@@ -209,18 +203,16 @@ doctrl(SDL_Event *event, int z)
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
-	setflag(&devctrl->mem[0], flag, z);
+	setflag(&devcontroller->mem[0], flag, z);
 }
 
 #pragma mark - Devices
 
 Uint8
-consoler(Device *d, Memory *m, Uint8 b)
+defaultrw(Device *d, Memory *m, Uint8 b)
 {
-	(void)b;
-	(void)d;
 	(void)m;
-	return 0;
+	return d->mem[b];
 }
 
 Uint8
@@ -235,7 +227,7 @@ consolew(Device *d, Memory *m, Uint8 b)
 }
 
 Uint8
-ppur(Device *d, Memory *m, Uint8 b)
+screenr(Device *d, Memory *m, Uint8 b)
 {
 	switch(b) {
 	case 0: return (WIDTH >> 8) & 0xff;
@@ -243,11 +235,12 @@ ppur(Device *d, Memory *m, Uint8 b)
 	case 2: return (HEIGHT >> 8) & 0xff;
 	case 3: return HEIGHT & 0xff;
 	}
+	(void)m;
 	return d->mem[b];
 }
 
 Uint8
-ppuw(Device *d, Memory *m, Uint8 b)
+screenw(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->len++] = b;
 	if(d->len > 5) {
@@ -259,17 +252,12 @@ ppuw(Device *d, Memory *m, Uint8 b)
 			redraw(pixels);
 		d->len = 0;
 	}
+	(void)m;
 	return 0;
 }
 
 Uint8
-ppusr(Device *d, Memory *m, Uint8 b)
-{
-	return 0;
-}
-
-Uint8
-ppusw(Device *d, Memory *m, Uint8 b)
+spritew(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->len++] = b;
 	if(d->len > 6) {
@@ -281,50 +269,6 @@ ppusw(Device *d, Memory *m, Uint8 b)
 			redraw(pixels);
 		d->len = 0;
 	}
-	return 0;
-}
-
-Uint8
-mouser(Device *d, Memory *m, Uint8 b)
-{
-	return d->mem[b];
-}
-
-Uint8
-mousew(Device *d, Memory *m, Uint8 b)
-{
-	(void)d;
-	(void)b;
-	return 0;
-}
-
-Uint8
-keyr(Device *d, Memory *m, Uint8 b)
-{
-	(void)d;
-	(void)b;
-	return 0;
-}
-
-Uint8
-keyw(Device *d, Memory *m, Uint8 b)
-{
-	(void)d;
-	(void)b;
-	return 0;
-}
-
-Uint8
-ctrlr(Device *d, Memory *m, Uint8 b)
-{
-	return d->mem[b];
-}
-
-Uint8
-ctrlw(Device *d, Memory *m, Uint8 b)
-{
-	(void)d;
-	(void)b;
 	return 0;
 }
 
@@ -378,12 +322,12 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	devconsole = portuxn(&u, "console", consoler, consolew);
-	devscreen = portuxn(&u, "ppu", ppur, ppuw);
-	devmouse = portuxn(&u, "mouse", mouser, mousew);
-	devkey = portuxn(&u, "key", keyr, keyw);
-	devsprite = portuxn(&u, "ppu-sprite", ppusr, ppusw);
-	devctrl = portuxn(&u, "ctrl", ctrlr, ctrlw);
+	devconsole = portuxn(&u, "console", defaultrw, consolew);
+	devscreen = portuxn(&u, "screen", screenr, screenw);
+	devsprite = portuxn(&u, "sprite", defaultrw, spritew);
+	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw);
+	devkey = portuxn(&u, "key", defaultrw, consolew);
+	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
 
 	start(&u);
 
