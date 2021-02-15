@@ -4,7 +4,6 @@
 
 |0100 @RESET 
 
-	#00 ,dev/w STR                           ( set dev/write to console ) 
 	,string                                  ( add string pointer to stack )
 	@loop
 		DUP2 LDR IOW                         ( write pointer value to console )

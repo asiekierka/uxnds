@@ -30,11 +30,6 @@ evaluxn(u, u->vframe); /* Each frame
 - `;variable 2`, assign an address to a label automatically.
 - `:const 1a2b`, assign an address to a label manually.
 
-### Read
-
-- `,literal`, push label value to stack, prefixed with `LIT LEN`.
-- `.pointer`, push label value to stack.
-
 ### Write
 
 - `ADD`, an opcode.
@@ -46,18 +41,22 @@ evaluxn(u, u->vframe); /* Each frame
 - `-12ef`, a literal signed short(negative).
 - `.ab`, a raw byte in memory.
 - `.abcd`, a raw short in memory.
+- `,literal`, push label address to stack, prefixed with `LIT LEN`.
 
 ### Special
 
 - `( comment )`, toggle parsing on/off.
 - `|0010`, move to position in the program.
 - `"hello`, push literal bytes for word "hello".
+- `=label`, helper to STR, equivalent to `,label STR`, or `label STR2`.
+- `~label`, helper to LDR, equivalent to `,label LDR2`, or `,label LDR2`.
 
 ### Operator modes
 
 - `#1234 #0001 ADD2`, 16-bits operators have the short flag `2`.
 - `#12 #11 GTH JMP?`, conditional operators have the cond flag `?`.
 - `+21 -03 MULS`, signed operators have the cond flag `S`.
+- `ADDS2?`, modes can be combined.
 
 ```
 ( comment )
@@ -66,8 +65,7 @@ evaluxn(u, u->vframe); /* Each frame
 
 |0100 @RESET 
 
-	#00 ,dev/w STR                        ( set dev/write to console ) 
-	,string                               ( add string pointer to stack )
+	,string                                  ( add string pointer to stack )
 	@loop
 		DUP2 LDR IOW                         ( write pointer value to console )
 		#0001 ADD2                           ( increment string pointer )
@@ -75,7 +73,7 @@ evaluxn(u, u->vframe); /* Each frame
 
 BRK
 
-@string " Hello World "                ( add string to memory )
+@string " Hello World "                      ( add string to memory )
 
 |c000 @FRAME BRK
 |d000 @ERROR BRK 
@@ -89,28 +87,28 @@ BRK
 
 A device that works like a NES controller, each button is a bit from a single byte.
 
-- Ctrl
-- Alt
-- Escape
-- Return
-- Up
-- Down
-- Left
-- Right
+- `0x01` Ctrl
+- `0x02` Alt
+- `0x04` Escape
+- `0x08` Return
+- `0x10` Up
+- `0x20` Down
+- `0x40` Left
+- `0x80` Right
 
 ## TODOs
 
-- Defines?
 - LDR/STR helpers
-- Keyboard example
-- PPU chr device
 - Line routine
 - On-screen debugger.
-- Auto-advance ldr?
 - Getting rid of IOR/IOW would be nice..
-- Sending from the wst to the rst, balance mode/flag?
-- Device that works like an extra memory bank
-- [debug]Print unused labels
+- Sending from the wst to the rst, balance counter?
+
+### Misc TODOs
+
+- Includes
+- Defines
+- Lint, print unused labels
 
 ## Refs
 

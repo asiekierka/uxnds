@@ -54,7 +54,7 @@ void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
-		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
+		dst[y * WIDTH + x] = theme[color];
 }
 
 void
@@ -190,6 +190,7 @@ domouse(SDL_Event *event)
 void
 dokey(SDL_Event *event)
 {
+	(void)event;
 }
 
 void
@@ -218,16 +219,18 @@ consoler(Device *d, Memory *m, Uint8 b)
 {
 	(void)b;
 	(void)d;
+	(void)m;
 	return 0;
 }
 
 Uint8
 consolew(Device *d, Memory *m, Uint8 b)
 {
-	(void)d;
 	if(b)
 		printf("%c", b);
 	fflush(stdout);
+	(void)d;
+	(void)m;
 	return 0;
 }
 

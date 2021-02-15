@@ -7,12 +7,10 @@
 
 |0100 @RESET 
 
-	#05 ,dev/r STR                           ( set dev/read to ctrl ) 
-	#04 ,dev/w STR                           ( set dev/write to ppu-sprite ) 
-
-	#0080 ,x STR2
-	#0040 ,y STR2
-	#01 ,cursor_icn ,x LDR2 ,y LDR2 ,putsprite JSR
+	#05 =dev/r ( set dev/read to ctrl ) 
+	#04 =dev/w ( set dev/write to ppu-sprite ) 
+	#0080 =x #0040 =y ( origin )
+	#01 ,cursor_icn ~x ~y ,putsprite JSR ( draw sprite )
 
 BRK
 
@@ -26,19 +24,23 @@ BRK
 |c000 @FRAME 
 
 	#00 IOR #10 NEQ ,next0 ROT JMP? POP2
-	,y LDR2 #0001 SUB2 ,y STR2
+		~y #0001 SUB2 =y
 	@next0
+
 	#00 IOR #20 NEQ ,next1 ROT JMP? POP2
-	,y LDR2 #0001 ADD2 ,y STR2
+		~y #0001 ADD2 =y
+
 	@next1
 	#00 IOR #40 NEQ ,next2 ROT JMP? POP2
-	,x LDR2 #0001 SUB2 ,x STR2
+		~x #0001 SUB2 =x
+
 	@next2
-	#00 IOR #80 NEQ ,next3 ROT JMP? POP2
-	,x LDR2 #0001 ADD2 ,x STR2
-	@next3
+	#00 IOR #80 NEQ ,end ROT JMP? POP2
+		~x #0001 ADD2 =x
+
+	@end
 	( redraw )
-	#01 ,cursor_icn ,x LDR2 ,y LDR2 ,putsprite JSR
+	#01 ,cursor_icn ~x ~y ,putsprite JSR
 
 BRK
 

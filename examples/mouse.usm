@@ -5,8 +5,8 @@
 
 |0100 @RESET 
 	
-	#02 ,dev/r STR ( set dev/read mouse#02 )
-	#01 ,dev/w STR ( set dev/write screen#01 )
+	#02 =dev/r ( set dev/read mouse#02 )
+	#01 =dev/w ( set dev/write screen#01 )
 
 BRK
 

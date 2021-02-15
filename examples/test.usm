@@ -1,54 +1,24 @@
-( comment )
+( blank )
 
-:dev/r fff8 ( const read port )
-:dev/w fff9 ( const write port )
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
 
-;x 2 ;y 2
+:test 0010
 
-|0100 @RESET 
+;x 1 ;y 2
 
-	#05 ,dev/r STR                           ( set dev/read to ctrl ) 
-	#04 ,dev/w STR                           ( set dev/write to ppu-sprite ) 
+|0100 @RESET
 
-	#0080 ,x STR2
-	#0040 ,y STR2
-	#01 ,cursor_icn ,x LDR2 ,y LDR2 ,putsprite JSR
+	#12 =x
+	#1234 =y
+	~x
+	~y
 
-BRK
-
-|0200 @SPRITESHEET
-
-@cursor_icn .80c0 .e0f0 .f8e0 .1000 .0000 .0000 .0000 .0000
-@star_icn   .1054 .28c6 .2854 .1000 .0000 .0000 .0000 .0000
+	#ef =test
 
 BRK
 
-|c000 @FRAME 
-
-	#00 IOR #10 NEQ ,next0 ROT JMP? POP2
-	,y LDR2 #0001 SUB2 ,y STR2
-	@next0
-	#00 IOR #20 NEQ ,next1 ROT JMP? POP2
-	,y LDR2 #0001 ADD2 ,y STR2
-	@next1
-	#00 IOR #40 NEQ ,next2 ROT JMP? POP2
-	,x LDR2 #0001 SUB2 ,x STR2
-	@next2
-	#00 IOR #80 NEQ ,next3 ROT JMP? POP2
-	,x LDR2 #0001 ADD2 ,x STR2
-	@next3
-	( redraw )
-	#01 ,cursor_icn ,x LDR2 ,y LDR2 ,putsprite JSR
-
-BRK
-
-@putsprite
-	IOW2 ( y short )
-	IOW2 ( x short )
-	IOW2 ( sprite address )
-	IOW  ( redraw byte )
-	RTS
-
+|c000 @FRAME BRK 
 |d000 @ERROR BRK 
 
 |FFFA .RESET .FRAME .ERROR

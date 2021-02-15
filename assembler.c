@@ -22,6 +22,7 @@ typedef struct {
 } Program;
 
 typedef struct {
+	Uint8 len;
 	Uint16 addr;
 	char name[64];
 } Label;
@@ -33,7 +34,7 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "LIX", "IOR", "IOW", "LDR", "STR",
+	"BRK", "NOP", "LIT", "---", "IOR", "IOW", "LDR", "STR",
 	"JMP", "JSR", "RTI", "RTS", "---", "---", "---", "---",
 	"POP", "DUP", "SWP", "OVR", "ROT", "AND", "ORA", "ROL",
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
@@ -108,7 +109,7 @@ error(char *name, char *id)
 }
 
 int
-makelabel(char *name, Uint16 addr)
+makelabel(char *name, Uint16 addr, Uint8 len)
 {
 	Label *l;
 	if(findlabel(name))
@@ -119,8 +120,9 @@ makelabel(char *name, Uint16 addr)
 		return error("Label name is invalid", name);
 	l = &labels[labelslen++];
 	l->addr = addr;
+	l->len = len;
 	scpy(name, l->name, 64);
-	printf("New label: %s[0x%02x]\n", l->name, l->addr);
+	printf("New label: %s, at 0x%02x[%d]\n", l->name, l->addr, l->len);
 	return 1;
 }
 
@@ -129,7 +131,7 @@ makeconst(char *id, FILE *f)
 {
 	char wv[64];
 	fscanf(f, "%s", wv);
-	return makelabel(id, shex(wv));
+	return makelabel(id, shex(wv), 1);
 }
 
 int
@@ -140,7 +142,7 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	fscanf(f, "%s", wv);
 	origin = *addr;
 	*addr += shex(wv);
-	return makelabel(id, origin);
+	return makelabel(id, origin, shex(wv));
 }
 
 int
@@ -200,7 +202,7 @@ pass1(FILE *f)
 		if(skipcomment(w, &ccmnt)) continue;
 		if(skipstring(w, &cstrg, &addr)) continue;
 		if(w[0] == '@') {
-			if(!makelabel(w + 1, addr))
+			if(!makelabel(w + 1, addr, 0))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
 			if(!makevariable(w + 1, &addr, f))
@@ -213,6 +215,8 @@ pass1(FILE *f)
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
+			case '=': addr += 4; break; /* STR helper */
+			case '~': addr += 4; break; /* LDR helper */
 			case ',': addr += 3; break;
 			case '.': addr += (slen(w + 1) == 2 ? 1 : 2); break;
 			case '+': /* signed positive */
@@ -250,6 +254,8 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr, 1); pushbyte(findopcode(l->len == 2 ? "STR2" : "STR"),0); }
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr, 1); pushbyte(findopcode(l->len == 2 ? "LDR2" : "LDR"),0); }
 		else if((l = findlabel(w + 1))) pushshort(l->addr, w[0] == ',');
 		else return error("Unknown label in second pass", w);
 		/* clang-format on */

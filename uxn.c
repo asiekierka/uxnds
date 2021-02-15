@@ -16,7 +16,6 @@ WITH REGARD TO THIS SOFTWARE.
 #pragma mark - Operations
 
 /* clang-format off */
-
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
 void   mempoke8(Memory *m, Uint16 a, Uint8 b) { m->dat[a] = b; }

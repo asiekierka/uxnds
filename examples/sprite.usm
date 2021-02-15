@@ -4,14 +4,10 @@
 
 |0100 @RESET 
 
-	#01 ,dev/w STR                           ( set dev/write to screen ) 
+	#01 =dev/w                           ( set dev/write to screen ) 
+	#04 =dev/w                           ( set dev/write to ppu-sprite ) 
 
-	( draw 1 pixel )
-	#00 #01 #0021 #0021 ,putpixel JSR
-
-	#04 ,dev/w STR                           ( set dev/write to screen ) 
-
-	#00 ,star_icn #0001 #0001 ,putsprite JSR
+	#00 ,star_icn #0041 #0041 ,putsprite JSR
 	#00 ,star_icn #0031 #0021 ,putsprite JSR
 	#00 ,cursor_icn #0021 #0016 ,putsprite JSR
 	#00 ,star_icn #0055 #0042 ,putsprite JSR
