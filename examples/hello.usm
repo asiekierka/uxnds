@@ -1,4 +1,4 @@
-( comment )
+( hello world )
 
 :dev/w fff9 ( const write port )
 
@@ -32,11 +32,11 @@ BRK
 
 @displaygui
 	#02 =dev/w                                   ( set dev/write to sprite ) 
-	@displayguiloop
+	@guiloop
 		DUP2 LDR ,printchar JSR
 		#0001 ADD2
 		~x #0008 ADD2 =x
-		DUP2 LDR #00 NEQ ,displayguiloop ROT JMP? POP2
+		DUP2 LDR #00 NEQ ,guiloop ROT JMP? POP2
 	RTS
 
 @printchar

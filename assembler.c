@@ -140,6 +140,8 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	char wv[64];
 	Uint8 origin;
 	fscanf(f, "%s", wv);
+	if(!sihx(wv))
+		return error("Variable value is invalid", wv);
 	origin = *addr;
 	*addr += shex(wv);
 	return makelabel(id, origin, shex(wv));

@@ -1,4 +1,4 @@
-( comment )
+( controller )
 
 :dev/r fff8 ( const read port )
 :dev/w fff9 ( const write port )

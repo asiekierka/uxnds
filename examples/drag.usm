@@ -1,0 +1,69 @@
+( drag )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;drawx 2 ;drawy 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
+
+|0100 @RESET 
+	
+	#05 =dev/r ( set dev/read mouse )
+	#01 =dev/w ( set dev/write to screen ) 
+
+BRK
+
+|c000 @FRAME
+	
+	( get touch )
+	#04 IOR #01 NEQ ,frame-end ROT JMP? POP2
+
+	( clear )
+	#00 =color
+	~x ~y #0060 #0040 ,fillrect JSR
+
+	( fill rect x y w h )
+	#01 =color
+	#00 IOR2 ( get mouse-x ) =x
+	#02 IOR2 ( get mouse-y ) =y
+	~x ~y #0060 #0040 ,fillrect JSR
+	
+	,redraw JSR
+
+	@frame-end
+
+BRK
+
+@fillrect
+	=h =w =y =x ( store values in variables )
+	~x =drawx ~y =drawy ( store draw pos in variables )
+	@fillrectrow
+		~x =drawx
+		@fillrectcol
+			( draw ) ~drawx ~drawy IOW2 IOW2 ~color IOW  #00 IOW
+			~drawx #0001 ADD2 =drawx 
+			~drawx ~w ~x ADD2 LTH2 ,fillrectcol ROT JMP? POP2
+		~drawy #0001 ADD2 =drawy 
+		~drawy ~h ~y ADD2 LTH2 ,fillrectrow ROT JMP? POP2
+	RTS
+
+@getmouse
+	#00 IOR2 ( get mouse x )
+	#02 IOR2 ( get mouse y )
+	RTS
+
+@redraw
+	#0000 IOW2
+	#0000 IOW2
+	#00 IOW
+	#01 IOW
+	RTS
+
+@clear
+	#0000 IOW2
+	#0000 IOW2
+	#00 IOW
+	#02 IOW
+	RTS
+
+|d000 @ERROR BRK 
+|FFFA .RESET .FRAME .ERROR

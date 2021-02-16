@@ -1,4 +1,4 @@
-( my default test file )
+( pixels )
 
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )

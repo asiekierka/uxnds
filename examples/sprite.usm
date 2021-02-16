@@ -1,4 +1,4 @@
-( comment )
+( sprite )
 
 :dev/w fff9 ( const write port )
 

@@ -252,8 +252,10 @@ screenw(Device *d, Memory *m, Uint8 b)
 			(d->mem[2] << 8) + d->mem[3],
 			(d->mem[0] << 8) + d->mem[1],
 			d->mem[4]);
-		if(d->mem[5])
+		if(d->mem[5] == 1)
 			REQDRAW = 1;
+		if(d->mem[5] == 2)
+			clear(pixels);
 		d->ptr = 0;
 	}
 	(void)m;
