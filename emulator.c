@@ -111,7 +111,7 @@ void
 drawdebugger(Uint32 *dst, Uxn *u)
 {
 	Uint8 i;
-	for(i = 0; i < 0x10; ++i) { /* memory */
+	for(i = 0; i < 0x20; ++i) { /* memory */
 		Uint8 x = (i % 8) * 3 + 1, y = i / 8 + 1, b = u->ram.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
@@ -182,12 +182,11 @@ domouse(SDL_Event *event)
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
 	devmouse->mem[3] = y & 0xff;
+	devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
+	devmouse->mem[5] = 0x00;
 	switch(event->type) {
-	case SDL_MOUSEBUTTONUP:
-		devmouse->mem[4] = 0;
-		break;
-	case SDL_MOUSEBUTTONDOWN:
-		devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
+	case SDL_MOUSEBUTTONUP: devmouse->mem[5] = 0x10; break;
+	case SDL_MOUSEBUTTONDOWN: devmouse->mem[5] = 0x01; break;
 	}
 }
 
@@ -254,8 +253,6 @@ screenw(Device *d, Memory *m, Uint8 b)
 			d->mem[4]);
 		if(d->mem[5] == 1)
 			REQDRAW = 1;
-		if(d->mem[5] == 2)
-			clear(pixels);
 		d->ptr = 0;
 	}
 	(void)m;
@@ -288,6 +285,8 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
+	if(REQDRAW)
+		redraw(pixels, u);
 	while(1) {
 		int tick = SDL_GetTicks();
 		SDL_Event event;

@@ -4,32 +4,53 @@
 :dev/w fff9 ( std write port )
 
 ;drawx 2 ;drawy 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
+;touchx 2 ;touchy 2 ;down 1
 
 |0100 @RESET 
 	
 	#05 =dev/r ( set dev/read mouse )
 	#01 =dev/w ( set dev/write to screen ) 
 
+	#02 =color
+	#0050 =w #0080 =h ,update JSR
+
 BRK
 
 |c000 @FRAME
 	
 	( get touch )
-	#04 IOR #01 NEQ ,frame-end ROT JMP? POP2
+	#05 IOR #01 EQU ,on-touch ROT JMP? POP2
+	#05 IOR #10 EQU ,on-release ROT JMP? POP2
+	#01 ~down EQU ,on-drag ROT JMP? POP2
+	BRK
 
-	( clear )
-	#00 =color
-	~x ~y #0060 #0040 ,fillrect JSR
+	@on-touch
+		#01 =down
+		#01 =color
+		#00 IOR2 =touchx #02 IOR2 =touchy
+		,update JSR
+	BRK
+	@on-release
+		#00 =down
+		#02 =color
+		,update JSR
+	BRK
+	@on-drag
+		( clear last rect )
+		#00 =color
+		~x ~y ~w ~h ,fillrect JSR
+		( draw new rect )
+		#03 =color
+		#00 IOR2 ~touchx SUBS2 ~x ADDS2 =x
+		#02 IOR2 ~touchy SUBS2 ~y ADDS2 =y
+		#00 IOR2 =touchx #02 IOR2 =touchy
+		,update JSR
+	BRK
 
-	( fill rect x y w h )
-	#01 =color
-	#00 IOR2 ( get mouse-x ) =x
-	#02 IOR2 ( get mouse-y ) =y
-	~x ~y #0060 #0040 ,fillrect JSR
-	
-	,redraw JSR
-
-	@frame-end
+	@update
+		~x ~y ~w ~h ,fillrect JSR
+		,redraw JSR
+	BRK
 
 BRK
 
@@ -56,13 +77,6 @@ BRK
 	#0000 IOW2
 	#00 IOW
 	#01 IOW
-	RTS
-
-@clear
-	#0000 IOW2
-	#0000 IOW2
-	#00 IOW
-	#02 IOW
 	RTS
 
 |d000 @ERROR BRK 
