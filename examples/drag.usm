@@ -11,8 +11,9 @@
 	#05 =dev/r ( set dev/read mouse )
 	#01 =dev/w ( set dev/write to screen ) 
 
-	#02 =color
-	#0050 =w #0080 =h ,update JSR
+	#02 =color ( starting color )
+	#0050 =w #0080 =h ( starting size )
+	,update JSR
 
 BRK
 
@@ -26,21 +27,18 @@ BRK
 
 	@on-touch
 		#01 =down
-		#01 =color
+		#03 =color
 		#00 IOR2 =touchx #02 IOR2 =touchy
 		,update JSR
 	BRK
+
 	@on-release
 		#00 =down
-		#02 =color
+		#01 =color
 		,update JSR
 	BRK
+
 	@on-drag
-
-		( clear last rect )
-		#00 =color
-		~x ~y ~w ~h ,fillrect JSR
-
 		#00 IOR2 ~touchx SUBS2 ~x ADDS2 =x
 		#02 IOR2 ~touchy SUBS2 ~y ADDS2 =y
 		#00 IOR2 =touchx #02 IOR2 =touchy
@@ -48,14 +46,9 @@ BRK
 	BRK
 
 	@update
-
-		( draw new rect )
-		#03 =color
-		~x ~y ~w ~h ,linerect JSR
-
-		#0000 ,rounds_chr ~x #0010 ADD2 ~y #0010 ADD2 ,drawsprite JSR
-		#0100 ,eyeeye_chr ~x #0040 ADD2 ~y #0020 ADD2 ,drawsprite JSR
-
+		( draw ) ~x ~y ~w ~h ,linerect JSR
+		( draw ) #0000 ,rounds_chr ~x #0010 ADD2 ~y #0010 ADD2 ,drawsprite JSR
+		( draw ) #0100 ,eyeeye_chr ~x #0040 ADD2 ~y #0020 ADD2 ,drawsprite JSR
 		,redraw JSR
 	BRK
 
@@ -82,18 +75,18 @@ BRK
 	RTS
 
 @linerect
-	,h STR2 ,w STR2 ,y STR2 ,x STR2
-	,x LDR2 ,drawx STR2 ,y LDR2 ,drawy STR2
+	=h =w =y =x
+	~x =drawx ~y =drawy
 	@linerectcol
-		( draw ) ,x LDR2 ,drawy LDR2 ,putpixel JSR
-		( draw ) ,x LDR2 ,w LDR2 ADD2 ,drawy LDR2 ,putpixel JSR
-		,drawy LDR2 #0001 ADD2 ,drawy STR2 
-		,drawy LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,linerectcol ROT JMP? POP2
+		( draw ) ~x ~drawy ,putpixel JSR
+		( draw ) ~x ~w ADD2 ~drawy ,putpixel JSR
+		~drawy #0001 ADD2 =drawy 
+		~drawy ~h ~y ADD2 LTH2 ,linerectcol ROT JMP? POP2
 	@linerectrow
-		( draw ) ,drawx LDR2 ,y LDR2 ,putpixel JSR
-		( draw ) ,drawx LDR2 ,y LDR2 ,h LDR2 ADD2 ,putpixel JSR
-		,drawx LDR2 #0001 ADD2 ,drawx STR2 
-		,drawx LDR2 ,w LDR2 ,x LDR2 ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
+		( draw ) ~drawx ~y ,putpixel JSR
+		( draw ) ~drawx ~y ~h ADD2 ,putpixel JSR
+		~drawx #0001 ADD2 =drawx 
+		~drawx ~w ~x ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
 	RTS
 
 @getmouse
