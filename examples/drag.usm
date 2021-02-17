@@ -36,11 +36,11 @@ BRK
 		,update JSR
 	BRK
 	@on-drag
+
 		( clear last rect )
 		#00 =color
 		~x ~y ~w ~h ,fillrect JSR
-		( draw new rect )
-		#03 =color
+
 		#00 IOR2 ~touchx SUBS2 ~x ADDS2 =x
 		#02 IOR2 ~touchy SUBS2 ~y ADDS2 =y
 		#00 IOR2 =touchx #02 IOR2 =touchy
@@ -48,11 +48,25 @@ BRK
 	BRK
 
 	@update
-		~x ~y ~w ~h ,fillrect JSR
+
+		( draw new rect )
+		#03 =color
+		~x ~y ~w ~h ,linerect JSR
+
+		#0000 ,rounds_chr ~x #0010 ADD2 ~y #0010 ADD2 ,drawsprite JSR
+		#0100 ,eyeeye_chr ~x #0040 ADD2 ~y #0020 ADD2 ,drawsprite JSR
+
 		,redraw JSR
 	BRK
 
 BRK
+
+@putpixel 
+	IOW2 ( y short )
+	IOW2 ( x short )
+	,color LDR IOW  ( color byte )
+	#00 IOW  ( redraw byte )
+	RTS
 
 @fillrect
 	=h =w =y =x ( store values in variables )
@@ -67,17 +81,44 @@ BRK
 		~drawy ~h ~y ADD2 LTH2 ,fillrectrow ROT JMP? POP2
 	RTS
 
+@linerect
+	,h STR2 ,w STR2 ,y STR2 ,x STR2
+	,x LDR2 ,drawx STR2 ,y LDR2 ,drawy STR2
+	@linerectcol
+		( draw ) ,x LDR2 ,drawy LDR2 ,putpixel JSR
+		( draw ) ,x LDR2 ,w LDR2 ADD2 ,drawy LDR2 ,putpixel JSR
+		,drawy LDR2 #0001 ADD2 ,drawy STR2 
+		,drawy LDR2 ,h LDR2 ,y LDR2 ADD2 LTH2 ,linerectcol ROT JMP? POP2
+	@linerectrow
+		( draw ) ,drawx LDR2 ,y LDR2 ,putpixel JSR
+		( draw ) ,drawx LDR2 ,y LDR2 ,h LDR2 ADD2 ,putpixel JSR
+		,drawx LDR2 #0001 ADD2 ,drawx STR2 
+		,drawx LDR2 ,w LDR2 ,x LDR2 ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
+	RTS
+
 @getmouse
 	#00 IOR2 ( get mouse x )
 	#02 IOR2 ( get mouse y )
 	RTS
 
+@drawsprite
+	#02 =dev/w                           ( set dev/write to sprite ) 
+	IOW2 ( y short )
+	IOW2 ( x short )
+	IOW2 ( sprite address )
+	IOW2 ( redraw byte )
+	RTS
+
 @redraw
+	#01 =dev/w                           ( set dev/write to sprite ) 
 	#0000 IOW2
 	#0000 IOW2
 	#00 IOW
 	#01 IOW
 	RTS
+
+@rounds_chr [ 3844 92aa 9244 3800 0038 7c7c 7c38 0000 ]
+@eyeeye_chr [ aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55 ]
 
 |d000 @ERROR BRK 
 |FFFA .RESET .FRAME .ERROR
