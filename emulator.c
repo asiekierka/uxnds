@@ -15,14 +15,16 @@ WITH REGARD TO THIS SOFTWARE.
 #include "uxn.h"
 
 #define HOR 32
-#define VER 16
+#define VER 18
 #define PAD 2
-#define SZ (HOR * VER * 16)
+#define RES (HOR * VER * 16)
 
-typedef unsigned char Uint8;
+typedef struct {
+	Uint8 bg[RES], fg[RES];
+} Screen;
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
-int HEIGHT = 8 * (VER + 2) + 8 * PAD * 2;
+int HEIGHT = 8 * VER + 8 * PAD * 2;
 int FPS = 30, GUIDES = 1, REQDRAW = 0, ZOOM = 2;
 
 Uint32 theme[] = {
@@ -55,7 +57,41 @@ SDL_Renderer *gRenderer;
 SDL_Texture *gTexture;
 Uint32 *pixels;
 
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller;
+Screen screen;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller, *devfg;
+
+#pragma mark - Paint
+
+Uint16
+rowchr(Uint16 x, Uint16 y)
+{
+	return (y % 8) + ((x / 8 + y / 8 * HOR) * 16);
+}
+
+void
+paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
+{
+	Uint16 row = rowchr(x, y), col = x % 8;
+	if(x >= HOR * 8 || y >= VER * 8 || row > RES - 8)
+		return;
+	if(color == 0 || color == 2)
+		dst[row] &= ~(1UL << (7 - col));
+	else
+		dst[row] |= 1UL << (7 - col);
+	if(color == 0 || color == 1)
+		dst[row + 8] &= ~(1UL << (7 - col));
+	else
+		dst[row + 8] |= 1UL << (7 - col);
+}
+
+void
+painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg)
+{
+	Uint16 v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++)
+			paintpixel(dst, x + h, y + v, ((sprite[v] >> (7 - h)) & 0x1) ? fg : 0);
+}
 
 #pragma mark - Helpers
 
@@ -76,14 +112,15 @@ putpixel(Uint32 *dst, int x, int y, int color)
 }
 
 void
-drawchr(Uint32 *dst, int x, int y, Uint8 *sprite)
+drawchr(Uint32 *dst, int x, int y, Uint8 *sprite, Uint8 alpha)
 {
 	int v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
-			int ch1 = ((sprite[v] >> h) & 0x1);
-			int ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-			putpixel(dst, x + 7 - h, y + v, ch1 + ch2);
+			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
+			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+			if(!alpha || (alpha && ch1 + ch2 != 0))
+				putpixel(dst, x + 7 - h, y + v, ch1 + ch2);
 		}
 }
 
@@ -111,25 +148,27 @@ void
 drawdebugger(Uint32 *dst, Uxn *u)
 {
 	Uint8 i;
-	for(i = 0; i < 0x20; ++i) { /* memory */
-		Uint8 x = (i % 8) * 3 + 1, y = i / 8 + 1, b = u->ram.dat[i];
+	for(i = 0; i < 0x10; ++i) { /* memory */
+		Uint8 x = (i % 8) * 3 + 3, y = i / 8 + 3, b = u->ram.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
-	}
-	for(i = 0; i < 0x10; ++i) { /* memory */
-		Uint8 x = (i % 8) * 3 + 1, y = i / 8 + 0x13, b = u->wst.dat[i];
+		y = i / 8 + 0x11, b = u->wst.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
-	drawicn(dst, 25 * 8, 8, icons[getflag(&u->status, FLAG_HALT) != 0], 2, 0);
-	drawicn(dst, 26 * 8, 8, icons[getflag(&u->status, FLAG_SHORT) != 0], 2, 0);
-	drawicn(dst, 27 * 8, 8, icons[getflag(&u->status, FLAG_SIGN) != 0], 2, 0);
-	drawicn(dst, 28 * 8, 8, icons[getflag(&u->status, FLAG_COND) != 0], 2, 0);
 }
 
 void
 redraw(Uint32 *dst, Uxn *u)
 {
+	int x, y;
+	/* merge layers */
+	for(y = 0; y < VER; ++y)
+		for(x = 0; x < HOR; ++x) {
+			int key = (y * HOR + x) * 16;
+			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.bg[key], 0);
+			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
+		}
 	if(GUIDES)
 		drawdebugger(dst, u);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
@@ -170,14 +209,23 @@ init(void)
 	if(!(pixels = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
 		return error("Pixels", "Failed to allocate memory");
 	clear(pixels);
+	SDL_ShowCursor(SDL_DISABLE);
 	return 1;
 }
 
 void
 domouse(SDL_Event *event)
 {
-	int x = event->motion.x / ZOOM;
-	int y = event->motion.y / ZOOM;
+	int x = (event->motion.x - PAD * 8 * ZOOM) / ZOOM;
+	int y = (event->motion.y - PAD * 8 * ZOOM) / ZOOM;
+	if(x < 0)
+		x = 0;
+	else if(x > WIDTH)
+		x = WIDTH - 1;
+	if(y < 0)
+		y = 0;
+	else if(y > HEIGHT)
+		y = HEIGHT - 1;
 	devmouse->mem[0] = (x >> 8) & 0xff;
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
@@ -263,16 +311,32 @@ Uint8
 spritew(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->ptr++] = b;
-	if(d->ptr > 7) {
+	if(d->ptr == 6) {
+		int i;
 		Uint16 x = (d->mem[2] << 8) + d->mem[3];
 		Uint16 y = (d->mem[0] << 8) + d->mem[1];
-		Uint8 *chr = &m->dat[(d->mem[4] << 8) + d->mem[5]];
-		if(!d->mem[6])
-			drawchr(pixels, x, y, chr);
-		else
-			drawicn(pixels, x, y, chr, d->mem[6] & 0xf, (d->mem[6] >> 4) & 0xf);
-		if(d->mem[7])
-			REQDRAW = 1;
+		Uint16 a = (d->mem[4] << 8) + d->mem[5];
+		Uint16 key = (x + y * HOR) * 16;
+		for(i = 0; i < 16; ++i)
+			screen.bg[key + i] = m->dat[a + i];
+		REQDRAW = 1;
+		d->ptr = 0;
+	}
+	return 0;
+}
+
+Uint8 /* TODO: merge this device into screen/sprite */
+fgw(Device *d, Memory *m, Uint8 b)
+{
+	d->mem[d->ptr++] = b;
+	if(d->ptr == 7) {
+		Uint16 x = (d->mem[2] << 8) + d->mem[3];
+		Uint16 y = (d->mem[0] << 8) + d->mem[1];
+		Uint16 a = (d->mem[4] << 8) + d->mem[5];
+		Uint8 clr = d->mem[6] & 0xf;
+		Uint8 layer = d->mem[6] >> 4 & 0xf;
+		painticn(layer ? screen.fg : screen.bg, x, y, &m->dat[a], clr);
+		REQDRAW = 1;
 		d->ptr = 0;
 	}
 	return 0;
@@ -333,6 +397,7 @@ main(int argc, char **argv)
 	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw);
 	devkey = portuxn(&u, "key", defaultrw, consolew);
 	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
+	devfg = portuxn(&u, "fg", defaultrw, fgw);
 
 	start(&u);
 	quit();

@@ -1,21 +1,50 @@
-( blank )
+( sprite )
 
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;x 1 ;y 2
+;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 ;color 1
 
-|0100 @RESET
+|0100 @RESET 
 
-	#12 #34 WSR2
-	,test JSR
+	#05 =dev/r ( set dev/read mouse )
+	#02 =dev/w ( set dev/write to sprite ) 
+
+	#00 ,rounds_chr #0004 #0004 ,drawsprite JSR
 
 BRK
 
-@test
+|c000 @FRAME
+	
+	#06 =dev/w ( set dev/write to sprite ) 
+
+	( clear last cursor )
+	#10 ,clear_icn ~lastx ~lasty ,drawsprite JSR
+
+	( record mouse values )
+	#00 IOR2 =mousex #02 IOR2 =mousey
+	#04 IOR #11 ADD =color
+
+	~color ,cursor_icn ~mousex ~mousey ,drawsprite JSR
+	~mousex =lastx ~mousey =lasty
+
+BRK
+
+@drawsprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
+	IOW2 ( sprite address )
+	IOW ( layer-color )
 	RTS
 
-|c000 @FRAME BRK 
+|0200 @SPRITESHEET
+
+@rounds_chr [ 3844 92aa 9244 3800 0038 7c7c 7c38 0000 ]
+@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
+@clear_icn [ 0000 0000 0000 0000 ]
+
+BRK
+
 |d000 @ERROR BRK 
 
 |FFFA .RESET .FRAME .ERROR

@@ -7,16 +7,16 @@
 	#01 =dev/w                           ( set dev/write to screen ) 
 	#02 =dev/w                           ( set dev/write to sprite ) 
 
-	#0110 ,cursor_icn #0020 #0038 ,drawsprite JSR
-	#0010 ,rounds_chr #0028 #0038 ,drawsprite JSR
-	#3210 ,cursor_icn #0020 #0040 ,drawsprite JSR
-	#0010 ,rounds_chr #0028 #0040 ,drawsprite JSR
+	#0110 ,cursor_icn #20 #38 ,drawsprite JSR
+	#0010 ,rounds_chr #28 #38 ,drawsprite JSR
+	#3210 ,cursor_icn #20 #40 ,drawsprite JSR
+	#0010 ,rounds_chr #28 #40 ,drawsprite JSR
 
 BRK
 
 @drawsprite
-	IOW2 ( y short )
-	IOW2 ( x short )
+	IOW ( y byte )
+	IOW ( x byte )
 	IOW2 ( sprite address )
 	IOW2 ( redraw byte )
 	RTS
