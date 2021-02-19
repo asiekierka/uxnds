@@ -94,4 +94,5 @@ BRK
 |c000 @FRAME
 |d000 @ERROR 
 
+|FFF0 [ f2ac 35bb 2b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR

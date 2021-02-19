@@ -37,4 +37,5 @@ BRK
 	RTS
 
 |d000 @ERROR BRK 
+|FFF0 [ f2ac 35bb 2b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR

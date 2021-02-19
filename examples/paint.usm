@@ -3,22 +3,23 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 ;color 1 ;mode 1 ;state 1 ;brush 2
+;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 
+;state 1 ;color 1 ;brush 2
 
 |0100 @RESET 
 
 	#05 =dev/r ( set dev/read mouse )
 	#02 =dev/w ( set dev/write to sprite ) 
 
-	#05 =color
-	,draw-interface JSR
-	,brush_large ,brush STR2
+	#05 =color ( select a default color )
+	,brush_large ,brush STR2 ( select a default brush )
+
+	,draw-interface JSR 
 
 BRK
 
 |c000 @FRAME
 	
-	#02 =dev/w ( set dev/write to sprite ) 
 	( clear last cursor )
 	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
 	( record mouse values )
@@ -58,7 +59,7 @@ BRK
 		~color ~brush ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,draw-sprite JSR
 	@end-touch
 
-	~mousex =lastx ~mousey =lasty
+	~mousex =lastx ~mousey =lasty ( update last post )
 
 BRK
 
@@ -90,4 +91,5 @@ BRK
 
 |d000 @ERROR BRK 
 
+|FFF0 [ f2af 35bb 2b5f ] ( palette )
 |FFFA .RESET .FRAME .ERROR

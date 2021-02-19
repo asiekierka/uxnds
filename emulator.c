@@ -173,6 +173,20 @@ error(char *msg, const char *err)
 }
 
 void
+loadtheme(Uint8 *addr)
+{
+	Uint8 r, g, b;
+	r = *(addr + 0) >> 4 & 0xf, g = *(addr + 2) >> 4 & 0xf, b = *(addr + 4) >> 4 & 0xf;
+	theme[0] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+	r = *(addr + 0) & 0xf, g = *(addr + 2) & 0xf, b = *(addr + 4) & 0xf;
+	theme[1] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+	r = *(addr + 1) >> 4 & 0xf, g = *(addr + 3) >> 4 & 0xf, b = *(addr + 5) >> 4 & 0xf;
+	theme[2] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+	r = *(addr + 1) & 0xf, g = *(addr + 3) & 0xf, b = *(addr + 5) & 0xf;
+	theme[3] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+}
+
+void
 drawdebugger(Uint32 *dst, Uxn *u)
 {
 	Uint8 i;
@@ -307,6 +321,7 @@ screenr(Device *d, Memory *m, Uint8 b)
 	case 2: return (HEIGHT >> 8) & 0xff;
 	case 3: return HEIGHT & 0xff;
 	}
+	loadtheme(m->dat + 0xfff0);
 	(void)m;
 	return d->mem[b];
 }
@@ -355,6 +370,7 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
+	loadtheme(u->ram.dat + 0xfff0);
 	if(screen.reqdraw)
 		redraw(pixels, u);
 	while(1) {
