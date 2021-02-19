@@ -20,12 +20,13 @@ WITH REGARD TO THIS SOFTWARE.
 #define RES (HOR * VER * 16)
 
 typedef struct {
+	Uint8 reqdraw;
 	Uint8 bg[RES], fg[RES];
 } Screen;
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
 int HEIGHT = 8 * VER + 8 * PAD * 2;
-int FPS = 30, GUIDES = 1, REQDRAW = 0, ZOOM = 2;
+int FPS = 30, GUIDES = 1, ZOOM = 2;
 
 Uint32 theme[] = {
 	0x000000,
@@ -58,7 +59,15 @@ SDL_Texture *gTexture;
 Uint32 *pixels;
 
 Screen screen;
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller, *devfg;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller;
+
+#pragma mark - Helpers
+
+int
+clamp(int val, int min, int max)
+{
+	return (val >= min) ? (val <= max) ? val : max : min;
+}
 
 #pragma mark - Paint
 
@@ -85,12 +94,27 @@ paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg)
+paintchr(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++)
-			paintpixel(dst, x + h, y + v, ((sprite[v] >> (7 - h)) & 0x1) ? fg : 0);
+		for(h = 0; h < 8; h++) {
+			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
+			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+			paintpixel(dst, x + h, y + v, ch1 + ch2);
+		}
+}
+
+void
+painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 alpha)
+{
+	Uint16 v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
+			if(!alpha || (alpha && ch1))
+				paintpixel(dst, x + h, y + v, ch1 ? fg : 0);
+		}
 }
 
 #pragma mark - Helpers
@@ -175,7 +199,7 @@ redraw(Uint32 *dst, Uxn *u)
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
-	REQDRAW = 0;
+	screen.reqdraw = 0;
 }
 
 void
@@ -216,16 +240,8 @@ init(void)
 void
 domouse(SDL_Event *event)
 {
-	int x = (event->motion.x - PAD * 8 * ZOOM) / ZOOM;
-	int y = (event->motion.y - PAD * 8 * ZOOM) / ZOOM;
-	if(x < 0)
-		x = 0;
-	else if(x > WIDTH)
-		x = WIDTH - 1;
-	if(y < 0)
-		y = 0;
-	else if(y > HEIGHT)
-		y = HEIGHT - 1;
+	int x = clamp((event->motion.x - PAD * 8 * ZOOM) / ZOOM, 0, WIDTH - 1);
+	int y = clamp((event->motion.y - PAD * 8 * ZOOM) / ZOOM, 0, HEIGHT - 1);
 	devmouse->mem[0] = (x >> 8) & 0xff;
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
@@ -300,7 +316,7 @@ screenw(Device *d, Memory *m, Uint8 b)
 			(d->mem[0] << 8) + d->mem[1],
 			d->mem[4]);
 		if(d->mem[5] == 1)
-			REQDRAW = 1;
+			screen.reqdraw = 1;
 		d->ptr = 0;
 	}
 	(void)m;
@@ -311,32 +327,17 @@ Uint8
 spritew(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->ptr++] = b;
-	if(d->ptr == 6) {
-		int i;
-		Uint16 x = (d->mem[2] << 8) + d->mem[3];
-		Uint16 y = (d->mem[0] << 8) + d->mem[1];
-		Uint16 a = (d->mem[4] << 8) + d->mem[5];
-		Uint16 key = (x + y * HOR) * 16;
-		for(i = 0; i < 16; ++i)
-			screen.bg[key + i] = m->dat[a + i];
-		REQDRAW = 1;
-		d->ptr = 0;
-	}
-	return 0;
-}
-
-Uint8 /* TODO: merge this device into screen/sprite */
-fgw(Device *d, Memory *m, Uint8 b)
-{
-	d->mem[d->ptr++] = b;
 	if(d->ptr == 7) {
 		Uint16 x = (d->mem[2] << 8) + d->mem[3];
 		Uint16 y = (d->mem[0] << 8) + d->mem[1];
 		Uint16 a = (d->mem[4] << 8) + d->mem[5];
 		Uint8 clr = d->mem[6] & 0xf;
 		Uint8 layer = d->mem[6] >> 4 & 0xf;
-		painticn(layer ? screen.fg : screen.bg, x, y, &m->dat[a], clr);
-		REQDRAW = 1;
+		if(clr > 7)
+			paintchr(layer ? screen.fg : screen.bg, x, y, &m->dat[a]);
+		else
+			painticn(layer ? screen.fg : screen.bg, x, y, &m->dat[a], clr % 4, clr > 3);
+		screen.reqdraw = 1;
 		d->ptr = 0;
 	}
 	return 0;
@@ -349,7 +350,7 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
-	if(REQDRAW)
+	if(screen.reqdraw)
 		redraw(pixels, u);
 	while(1) {
 		int tick = SDL_GetTicks();
@@ -372,7 +373,7 @@ start(Uxn *u)
 			}
 		}
 		evaluxn(u, u->vframe);
-		if(REQDRAW)
+		if(screen.reqdraw)
 			redraw(pixels, u);
 	}
 }
@@ -397,7 +398,6 @@ main(int argc, char **argv)
 	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw);
 	devkey = portuxn(&u, "key", defaultrw, consolew);
 	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
-	devfg = portuxn(&u, "fg", defaultrw, fgw);
 
 	start(&u);
 	quit();
