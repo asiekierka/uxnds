@@ -85,7 +85,7 @@ BRK
 
 ### Controller(dev/ctrl)
 
-A device that works like a NES controller, each button is a bit from a single byte.
+A device that works like a NES controller, each button is a bit from a single byte. Press `h` to toggle debugger.
 
 - `0x01` Ctrl
 - `0x02` Alt

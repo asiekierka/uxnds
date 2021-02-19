@@ -29,7 +29,7 @@ BRK
 
 	( check paint )
 	#04 IOR #00 EQU ,skip ROT JMP? POP2
-	#05 ,brush_large ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,drawsprite JSR
+		#05 ,brush_large ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,drawsprite JSR
 	@skip
 
 	~mousex =lastx ~mousey =lasty

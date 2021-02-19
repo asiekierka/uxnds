@@ -258,6 +258,8 @@ void
 doctrl(SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
+	if(z && event->key.keysym.sym == SDLK_h)
+		GUIDES = !GUIDES;
 	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
 		flag = 0x01;
 	if(SDL_GetModState() & KMOD_LALT || SDL_GetModState() & KMOD_RALT)
@@ -394,7 +396,7 @@ main(int argc, char **argv)
 
 	devconsole = portuxn(&u, "console", defaultrw, consolew);
 	devscreen = portuxn(&u, "screen", screenr, screenw);
-	devsprite = portuxn(&u, "sprite", defaultrw, spritew);
+	devsprite = portuxn(&u, "sprite", screenr, spritew);
 	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw);
 	devkey = portuxn(&u, "key", defaultrw, consolew);
 	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
