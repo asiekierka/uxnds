@@ -12,7 +12,7 @@
 	#02 =dev/w ( set dev/write to sprite ) 
 
 	#05 =color ( select a default color )
-	,brush_large ,brush STR2 ( select a default brush )
+	,brush_large =brush ( select a default brush )
 
 	,draw-interface JSR 
 
@@ -91,5 +91,5 @@ BRK
 
 |d000 @ERROR BRK 
 
-|FFF0 [ f2af 35bb 2b5f ] ( palette )
+|FFF0 [ f1c3 f12e f12a ] ( palette )
 |FFFA .RESET .FRAME .ERROR

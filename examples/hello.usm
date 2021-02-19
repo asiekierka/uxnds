@@ -12,9 +12,9 @@
 	( print to screen )
 	#0008 =x #0030 =y #01 =color
 	,string ,displaygui JSR 
-	#0010 =x #0038 =y #12 =color
+	#0010 =x #0038 =y #02 =color
 	,string ,displaygui JSR 
-	#0018 =x #0040 =y #23 =color
+	#0018 =x #0040 =y #03 =color
 	,string ,displaygui JSR 
 	
 
@@ -40,18 +40,18 @@ BRK
 	RTS
 
 @printchar
-	~color #01 ROT ,getchar JSR ~x ~y ,puticon JSR
+	~color ,getchar JSR ~x ~y ,draw-sprite JSR
 	RTS
 
 @getchar
 	#00 SWP #0008 MUL2 ,SPRITESHEET ADD2
 	RTS
 
-@puticon
-	IOW2 ( y short )
-	IOW2 ( x short )
+@draw-sprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
 	IOW2 ( sprite address )
-	IOW2  ( redraw byte )
+	IOW ( layer-color )
 	RTS
 
 |0300 @SPRITESHEET ( first 128 characters of the spectrum-zx font ) 
@@ -94,5 +94,5 @@ BRK
 |c000 @FRAME
 |d000 @ERROR 
 
-|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFF0 [ f3f0 f30b f30a ] ( palette )
 |FFFA .RESET .FRAME .ERROR
