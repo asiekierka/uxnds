@@ -186,7 +186,6 @@ void
 redraw(Uint32 *dst, Uxn *u)
 {
 	int x, y;
-	/* merge layers */
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x) {
 			int key = (y * HOR + x) * 16;

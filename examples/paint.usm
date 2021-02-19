@@ -3,40 +3,75 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 ;color 1
+;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 ;color 1 ;mode 1 ;state 1 ;brush 2
 
 |0100 @RESET 
 
 	#05 =dev/r ( set dev/read mouse )
 	#02 =dev/w ( set dev/write to sprite ) 
 
-	#00 ,rounds_chr #0004 #0004 ,drawsprite JSR
+	#05 =color
+	,draw-interface JSR
+	,brush_large ,brush STR2
 
 BRK
 
 |c000 @FRAME
 	
 	#02 =dev/w ( set dev/write to sprite ) 
-
 	( clear last cursor )
-	#10 ,clear_icn ~lastx ~lasty ,drawsprite JSR
-
+	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
 	( record mouse values )
 	#00 IOR2 =mousex #02 IOR2 =mousey
-	#04 IOR #11 ADD =color
+	#04 IOR #11 ADD =state
+	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
 
-	~color ,cursor_icn ~mousex ~mousey ,drawsprite JSR
+	( check click )
+	#04 IOR #00 EQU ,end-touch ROT JMP? POP2
 
-	( check paint )
-	#04 IOR #00 EQU ,skip ROT JMP? POP2
-		#05 ,brush_large ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,drawsprite JSR
-	@skip
+		( check interface )
+		#00 IOR2 #0008 DIV2 #0001 NEQ2 ,end-interface ROT JMP? POP2
+
+			@option0
+			#02 IOR2 #0008 DIV2 #0004 NEQ2 ,option1 ROT JMP? POP2
+				,brush_large =brush BRK
+			@option1
+			#02 IOR2 #0008 DIV2 #0005 NEQ2 ,option2 ROT JMP? POP2
+				,brush_small =brush BRK
+			@option2
+			#02 IOR2 #0008 DIV2 #0006 NEQ2 ,option3 ROT JMP? POP2
+				,brush_tiny =brush BRK
+			@option3
+			#02 IOR2 #0008 DIV2 #0007 NEQ2 ,option4 ROT JMP? POP2
+				#05 =color BRK
+			@option4
+			#02 IOR2 #0008 DIV2 #0008 NEQ2 ,option5 ROT JMP? POP2
+				#06 =color BRK
+			@option5
+			#02 IOR2 #0008 DIV2 #0009 NEQ2 ,option6 ROT JMP? POP2
+				#07 =color BRK
+			@option6
+
+			BRK
+		@end-interface
+
+		~color ~brush ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,draw-sprite JSR
+	@end-touch
 
 	~mousex =lastx ~mousey =lasty
 
 BRK
 
-@drawsprite
+@draw-interface
+	#05 ,brush_large #0008 #0020 ,draw-sprite JSR
+	#05 ,brush_small #0008 #0028 ,draw-sprite JSR
+	#05 ,brush_tiny  #0008 #0030 ,draw-sprite JSR
+	#05 ,brush_large #0008 #0038 ,draw-sprite JSR
+	#06 ,brush_large #0008 #0040 ,draw-sprite JSR
+	#07 ,brush_large #0008 #0048 ,draw-sprite JSR
+	RTS
+
+@draw-sprite
 	IOW2 ( y byte )
 	IOW2 ( x byte )
 	IOW2 ( sprite address )
@@ -45,11 +80,11 @@ BRK
 
 |0200 @SPRITESHEET
 
-@rounds_chr [ 3844 92aa 9244 3800 0038 7c7c 7c38 0000 ]
-@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
-@clear_icn [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+@clear_icn   [ 0000 0000 0000 0000 ]
 @brush_large [ 387c fefe fe7c 3800 ]
 @brush_small [ 0038 7c7c 7c38 0000 ]
+@brush_tiny  [ 0000 1038 1000 0000 ]
 
 BRK
 
