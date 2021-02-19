@@ -131,6 +131,10 @@ clear(Uint32 *dst)
 void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
+	if(y == PAD * 8 || y == HEIGHT - PAD * 8 - 1) {
+		if(x == PAD * 8) return;
+		if(x == WIDTH - PAD * 8 - 1) return;
+	}
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
 		dst[y * WIDTH + x] = theme[color];
 }

@@ -106,6 +106,7 @@ A device that works like a NES controller, each button is a bit from a single by
 
 ### Misc TODOs
 
+- Defining theme colors in memory
 - Includes
 - Defines
 - Lint, print unused labels

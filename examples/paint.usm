@@ -42,13 +42,13 @@ BRK
 			#02 IOR2 #0008 DIV2 #0006 NEQ2 ,option3 ROT JMP? POP2
 				,brush_tiny =brush BRK
 			@option3
-			#02 IOR2 #0008 DIV2 #0007 NEQ2 ,option4 ROT JMP? POP2
+			#02 IOR2 #0008 DIV2 #000b NEQ2 ,option4 ROT JMP? POP2
 				#05 =color BRK
 			@option4
-			#02 IOR2 #0008 DIV2 #0008 NEQ2 ,option5 ROT JMP? POP2
+			#02 IOR2 #0008 DIV2 #000c NEQ2 ,option5 ROT JMP? POP2
 				#06 =color BRK
 			@option5
-			#02 IOR2 #0008 DIV2 #0009 NEQ2 ,option6 ROT JMP? POP2
+			#02 IOR2 #0008 DIV2 #000d NEQ2 ,option6 ROT JMP? POP2
 				#07 =color BRK
 			@option6
 
@@ -66,9 +66,9 @@ BRK
 	#05 ,brush_large #0008 #0020 ,draw-sprite JSR
 	#05 ,brush_small #0008 #0028 ,draw-sprite JSR
 	#05 ,brush_tiny  #0008 #0030 ,draw-sprite JSR
-	#05 ,brush_large #0008 #0038 ,draw-sprite JSR
-	#06 ,brush_large #0008 #0040 ,draw-sprite JSR
-	#07 ,brush_large #0008 #0048 ,draw-sprite JSR
+	#05 ,brush_large #0008 #0058 ,draw-sprite JSR
+	#06 ,brush_large #0008 #0060 ,draw-sprite JSR
+	#07 ,brush_large #0008 #0068 ,draw-sprite JSR
 	RTS
 
 @draw-sprite
