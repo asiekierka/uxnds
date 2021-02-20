@@ -3,116 +3,110 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;drawx 2 ;drawy 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
-;touchx 2 ;touchy 2 ;down 1
+;dragx 2  ;dragy 2
+;mousex 2 ;mousey 2 
+;lastx 2  ;lasty 2 
+;originx 2 ;originy 2 
+;down 1 ;state 1
 
 |0100 @RESET 
 	
 	#05 =dev/r ( set dev/read mouse )
-	#01 =dev/w ( set dev/write to screen ) 
-
-	#02 =color ( starting color )
-	#0050 =w #0080 =h ( starting size )
-	,update JSR
+	#02 =dev/w ( set dev/write to sprite ) 
+	,draw-picture JSR
 
 BRK
 
 |c000 @FRAME
-	
+
+	( clear last cursor )
+	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	( record mouse values )
+	#00 IOR2 =mousex #02 IOR2 =mousey
+	#04 IOR #11 ADD =state
+	( draw mouse )
+	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	( update last pos )
+	~mousex =lastx ~mousey =lasty 
+
 	( get touch )
 	#05 IOR #01 EQU ,on-touch ROT JMP? POP2
 	#05 IOR #10 EQU ,on-release ROT JMP? POP2
 	#01 ~down EQU ,on-drag ROT JMP? POP2
+
 	BRK
 
 	@on-touch
 		#01 =down
-		#03 =color
-		#00 IOR2 =touchx #02 IOR2 =touchy
+		#00 IOR2 =originx #02 IOR2 =originy
 		,update JSR
 	BRK
 
 	@on-release
 		#00 =down
-		#01 =color
 		,update JSR
 	BRK
 
 	@on-drag
-		#00 IOR2 ~touchx SUBS2 ~x ADDS2 =x
-		#02 IOR2 ~touchy SUBS2 ~y ADDS2 =y
-		#00 IOR2 =touchx #02 IOR2 =touchy
+		#00 IOR2 ~originx SUBS2 ~dragx ADDS2 =dragx
+		#02 IOR2 ~originy SUBS2 ~dragy ADDS2 =dragy
+		#00 IOR2 =originx #02 IOR2 =originy
 		,update JSR
 	BRK
 
 	@update
-		( draw ) ~x ~y ~w ~h ,linerect JSR
-		( draw ) #0000 ,rounds_chr ~x #0010 ADD2 ~y #0010 ADD2 ,drawsprite JSR
-		( draw ) #0100 ,eyeeye_chr ~x #0040 ADD2 ~y #0020 ADD2 ,drawsprite JSR
-		,redraw JSR
-	BRK
+		,draw-picture JSR
 
 BRK
 
-@putpixel 
-	IOW2 ( y short )
-	IOW2 ( x short )
-	,color LDR IOW  ( color byte )
-	#00 IOW  ( redraw byte )
+@draw-picture
+	#01 ,graphic #0040 ~dragx ADD2 #0040 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0008 ADD2 #0048 ~dragx ADD2 #0040 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0010 ADD2 #0050 ~dragx ADD2 #0040 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0018 ADD2 #0058 ~dragx ADD2 #0040 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0020 ADD2 #0040 ~dragx ADD2 #0048 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0028 ADD2 #0048 ~dragx ADD2 #0048 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0030 ADD2 #0050 ~dragx ADD2 #0048 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0038 ADD2 #0058 ~dragx ADD2 #0048 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0040 ADD2 #0040 ~dragx ADD2 #0050 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0048 ADD2 #0048 ~dragx ADD2 #0050 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0050 ADD2 #0050 ~dragx ADD2 #0050 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0058 ADD2 #0058 ~dragx ADD2 #0050 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0060 ADD2 #0040 ~dragx ADD2 #0058 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0068 ADD2 #0048 ~dragx ADD2 #0058 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0070 ADD2 #0050 ~dragx ADD2 #0058 ~dragy ADD2 ,draw-sprite JSR
+	#01 ,graphic #0078 ADD2 #0058 ~dragx ADD2 #0058 ~dragy ADD2 ,draw-sprite JSR
 	RTS
 
-@fillrect
-	=h =w =y =x ( store values in variables )
-	~x =drawx ~y =drawy ( store draw pos in variables )
-	@fillrectrow
-		~x =drawx
-		@fillrectcol
-			( draw ) ~drawx ~drawy IOW2 IOW2 ~color IOW  #00 IOW
-			~drawx #0001 ADD2 =drawx 
-			~drawx ~w ~x ADD2 LTH2 ,fillrectcol ROT JMP? POP2
-		~drawy #0001 ADD2 =drawy 
-		~drawy ~h ~y ADD2 LTH2 ,fillrectrow ROT JMP? POP2
-	RTS
-
-@linerect
-	=h =w =y =x
-	~x =drawx ~y =drawy
-	@linerectcol
-		( draw ) ~x ~drawy ,putpixel JSR
-		( draw ) ~x ~w ADD2 ~drawy ,putpixel JSR
-		~drawy #0001 ADD2 =drawy 
-		~drawy ~h ~y ADD2 LTH2 ,linerectcol ROT JMP? POP2
-	@linerectrow
-		( draw ) ~drawx ~y ,putpixel JSR
-		( draw ) ~drawx ~y ~h ADD2 ,putpixel JSR
-		~drawx #0001 ADD2 =drawx 
-		~drawx ~w ~x ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
-	RTS
-
-@getmouse
-	#00 IOR2 ( get mouse x )
-	#02 IOR2 ( get mouse y )
-	RTS
-
-@drawsprite
-	#02 =dev/w                           ( set dev/write to sprite ) 
-	IOW2 ( y short )
-	IOW2 ( x short )
+@draw-sprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
 	IOW2 ( sprite address )
-	IOW2 ( redraw byte )
+	IOW ( layer-color )
 	RTS
 
-@redraw
-	#01 =dev/w                           ( set dev/write to sprite ) 
-	#0000 IOW2
-	#0000 IOW2
-	#00 IOW
-	#01 IOW
-	RTS
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
 
-@rounds_chr [ 3844 92aa 9244 3800 0038 7c7c 7c38 0000 ]
-@eyeeye_chr [ aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55 ]
+@graphic [
+	ff80 8080 8080 8088
+	ffff fffc f8f9 f1f4
+	ffff 0010 c721 2120
+	ffff 3f0f 0717 c343
+	8888 8080 8080 8080
+	f0f1 f2f5 f2f1 f0f4
+	1208 804c 9212 4c00
+	7303 0343 1b1b fbfb
+	8080 8f83 8383 8393
+	f0f3 f1f0 e4c0 80ff
+	00c7 c7c6 4606 00ff
+	c3d3 c307 870f 3fff
+	8f83 8383 8383 83ff
+	fff7 fdff c0e2 f1ff
+	7fef bfff 07af 5fff
+	ffff ffff ffff ffff
+]
 
 |d000 @ERROR BRK 
-|FFF0 [ f2ac 35bb 2b53 ] ( palette )
-|FFFA .RESET .FRAME .ERROR
+|FFF0 [ f0ac f0bb f053 ] ( palette )
+|FFFA .RESET .FRAME .ERROR ( vectors )
