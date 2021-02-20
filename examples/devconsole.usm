@@ -1,0 +1,30 @@
+( hello world )
+
+:dev/w fff9 ( const write port )
+
+;x 2 ;y 2 ;color 1
+
+|0100 @RESET 
+	
+	( set dev/write to console ) 
+	#00 =dev/w                                   
+	( print to console )
+	,text ,displaycli JSR
+
+BRK
+
+@displaycli
+	
+	@cliloop
+		DUP2 LDR IOW                             ( write pointer value to console )
+		#0001 ADD2                               ( increment string pointer )
+		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
+RTS
+
+@text " Hello World "                     ( add characters to memory )
+
+|c000 @FRAME
+|d000 @ERROR 
+
+|FFF0 [ f3f0 f30b f30a ] ( palette )
+|FFFA .RESET .FRAME .ERROR

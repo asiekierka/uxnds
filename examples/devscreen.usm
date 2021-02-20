@@ -1,0 +1,45 @@
+( screen )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;centerx 2 ;centery 2 ;i 2
+
+|0100 @RESET 
+	
+	( set read/write to dev/screen )
+	#01 DUP =dev/r =dev/w 
+
+	( find screen center )
+	#00 IOR2 #0002 DIV2 =centerx
+	#02 IOR2 #0002 DIV2 =centery
+
+	( draw hor line )
+	#0000 =i
+	@draw-hor
+		#03 ~i ~centery ,draw-pixel JSR
+		~i #0002 ADD2 =i ( increment )
+	~i #00 IOR2 LTH2 ,draw-hor ROT JMP? POP2
+
+	( draw ver line )
+	#0000 =i
+	@draw-ver
+		#03 ~centerx ~i ,draw-pixel JSR
+		~i #0002 ADD2 =i ( increment )
+	~i #02 IOR2 LTH2 ,draw-ver ROT JMP? POP2
+
+	( draw pixel in the middle )
+	#01 ~centerx ~centery ,draw-pixel JSR
+
+BRK
+
+@draw-pixel 
+	IOW2 ( y short )
+	IOW2 ( x short )
+	IOW ( color byte )
+	RTS
+
+|c000 @FRAME BRK
+|d000 @ERROR BRK 
+|FFF0 [ f0ac f0bb f053 ] ( palette )
+|FFFA .RESET .FRAME .ERROR

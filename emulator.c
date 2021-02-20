@@ -322,10 +322,10 @@ Uint8
 screenr(Device *d, Memory *m, Uint8 b)
 {
 	switch(b) {
-	case 0: return (WIDTH >> 8) & 0xff;
-	case 1: return WIDTH & 0xff;
-	case 2: return (HEIGHT >> 8) & 0xff;
-	case 3: return HEIGHT & 0xff;
+	case 0: return (HOR * 8 >> 8) & 0xff;
+	case 1: return HOR * 8 & 0xff;
+	case 2: return (VER * 8 >> 8) & 0xff;
+	case 3: return VER * 8 & 0xff;
 	}
 	loadtheme(m->dat + 0xfff0);
 	(void)m;
@@ -336,13 +336,13 @@ Uint8
 screenw(Device *d, Memory *m, Uint8 b)
 {
 	d->mem[d->ptr++] = b;
-	if(d->ptr > 5) {
-		putpixel(pixels,
-			(d->mem[2] << 8) + d->mem[3],
-			(d->mem[0] << 8) + d->mem[1],
-			d->mem[4]);
-		if(d->mem[5] == 1)
-			screen.reqdraw = 1;
+	if(d->ptr > 4) {
+		Uint16 x = (d->mem[2] << 8) + d->mem[3];
+		Uint16 y = (d->mem[0] << 8) + d->mem[1];
+		Uint8 clr = d->mem[4] & 0xf;
+		Uint8 layer = d->mem[4] >> 4 & 0xf;
+		paintpixel(layer ? screen.fg : screen.bg, x, y, clr);
+		screen.reqdraw = 1;
 		d->ptr = 0;
 	}
 	(void)m;

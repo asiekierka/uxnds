@@ -111,7 +111,7 @@ RTS
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
 
 @polycat [
-	0081c 3e3e 7f7f ffff 081c 3e3e 7f7f fffc
+	081c 3e3e 7f7f ffff 081c 3e3e 7f7f fffc
 	081c 3c3e 7e7e ffff 081c 3c3e 7e7e ff1f
 	ffff ffff ff7f 3f0f f0e7 cfef f77c 3f0f
 	ffff ffff fffe fcf0 0783 c1c3 871e fcf0
