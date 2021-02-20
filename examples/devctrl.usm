@@ -3,63 +3,59 @@
 :dev/r fff8 ( const read port )
 :dev/w fff9 ( const write port )
 
-;x 2 ;y 2
+;x 2 ;y 2 ;sprite 2
 
 |0100 @RESET 
 
 	#03 =dev/r ( set dev/read to controller ) 
 	#02 =dev/w ( set dev/write to sprite ) 
 	#0080 =x #0040 =y ( origin )
-	#0101 ,cursor_icn ~x ~y ,putsprite JSR ( draw sprite )
 
-BRK
-
-|0200 @SPRITESHEET
-
-@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
+	#02 ,up_icn ~x ~y ,draw-sprite JSR
 
 BRK
 
 |c000 @FRAME 
 
-	#05 =dev/r ( set dev/read to mouse ) 
-
-	#04 IOR #01 NEQ ,next0 ROT JMP? POP2
-		#00 IOR2 =x #02 IOR2 =y
-
-	@next0
-
 	#03 =dev/r ( set dev/read to controller ) 
 
+	,default_icn =sprite
+
 	#00 IOR #10 NEQ ,next1 ROT JMP? POP2
+		,up_icn =sprite
 		~y #0001 SUB2 =y
 	@next1
-
 	#00 IOR #20 NEQ ,next2 ROT JMP? POP2
+		,down_icn =sprite
 		~y #0001 ADD2 =y
-
 	@next2
 	#00 IOR #40 NEQ ,next3 ROT JMP? POP2
+		,left_icn =sprite
 		~x #0001 SUB2 =x
-
 	@next3
 	#00 IOR #80 NEQ ,end ROT JMP? POP2
+		,right_icn =sprite
 		~x #0001 ADD2 =x
-
 	@end
 	( redraw )
-	#0101 ,cursor_icn ~x ~y ,putsprite JSR
+	#03 ~sprite ~x ~y ,draw-sprite JSR
 
 BRK
 
-@putsprite
-	IOW2 ( y short )
-	IOW2 ( x short )
+@default_icn [ 3c7e ffdb ffe7 7e3c ]
+@up_icn      [ 2466 e7db ffff 7e3c ]
+@down_icn    [ 3c7e ffff dbe7 6624 ]
+@left_icn    [ 3c7e ef1f 1fef 7e3c ]
+@right_icn   [ 3c7e f7f8 f8f7 7e3c ]
+
+@draw-sprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
 	IOW2 ( sprite address )
-	IOW2  ( redraw byte )
+	IOW ( layer-color )
 	RTS
 
 |d000 @ERROR BRK 
 
-|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFF0 [ 02ac 05bb 0b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR
