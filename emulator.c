@@ -99,8 +99,8 @@ paintchr(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite)
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
-			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
+			Uint8 ch2 = (((sprite[v + 8] >> (7 - h)) & 0x1) << 1);
 			paintpixel(dst, x + h, y + v, ch1 + ch2);
 		}
 }
@@ -266,8 +266,14 @@ domouse(SDL_Event *event)
 	devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
 	devmouse->mem[5] = 0x00;
 	switch(event->type) {
-	case SDL_MOUSEBUTTONUP: devmouse->mem[5] = 0x10; break;
-	case SDL_MOUSEBUTTONDOWN: devmouse->mem[5] = 0x01; break;
+	case SDL_MOUSEBUTTONUP:
+		devmouse->mem[4] = 0;
+		devmouse->mem[5] = 0x10;
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
+		devmouse->mem[5] = 0x01;
+		break;
 	}
 }
 

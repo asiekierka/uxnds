@@ -1,0 +1,132 @@
+( mouse )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;mousex 2 ;mousey 2 
+;lastx 2  ;lasty 2 
+;catx 2 ;caty 2
+;state 1 ;timer 1
+
+|0100 @RESET 
+	
+	#05 =dev/r ( set dev/read mouse )
+	#02 =dev/w ( set dev/write to sprite ) 
+	( position cat )
+	#0050 =catx #0058 =caty
+	( draw polycat )
+	,draw-polycat JSR
+
+BRK
+
+|c000 @FRAME
+
+	( clear last cursor )
+	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	( record mouse positions )
+	#00 IOR2 =mousex #02 IOR2 =mousey
+	( record mouse state )
+	#04 IOR #11 ADD =state
+
+	#04 IOR #01 NEQ ,no-click ROT JMP? POP2
+		#50 =timer
+	@no-click
+
+	( draw mouse )
+	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	( animate )
+	,animate-polycat JSR
+	( update last pos )
+	~mousex =lastx ~mousey =lasty 
+	~timer #01 ADD =timer
+
+BRK
+
+@draw-polycat
+
+	( ears )
+	,polycat ~catx ~caty ,draw-sprite-chr JSR
+	,polycat #0010 ADD2 ~catx #0008 ADD2 ~caty ,draw-sprite-chr JSR
+	( eye )
+	,polycat #0020 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
+	,polycat #0030 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+	( body )
+	,polycat #00a0 ADD2 ~catx ~caty #0010 ADD2 ,draw-sprite-chr JSR
+	,polycat #00b0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+
+RTS
+
+@animate-polycat
+
+	( tail )
+	~timer #50 NEQ ,animate-polycat-tail-next0 ROT JMP? POP2
+		,polycat #00c0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+	@animate-polycat-tail-next0
+	~timer #58 NEQ ,animate-polycat-tail-next1 ROT JMP? POP2
+		,polycat #00d0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+	@animate-polycat-tail-next1
+	~timer #60 NEQ ,animate-polycat-tail-next2 ROT JMP? POP2
+		,polycat #00b0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+	@animate-polycat-tail-next2
+	( look-at )
+	~mousex ~catx #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP? POP2
+	@animate-polycat-left
+		~mousey ~caty #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP? POP2
+		@animate-polycat-left-up 
+			,polycat #0040 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0050 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+		RTS
+		@animate-polycat-left-down 
+			,polycat #0020 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0030 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+		RTS
+	@animate-polycat-right
+		~mousey ~caty #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP? POP2
+		@animate-polycat-right-up 
+			,polycat #0060 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0070 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+		RTS
+		@animate-polycat-right-down 
+			,polycat #0080 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0090 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+		RTS
+
+RTS
+
+@draw-sprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
+	IOW2 ( sprite address )
+	IOW ( layer-color )
+	RTS
+
+@draw-sprite-chr
+	IOW2 ( y byte )
+	IOW2 ( x byte )
+	IOW2 ( sprite address )
+	#08 IOW ( layer-color )
+	RTS
+
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@polycat [
+	0081c 3e3e 7f7f ffff 081c 3e3e 7f7f fffc
+	081c 3c3e 7e7e ffff 081c 3c3e 7e7e ff1f
+	ffff ffff ff7f 3f0f f0e7 cfef f77c 3f0f
+	ffff ffff fffe fcf0 0783 c1c3 871e fcf0
+	ffff ffff ff7f 3f0f f7ef cfe7 f07c 3f0f
+	ffff ffff fffe fcf0 87c3 c183 071e fcf0
+	ffff ffff ff7f 3f0f f0e1 c1e0 f07c 3f0f
+	ffff ffff fffe fcf0 f7fb f9f3 071e fcf0
+	ffff ffff ff7f 3f0f f0e0 c1e1 f07c 3f0f
+	ffff ffff fffe fcf0 07f3 f9fb f71e fcf0
+	0307 0707 0302 0200 0307 0707 0300 0000
+	c0f0 f0e0 e080 8000 c0f2 f9f9 fef8 b000
+	c0f0 f0e0 e080 8000 c0f2 faf9 fef8 b000
+	c0f0 f0e0 e080 8000 c0f1 faf9 fef8 b000
+]
+
+|d000 @ERROR BRK 
+|FFF0 [ 0f85 0fd5 0fb5 ] ( palette )
+|FFFA .RESET .FRAME .ERROR
