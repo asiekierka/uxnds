@@ -3,77 +3,73 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;x_ 2 ;y_ 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
+;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
 
 |0100 @RESET
 
 	#01 =dev/w ( set dev/write to screen ) 
 
-	#01 ,color STR
-	( fill rect x y w h )
-	#0020 #0020 #0060 #0040 ,fillrect JSR
+	#01 =color
+	#0020 #0020 #0060 #0060 ,fill-rect JSR
+	#02 =color
+	#0030 #0030 #0070 #0070 ,fill-rect JSR
+	#03 =color
+	#0040 #0040 #0080 #0080 ,fill-rect JSR
 
-	#02 ,color STR
-	( fill rect x y w h )
-	#0030 #0030 #0040 #0060 ,fillrect JSR
-
-	#03 ,color STR
-	( fill rect x y w h )
-	#0040 #0040 #0060 #0040 ,fillrect JSR
-
-	#01 ,color STR
-	( fill rect x y w h )
-	#00a0 #0010 #0020 #0020 ,fillrect JSR
-
-	#02 ,color STR
-	( fill rect x y w h )
-	#00b0 #0040 #0020 #0020 ,linerect JSR
-
-	#03 ,color STR
-	( fill rect x y w h )
-	#0058 #0028 #0050 #0050 ,linerect JSR
-
-	#01 ,color STR
-	( fill rect x y w h )
-	#0028 #0038 #0050 #0030 ,linerect JSR
-
+	#01 =color
+	#0090 #0020 #00d0 #0060 ,line-rect JSR
+	#02 =color
+	#00a0 #0030 #00e0 #0070 ,line-rect JSR
+	#03 =color
+	#00b0 #0040 #00f0 #0080 ,line-rect JSR
+	
 BRK
 
-@fillrect
-	=h  =w  =y  =x 
-	~x  =x_  ~y  =y_ 
-	@fillrectrow
-		~x  =x_ 
-		@fillrectcol
-			( draw ) ~x_  ~y_  ,putpixel JSR
-			~x_  #0001 ADD2 =x_  
-			~x_  ~w  ~x  ADD2 LTH2 ,fillrectcol ROT JMP? POP2
-		~y_  #0001 ADD2 =y_  
-		~y_  ~h  ~y  ADD2 LTH2 ,fillrectrow ROT JMP? POP2
-	RTS
+@line-ver ( x1 y1 y2 )
+	=y2 =y1 =x1 
+	@line-ver-loop
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( incr ) ~y1 #0001 ADD2 DUP2 =y1
+		~y2 NEQ2 ,line-ver-loop ROT JMP? POP2
+RTS
 
-@linerect
-	=h  =w  =y  =x 
-	~x  =x_  ~y  =y_ 
-	@linerectcol
-		( draw ) ~x  ~y_  ,putpixel JSR
-		( draw ) ~x  ~w  ADD2 ~y_  ,putpixel JSR
-		~y_  #0001 ADD2 =y_  
-		~y_  ~h  ~y  ADD2 LTH2 ,linerectcol ROT JMP? POP2
-	@linerectrow
-		( draw ) ~x_  ~y  ,putpixel JSR
-		( draw ) ~x_  ~y  ~h  ADD2 ,putpixel JSR
-		~x_  #0001 ADD2 =x_  
-		~x_  ~w  ~x  ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
-	RTS
+@line-hor ( x1 y1 x2 )
+	=x2 =y1 =x1
+	@line-hor-loop
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( incr ) ~x1 #0001 ADD2 DUP2 =x1
+		~x2 NEQ2 ,line-hor-loop ROT JMP? POP2
+RTS
 
-@putpixel 
-	IOW2 ( y short )
-	IOW2 ( x short )
-	,color LDR IOW  ( color byte )
-	RTS
+@line-rect ( x1 y1 x2 y2 )
+	=y2 =x2 ( stash x1 y1 ) DUP2 WSR2 =y1 DUP2 WSR2 =x1
+	@line-rect-hor
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( draw ) ~x1 ~y2 IOW2 IOW2 ~color IOW
+		( incr ) ~x1 #0001 ADD2 DUP2 =x1  
+		~x2 #0001 ADD2 LTH2 ,line-rect-hor ROT JMP? POP2
+	( restore x1 y1 ) RSW2 =x1 RSW2 =y1
+	@line-rect-ver
+		( incr ) ~y1 #0001 ADD2 DUP2 =y1  
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( draw ) ~x2 ~y1 IOW2 IOW2 ~color IOW
+		~y2 #0001 SUB2 LTH2 ,line-rect-ver ROT JMP? POP2
+RTS
+
+@fill-rect ( x1 y1 x2 y2 )
+	=y2 =x2 ( stash x1 y1 ) =y1 DUP2 WSR2 =x1
+	@fill-rect-ver
+		RSW2 DUP2 =x1 WSR2
+		@fill-rect-hor
+			( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+			( incr ) ~x1 #0001 ADD2 DUP2 =x1  
+			~x2 LTH2 ,fill-rect-hor ROT JMP? POP2
+		~y1 #0001 ADD2 DUP2 =y1
+		~y2 LTH2 ,fill-rect-ver ROT JMP? POP2
+	RSW2 POP2
+RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
-|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFF0 [ f2ac 35bb 2b5f ] ( palette )
 |FFFA .RESET .FRAME .ERROR ( vectors )
