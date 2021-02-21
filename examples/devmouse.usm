@@ -27,11 +27,10 @@ BRK
 	#00 IOR2 =mousex #02 IOR2 =mousey
 	( record mouse state )
 	#04 IOR #11 ADD =state
-
+	( detect click )
 	#04 IOR #01 NEQ ,no-click ROT JMP? POP2
 		#50 =timer
 	@no-click
-
 	( draw mouse )
 	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
 	( animate )

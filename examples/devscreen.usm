@@ -42,4 +42,4 @@ BRK
 |c000 @FRAME BRK
 |d000 @ERROR BRK 
 |FFF0 [ f0ac f0bb f053 ] ( palette )
-|FFFA .RESET .FRAME .ERROR
+|FFFA .RESET .FRAME .ERROR ( vectors )

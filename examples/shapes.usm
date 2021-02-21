@@ -1,0 +1,79 @@
+( draw routines )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+;x_ 2 ;y_ 2 ;x 2 ;y 2 ;w 2 ;h 2 ;color 1
+
+|0100 @RESET
+
+	#01 =dev/w ( set dev/write to screen ) 
+
+	#01 ,color STR
+	( fill rect x y w h )
+	#0020 #0020 #0060 #0040 ,fillrect JSR
+
+	#02 ,color STR
+	( fill rect x y w h )
+	#0030 #0030 #0040 #0060 ,fillrect JSR
+
+	#03 ,color STR
+	( fill rect x y w h )
+	#0040 #0040 #0060 #0040 ,fillrect JSR
+
+	#01 ,color STR
+	( fill rect x y w h )
+	#00a0 #0010 #0020 #0020 ,fillrect JSR
+
+	#02 ,color STR
+	( fill rect x y w h )
+	#00b0 #0040 #0020 #0020 ,linerect JSR
+
+	#03 ,color STR
+	( fill rect x y w h )
+	#0058 #0028 #0050 #0050 ,linerect JSR
+
+	#01 ,color STR
+	( fill rect x y w h )
+	#0028 #0038 #0050 #0030 ,linerect JSR
+
+BRK
+
+@fillrect
+	=h  =w  =y  =x 
+	~x  =x_  ~y  =y_ 
+	@fillrectrow
+		~x  =x_ 
+		@fillrectcol
+			( draw ) ~x_  ~y_  ,putpixel JSR
+			~x_  #0001 ADD2 =x_  
+			~x_  ~w  ~x  ADD2 LTH2 ,fillrectcol ROT JMP? POP2
+		~y_  #0001 ADD2 =y_  
+		~y_  ~h  ~y  ADD2 LTH2 ,fillrectrow ROT JMP? POP2
+	RTS
+
+@linerect
+	=h  =w  =y  =x 
+	~x  =x_  ~y  =y_ 
+	@linerectcol
+		( draw ) ~x  ~y_  ,putpixel JSR
+		( draw ) ~x  ~w  ADD2 ~y_  ,putpixel JSR
+		~y_  #0001 ADD2 =y_  
+		~y_  ~h  ~y  ADD2 LTH2 ,linerectcol ROT JMP? POP2
+	@linerectrow
+		( draw ) ~x_  ~y  ,putpixel JSR
+		( draw ) ~x_  ~y  ~h  ADD2 ,putpixel JSR
+		~x_  #0001 ADD2 =x_  
+		~x_  ~w  ~x  ADD2 #0001 ADD2 LTH2 ,linerectrow ROT JMP? POP2
+	RTS
+
+@putpixel 
+	IOW2 ( y short )
+	IOW2 ( x short )
+	,color LDR IOW  ( color byte )
+	RTS
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFFA .RESET .FRAME .ERROR ( vectors )
