@@ -320,13 +320,13 @@ consolew(Device *d, Memory *m, Uint8 b)
 Uint8
 screenr(Device *d, Memory *m, Uint8 b)
 {
+	loadtheme(m->dat + 0xfff0);
 	switch(b) {
 	case 0: return (HOR * 8 >> 8) & 0xff;
 	case 1: return HOR * 8 & 0xff;
 	case 2: return (VER * 8 >> 8) & 0xff;
 	case 3: return VER * 8 & 0xff;
 	}
-	loadtheme(m->dat + 0xfff0);
 	(void)m;
 	return d->mem[b];
 }

@@ -3,77 +3,85 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
-
-;mousex 2 ;mousey 2 
-;lastx 2  ;lasty 2 
-;state 1
+( window ) ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
+( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
+( mouse )   ;mousex 2 ;mousey 2 ;state 1
 
 |0100 @RESET 
 	
-	( fill background )
-	#01 =dev/r 
-	#02 =dev/w 
-	,fill-sprite JSR
-
-	( draw rect )
-	#01 =dev/w
-	#00 =color
-	#00 IOR2 #0002 DIV2 #0060 SUB2 
-	#02 IOR2 #0002 DIV2 #0030 SUB2
-	#00 IOR2 #0002 DIV2 #0060 ADD2 
-	#02 IOR2 #0002 DIV2 #0030 ADD2 ,fill-rect JSR
-	#01 =color
-	#00 IOR2 #0002 DIV2 #0060 SUB2 
-	#02 IOR2 #0002 DIV2 #0030 SUB2
-	#00 IOR2 #0002 DIV2 #0060 ADD2 
-	#02 IOR2 #0002 DIV2 #0030 ADD2 ,line-rect JSR
-	#01 =color
-	#00 IOR2 #0002 DIV2 #0060 SUB2 #0002 ADD2 
-	#02 IOR2 #0002 DIV2 #0030 SUB2 #0002 ADD2
-	#00 IOR2 #0002 DIV2 #0060 ADD2 #0002 SUB2 
-	#02 IOR2 #0002 DIV2 #0030 ADD2 #0002 SUB2 ,line-rect JSR
+	,paint-background JSR
+	#0020 #0020 #00d0 #0080 ,paint-window JSR
+	#0040 #0040 #00f0 #0070 ,paint-window JSR
+	#0060 #004c #00c0 #007a ,paint-window JSR
 
 	#05 =dev/r ( set dev/read mouse )
-	#02 =dev/w ( set dev/read mouse )
-
-	#01 =color
-	,text1 #0028 #0030 ,draw-label JSR
-
-	#01 ,checkon_icn #0028 #0050 ,draw-sprite JSR
-	,text2 #0038 #0050 ,draw-label JSR
-
-	#01 ,checkoff_icn #0028 #0060 ,draw-sprite JSR
-	,text3 #0038 #0060 ,draw-label JSR
+	#02 =dev/w ( set dev/write sprite )
 
 BRK
 
 |c000 @FRAME 
 
 	( clear last cursor )
-	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	#10 ,clear_icn ~mousex ~mousey ,draw-sprite JSR
 	( record mouse positions )
 	#00 IOR2 =mousex #02 IOR2 =mousey
 	( record mouse state )
 	#04 IOR #11 ADD =state
+
+	#04 IOR #01 NEQ ,no-touch ROT JMP? POP2
+		,on-touch JSR
+	@no-touch
+
 	( draw mouse )
 	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
-	( update last pos )
-	~mousex =lastx ~mousey =lasty 
 
 BRK
 
-@fill-sprite
+@paint-background ( nil )
+
+	#01 =dev/r ( read screen for size )
+	#02 =dev/w ( write to sprite )
+
 	#0000 
-	@fill-sprite-loop-hor
+	@paint-background-loop-hor
 	#0000
-	@fill-sprite-loop
+	@paint-background-loop
 		( draw ) OVR2 IOW2 DUP2 IOW2 ,texture IOW2 #01 IOW
 		( incr ) #0008 ADD2 DUP2
-		#00 IOR2 LTH2 ,fill-sprite-loop ROT JMP? POP2
+		#00 IOR2 LTH2 ,paint-background-loop ROT JMP? POP2
 		POP2
 	( incr ) #0008 ADD2 DUP2
-	#02 IOR2 LTH2 ,fill-sprite-loop-hor ROT JMP? POP2
+	#02 IOR2 LTH2 ,paint-background-loop-hor ROT JMP? POP2
+	POP2
+
+RTS
+
+@paint-window ( wx1 wy1 wx2 wy2 )
+
+	=wy2 =wx2 =wy1 =wx1
+
+	#01 =dev/r ( read screen for size )
+	#01 =dev/w ( write to screen )
+
+	( Draw background )
+	#01 =color
+	~wx1 #0003 ADD2 ~wy1 #0003 ADD2 ~wx2 #0003 ADD2 ~wy2 #0003 ADD2 ,fill-rect JSR
+	#02 =color
+	~wx1 ~wy1 ~wx2 ~wy2 ,fill-rect JSR
+	( draw outline )
+	#01 =color
+	~wx1 ~wy1 ~wx2 ~wy2 ,line-rect JSR
+	#02 =color
+	~wx1 #0002 ADD2 ~wy1 #0002 ADD2 ~wx2 #0002 SUB2 ~wy2 #0002 SUB2 ,line-rect JSR
+
+	#02 =dev/w
+	#09 =color
+	,text1 ~wx1 #0008 ADD2 ~wy1 #0008 ADD2 ,draw-label JSR
+
+RTS
+
+@on-touch
+
 RTS
 
 @fill-rect ( x1 y1 x2 y2 )
@@ -111,7 +119,7 @@ RTS
 	IOW ( layer-color )
 RTS
 
-@draw-label ( x1 y1 text )
+@draw-label ( text x1 y1 )
 	=y1 =x1
 	@draw-label-loop
 		( draw ) ~x1 ~y1 IOW2 IOW2 DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 IOW2 ~color IOW
@@ -126,9 +134,11 @@ RTS
 @checkoff_icn  [ 7e81 8181 8181 817e ]
 @checkon_icn  [ 7e81 99bd bd99 817e ]
 
-@text1 " Hello World " ( add string to memory )
+@text1 " Planet " ( add string to memory )
 @text2 " To Jupiter " 
 @text3 " To Neptune " 
+@text4 " To Nereid " 
+@text5 " Theme " 
 
 @font ( spectrum-zx font ) 
 [
@@ -167,5 +177,5 @@ RTS
 ]
 
 |d000 @ERROR BRK 
-|FFF0 [ f1c3 f12e f12a ] ( palette )
+|FFF0 [ 31ff e1ff b10f ] ( palette )
 |FFFA .RESET .FRAME .ERROR
