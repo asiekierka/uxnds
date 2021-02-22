@@ -10,18 +10,18 @@
 	#01 =dev/w ( set dev/write to screen ) 
 
 	#01 =color
-	#0020 #0020 #0060 #0060 ,fill-rect JSR
+	#0010 #0020 #0040 #0060 ,fill-rect JSR
 	#02 =color
-	#0030 #0030 #0070 #0070 ,fill-rect JSR
+	#0020 #0030 #0050 #0070 ,fill-rect JSR
 	#03 =color
-	#0040 #0040 #0080 #0080 ,fill-rect JSR
+	#0030 #0040 #0060 #0080 ,fill-rect JSR
 
 	#01 =color
-	#0090 #0020 #00d0 #0060 ,line-rect JSR
+	#0070 #0020 #00a0 #0060 ,line-rect JSR
 	#02 =color
-	#00a0 #0030 #00e0 #0070 ,line-rect JSR
+	#0080 #0030 #00b0 #0070 ,line-rect JSR
 	#03 =color
-	#00b0 #0040 #00f0 #0080 ,line-rect JSR
+	#0090 #0040 #00c0 #0080 ,line-rect JSR
 	
 BRK
 
@@ -71,5 +71,5 @@ RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
-|FFF0 [ f2ac 35bb 2b5f ] ( palette )
+|FFF0 [ 0f0f 0fff 0ff0 ] ( palette )
 |FFFA .RESET .FRAME .ERROR ( vectors )

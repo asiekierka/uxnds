@@ -11,7 +11,7 @@
 	#02 =dev/w ( set dev/write to sprite ) 
 	#0080 =x #0040 =y ( origin )
 
-	#02 ,up_icn ~x ~y ,draw-sprite JSR
+	#12 ,up_icn ~x ~y ,draw-sprite JSR
 
 BRK
 
@@ -38,7 +38,7 @@ BRK
 		~x #0001 ADD2 =x
 	@end
 	( redraw )
-	#03 ~sprite ~x ~y ,draw-sprite JSR
+	#13 ~sprite ~x ~y ,draw-sprite JSR
 
 BRK
 

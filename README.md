@@ -98,17 +98,15 @@ A device that works like a NES controller, each button is a bit from a single by
 
 ## TODOs
 
-- LDR/STR helpers
 - Line routine
-- On-screen debugger.
 - Getting rid of IOR/IOW would be nice..
-- Sending from the wst to the rst, balance counter?
 
 ### Misc TODOs
 
 - Includes
 - Defines
-- Lint, print unused labels
+- Print unused labels
+- Blending mode
 
 ## Refs
 

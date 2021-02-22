@@ -1,61 +1,46 @@
-( hello world )
+( desktop )
 
 :dev/w fff9 ( const write port )
+
+;x1 2 ;y1 2
 
 ;x 2 ;y 2 ;color 1
 
 |0100 @RESET 
+	
+	#02 =dev/w 
 
-	( print to console )
-	,string ,displaycli JSR
-	
-	( print to screen )
-	#0008 =x #0030 =y #01 =color
-	,string ,displaygui JSR 
-	#0010 =x #0038 =y #02 =color
-	,string ,displaygui JSR 
-	#0018 =x #0040 =y #03 =color
-	,string ,displaygui JSR 
-	
+	#01 =color
+	,text #0020 #0030 ,draw-label JSR
+	#02 =color
+	,text #0022 #0038 ,draw-label JSR
+	#03 =color
+	,text #0024 #0040 ,draw-label JSR
+	#04 =color
+	,text #0026 #0048 ,draw-label JSR
+	#06 =color
+	,text #0028 #0050 ,draw-label JSR
+	#07 =color
+	,text #002a #0058 ,draw-label JSR
+	#08 =color
+	,text #002c #0060 ,draw-label JSR
+	#09 =color
+	,text #002e #0068 ,draw-label JSR
 
 BRK
 
-@string " Hello Merveilles "                     ( add string to memory )
+@text " Hello World " ( add string to memory )
 
-@displaycli
-	#00 =dev/w                                   ( set dev/write to console ) 
-	@cliloop
-		DUP2 LDR IOW                             ( write pointer value to console )
-		#0001 ADD2                               ( increment string pointer )
-		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
-	RTS
+@draw-label ( x1 y1 text )
+	=y1 =x1
+	@draw-label-loop
+		( draw ) ~x1 ~y1 IOW2 IOW2 DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 IOW2 ~color IOW
+		( incr ) #0001 ADD2
+		( incr ) ~x1 #0008 ADD2 =x1
+		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
+RTS
 
-@displaygui
-	#02 =dev/w                                   ( set dev/write to sprite ) 
-	@guiloop
-		DUP2 LDR ,printchar JSR
-		#0001 ADD2
-		~x #0008 ADD2 =x
-		DUP2 LDR #00 NEQ ,guiloop ROT JMP? POP2
-	RTS
-
-@printchar
-	~color ,getchar JSR ~x ~y ,draw-sprite JSR
-	RTS
-
-@getchar
-	#00 SWP #0008 MUL2 ,SPRITESHEET ADD2
-	RTS
-
-@draw-sprite
-	IOW2 ( y byte )
-	IOW2 ( x byte )
-	IOW2 ( sprite address )
-	IOW ( layer-color )
-	RTS
-
-|0300 @SPRITESHEET ( first 128 characters of the spectrum-zx font ) 
-
+@font ( spectrum-zx font ) 
 [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000

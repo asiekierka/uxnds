@@ -106,14 +106,13 @@ paintchr(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite)
 }
 
 void
-painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 alpha)
+painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 blend)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-			if(!alpha || (alpha && ch1))
-				paintpixel(dst, x + h, y + v, ch1 ? fg : 0);
+			paintpixel(dst, x + h, y + v, ch1 ? blend % 4 : blend / 4);
 		}
 }
 
@@ -357,12 +356,12 @@ spritew(Device *d, Memory *m, Uint8 b)
 		Uint16 x = (d->mem[2] << 8) + d->mem[3];
 		Uint16 y = (d->mem[0] << 8) + d->mem[1];
 		Uint16 a = (d->mem[4] << 8) + d->mem[5];
-		Uint8 clr = d->mem[6] & 0xf;
-		Uint8 layer = d->mem[6] >> 4 & 0xf;
-		if(clr > 7)
-			paintchr(layer ? screen.fg : screen.bg, x, y, &m->dat[a]);
+		Uint8 source = d->mem[6] >> 4 & 0xf;
+		Uint8 *layer = source % 2 ? screen.fg : screen.bg;
+		if(source / 2)
+			paintchr(layer, x, y, &m->dat[a]);
 		else
-			painticn(layer ? screen.fg : screen.bg, x, y, &m->dat[a], clr % 4, clr > 3);
+			painticn(layer, x, y, &m->dat[a], d->mem[6] & 0xf);
 		screen.reqdraw = 1;
 		d->ptr = 0;
 	}

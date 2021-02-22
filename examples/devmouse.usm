@@ -103,7 +103,7 @@ RTS
 	IOW2 ( y byte )
 	IOW2 ( x byte )
 	IOW2 ( sprite address )
-	#08 IOW ( layer-color )
+	#20 IOW ( layer-color )
 	RTS
 
 @clear_icn   [ 0000 0000 0000 0000 ]
