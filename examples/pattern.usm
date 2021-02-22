@@ -37,15 +37,29 @@
 	#05 =dev/r ( set dev/read mouse )
 	#02 =dev/w ( set dev/read mouse )
 
-
 	#01 =color
-	,text #0028 #0030 ,draw-label JSR
+	,text1 #0028 #0030 ,draw-label JSR
 
 	#01 ,checkon_icn #0028 #0050 ,draw-sprite JSR
-	,text_foo #0038 #0050 ,draw-label JSR
+	,text2 #0038 #0050 ,draw-label JSR
 
 	#01 ,checkoff_icn #0028 #0060 ,draw-sprite JSR
-	,text_bar #0038 #0060 ,draw-label JSR
+	,text3 #0038 #0060 ,draw-label JSR
+
+BRK
+
+|c000 @FRAME 
+
+	( clear last cursor )
+	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	( record mouse positions )
+	#00 IOR2 =mousex #02 IOR2 =mousey
+	( record mouse state )
+	#04 IOR #11 ADD =state
+	( draw mouse )
+	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	( update last pos )
+	~mousex =lastx ~mousey =lasty 
 
 BRK
 
@@ -90,23 +104,12 @@ RTS
 		~y2 #0001 SUB2 LTH2 ,line-rect-ver ROT JMP? POP2
 RTS
 
-
 @draw-sprite
 	IOW2 ( y byte )
 	IOW2 ( x byte )
 	IOW2 ( sprite address )
 	IOW ( layer-color )
-	RTS
-
-@texture     [ aa55 aa55 aa55 aa55 ]
-@clear_icn   [ 0000 0000 0000 0000 ]
-@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
-@checkoff_icn  [ 7e81 8181 8181 817e ]
-@checkon_icn  [ 7e81 99bd bd99 817e ]
-
-@text " Hello World " ( add string to memory )
-@text_foo " To Jupiter " 
-@text_bar " To Neptune " 
+RTS
 
 @draw-label ( x1 y1 text )
 	=y1 =x1
@@ -116,6 +119,16 @@ RTS
 		( incr ) ~x1 #0008 ADD2 =x1
 		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
 RTS
+
+@texture     [ aa55 aa55 aa55 aa55 ]
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+@checkoff_icn  [ 7e81 8181 8181 817e ]
+@checkon_icn  [ 7e81 99bd bd99 817e ]
+
+@text1 " Hello World " ( add string to memory )
+@text2 " To Jupiter " 
+@text3 " To Neptune " 
 
 @font ( spectrum-zx font ) 
 [
@@ -152,21 +165,6 @@ RTS
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
-
-|c000 @FRAME 
-
-	( clear last cursor )
-	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
-	( record mouse positions )
-	#00 IOR2 =mousex #02 IOR2 =mousey
-	( record mouse state )
-	#04 IOR #11 ADD =state
-	( draw mouse )
-	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
-	( update last pos )
-	~mousex =lastx ~mousey =lasty 
-
-BRK
 
 |d000 @ERROR BRK 
 |FFF0 [ f1c3 f12e f12a ] ( palette )
