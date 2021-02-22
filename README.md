@@ -106,7 +106,6 @@ A device that works like a NES controller, each button is a bit from a single by
 - Includes
 - Defines
 - Print unused labels
-- Blending mode
 
 ## Refs
 
