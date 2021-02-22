@@ -71,7 +71,7 @@ RTS
 	( draw outline )
 	#01 =color
 	~wx1 ~wy1 ~wx2 ~wy2 ,line-rect JSR
-	#02 =color
+	#01 =color
 	~wx1 #0002 ADD2 ~wy1 #0002 ADD2 ~wx2 #0002 SUB2 ~wy2 #0002 SUB2 ,line-rect JSR
 
 	#02 =dev/w
