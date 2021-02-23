@@ -91,45 +91,49 @@ findmacro(char *s)
 }
 
 Label *
-findlabelplain(char *s)
+findlabel(char *s)
 {
-	int i;
+	int i, rng = scin(s, '.');
+	char name[64];
+	scpy(s, name, rng > 0 ? rng + 1 : 64);
 	for(i = 0; i < labelslen; ++i)
-		if(scmp(labels[i].name, s, 64))
+		if(scmp(labels[i].name, name, 64))
 			return &labels[i];
 	return NULL;
 }
 
-Label *
-findlabelmacro(char *s)
+Uint16
+findlabeladdr(char *s)
 {
-	int i, o = 0, pti = scin(s, '.');
-	char name[64], param[64];
-	Label *l;
-	if(pti > 0) {
-		scpy(s, name, pti + 1);
-		scpy(s + pti + 1, param, 64);
-	} else
-		scpy(s, name, 64);
-	if(!(l = findlabelplain(name)) || !l->macro)
-		return NULL;
-	/* find macro offset */
+	int i, o = 0;
+	char *param;
+	Label *l = findlabel(s);
+	if(scin(s, '.') < 1)
+		return l->addr;
+	param = s + scin(s, '.') + 1;
 	for(i = 0; i < l->macro->len; ++i) {
-		if(scmp(l->macro->params[i], param, 64)) {
-			l->offset = o;
-			break;
-		}
+		if(scmp(l->macro->params[i], param, 64))
+			return l->addr + o;
 		o += l->macro->length[i];
 	}
-	return l;
+	printf("Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	return 0;
 }
 
-Label *
-findlabel(char *s)
+Uint8
+findlabellen(char *s)
 {
-	if(scin(s, '.') > 0)
-		return findlabelmacro(s);
-	return findlabelplain(s);
+	int i;
+	char *param;
+	Label *l = findlabel(s);
+	if(scin(s, '.') < 1)
+		return l->len;
+	param = s + scin(s, '.') + 1;
+	for(i = 0; i < l->macro->len; ++i)
+		if(scmp(l->macro->params[i], param, 64))
+			return l->macro->length[i];
+	printf("Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	return 0;
 }
 
 Uint8
@@ -356,9 +360,9 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr + l->offset, 1); pushbyte(findopcode(l->len == 2 ? "STR2" : "STR"),0); }
-		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr + l->offset, 1); pushbyte(findopcode(l->len == 2 ? "LDR2" : "LDR"),0); }
-		else if((l = findlabel(w + 1))) pushshort(l->addr + l->offset, w[0] == ',');
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2? "STR2" : "STR"), 0); }
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); }
+		else if((l = findlabel(w + 1))) pushshort(findlabeladdr(w+1), w[0] == ',');
 		else {
 			return error("Unknown label in second pass", w);
 		}

@@ -4,16 +4,21 @@
 :dev/w fff9 ( std write port )
 
 &Rect2d { x 2 y 2 width 2 height 2 }
+&ColorRGB { r 1 g 1 b 1 }
 
 ;rc1 Rect2d
-
-( TODO )
+;red ColorRGB
 
 |0100 @RESET
 	
-	#abcd ,rc1.height STR2
-	,rc1.height LDR2
-	,rc1.height LDR2
+	( byte mode )
+	#ff =red.r
+	~red.r
+
+	( short mode )_
+	#1234 =rc1.x
+	#abcd =rc1.height
+	~rc1.height
 
 BRK
 
