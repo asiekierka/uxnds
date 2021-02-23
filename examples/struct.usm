@@ -1,0 +1,30 @@
+( blank )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+&point2d { x 2 y 2 }
+&point3d { x 2 y 2 z 2 }
+
+;position point2d
+;vertex point3d
+
+( TODO )
+
+|0100 @RESET
+
+	,position:x #0002 STR2
+
+	~position:x
+
+	#02 =position:x
+
+	#abcd =vertex:x
+
+BRK
+
+|c000 @FRAME BRK 
+|d000 @ERROR BRK 
+
+|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFFA .RESET .FRAME .ERROR

@@ -29,6 +29,7 @@ evaluxn(u, u->vframe); /* Each frame
 - `@label`, assign the current address to a label.
 - `;variable 2`, assign an address to a label automatically.
 - `:const 1a2b`, assign an address to a label manually.
+- `&macro { x 2 y 2 }`, define a macro named `macro`.
 
 ### Write
 

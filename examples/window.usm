@@ -3,7 +3,7 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-( window ) ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
+( window )  ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
 ( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
 ( mouse )   ;mousex 2 ;mousey 2 ;state 1
 

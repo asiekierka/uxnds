@@ -22,13 +22,22 @@ typedef struct {
 } Program;
 
 typedef struct {
+	char name[64], keys[16][64];
+	Uint8 len, lens[16];
+} Macro;
+
+typedef struct {
 	Uint8 len;
 	Uint16 addr;
 	char name[64];
 } Label;
 
+int macroslen;
+Macro macros[256];
+
 int labelslen;
 Label labels[256];
+
 Program p;
 
 /* clang-format off */
@@ -67,6 +76,16 @@ pushshort(Uint16 s, int lit)
 		pushbyte(0x22, 0);
 	pushbyte((s >> 8) & 0xff, 0);
 	pushbyte(s & 0xff, 0);
+}
+
+Macro *
+findmacro(char *s)
+{
+	int i;
+	for(i = 0; i < macroslen; ++i)
+		if(scmp(macros[i].name, s))
+			return &macros[i];
+	return NULL;
 }
 
 Label *
@@ -109,6 +128,36 @@ error(char *name, char *id)
 }
 
 int
+makemacro(char *name, FILE *f)
+{
+	Uint8 mode = 0;
+	Macro *m;
+	char wv[64];
+	if(findmacro(name))
+		return error("Macro duplicate", name);
+	if(sihx(name))
+		return error("Macro name is hex number", name);
+	if(findopcode(name))
+		return error("Macro name is invalid", name);
+	m = &macros[macroslen++];
+	while(fscanf(f, "%s", wv)) {
+		if(wv[0] == '{')
+			continue;
+		if(wv[0] == '}')
+			break;
+		if(mode == 0)
+			scpy(wv, m->keys[m->len], 64);
+		else {
+			m->lens[m->len] = shex(wv);
+			m->len++;
+		}
+		mode = !mode;
+	}
+	printf("New macro: %s[%d items]\n", name, m->len);
+	return 1;
+}
+
+int
 makelabel(char *name, Uint16 addr, Uint8 len)
 {
 	Label *l;
@@ -140,33 +189,19 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	char wv[64];
 	Uint8 origin;
 	fscanf(f, "%s", wv);
-	if(!sihx(wv))
-		return error("Variable value is invalid", wv);
 	origin = *addr;
 	*addr += shex(wv);
 	return makelabel(id, origin, shex(wv));
 }
 
 int
-skipcomment(char *w, int *cap)
+skipblock(char *w, int *cap, char a, char b)
 {
-	if(w[0] == ')') {
+	if(w[0] == b) {
 		*cap = 0;
 		return 1;
 	}
-	if(w[0] == '(') *cap = 1;
-	if(*cap) return 1;
-	return 0;
-}
-
-int
-skipbinary(char *w, int *cap)
-{
-	if(w[0] == ']') {
-		*cap = 0;
-		return 1;
-	}
-	if(w[0] == '[') *cap = 1;
+	if(w[0] == a) *cap = 1;
 	if(*cap) return 1;
 	return 0;
 }
@@ -213,15 +248,18 @@ pass1(FILE *f)
 	Uint16 addr = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
-		if(skipcomment(w, &ccmnt)) continue;
+		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipstring(w, &cstrg, &addr)) continue;
-		if(skipbinary(w, &cbits))
+		if(skipblock(w, &cbits, '[', ']'))
 			addr += w[0] != '[' && w[0] != ']' ? 2 : 0;
 		else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
 			if(!makevariable(w + 1, &addr, f))
+				return error("Pass1 failed", w);
+		} else if(w[0] == '&') {
+			if(!makemacro(w + 1, f))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ':') {
 			if(!makeconst(w + 1, f))
@@ -249,16 +287,18 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, cstrg = 0, cbits = 0;
+	int ccmnt = 0, cstrg = 0, cbits = 0, cmacro = 0;
 	char w[64];
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
 		if(w[0] == '@') continue;
-		if(skipcomment(w, &ccmnt)) continue;
+		if(w[0] == '&') continue;
+		if(skipblock(w, &ccmnt, '(', ')')) continue;
+		if(skipblock(w, &cmacro, '{', '}')) continue;
 		if(capturestring(w, &cstrg)) continue;
 		/* clang-format off */
-		if(skipbinary(w, &cbits)) { if(w[0] != '[' && w[0] != ']') { pushshort(shex(w), 0); } }
+		if(skipblock(w, &cbits, '[', ']')) { if(w[0] != '[' && w[0] != ']') { pushshort(shex(w), 0); } }
 		else if(w[0] == '|') p.ptr = shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
