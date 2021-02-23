@@ -134,11 +134,11 @@ RTS
 @checkoff_icn  [ 7e81 8181 8181 817e ]
 @checkon_icn  [ 7e81 99bd bd99 817e ]
 
-@text1 " Planet " ( add string to memory )
-@text2 " To Jupiter " 
-@text3 " To Neptune " 
-@text4 " To Nereid " 
-@text5 " Theme " 
+@text1 [ Planet ] <1 .00 ( add string to memory )
+@text2 [ To Jupiter ] <1 .00
+@text3 [ To Neptune ] <1 .00
+@text4 [ To Nereid ] <1 .00
+@text5 [ Theme ] <1 .00
 
 @font ( spectrum-zx font ) 
 [

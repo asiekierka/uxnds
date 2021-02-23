@@ -15,7 +15,7 @@
 	#ff =red.r
 	~red.r
 
-	( short mode )_
+	( short mode )
 	#1234 =rc1.x
 	#abcd =rc1.height
 	~rc1.height

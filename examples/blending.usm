@@ -2,15 +2,9 @@
 
 :dev/w fff9 ( const write port )
 
-;x1 2 ;y1 2
-
-;x 2 ;y 2 ;color 1
-
 |0100 @RESET 
 	
 	#02 =dev/w 
-
-	#01 =color
 	#00 ,icon #0040 #0040 ,draw-sprite JSR
 	#01 ,icon #0048 #0040 ,draw-sprite JSR
 	#02 ,icon #0050 #0040 ,draw-sprite JSR

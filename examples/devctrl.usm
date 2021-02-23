@@ -3,15 +3,18 @@
 :dev/r fff8 ( const read port )
 :dev/w fff9 ( const write port )
 
-;x 2 ;y 2 ;sprite 2
+&Point2d { x 2 y 2 }
+
+;pos Point2d 
+;sprite 2
 
 |0100 @RESET 
 
 	#03 =dev/r ( set dev/read to controller ) 
 	#02 =dev/w ( set dev/write to sprite ) 
-	#0080 =x #0040 =y ( origin )
+	#0080 =pos.x #0040 =pos.y ( origin )
 
-	#12 ,up_icn ~x ~y ,draw-sprite JSR
+	#12 ,up_icn ~pos.x ~pos.y ,draw-sprite JSR
 
 BRK
 
@@ -23,22 +26,22 @@ BRK
 
 	#00 IOR #10 NEQ ,next1 ROT JMP? POP2
 		,up_icn =sprite
-		~y #0001 SUB2 =y
+		~pos.y #0001 SUB2 =pos.y
 	@next1
 	#00 IOR #20 NEQ ,next2 ROT JMP? POP2
 		,down_icn =sprite
-		~y #0001 ADD2 =y
+		~pos.y #0001 ADD2 =pos.y
 	@next2
 	#00 IOR #40 NEQ ,next3 ROT JMP? POP2
 		,left_icn =sprite
-		~x #0001 SUB2 =x
+		~pos.x #0001 SUB2 =pos.x
 	@next3
 	#00 IOR #80 NEQ ,end ROT JMP? POP2
 		,right_icn =sprite
-		~x #0001 ADD2 =x
+		~pos.x #0001 ADD2 =pos.x
 	@end
 	( redraw )
-	#13 ~sprite ~x ~y ,draw-sprite JSR
+	#13 ~sprite ~pos.x ~pos.y ,draw-sprite JSR
 
 BRK
 

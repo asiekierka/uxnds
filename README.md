@@ -24,33 +24,24 @@ evaluxn(u, u->vframe); /* Each frame
 
 ## Assembly Syntax
 
-### Assign
-
+- `ADD`, an opcode.
 - `@label`, assign the current address to a label.
 - `;variable 2`, assign an address to a label automatically.
 - `:const 1a2b`, assign an address to a label manually.
 - `&macro { x 2 y 2 }`, define a macro named `macro`.
-
-### Write
-
-- `ADD`, an opcode.
-- `#1a`, a literal byte.
-- `#12ef`, a literal short.
-- `+1a`, a literal signed byte.
-- `+12ef`, a literal signed short.
-- `-1a`, a literal signed byte(negative).
-- `-12ef`, a literal signed short(negative).
-- `.ab`, a raw byte in memory.
-- `.abcd`, a raw short in memory.
+- `#1a`, a literal byte/short.
+- `+1a`, a literal signed byte/short.
+- `-1a`, a literal signed byte/short(negative).
+- `.ab`, a raw byte/short in memory.
 - `,literal`, push label address to stack, prefixed with `LIT LEN`.
-
-### Special
-
-- `( comment )`, toggle parsing on/off.
-- `|0010`, move to position in the program.
-- `"hello`, push literal bytes for word "hello".
 - `=label`, helper to STR, equivalent to `,label STR`, or `label STR2`.
 - `~label`, helper to LDR, equivalent to `,label LDR2`, or `,label LDR2`.
+- `|0010`, move to position in the program.
+- `<23`, move the program position `23` bytes backward.
+- `>12`, move the program position `12` bytes forward.
+- `( comment )`, toggle parsing on/off.
+- `[ 0123 abcd ]`, write shorts to memory.
+- `[ Hello World ]`, write text to memory.
 
 ### Operator modes
 
@@ -60,25 +51,33 @@ evaluxn(u, u->vframe); /* Each frame
 - `ADDS2?`, modes can be combined.
 
 ```
-( comment )
+( hello world )
 
 :dev/w fff9 ( const write port )
 
 |0100 @RESET 
-
-	,string                                  ( add string pointer to stack )
-	@loop
-		DUP2 LDR IOW                         ( write pointer value to console )
-		#0001 ADD2                           ( increment string pointer )
-		DUP2 LDR #00 NEQ ,loop ROT JMP? POP2 ( while *ptr!=0 goto loop )
+	
+	#00 =dev/w ( set dev/write to console ) 
+	,text1 ,print-label JSR ( print to console )
 
 BRK
 
-@string " Hello World "                      ( add string to memory )
+@print-label ( text )
 
-|c000 @FRAME BRK
-|d000 @ERROR BRK 
+	@cliloop
+		DUP2 LDR IOW                             ( write pointer value to console )
+		#0001 ADD2                               ( increment string pointer )
+		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
+	POP2
+		
+RTS                 
 
+@text1 [ Hello World ] <1 .00 ( add text to memory, return 1 byte, add null byte )
+
+|c000 @FRAME
+|d000 @ERROR 
+
+|FFF0 [ f3f0 f30b f30a ] ( palette )
 |FFFA .RESET .FRAME .ERROR
 ```
 

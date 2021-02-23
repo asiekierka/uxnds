@@ -29,7 +29,7 @@
 
 BRK
 
-@text " Hello World " ( add string to memory )
+@text [ Hello World ] <1 .00 ( add characters to memory )
 
 @draw-label ( x1 y1 text )
 	=y1 =x1

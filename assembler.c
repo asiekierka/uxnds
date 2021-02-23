@@ -80,6 +80,18 @@ pushshort(Uint16 s, int lit)
 	pushbyte(s & 0xff, 0);
 }
 
+void
+pushtext(char *s, int lit)
+{
+	int i = 0;
+	char c;
+	if(lit)
+		pushbyte(0x22, 0);
+	while((c = s[i++]))
+		pushbyte(c, 0);
+	pushbyte(' ', 0);
+}
+
 Macro *
 findmacro(char *s)
 {
@@ -254,53 +266,19 @@ skipblock(char *w, int *cap, char a, char b)
 }
 
 int
-skipstring(char *w, int *cap, Uint16 *addr)
-{
-	if(w[0] == '"') {
-		if(*cap)
-			*addr += 1;
-		*cap = !(*cap);
-		return 1;
-	}
-	if(*cap) {
-		*addr += slen(w) + 1;
-		return 1;
-	}
-	return 0;
-}
-
-int
-capturestring(char *w, int *cap)
-{
-	if(w[0] == '"') {
-		if(*cap)
-			pushbyte(0x00, 0);
-		*cap = !(*cap);
-		return 1;
-	}
-	if(*cap) {
-		int i;
-		for(i = 0; i < slen(w); ++i)
-			pushbyte(w[i], 0);
-		pushbyte(' ', 0);
-		return 1;
-	}
-	return 0;
-}
-
-int
 pass1(FILE *f)
 {
-	int ccmnt = 0, cstrg = 0, cbits = 0;
+	int ccmnt = 0, cbits = 0;
 	Uint16 addr = 0;
 	char w[64];
 	printf("Pass 1\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(skipstring(w, &cstrg, &addr)) continue;
-		if(skipblock(w, &cbits, '[', ']'))
-			addr += w[0] != '[' && w[0] != ']' ? 2 : 0;
-		else if(w[0] == '@') {
+		if(skipblock(w, &cbits, '[', ']')) {
+			if(w[0] == '[' || w[0] == ']')
+				continue;
+			addr += sihx(w) ? 2 : slen(w) + 1;
+		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0, NULL))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
@@ -317,6 +295,8 @@ pass1(FILE *f)
 		else {
 			switch(w[0]) {
 			case '|': addr = shex(w + 1); break;
+			case '<': addr -= shex(w + 1); break;
+			case '>': addr += shex(w + 1); break;
 			case '=': addr += 4; break; /* STR helper */
 			case '~': addr += 4; break; /* LDR helper */
 			case ',': addr += 3; break;
@@ -335,7 +315,7 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, cstrg = 0, cbits = 0, cmacro = 0;
+	int ccmnt = 0, cbits = 0, cmacro = 0;
 	char w[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
@@ -345,10 +325,14 @@ pass2(FILE *f)
 		if(w[0] == '&') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &cmacro, '{', '}')) continue;
-		if(capturestring(w, &cstrg)) continue;
 		/* clang-format off */
-		if(skipblock(w, &cbits, '[', ']')) { if(w[0] != '[' && w[0] != ']') { pushshort(shex(w), 0); } }
+		if(skipblock(w, &cbits, '[', ']')) {
+			if(w[0] == '[' || w[0] == ']') { continue; }
+			if(slen(w) == 4 && sihx(w)) pushshort(shex(w), 0); else pushtext(w, 0);
+		}
 		else if(w[0] == '|') p.ptr = shex(w + 1);
+		else if(w[0] == '<') p.ptr -= shex(w + 1);
+		else if(w[0] == '>') p.ptr += shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
