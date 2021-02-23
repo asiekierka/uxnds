@@ -3,28 +3,22 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-&point2d { x 2 y 2 }
-&point3d { x 2 y 2 z 2 }
+&Rect2d { x 2 y 2 width 2 height 2 }
 
-;position point2d
-;vertex point3d
+;rc1 Rect2d
 
 ( TODO )
 
 |0100 @RESET
-
-	,position:x #0002 STR2
-
-	~position:x
-
-	#02 =position:x
-
-	#abcd =vertex:x
+	
+	#abcd ,rc1.height STR2
+	,rc1.height LDR2
+	,rc1.height LDR2
 
 BRK
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 
-|FFF0 [ f2ac 35bb 2b53 ] ( palette )
+|FFF0 [ 0f32 0f32 0f32 ] ( palette )
 |FFFA .RESET .FRAME .ERROR

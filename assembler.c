@@ -22,14 +22,15 @@ typedef struct {
 } Program;
 
 typedef struct {
-	char name[64], keys[16][64];
-	Uint8 len, lens[16];
+	char name[64], params[16][64];
+	Uint8 len, length[16], size;
 } Macro;
 
 typedef struct {
-	Uint8 len;
+	Uint8 len, offset;
 	Uint16 addr;
 	char name[64];
+	Macro *macro;
 } Label;
 
 int macroslen;
@@ -49,10 +50,11 @@ char ops[][4] = {
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
 };
 
-int scmp(char *a, char *b) { int i = 0; while(a[i] == b[i]) if(!a[i++]) return 1; return 0; } /* string compare */
-int slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
-int sihx(char *s) { int i = 0; char c; while((c = s[i++])) if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F')) return 0; return 1; } /* string is hexadecimal */
-int shex(char *s) { int n = 0, i = 0; char c; while((c = s[i++])) if(c >= '0' && c <= '9') n = n * 16 + (c - '0'); else if(c >= 'A' && c <= 'F') n = n * 16 + 10 + (c - 'A'); else if(c >= 'a' && c <= 'f') n = n * 16 + 10 + (c - 'a'); return n; } /* string to num */
+int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
+int   scmp(char *a, char *b, int len) { int i = 0; while(a[i] == b[i] && i < len) if(!a[i++]) return 1; return 0; } /* string compare */
+int   slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
+int   sihx(char *s) { int i = 0; char c; while((c = s[i++])) if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F')) return 0; return 1; } /* string is hexadecimal */
+int   shex(char *s) { int n = 0, i = 0; char c; while((c = s[i++])) if(c >= '0' && c <= '9') n = n * 16 + (c - '0'); else if(c >= 'A' && c <= 'F') n = n * 16 + 10 + (c - 'A'); else if(c >= 'a' && c <= 'f') n = n * 16 + 10 + (c - 'a'); return n; } /* string to num */
 char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) && i < len - 2) i++; dst[i + 1] = '\0'; return dst; } /* string copy */
 
 #pragma mark - Helpers
@@ -83,19 +85,51 @@ findmacro(char *s)
 {
 	int i;
 	for(i = 0; i < macroslen; ++i)
-		if(scmp(macros[i].name, s))
+		if(scmp(macros[i].name, s, 64))
 			return &macros[i];
 	return NULL;
 }
 
 Label *
-findlabel(char *s)
+findlabelplain(char *s)
 {
 	int i;
 	for(i = 0; i < labelslen; ++i)
-		if(scmp(labels[i].name, s))
+		if(scmp(labels[i].name, s, 64))
 			return &labels[i];
 	return NULL;
+}
+
+Label *
+findlabelmacro(char *s)
+{
+	int i, o = 0, pti = scin(s, '.');
+	char name[64], param[64];
+	Label *l;
+	if(pti > 0) {
+		scpy(s, name, pti + 1);
+		scpy(s + pti + 1, param, 64);
+	} else
+		scpy(s, name, 64);
+	if(!(l = findlabelplain(name)) || !l->macro)
+		return NULL;
+	/* find macro offset */
+	for(i = 0; i < l->macro->len; ++i) {
+		if(scmp(l->macro->params[i], param, 64)) {
+			l->offset = o;
+			break;
+		}
+		o += l->macro->length[i];
+	}
+	return l;
+}
+
+Label *
+findlabel(char *s)
+{
+	if(scin(s, '.') > 0)
+		return findlabelmacro(s);
+	return findlabelplain(s);
 }
 
 Uint8
@@ -140,25 +174,27 @@ makemacro(char *name, FILE *f)
 	if(findopcode(name))
 		return error("Macro name is invalid", name);
 	m = &macros[macroslen++];
+	scpy(name, m->name, 64);
 	while(fscanf(f, "%s", wv)) {
 		if(wv[0] == '{')
 			continue;
 		if(wv[0] == '}')
 			break;
 		if(mode == 0)
-			scpy(wv, m->keys[m->len], 64);
+			scpy(wv, m->params[m->len], 64);
 		else {
-			m->lens[m->len] = shex(wv);
+			m->length[m->len] = shex(wv);
+			m->size += m->length[m->len];
 			m->len++;
 		}
 		mode = !mode;
 	}
-	printf("New macro: %s[%d items]\n", name, m->len);
+	printf("New macro: %s[%d:%d]\n", name, m->len, m->size);
 	return 1;
 }
 
 int
-makelabel(char *name, Uint16 addr, Uint8 len)
+makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
 {
 	Label *l;
 	if(findlabel(name))
@@ -171,6 +207,8 @@ makelabel(char *name, Uint16 addr, Uint8 len)
 	l->addr = addr;
 	l->len = len;
 	scpy(name, l->name, 64);
+	if(m)
+		l->macro = m;
 	printf("New label: %s, at 0x%02x[%d]\n", l->name, l->addr, l->len);
 	return 1;
 }
@@ -180,18 +218,23 @@ makeconst(char *id, FILE *f)
 {
 	char wv[64];
 	fscanf(f, "%s", wv);
-	return makelabel(id, shex(wv), 1);
+	return makelabel(id, shex(wv), 1, 0);
 }
 
 int
 makevariable(char *id, Uint16 *addr, FILE *f)
 {
 	char wv[64];
-	Uint8 origin;
+	Uint8 origin, len;
+	Macro *m = NULL;
 	fscanf(f, "%s", wv);
 	origin = *addr;
-	*addr += shex(wv);
-	return makelabel(id, origin, shex(wv));
+	if((m = findmacro(wv)))
+		len = m->size;
+	else
+		len = shex(wv);
+	*addr += len;
+	return makelabel(id, origin, len, m);
 }
 
 int
@@ -247,13 +290,14 @@ pass1(FILE *f)
 	int ccmnt = 0, cstrg = 0, cbits = 0;
 	Uint16 addr = 0;
 	char w[64];
+	printf("Pass 1\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipstring(w, &cstrg, &addr)) continue;
 		if(skipblock(w, &cbits, '[', ']'))
 			addr += w[0] != '[' && w[0] != ']' ? 2 : 0;
 		else if(w[0] == '@') {
-			if(!makelabel(w + 1, addr, 0))
+			if(!makelabel(w + 1, addr, 0, NULL))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
 			if(!makevariable(w + 1, &addr, f))
@@ -264,7 +308,7 @@ pass1(FILE *f)
 		} else if(w[0] == ':') {
 			if(!makeconst(w + 1, f))
 				return error("Pass1 failed", w);
-		} else if(findopcode(w) || scmp(w, "BRK"))
+		} else if(findopcode(w) || scmp(w, "BRK", 4))
 			addr += 1;
 		else {
 			switch(w[0]) {
@@ -289,6 +333,7 @@ pass2(FILE *f)
 {
 	int ccmnt = 0, cstrg = 0, cbits = 0, cmacro = 0;
 	char w[64];
+	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
@@ -300,7 +345,7 @@ pass2(FILE *f)
 		/* clang-format off */
 		if(skipblock(w, &cbits, '[', ']')) { if(w[0] != '[' && w[0] != ']') { pushshort(shex(w), 0); } }
 		else if(w[0] == '|') p.ptr = shex(w + 1);
-		else if((op = findopcode(w)) || scmp(w, "BRK")) pushbyte(op, 0);
+		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
 		else if(w[0] == '.' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 0);
@@ -311,10 +356,12 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr, 1); pushbyte(findopcode(l->len == 2 ? "STR2" : "STR"),0); }
-		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr, 1); pushbyte(findopcode(l->len == 2 ? "LDR2" : "LDR"),0); }
-		else if((l = findlabel(w + 1))) pushshort(l->addr, w[0] == ',');
-		else return error("Unknown label in second pass", w);
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr + l->offset, 1); pushbyte(findopcode(l->len == 2 ? "STR2" : "STR"),0); }
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(l->addr + l->offset, 1); pushbyte(findopcode(l->len == 2 ? "LDR2" : "LDR"),0); }
+		else if((l = findlabel(w + 1))) pushshort(l->addr + l->offset, w[0] == ',');
+		else {
+			return error("Unknown label in second pass", w);
+		}
 		/* clang-format on */
 	}
 	return 1;
