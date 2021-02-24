@@ -3,7 +3,8 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;mousex 2 ;mousey 2 ;lastx 2 ;lasty 2 
+&Point2d { x 2 y 2 }
+;mouse Point2d
 ;state 1 ;color 1 ;brush 2
 
 |0100 @RESET 
@@ -21,11 +22,11 @@ BRK
 |c000 @FRAME
 	
 	( clear last cursor )
-	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 	( record mouse values )
-	#00 IOR2 =mousex #02 IOR2 =mousey
+	#00 IOR2 =mouse.x #02 IOR2 =mouse.y
 	#04 IOR #11 ADD =state
-	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	~state ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 
 	( check click )
 	#04 IOR #00 EQU ,end-touch ROT JMP? POP2
@@ -47,19 +48,17 @@ BRK
 				#05 =color BRK
 			@option4
 			#02 IOR2 #0008 DIV2 #000c NEQ2 ,option5 ROT JMP? POP2
-				#06 =color BRK
+				#0a =color BRK
 			@option5
 			#02 IOR2 #0008 DIV2 #000d NEQ2 ,option6 ROT JMP? POP2
-				#07 =color BRK
+				#0f =color BRK
 			@option6
 
 			BRK
 		@end-interface
 
-		~color ~brush ~mousex #0004 SUB2 ~mousey #0004 SUB2 ,draw-sprite JSR
+		~color ~brush ~mouse.x #0004 SUB2 ~mouse.y #0004 SUB2 ,draw-sprite JSR
 	@end-touch
-
-	~mousex =lastx ~mousey =lasty ( update last post )
 
 BRK
 
@@ -68,8 +67,8 @@ BRK
 	#05 ,brush_small #0008 #0028 ,draw-sprite JSR
 	#05 ,brush_tiny  #0008 #0030 ,draw-sprite JSR
 	#05 ,brush_large #0008 #0058 ,draw-sprite JSR
-	#06 ,brush_large #0008 #0060 ,draw-sprite JSR
-	#07 ,brush_large #0008 #0068 ,draw-sprite JSR
+	#0a ,brush_large #0008 #0060 ,draw-sprite JSR
+	#0f ,brush_large #0008 #0068 ,draw-sprite JSR
 	RTS
 
 @draw-sprite

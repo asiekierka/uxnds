@@ -3,9 +3,13 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
+&Point2d { x 2 y 2 }
+
+;mouse Point2d
+
 ( window )  ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
 ( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
-( mouse )   ;mousex 2 ;mousey 2 ;state 1
+( mouse )   ;state 1
 
 |0100 @RESET 
 	
@@ -22,9 +26,9 @@ BRK
 |c000 @FRAME 
 
 	( clear last cursor )
-	#10 ,clear_icn ~mousex ~mousey ,draw-sprite JSR
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 	( record mouse positions )
-	#00 IOR2 =mousex #02 IOR2 =mousey
+	#00 IOR2 =mouse.x #02 IOR2 =mouse.y
 	( record mouse state )
 	#04 IOR #11 ADD =state
 
@@ -33,7 +37,7 @@ BRK
 	@no-touch
 
 	( draw mouse )
-	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	~state ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 
 BRK
 

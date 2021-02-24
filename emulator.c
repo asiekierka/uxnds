@@ -14,8 +14,8 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-#define HOR 32
-#define VER 18
+#define HOR 64 / 2
+#define VER 48 / 2
 #define PAD 2
 #define RES (HOR * VER * 16)
 
@@ -112,6 +112,8 @@ painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 blend)
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
+			if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
+				continue;
 			paintpixel(dst, x + h, y + v, ch1 ? blend % 4 : blend / 4);
 		}
 }
@@ -193,7 +195,7 @@ drawdebugger(Uint32 *dst, Uxn *u)
 		Uint8 x = (i % 8) * 3 + 3, y = i / 8 + 3, b = u->ram.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
-		y = i / 8 + 0x11, b = u->wst.dat[i];
+		y = VER - i / 8, b = u->wst.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
