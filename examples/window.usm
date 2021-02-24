@@ -30,7 +30,7 @@
 	,window_name1 #0020 #0020 #00d0 #0080 ,paint-window JSR
 	,window_name2 #0040 #0040 #00f0 #0070 ,paint-window JSR
 	,window_name3 #0060 #004c #00c0 #007a ,paint-window JSR
-	
+
 	#05 =dev/r ( set dev/read mouse )
 
 BRK
@@ -101,8 +101,8 @@ RTS
 	=icon.y =icon.x =icon.sprite =icon.text
 
 	#01 =dev/w ( write to screen )
-
 	#02 =dev/w ( write to sprite )
+	
 	#01 =color
 	~icon.text ~icon.x #0008 ADD2 ~icon.y #0020 ADD2 ,draw-label JSR
 	#07 ~icon.sprite ~icon.x #0018 ADD2 ~icon.y #0008 ADD2

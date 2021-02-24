@@ -101,7 +101,6 @@ A device that works like a NES controller, each button is a bit from a single by
 - Line routine
 - Getting rid of IOR/IOW would be nice..
 - Example of button pointing to a subroutine
-- Labels should not have the trailing space
 
 ### Misc TODOs
 

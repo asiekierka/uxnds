@@ -3,17 +3,24 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-;mousex 2 ;mousey 2 
-;lastx 2  ;lasty 2 
-;catx 2 ;caty 2
+&Point2d { x 2 y 2 }
+
+;mouse Point2d
+;cat Point2d
+
 ;state 1 ;timer 1
 
 |0100 @RESET 
 	
+	#01 =dev/r ( set dev/read mouse )
+
+	( position cat )
+	#00 IOR2 #0002 DIV2 =cat.x 
+	#02 IOR2 #0038 SUB2 =cat.y
+
 	#05 =dev/r ( set dev/read mouse )
 	#02 =dev/w ( set dev/write to sprite ) 
-	( position cat )
-	#0050 =catx #0058 =caty
+	
 	( draw polycat )
 	,draw-polycat JSR
 
@@ -22,9 +29,9 @@ BRK
 |c000 @FRAME
 
 	( clear last cursor )
-	#10 ,clear_icn ~lastx ~lasty ,draw-sprite JSR
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 	( record mouse positions )
-	#00 IOR2 =mousex #02 IOR2 =mousey
+	#00 IOR2 =mouse.x #02 IOR2 =mouse.y
 	( record mouse state )
 	#04 IOR #11 ADD =state
 	( detect click )
@@ -32,11 +39,10 @@ BRK
 		#50 =timer
 	@no-click
 	( draw mouse )
-	~state ,cursor_icn ~mousex ~mousey ,draw-sprite JSR
+	~state ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 	( animate )
 	,animate-polycat JSR
 	( update last pos )
-	~mousex =lastx ~mousey =lasty 
 	~timer #01 ADD =timer
 
 BRK
@@ -44,14 +50,14 @@ BRK
 @draw-polycat
 
 	( ears )
-	,polycat ~catx ~caty ,draw-sprite-chr JSR
-	,polycat #0010 ADD2 ~catx #0008 ADD2 ~caty ,draw-sprite-chr JSR
+	,polycat ~cat.x ~cat.y ,draw-sprite-chr JSR
+	,polycat #0010 ADD2 ~cat.x #0008 ADD2 ~cat.y ,draw-sprite-chr JSR
 	( eye )
-	,polycat #0020 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
-	,polycat #0030 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+	,polycat #0020 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
+	,polycat #0030 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 	( body )
-	,polycat #00a0 ADD2 ~catx ~caty #0010 ADD2 ,draw-sprite-chr JSR
-	,polycat #00b0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+	,polycat #00a0 ADD2 ~cat.x ~cat.y #0010 ADD2 ,draw-sprite-chr JSR
+	,polycat #00b0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR
 
 RTS
 
@@ -59,35 +65,35 @@ RTS
 
 	( tail )
 	~timer #50 NEQ ,animate-polycat-tail-next0 ROT JMP? POP2
-		,polycat #00c0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+		,polycat #00c0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR
 	@animate-polycat-tail-next0
 	~timer #58 NEQ ,animate-polycat-tail-next1 ROT JMP? POP2
-		,polycat #00d0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+		,polycat #00d0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR
 	@animate-polycat-tail-next1
 	~timer #60 NEQ ,animate-polycat-tail-next2 ROT JMP? POP2
-		,polycat #00b0 ADD2 ~catx #0008 ADD2 ~caty #0010 ADD2 ,draw-sprite-chr JSR
+		,polycat #00b0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR
 	@animate-polycat-tail-next2
 	( look-at )
-	~mousex ~catx #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP? POP2
+	~mouse.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP? POP2
 	@animate-polycat-left
-		~mousey ~caty #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP? POP2
+		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP? POP2
 		@animate-polycat-left-up 
-			,polycat #0040 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
-			,polycat #0050 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0040 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0050 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
 		@animate-polycat-left-down 
-			,polycat #0020 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
-			,polycat #0030 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0020 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0030 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
 	@animate-polycat-right
-		~mousey ~caty #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP? POP2
+		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP? POP2
 		@animate-polycat-right-up 
-			,polycat #0060 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
-			,polycat #0070 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0060 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0070 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
 		@animate-polycat-right-down 
-			,polycat #0080 ADD2 ~catx ~caty #0008 ADD2 ,draw-sprite-chr JSR
-			,polycat #0090 ADD2 ~catx #0008 ADD2 ~caty #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0080 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
+			,polycat #0090 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
 
 RTS
