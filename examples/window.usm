@@ -4,22 +4,34 @@
 :dev/w fff9 ( std write port )
 
 &Point2d { x 2 y 2 }
+&Icon { text 2 sprite 2 x 2 y 2 }
 
 ;mouse Point2d
+;pos Point2d
+
+;icon Icon
 
 ( window )  ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
 ( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
-( mouse )   ;state 1
+( mouse )   ;state 1 ;wname 2
 
 |0100 @RESET 
 	
 	,paint-background JSR
-	#0020 #0020 #00d0 #0080 ,paint-window JSR
-	#0040 #0040 #00f0 #0070 ,paint-window JSR
-	#0060 #004c #00c0 #007a ,paint-window JSR
 
-	#05 =dev/r ( set dev/read mouse )
+	#01 =dev/r ( set read screen )
+
+	,icon_name1 ,icon_icn1 #00 IOR2 #0040 SUB2 #0000 ,paint-icon JSR
+	,icon_name2 ,icon_icn2 #00 IOR2 #0040 SUB2 #0030 ,paint-icon JSR
+	,icon_name3 ,icon_icn3 #00 IOR2 #0040 SUB2 #0090 ,paint-icon JSR
+
 	#02 =dev/w ( set dev/write sprite )
+
+	,window_name1 #0020 #0020 #00d0 #0080 ,paint-window JSR
+	,window_name2 #0040 #0040 #00f0 #0070 ,paint-window JSR
+	,window_name3 #0060 #004c #00c0 #007a ,paint-window JSR
+	
+	#05 =dev/r ( set dev/read mouse )
 
 BRK
 
@@ -62,7 +74,7 @@ RTS
 
 @paint-window ( wx1 wy1 wx2 wy2 )
 
-	=wy2 =wx2 =wy1 =wx1
+	=wy2 =wx2 =wy1 =wx1 =wname
 
 	#01 =dev/r ( read screen for size )
 	#01 =dev/w ( write to screen )
@@ -80,7 +92,27 @@ RTS
 
 	#02 =dev/w
 	#09 =color
-	,text1 ~wx1 #0008 ADD2 ~wy1 #0008 ADD2 ,draw-label JSR
+	~wname ~wx1 #0008 ADD2 ~wy1 #0008 ADD2 ,draw-label JSR
+
+RTS
+
+@paint-icon ( x y )
+
+	=icon.y =icon.x =icon.sprite =icon.text
+
+	#01 =dev/w ( write to screen )
+
+	#02 =dev/w ( write to sprite )
+	#01 =color
+	~icon.text ~icon.x #0008 ADD2 ~icon.y #0020 ADD2 ,draw-label JSR
+	#07 ~icon.sprite ~icon.x #0018 ADD2 ~icon.y #0008 ADD2
+	IOW2 IOW2 IOW2 IOW 
+	#07 ~icon.sprite #0008 ADD2 ~icon.x #0020 ADD2 ~icon.y #0008 ADD2
+	IOW2 IOW2 IOW2 IOW 
+	#07 ~icon.sprite #0010 ADD2 ~icon.x #0018 ADD2 ~icon.y #0010 ADD2
+	IOW2 IOW2 IOW2 IOW 
+	#07 ~icon.sprite #0018 ADD2 ~icon.x #0020 ADD2 ~icon.y #0010 ADD2
+	IOW2 IOW2 IOW2 IOW 
 
 RTS
 
@@ -132,17 +164,18 @@ RTS
 		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
 RTS
 
-@texture     [ aa55 aa55 aa55 aa55 ]
-@clear_icn   [ 0000 0000 0000 0000 ]
-@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+@texture       [ aa55 aa55 aa55 aa55 ]
+@clear_icn     [ 0000 0000 0000 0000 ]
+@cursor_icn    [ 80c0 e0f0 f8e0 1000 ]
 @checkoff_icn  [ 7e81 8181 8181 817e ]
-@checkon_icn  [ 7e81 99bd bd99 817e ]
+@checkon_icn   [ 7e81 99bd bd99 817e ]
 
-@text1 [ Planet ] <1 .00 ( add string to memory )
-@text2 [ To Jupiter ] <1 .00
-@text3 [ To Neptune ] <1 .00
-@text4 [ To Nereid ] <1 .00
-@text5 [ Theme ] <1 .00
+@window_name1 [ To Jupiter ] <1 .00
+@window_name2 [ To Neptune ] <1 .00
+@window_name3 [ To Nereid ] <1 .00
+@icon_name1 [ Disk 1 ] <1 .00
+@icon_name2 [ Text 1 ] <1 .00
+@icon_name3 [ Trash ] <1 .00
 
 @font ( spectrum-zx font ) 
 [
@@ -180,6 +213,27 @@ RTS
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
+@icon_icn1 [
+	0000 030f 1f1e 3c38
+	0000 c0f0 f878 3c1c
+	383c 1e1f 0f03 0000
+	1c3c 78f8 f0c0 0000
+]
+
+@icon_icn2 [
+	ffff fdc2 fdc0 ffc0
+	ffff ffff ff03 ff03
+	ffc0 ffc0 ffff ffff
+	ff03 ff02 fdf9 f1ef
+]
+
+@icon_icn3 [
+	0001 0307 0f1f 3e7c
+	0080 c0e0 f0f8 7c3e
+	7c3e 1f0f 0703 0100
+	3e7c f8f0 e4ca 8400
+]
+
 |d000 @ERROR BRK 
-|FFF0 [ 31ff e1ff b10f ] ( palette )
+|FFF0 [ 31fd e1f3 b1f2 ] ( palette )
 |FFFA .RESET .FRAME .ERROR
