@@ -14,8 +14,9 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-#define HOR 64 / 2
-#define VER 48 / 2
+#define MODE 2
+#define HOR 64 / MODE
+#define VER 48 / MODE
 #define PAD 2
 #define RES (HOR * VER * 16)
 
@@ -26,7 +27,7 @@ typedef struct {
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
 int HEIGHT = 8 * VER + 8 * PAD * 2;
-int FPS = 30, GUIDES = 1, ZOOM = 2;
+int FPS = 30, GUIDES = 1, ZOOM = MODE;
 
 Uint32 theme[] = {
 	0x000000,
@@ -261,6 +262,7 @@ domouse(SDL_Event *event)
 	Uint8 flag = 0x00;
 	int x = clamp((event->motion.x - PAD * 8 * ZOOM) / ZOOM, 0, WIDTH - 1);
 	int y = clamp((event->motion.y - PAD * 8 * ZOOM) / ZOOM, 0, HEIGHT - 1);
+	devmouse->mem[0] = (x >> 8) & 0xff;
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
 	devmouse->mem[3] = y & 0xff;

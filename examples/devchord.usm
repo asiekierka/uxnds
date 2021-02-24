@@ -4,23 +4,22 @@
 :dev/w fff9 ( std write port )
 
 &Point2d { x 2 y 2 }
+&Window2d { x1 2 y1 2 x2 2 y2 2 }
 
 ;pos Point2d
 ;mouse Point2d
 ;scenter Point2d
+;win Window2d
 
 ( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2 ;i 2
-( window )  ;wx1 2 ;wy1 2 ;wx2 2 ;wy2 2 
 ;state 1
 
 |0100 @RESET 
 
-	#01 =color
-
 	#01 =dev/r ( read screen for size )
-
 	#02 =dev/w ( write to screen )
 
+	#08 =color
 	,paint-pattern JSR
 
 	#01 =dev/w ( write to screen )
@@ -38,8 +37,6 @@
 
 	#09 =color
 
-	,window_name ~scenter.x #0058 SUB2 ~scenter.y #0018 SUB2 ,draw-label JSR
-
 BRK
 
 |c000 @FRAME
@@ -49,43 +46,41 @@ BRK
 	( record mouse positions )
 	#00 IOR2 =mouse.x 
 	#02 IOR2 =mouse.y
-	#11 =state
+	#13 =state
 
 	( detect click )
 	#04 IOR #11 NEQ ,no-click12 ROT JMP? POP2
-		#10 =state
-		,mouse12_text #0040 ~scenter.y ,draw-label JSR
-		~color ,mouse12_icn #0030 ~scenter.y ,draw-sprite JSR
+		,mouse12_text ~win.x1 #0018 ADD2 ~scenter.y #0008 SUB2 ,draw-label JSR
+		~color ,mouse12_icn ~win.x1 #0008 ADD2 ~scenter.y #0008 SUB2 ,draw-sprite JSR
 		,end-click JSR
 	@no-click12
 	#04 IOR #01 NEQ ,no-click1 ROT JMP? POP2
-		#12 =state
-		,mouse1_text #0040 ~scenter.y ,draw-label JSR
-		~color ,mouse1_icn #0030 ~scenter.y ,draw-sprite JSR
+		,mouse1_text ~win.x1 #0018 ADD2 ~scenter.y #0008 SUB2 ,draw-label JSR
+		~color ,mouse1_icn ~win.x1 #0008 ADD2 ~scenter.y #0008 SUB2 ,draw-sprite JSR
 		,end-click JSR
 	@no-click1
 	#04 IOR #10 NEQ ,no-click2 ROT JMP? POP2
-		#13 =state
-		,mouse2_text #0040 ~scenter.y ,draw-label JSR
-		~color ,mouse2_icn #0030 ~scenter.y ,draw-sprite JSR
+		,mouse2_text ~win.x1 #0018 ADD2 ~scenter.y #0008 SUB2 ,draw-label JSR
+		~color ,mouse2_icn ~win.x1 #0008 ADD2 ~scenter.y #0008 SUB2 ,draw-sprite JSR
 		,end-click JSR
 	@no-click2
 	( default )
-	,mouse0_text #0040 ~scenter.y ,draw-label JSR
-	~color ,mouse0_icn #0030 ~scenter.y ,draw-sprite JSR
+	#11 =state
+	,mouse0_text ~win.x1 #0018 ADD2 ~scenter.y #0008 SUB2 ,draw-label JSR
+	~color ,mouse0_icn ~win.x1 #0008 ADD2 ~scenter.y #0008 SUB2 ,draw-sprite JSR
 	@end-click
 
 	( detect chord )
 	#05 IOR #01 NEQ ,no-chord1 ROT JMP? POP2
-		,chord1_text #0040 ~scenter.y #0008 ADD2 ,draw-label JSR
+		,chord1_text ~win.x1 #0018 ADD2 ~scenter.y ,draw-label JSR
 		,end-chord JSR
 	@no-chord1
 	#05 IOR #10 NEQ ,no-chord2 ROT JMP? POP2
-		,chord2_text #0040 ~scenter.y #0008 ADD2 ,draw-label JSR
+		,chord2_text ~win.x1 #0018 ADD2 ~scenter.y ,draw-label JSR
 		,end-chord JSR
 	@no-chord2
 	( default )
-	,chord0_text #0040 ~scenter.y #0008 ADD2 ,draw-label JSR
+	,chord0_text ~win.x1 #0018 ADD2 ~scenter.y ,draw-label JSR
 	@end-chord
 
 	( draw mouse )
@@ -102,7 +97,7 @@ BRK
 	@paint-pattern-loop-hor
 	#0000
 	@paint-pattern-loop
-		( draw ) OVR2 IOW2 DUP2 IOW2 ,pattern IOW2 #01 IOW
+		( draw ) OVR2 IOW2 DUP2 IOW2 ,pattern IOW2 ~color IOW
 		( incr ) #0008 ADD2 DUP2
 		#00 IOR2 LTH2 ,paint-pattern-loop ROT JMP? POP2
 		POP2
@@ -114,18 +109,20 @@ RTS
 
 @paint-window ( name wx1 wy1 wx2 wy2 )
 
-	=wy2 =wx2 =wy1 =wx1
+	=win.y2 =win.x2 =win.y1 =win.x1
 
-	( Draw background )
-	#00 =color
-	~wx1 #0003 ADD2 ~wy1 #0003 ADD2 ~wx2 #0003 ADD2 ~wy2 #0003 ADD2 ,fill-rect JSR
+	( Draw shadow )
+	#01 =color
+	~win.x2 ~win.y1 #0003 ADD2 ~win.x2 #0003 ADD2 ~win.y2 #0003 ADD2 ,fill-rect JSR
+	~win.x1 #0003 ADD2 ~win.y2 ~win.x2 #0003 ADD2 ~win.y2 #0003 ADD2 ,fill-rect JSR
+	( Fill background )
 	#02 =color
-	~wx1 ~wy1 ~wx2 ~wy2 ,fill-rect JSR
+	~win.x1 ~win.y1 ~win.x2 ~win.y2 ,fill-rect JSR
 	( draw outline )
 	#01 =color
-	~wx1 ~wy1 ~wx2 ~wy2 ,line-rect JSR
+	~win.x1 ~win.y1 ~win.x2 ~win.y2 ,line-rect JSR
 	#01 =color
-	~wx1 #0002 ADD2 ~wy1 #0002 ADD2 ~wx2 #0002 SUB2 ~wy2 #0002 SUB2 ,line-rect JSR
+	~win.x1 #0002 ADD2 ~win.y1 #0002 ADD2 ~win.x2 #0002 SUB2 ~win.y2 #0002 SUB2 ,line-rect JSR
 
 RTS
 
@@ -227,8 +224,7 @@ RTS
 @mouse1_text   [ mouse 1_ ] <1 .00
 @mouse2_text   [ mouse _2 ] <1 .00
 @mouse12_text  [ mouse 12 ] <1 .00
-@window_name   [ mouse test ] <1 .00
 
 |d000 @ERROR BRK 
-|FFF0 [ 25fd c3d2 a7bf ] ( palette )
+|FFF0 [ f0ff 20df 40bf ] ( palette )
 |FFFA .RESET .FRAME .ERROR
