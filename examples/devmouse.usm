@@ -12,7 +12,7 @@
 
 |0100 @RESET 
 	
-	#01 =dev/r ( set dev/read mouse )
+	#01 =dev/r ( set dev/read screen )
 
 	( position cat )
 	#00 IOR2 #0002 DIV2 =cat.x 

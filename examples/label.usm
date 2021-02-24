@@ -38,6 +38,7 @@ BRK
 		( incr ) #0001 ADD2
 		( incr ) ~x1 #0008 ADD2 =x1
 		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
+	POP2
 RTS
 
 @font ( spectrum-zx font ) 

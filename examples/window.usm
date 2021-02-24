@@ -77,7 +77,7 @@ RTS
 
 RTS
 
-@paint-window ( wx1 wy1 wx2 wy2 )
+@paint-window ( name wx1 wy1 wx2 wy2 )
 
 	=wy2 =wx2 =wy1 =wx1 =wname
 
@@ -167,6 +167,7 @@ RTS
 		( incr ) #0001 ADD2
 		( incr ) ~x1 #0008 ADD2 =x1
 		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
+	POP2
 RTS
 
 @texture       [ aa55 aa55 aa55 aa55 ]

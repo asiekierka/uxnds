@@ -258,22 +258,27 @@ init(void)
 void
 domouse(SDL_Event *event)
 {
+	Uint8 flag = 0x00;
 	int x = clamp((event->motion.x - PAD * 8 * ZOOM) / ZOOM, 0, WIDTH - 1);
 	int y = clamp((event->motion.y - PAD * 8 * ZOOM) / ZOOM, 0, HEIGHT - 1);
-	devmouse->mem[0] = (x >> 8) & 0xff;
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
 	devmouse->mem[3] = y & 0xff;
-	devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
 	devmouse->mem[5] = 0x00;
+	switch(event->button.button) {
+	case SDL_BUTTON_LEFT: flag = 0x01; break;
+	case SDL_BUTTON_RIGHT: flag = 0x10; break;
+	}
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
-		devmouse->mem[4] = 0;
-		devmouse->mem[5] = 0x10;
+		setflag(&devmouse->mem[4], flag, 0);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		devmouse->mem[4] = event->button.button == SDL_BUTTON_LEFT;
-		devmouse->mem[5] = 0x01;
+		setflag(&devmouse->mem[4], flag, 1);
+		if(flag == 0x01 && getflag(&devmouse->mem[4], 0x10))
+			devmouse->mem[5] = 0x01;
+		if(flag == 0x10 && getflag(&devmouse->mem[4], 0x01))
+			devmouse->mem[5] = 0x10;
 		break;
 	}
 }
