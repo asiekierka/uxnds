@@ -286,6 +286,20 @@ domouse(SDL_Event *event)
 }
 
 void
+dotext(SDL_Event *event)
+{
+	int i;
+	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
+		return;
+	for(i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i) {
+		char c = event->text.text[i];
+		if(c < ' ' || c > '~')
+			break;
+		devkey->mem[0] = c;
+	}
+}
+
+void
 doctrl(SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
@@ -303,6 +317,14 @@ doctrl(SDL_Event *event, int z)
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
+	if(z) {
+		/* special key controls */
+		switch(event->key.keysym.sym) {
+		case SDLK_BACKSPACE: devkey->mem[0] = 0x08; break;
+		case SDLK_RETURN: devkey->mem[0] = 0x0d; break;
+		}
+	}
+
 	setflag(&devcontroller->mem[0], flag, z);
 }
 
@@ -393,12 +415,14 @@ start(Uxn *u)
 		if(tick < ticknext)
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
+		devkey->mem[0] = 0x00; /* TODO: cleanup */
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT: quit(); break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION: domouse(&event); break;
+			case SDL_TEXTINPUT: dotext(&event); break;
 			case SDL_KEYDOWN: doctrl(&event, 1); break;
 			case SDL_KEYUP: doctrl(&event, 0); break;
 			case SDL_WINDOWEVENT:
