@@ -196,7 +196,7 @@ drawdebugger(Uint32 *dst, Uxn *u)
 		Uint8 x = (i % 8) * 3 + 3, y = i / 8 + 3, b = u->ram.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
-		y = VER - i / 8, b = u->wst.dat[i];
+		y = VER - 1 + i / 8, b = u->wst.dat[i];
 		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
 		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}

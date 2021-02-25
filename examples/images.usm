@@ -1,0 +1,87 @@
+( drag )
+
+:dev/r fff8 ( std read port )
+:dev/w fff9 ( std write port )
+
+&Point { x 1 y 1 }
+
+&Point2d { x 2 y 2 }
+&Picture2d { x 2 y 2 width 1 height 1 color 1 addr 2 }
+
+;pict Picture2d ;pictpt Point
+
+|0100 @RESET 
+	
+	#05 =dev/r ( set dev/read mouse )
+	#02 =dev/w ( set dev/write to sprite ) 
+
+	#0030 #0042 #04 #04 #01 ,graphic ,draw-picture JSR
+	#0040 #0052 #04 #04 #02 ,graphic ,draw-picture JSR
+	#0050 #0062 #04 #04 #03 ,graphic ,draw-picture JSR
+
+	#0058 #0042 #04 #04 #05 ,graphic ,draw-picture JSR
+	#0068 #0052 #04 #04 #06 ,graphic ,draw-picture JSR
+	#0078 #0062 #04 #04 #07 ,graphic ,draw-picture JSR
+
+	#0080 #0042 #04 #04 #0a ,graphic ,draw-picture JSR
+	#0090 #0052 #04 #04 #0c ,graphic ,draw-picture JSR
+	#00a0 #0062 #04 #04 #0e ,graphic ,draw-picture JSR
+
+BRK
+
+@draw-picture ( x y width height addr -> picture ) 
+
+	=pict.addr =pict.color =pict.height =pict.width =pict.y =pict.x
+	#00 =pictpt.y
+	@draw-picture-row
+		#00 =pictpt.x
+		@draw-picture-col
+			( draw )
+			~pict.color 
+			~pict.addr 
+			#0008 #00 ~pictpt.x MUL2 ADD2 ( x )
+			#0008 #00 ~pictpt.y ~pict.width MUL MUL2 ADD2 ( y * width )
+			~pict.x #0008 #00 ~pictpt.x MUL2 ADD2
+			~pict.y #0008 #00 ~pictpt.y MUL2 ADD2
+			,draw-sprite JSR
+			( draw - end )
+			( incr x ) ~pictpt.x #01 ADD =pictpt.x
+			~pictpt.x ~pict.width LTH ,draw-picture-col ROT JMP? POP2
+		( incr y ) ~pictpt.y #01 ADD =pictpt.y
+		~pictpt.y ~pict.height LTH ,draw-picture-row ROT JMP? POP2
+		
+RTS
+
+@draw-sprite
+	IOW2 ( y byte )
+	IOW2 ( x byte )
+	IOW2 ( sprite address )
+	IOW ( layer-color )
+	RTS
+
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@graphic [
+	ff80 8080 8080 8088
+	ffff fffc f8f9 f1f4
+	ffff 0010 c721 2120
+	ffff 3f0f 0717 c343
+	8888 8080 8080 8080
+	f0f1 f2f5 f2f1 f0f4
+	1208 804c 9212 4c00
+	7303 0343 1b1b fbfb
+	8080 8f83 8383 8393
+	f0f3 f1f0 e4c0 80ff
+	00c7 c7c6 4606 00ff
+	c3d3 c307 870f 3fff
+	8f83 8383 8383 83ff
+	fff7 fdff c0e2 f1ff
+	7fef bfff 07af 5fff
+	ffff ffff ffff ffff
+]
+
+|c000 @FRAME BRK
+|d000 @ERROR BRK 
+|FFF0 [ f0ac f0bb f053 ] ( palette )
+|FFFA .RESET .FRAME .ERROR ( vectors )
