@@ -6,26 +6,36 @@
 &Point { x 1 y 1 }
 
 &Point2d { x 2 y 2 }
+
 &Picture2d { x 2 y 2 width 1 height 1 color 1 addr 2 }
 
+;mouse Point2d
 ;pict Picture2d ;pictpt Point
+( drawing ) ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2 ;i 2
+;state 1
 
 |0100 @RESET 
 	
-	#05 =dev/r ( set dev/read mouse )
 	#02 =dev/w ( set dev/write to sprite ) 
 
-	#0030 #0042 #04 #04 #01 ,graphic ,draw-picture JSR
-	#0040 #0052 #04 #04 #02 ,graphic ,draw-picture JSR
-	#0050 #0062 #04 #04 #03 ,graphic ,draw-picture JSR
+	#0010 #0020 #04 #04 #01 ,graphic1 ,draw-picture JSR
+	#0020 #0030 #10 #10 #04 ,graphic2 ,draw-picture JSR
+	#0088 #0020 #10 #10 #08 ,graphic2 ,draw-picture JSR
 
-	#0058 #0042 #04 #04 #05 ,graphic ,draw-picture JSR
-	#0068 #0052 #04 #04 #06 ,graphic ,draw-picture JSR
-	#0078 #0062 #04 #04 #07 ,graphic ,draw-picture JSR
+	#05 =dev/r ( set dev/read mouse )
 
-	#0080 #0042 #04 #04 #0a ,graphic ,draw-picture JSR
-	#0090 #0052 #04 #04 #0c ,graphic ,draw-picture JSR
-	#00a0 #0062 #04 #04 #0e ,graphic ,draw-picture JSR
+BRK
+
+|c000 @FRAME
+
+	( clear last cursor )
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	( record mouse positions )
+	#00 IOR2 =mouse.x #02 IOR2 =mouse.y
+	( record mouse state )
+	#04 IOR #11 ADD =state
+	( draw mouse )
+	~state ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 
 BRK
 
@@ -49,7 +59,27 @@ BRK
 			~pictpt.x ~pict.width LTH ,draw-picture-col ROT JMP? POP2
 		( incr y ) ~pictpt.y #01 ADD =pictpt.y
 		~pictpt.y ~pict.height LTH ,draw-picture-row ROT JMP? POP2
-		
+
+	#01 =dev/w ( set dev/write to sprite ) 
+	#03 =color
+	~pict.x #0001 SUB2 ~pict.y #0001 SUB2 ~pict.x #0008 #00 ~pict.width MUL2 ADD2 ~pict.y #0008 #00 ~pict.height MUL2 ADD2 ,line-rect JSR
+	#02 =dev/w ( set dev/write to sprite ) 
+
+RTS
+
+@line-rect ( x1 y1 x2 y2 )
+	=y2 =x2 ( stash x1 y1 ) DUP2 WSR2 =y1 DUP2 WSR2 =x1
+	@line-rect-hor
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( draw ) ~x1 ~y2 IOW2 IOW2 ~color IOW
+		( incr ) ~x1 #0001 ADD2 DUP2 =x1  
+		~x2 #0001 ADD2 LTH2 ,line-rect-hor ROT JMP? POP2
+	( restore x1 y1 ) RSW2 =x1 RSW2 =y1
+	@line-rect-ver
+		( incr ) ~y1 #0001 ADD2 DUP2 =y1  
+		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+		( draw ) ~x2 ~y1 IOW2 IOW2 ~color IOW
+		~y2 #0001 SUB2 LTH2 ,line-rect-ver ROT JMP? POP2
 RTS
 
 @draw-sprite
@@ -62,7 +92,7 @@ RTS
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
 
-@graphic [
+@graphic1 [
 	ff80 8080 8080 8088
 	ffff fffc f8f9 f1f4
 	ffff 0010 c721 2120
@@ -81,7 +111,265 @@ RTS
 	ffff ffff ffff ffff
 ]
 
-|c000 @FRAME BRK
+@graphic2 [
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff fffe 
+	ffff ffff fef0 8000 
+	ffff ffd0 0000 0000 
+	ffff ff02 0000 0000 
+	ffff ffff 1f03 0000 
+	ffff ffff ffff ff1f 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff fef8 f8e0 
+	f8e0 c000 0003 0c30 
+	0000 0738 c000 0000 
+	17d0 0404 0404 0404 
+	fd00 0000 0000 0000 
+	40be 0100 0000 0000 
+	0300 e01c 0300 0000 
+	ff2f 0300 802d 0000 
+	ffff ff3f 0f07 a101 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff fefc f0e0 c081 
+	a081 060c 3060 8000 
+	c080 0000 0000 0000 
+	0000 0000 0000 0000 
+	0604 0406 0206 0202 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0000 0100 0101 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	fffe ffd0 e0e0 e0e0 
+	16f8 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0202 0202 0300 02ba 
+	0000 0000 0000 12c8 
+	0000 0000 0000 4893 
+	0000 0000 0000 00f4 
+	0000 0000 0000 0000 
+	0103 0303 0703 0707 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	e0e0 e0f0 f0f8 f8fc 
+	0000 0000 0000 0000 
+	0000 0000 0001 020a 
+	0000 0314 7040 8000 
+	0b74 8000 0000 0000 
+	4001 0105 0703 0200 
+	0000 80c0 c080 4000 
+	0000 0000 0000 0000 
+	0700 0000 0000 0000 
+	8028 0000 0000 0000 
+	0f0f 0f1f 1f1f 1f1f 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	fcfe feff ffff ffff 
+	0000 0003 82cc c0e0 
+	1060 8000 0000 0000 
+	0000 0000 0000 0b34 
+	0000 0000 17f8 0000 
+	0000 005f ff3f fe68 
+	0000 aff8 e0fc a100 
+	0000 5a00 0092 4000 
+	0000 b217 0080 9000 
+	0000 0040 5801 0101 
+	0f1f 0f1f 0f1f 4f2f 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	e0f0 f0f0 f0f1 f1ed 
+	0105 0a30 4000 0000 
+	c000 0000 0000 0000 
+	0000 0000 0000 0000 
+	071f 1f3f 1fbf 3fbf 
+	8080 a0d0 84e4 f0f0 
+	0000 0000 0000 0000 
+	0000 0000 0000 0000 
+	0000 0302 040a 062b 
+	af0f 0f1f 0f0f 1f9f 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	e5e5 eaf0 f2f8 eeff 
+	8000 0000 0200 001e 
+	0000 0000 4500 00aa 
+	0000 0055 0200 01ff 
+	3fbf 28f7 0f14 57ff 
+	f059 80d0 c02f fde5 
+	2840 0008 f795 474f 
+	0100 16eb 5fff ffff 
+	54df 1f87 ffff ffff 
+	1f3f 291e bf7b fdfb 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	fbfd fef5 fdff ffff 
+	8789 c64f af87 6fe7 
+	f76d 8e56 deed edef 
+	55ff 00fe 896d ffff 
+	5fe1 c9d7 7b77 bb7b 
+	5a5f ffff ff7f 7fff 
+	dffc f8f2 c7ea fd9f 
+	0100 8496 619f ffff 
+	6f1f 7f7f ffff ffff 
+	3ffb 7fdf 776f 7777 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	fcff ffff ffff ffff 
+	d7b7 7ff7 bbd7 f3fb 
+	edee edfe e2eb d5d6 
+	edff ffe9 22aa dd56 
+	bf7b bb35 75f2 a7ff 
+	ffff f7ff 5fd1 2efa 
+	efff ffff ff7f 95ee 
+	ffff ffff ffff 779a 
+	feff feff fefe ffa1 
+	df7f dfbf bfff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	f9ff f5fa fcfc fcff 
+	af5f 7fbf 7fff 7fff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	52ff ffff ffff ffff 
+	aef5 ffff ffff ffff 
+	ddeb fffd fdff fbf9 
+	ffff ffff ffff ff7f 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff ffff ffde fef0 
+	fbf8 f7ed d1a3 21c1 
+	bfff 3f9f 0f0f 0787 
+	ffff ffff ffff ffff 
+	ffff ffff ffff ffff 
+	ffff afd2 fdff ea80 
+	ffbf 5fff ffff 1f07 
+	ffff ffff ffff ffff 
+	f9f0 f0e0 e8c8 cc94 
+	5fe3 1c0f 0100 0000 
+	ffff bf85 fa3f 0f03 
+	ffff ffff 7f83 fcff 
+	ffff ffff ffff 5fa5 
+	ffff ffff ffff fffb 
+	ffff ffff ffff fcf3 
+	fffe faeb ac58 f0c0 
+	d9a3 a206 0c18 3830 
+	0402 0404 0404 0404 
+	8381 8040 4000 4000 
+	ffff ff6f 3f1f 0f07 
+	fefe fefe fffe ffdf 
+	8037 00e4 390f 8087 
+	03a3 13f7 47a7 cf1f 
+	fef7 fffe fefc f8f8 
+	94a4 2420 4440 4480 
+	0000 0000 0000 0000 
+	0101 0303 060c 0c08 
+	9f86 0001 0303 060c 
+	fabf 7dc0 8000 0000 
+	2fd3 fc07 0100 0000 
+	cfbf 7ff1 c080 0000 
+	8080 8000 8080 8080 
+	6020 6060 2060 6020 
+	0404 040c 0404 0404 
+	1000 0008 0002 0000 
+	0101 0000 0000 0080 
+	ffff 7f1f 0f03 0000 
+	e0fd ffff fffe fe1e 
+	3fff ff57 4faf a6f4 
+	f0e0 e182 8200 0000 
+	8080 0000 0000 0000 
+	0000 0000 0000 0000 
+	1810 3020 60c0 80c0 
+	0c18 1030 2040 40c0 
+	0000 0000 0000 0000 
+	0001 0307 0f0f 1f3f 
+	0000 0000 0000 0000 
+	4040 4040 2020 2030 
+	6030 6030 2030 2030 
+	0804 0408 0404 0404 
+	0000 0000 0000 0000 
+	0028 0802 0100 0000 
+	0000 0000 8061 171f 
+	0000 000a 7fff fffe 
+	b0b8 995b 8fa9 b4bc 
+	0001 7ffe fea0 0000 
+	0040 e080 0000 0000 
+	0101 0301 0206 0404 
+	8000 0100 0101 0301 
+	8080 8080 0000 0000 
+	0000 0001 0103 0707 
+	7e7c f8f0 e0c0 c080 
+	0000 0000 80c0 6070 
+	1010 1008 0808 0808 
+	2030 1020 3000 3010 
+	0404 0406 0202 0403 
+	0000 0001 0b3f 7fff 
+	0003 1f7f ffff ffff 
+	7fff ffff ffff ffff 
+	faf9 f7fd fcff ffff 
+	b6da dc9a 5d4d ee6e 
+	0000 0000 00fa ffff 
+	0000 0000 0080 fcf8 
+	0404 0000 0000 0000 
+	0302 0301 0202 0202 
+	0000 0000 0000 0000 
+	0f1f 1e3c 7c78 f0e0 
+	0000 0000 0000 0001 
+]
+
 |d000 @ERROR BRK 
 |FFF0 [ f0ac f0bb f053 ] ( palette )
 |FFFA .RESET .FRAME .ERROR ( vectors )
