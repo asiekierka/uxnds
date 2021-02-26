@@ -3,21 +3,18 @@
 :dev/r fff8 ( std read port )
 :dev/w fff9 ( std write port )
 
-&Device { r 8 w 8 }
+&Console { stdout 1 }
 
 |0100 @RESET 
 
-	#aa =device1.r 
-	~device1.r NOP
 
 BRK
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 
-|FF00 
-;device1 Device 
-;device2 Device
+|FF00 ;dev/console Console
+|FF08 ;device2 Device
 
 |FFF0 [ f2ac 35bb 2b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR

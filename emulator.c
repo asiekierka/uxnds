@@ -325,6 +325,40 @@ doctrl(SDL_Event *event, int z)
 #pragma mark - Devices
 
 Uint8
+console_poke(Uint8 *m, Uint8 b0, Uint8 b1)
+{
+	printf("%c", b1);
+	fflush(stdout);
+	return b1;
+}
+
+Uint8
+screen_poke(Uint8 *m, Uint8 b0, Uint8 b1)
+{
+	if(b0 == 0x04) {
+		Uint16 x = (*(m + 2) << 8) + *(m + 3);
+		Uint16 y = (*m << 8) + *(m + 1);
+		paintpixel(b1 >> 4 & 0xf ? screen.fg : screen.bg, x, y, b1 & 0xf);
+		screen.reqdraw = 1;
+	}
+	return b1;
+}
+
+Uint8
+peek1(Uint8 *m, Uint8 b0, Uint8 b1)
+{
+	printf("PEEK! %02x\n", b1);
+	return b1;
+}
+
+Uint8
+poke1(Uint8 *m, Uint8 b0, Uint8 b1)
+{
+	printf("POKE! %02x\n", b1);
+	return b1;
+}
+
+Uint8
 defaultrw(Device *d, Memory *m, Uint8 b)
 {
 	(void)m;
@@ -445,12 +479,12 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	devconsole = portuxn(&u, "console", defaultrw, consolew);
-	devscreen = portuxn(&u, "screen", screenr, screenw);
-	devsprite = portuxn(&u, "sprite", screenr, spritew);
-	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw);
-	devkey = portuxn(&u, "key", defaultrw, consolew);
-	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw);
+	devconsole = portuxn(&u, "console", defaultrw, consolew, peek1, console_poke);
+	devscreen = portuxn(&u, "screen", screenr, screenw, peek1, screen_poke);
+	devsprite = portuxn(&u, "sprite", screenr, spritew, peek1, poke1);
+	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw, peek1, poke1);
+	devkey = portuxn(&u, "key", defaultrw, consolew, peek1, poke1);
+	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw, peek1, poke1);
 
 	start(&u);
 	quit();

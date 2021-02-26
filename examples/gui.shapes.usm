@@ -1,13 +1,10 @@
 ( draw routines )
 
-:dev/r fff8 ( std read port )
-:dev/w fff9 ( std write port )
+&Screen { y 2 x 2 color 1 }
 
 ;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
 
 |0100 @RESET
-
-	#01 =dev/w ( set dev/write to screen ) 
 
 	#01 =color
 	#0010 #0020 #0040 #0060 ,fill-rect JSR
@@ -25,34 +22,18 @@
 	
 BRK
 
-@line-ver ( x1 y1 y2 )
-	=y2 =y1 =x1 
-	@line-ver-loop
-		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
-		( incr ) ~y1 #0001 ADD2 DUP2 =y1
-		~y2 NEQ2 ,line-ver-loop ROT JMP? POP2
-RTS
-
-@line-hor ( x1 y1 x2 )
-	=x2 =y1 =x1
-	@line-hor-loop
-		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
-		( incr ) ~x1 #0001 ADD2 DUP2 =x1
-		~x2 NEQ2 ,line-hor-loop ROT JMP? POP2
-RTS
-
 @line-rect ( x1 y1 x2 y2 )
 	=y2 =x2 ( stash x1 y1 ) DUP2 WSR2 =y1 DUP2 WSR2 =x1
 	@line-rect-hor
-		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
-		( draw ) ~x1 ~y2 IOW2 IOW2 ~color IOW
+		( draw ) ~x1 ~y1 =dev/screen.y =dev/screen.x ~color =dev/screen.color
+		( draw ) ~x1 ~y2 =dev/screen.y =dev/screen.x ~color =dev/screen.color
 		( incr ) ~x1 #0001 ADD2 DUP2 =x1  
 		~x2 #0001 ADD2 LTH2 ,line-rect-hor ROT JMP? POP2
 	( restore x1 y1 ) RSW2 =x1 RSW2 =y1
 	@line-rect-ver
 		( incr ) ~y1 #0001 ADD2 DUP2 =y1  
-		( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
-		( draw ) ~x2 ~y1 IOW2 IOW2 ~color IOW
+		( draw ) ~x1 ~y1 =dev/screen.y =dev/screen.x ~color =dev/screen.color
+		( draw ) ~x2 ~y1 =dev/screen.y =dev/screen.x ~color =dev/screen.color
 		~y2 #0001 SUB2 LTH2 ,line-rect-ver ROT JMP? POP2
 RTS
 
@@ -61,7 +42,7 @@ RTS
 	@fill-rect-ver
 		RSW2 DUP2 =x1 WSR2
 		@fill-rect-hor
-			( draw ) ~x1 ~y1 IOW2 IOW2 ~color IOW
+			( draw ) ~x1 ~y1 =dev/screen.y =dev/screen.x ~color =dev/screen.color
 			( incr ) ~x1 #0001 ADD2 DUP2 =x1  
 			~x2 LTH2 ,fill-rect-hor ROT JMP? POP2
 		~y1 #0001 ADD2 DUP2 =y1
@@ -71,5 +52,8 @@ RTS
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
+
+|FF08 ;dev/screen Screen
+
 |FFF0 [ 0f0f 0fff 0ff0 ] ( palette )
 |FFFA .RESET .FRAME .ERROR ( vectors )
