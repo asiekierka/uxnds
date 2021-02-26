@@ -21,8 +21,13 @@ WITH REGARD TO THIS SOFTWARE.
 #define RES (HOR * VER * 16)
 
 typedef struct {
+	Uint16 x1, y1, x2, y2;
+} Rect2d;
+
+typedef struct {
 	Uint8 reqdraw;
 	Uint8 bg[RES], fg[RES];
+	Rect2d bounds;
 } Screen;
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
@@ -72,26 +77,20 @@ clamp(int val, int min, int max)
 
 #pragma mark - Paint
 
-Uint16
-rowchr(Uint16 x, Uint16 y)
-{
-	return (y % 8) + ((x / 8 + y / 8 * HOR) * 16);
-}
-
 void
 paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
 {
-	Uint16 row = rowchr(x, y), col = x % 8;
+	Uint16 row = (y % 8) + ((x / 8 + y / 8 * HOR) * 16), col = 7 - (x % 8);
 	if(x >= HOR * 8 || y >= VER * 8 || row > RES - 8)
 		return;
 	if(color == 0 || color == 2)
-		dst[row] &= ~(1UL << (7 - col));
+		dst[row] &= ~(1UL << col);
 	else
-		dst[row] |= 1UL << (7 - col);
+		dst[row] |= 1UL << col;
 	if(color == 0 || color == 1)
-		dst[row + 8] &= ~(1UL << (7 - col));
+		dst[row + 8] &= ~(1UL << col);
 	else
-		dst[row + 8] |= 1UL << (7 - col);
+		dst[row + 8] |= 1UL << col;
 }
 
 void
@@ -131,37 +130,33 @@ clear(Uint32 *dst)
 }
 
 void
-putpixel(Uint32 *dst, int x, int y, int color)
+drawpixel(Uint32 *dst, Uint16 x, Uint16 y, Uint8 color)
 {
-	if(y == PAD * 8 || y == HEIGHT - PAD * 8 - 1) {
-		if(x == PAD * 8) return;
-		if(x == WIDTH - PAD * 8 - 1) return;
-	}
-	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
+	if(x >= screen.bounds.x1 && x <= screen.bounds.x2 && y >= screen.bounds.x1 && y <= screen.bounds.y2)
 		dst[y * WIDTH + x] = theme[color];
 }
 
 void
-drawchr(Uint32 *dst, int x, int y, Uint8 *sprite, Uint8 alpha)
+drawchr(Uint32 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 alpha)
 {
-	int v, h;
+	Uint8 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
 			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
 			if(!alpha || (alpha && ch1 + ch2 != 0))
-				putpixel(dst, x + 7 - h, y + v, ch1 + ch2);
+				drawpixel(dst, x + 7 - h, y + v, ch1 + ch2);
 		}
 }
 
 void
-drawicn(Uint32 *dst, int x, int y, Uint8 *sprite, int fg, int bg)
+drawicn(Uint32 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 bg)
 {
-	int v, h;
+	Uint8 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
-			int ch1 = (sprite[v] >> (7 - h)) & 0x1;
-			putpixel(dst, x + h, y + v, ch1 ? fg : bg);
+			Uint8 ch1 = (sprite[v] >> (7 - h)) & 0x1;
+			drawpixel(dst, x + h, y + v, ch1 ? fg : bg);
 		}
 }
 
@@ -191,14 +186,11 @@ loadtheme(Uint8 *addr)
 void
 drawdebugger(Uint32 *dst, Uxn *u)
 {
-	Uint8 i;
+	Uint8 i, x, y, b;
 	for(i = 0; i < 0x10; ++i) { /* memory */
-		Uint8 x = (i % 8) * 3 + 3, y = i / 8 + 3, b = u->ram.dat[i];
-		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1, 0);
-		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1, 0);
-		y = VER - 1 + i / 8, b = u->wst.dat[i];
-		drawicn(dst, x * 8, y * 8, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
-		drawicn(dst, x * 8 + 8, y * 8, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
+		x = ((i % 8) * 3 + 3) * 8, y = screen.bounds.x1 + 8 + i / 8 * 8, b = u->wst.dat[i];
+		drawicn(dst, x, y, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
+		drawicn(dst, x + 8, y, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
 }
 
@@ -253,6 +245,10 @@ init(void)
 		return error("Pixels", "Failed to allocate memory");
 	clear(pixels);
 	SDL_ShowCursor(SDL_DISABLE);
+	screen.bounds.x1 = PAD * 8;
+	screen.bounds.x2 = WIDTH - PAD * 8 - 1;
+	screen.bounds.y1 = PAD * 8;
+	screen.bounds.y2 = HEIGHT - PAD * 8 - 1;
 	return 1;
 }
 
@@ -260,8 +256,8 @@ void
 domouse(SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	int x = clamp((event->motion.x - PAD * 8 * ZOOM) / ZOOM, 0, WIDTH - 1);
-	int y = clamp((event->motion.y - PAD * 8 * ZOOM) / ZOOM, 0, HEIGHT - 1);
+	Uint16 x = clamp(event->motion.x / ZOOM - PAD * 8, 0, HOR * 8 - 1);
+	Uint16 y = clamp(event->motion.y / ZOOM - PAD * 8, 0, VER * 8 - 1);
 	devmouse->mem[0] = (x >> 8) & 0xff;
 	devmouse->mem[1] = x & 0xff;
 	devmouse->mem[2] = (y >> 8) & 0xff;
@@ -310,21 +306,19 @@ doctrl(SDL_Event *event, int z)
 	if(SDL_GetModState() & KMOD_LALT || SDL_GetModState() & KMOD_RALT)
 		flag = 0x02;
 	switch(event->key.keysym.sym) {
-	case SDLK_ESCAPE: flag = 0x04; break;
-	case SDLK_RETURN: flag = 0x08; break;
+	case SDLK_BACKSPACE:
+		flag = 0x04;
+		if(z) devkey->mem[0] = 0x08;
+		break;
+	case SDLK_RETURN:
+		flag = 0x08;
+		if(z) devkey->mem[0] = 0x0d;
+		break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
-	if(z) {
-		/* special key controls */
-		switch(event->key.keysym.sym) {
-		case SDLK_BACKSPACE: devkey->mem[0] = 0x08; break;
-		case SDLK_RETURN: devkey->mem[0] = 0x0d; break;
-		}
-	}
-
 	setflag(&devcontroller->mem[0], flag, z);
 }
 
