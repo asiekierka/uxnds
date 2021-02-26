@@ -98,11 +98,26 @@ A device that works like a NES controller, each button is a bit from a single by
 
 ## TODOs
 
-- Line routine
-- Getting rid of IOR/IOW would be nice..
-- Example of button pointing to a subroutine
+### OS Boot Disk
 
-### Misc TODOs
+- Load external disk in disk2
+- Build hex editor
+- Build sprite editor
+
+### Examples
+
+- Basics:
+	- Simple drag/drop redraw
+	- Window basics with open/close drag/drop redraw
+	- Example of button pointing to a subroutine
+- GUI:
+	- Line routine
+
+### Devices redesign
+
+- Possibly remove
+
+### Assembler
 
 - Includes
 - Defines

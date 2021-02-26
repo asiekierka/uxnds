@@ -35,6 +35,8 @@ typedef struct Device {
 	Uint8 ptr, mem[8];
 	Uint8 (*read)(struct Device *, Memory *, Uint8);
 	Uint8 (*write)(struct Device *, Memory *, Uint8);
+	Uint8 (*peek)(Uint8, Uint8);
+	Uint8 (*poke)(Uint8, Uint8);
 } Device;
 
 typedef struct {

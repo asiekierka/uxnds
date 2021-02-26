@@ -241,7 +241,8 @@ int
 makevariable(char *id, Uint16 *addr, FILE *f)
 {
 	char wv[64];
-	Uint8 origin, len;
+	Uint16 origin;
+	Uint8 len;
 	Macro *m = NULL;
 	fscanf(f, "%s", wv);
 	origin = *addr;
