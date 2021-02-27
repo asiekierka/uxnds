@@ -253,30 +253,31 @@ init(void)
 }
 
 void
-domouse(SDL_Event *event)
+domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
+	Uint16 addr = 0xff50; /* TODO: get dynamically */
 	Uint16 x = clamp(event->motion.x / ZOOM - PAD * 8, 0, HOR * 8 - 1);
 	Uint16 y = clamp(event->motion.y / ZOOM - PAD * 8, 0, VER * 8 - 1);
-	devmouse->mem[0] = (x >> 8) & 0xff;
-	devmouse->mem[1] = x & 0xff;
-	devmouse->mem[2] = (y >> 8) & 0xff;
-	devmouse->mem[3] = y & 0xff;
-	devmouse->mem[5] = 0x00;
+	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
+	u->ram.dat[addr + 1] = x & 0xff;
+	u->ram.dat[addr + 2] = (y >> 8) & 0xff;
+	u->ram.dat[addr + 3] = y & 0xff;
+	u->ram.dat[addr + 5] = 0x00;
 	switch(event->button.button) {
 	case SDL_BUTTON_LEFT: flag = 0x01; break;
 	case SDL_BUTTON_RIGHT: flag = 0x10; break;
 	}
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
-		setflag(&devmouse->mem[4], flag, 0);
+		setflag(&u->ram.dat[addr + 4], flag, 0);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		setflag(&devmouse->mem[4], flag, 1);
-		if(flag == 0x01 && getflag(&devmouse->mem[4], 0x10))
-			devmouse->mem[5] = 0x01;
-		if(flag == 0x10 && getflag(&devmouse->mem[4], 0x01))
-			devmouse->mem[5] = 0x10;
+		setflag(&u->ram.dat[addr + 4], flag, 1);
+		if(flag == 0x01 && getflag(&u->ram.dat[addr + 4], 0x10))
+			u->ram.dat[addr + 5] = 0x01;
+		if(flag == 0x10 && getflag(&u->ram.dat[addr + 4], 0x01))
+			u->ram.dat[addr + 5] = 0x10;
 		break;
 	}
 }
@@ -325,19 +326,23 @@ doctrl(SDL_Event *event, int z)
 #pragma mark - Devices
 
 Uint8
-console_poke(Uint8 *m, Uint8 b0, Uint8 b1)
+console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	printf("%c", b1);
 	fflush(stdout);
+	(void)m;
+	(void)ptr;
+	(void)b0;
 	return b1;
 }
 
 Uint8
-screen_poke(Uint8 *m, Uint8 b0, Uint8 b1)
+screen_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	if(b0 == 0x04) {
-		Uint16 x = (*(m + 2) << 8) + *(m + 3);
-		Uint16 y = (*m << 8) + *(m + 1);
+	ptr += 8;
+	if(b0 == 0x0c) {
+		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
+		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
 		paintpixel(b1 >> 4 & 0xf ? screen.fg : screen.bg, x, y, b1 & 0xf);
 		screen.reqdraw = 1;
 	}
@@ -345,16 +350,30 @@ screen_poke(Uint8 *m, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-peek1(Uint8 *m, Uint8 b0, Uint8 b1)
+sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	printf("PEEK! %02x\n", b1);
+	ptr += 8;
+	if(b0 == 0x0e) {
+		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
+		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
+		Uint16 a = (m[ptr + 4] << 8) + m[ptr + 5];
+		Uint8 source = (b1 >> 4) & 0xf;
+		Uint8 *layer = source % 2 ? screen.fg : screen.bg;
+		if(source / 2)
+			paintchr(layer, x, y, &m[a]);
+		else
+			painticn(layer, x, y, &m[a], b1 & 0xf);
+		screen.reqdraw = 1;
+	}
 	return b1;
 }
 
 Uint8
-poke1(Uint8 *m, Uint8 b0, Uint8 b1)
+ppnil(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	printf("POKE! %02x\n", b1);
+	(void)m;
+	(void)ptr;
+	(void)b0;
 	return b1;
 }
 
@@ -372,37 +391,6 @@ consolew(Device *d, Memory *m, Uint8 b)
 		printf("%c", b);
 	fflush(stdout);
 	(void)d;
-	(void)m;
-	return 0;
-}
-
-Uint8
-screenr(Device *d, Memory *m, Uint8 b)
-{
-	loadtheme(m->dat + 0xfff0);
-	switch(b) {
-	case 0: return (HOR * 8 >> 8) & 0xff;
-	case 1: return HOR * 8 & 0xff;
-	case 2: return (VER * 8 >> 8) & 0xff;
-	case 3: return VER * 8 & 0xff;
-	}
-	(void)m;
-	return d->mem[b];
-}
-
-Uint8
-screenw(Device *d, Memory *m, Uint8 b)
-{
-	d->mem[d->ptr++] = b;
-	if(d->ptr > 4) {
-		Uint16 x = (d->mem[2] << 8) + d->mem[3];
-		Uint16 y = (d->mem[0] << 8) + d->mem[1];
-		Uint8 clr = d->mem[4] & 0xf;
-		Uint8 layer = d->mem[4] >> 4 & 0xf;
-		paintpixel(layer ? screen.fg : screen.bg, x, y, clr);
-		screen.reqdraw = 1;
-		d->ptr = 0;
-	}
 	(void)m;
 	return 0;
 }
@@ -449,7 +437,7 @@ start(Uxn *u)
 			case SDL_QUIT: quit(); break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEMOTION: domouse(&event); break;
+			case SDL_MOUSEMOTION: domouse(u, &event); break;
 			case SDL_TEXTINPUT: dotext(&event); break;
 			case SDL_KEYDOWN: doctrl(&event, 1); break;
 			case SDL_KEYUP: doctrl(&event, 0); break;
@@ -479,12 +467,17 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	devconsole = portuxn(&u, "console", defaultrw, consolew, peek1, console_poke);
-	devscreen = portuxn(&u, "screen", screenr, screenw, peek1, screen_poke);
-	devsprite = portuxn(&u, "sprite", screenr, spritew, peek1, poke1);
-	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw, peek1, poke1);
-	devkey = portuxn(&u, "key", defaultrw, consolew, peek1, poke1);
-	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw, peek1, poke1);
+	devconsole = portuxn(&u, "console", defaultrw, consolew, ppnil, console_poke);
+	devscreen = portuxn(&u, "screen", defaultrw, defaultrw, ppnil, screen_poke);
+	devsprite = portuxn(&u, "sprite", defaultrw, spritew, ppnil, sprite_poke);
+	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw, ppnil, ppnil);
+	devkey = portuxn(&u, "key", defaultrw, consolew, ppnil, ppnil);
+	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw, ppnil, ppnil);
+
+	u.ram.dat[0xff10] = (HOR * 8 >> 8) & 0xff;
+	u.ram.dat[0xff11] = HOR * 8 & 0xff;
+	u.ram.dat[0xff12] = (VER * 8 >> 8) & 0xff;
+	u.ram.dat[0xff13] = VER * 8 & 0xff;
 
 	start(&u);
 	quit();

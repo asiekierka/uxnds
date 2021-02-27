@@ -1,0 +1,40 @@
+( screen )
+
+&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+
+;centerx 2 ;centery 2 ;i 2
+
+|0100 @RESET 
+
+	( find screen center )
+	~dev/screen.width #0002 DIV2 =centerx
+	~dev/screen.height #0002 DIV2 =centery
+
+	( draw hor line )
+	#0000 =i
+	~centery =dev/screen.y
+	@draw-hor
+		#03 ~i =dev/screen.x =dev/screen.color
+		~i #0002 ADD2 =i ( increment )
+	~i ~dev/screen.width LTH2 ,draw-hor ROT JMP? POP2
+
+	( draw ver line )
+	#0000 =i
+	~centerx =dev/screen.x
+	@draw-ver
+		#03 ~i =dev/screen.y =dev/screen.color
+		~i #0002 ADD2 =i ( increment )
+	~i ~dev/screen.width LTH2 ,draw-ver ROT JMP? POP2
+
+	( draw pixel in the middle )
+	#01 ~centerx ~centery =dev/screen.y =dev/screen.x =dev/screen.color
+
+BRK
+
+|c000 @FRAME BRK
+|d000 @ERROR BRK 
+
+|FF10 ;dev/screen Screen
+
+|FFF0 [ f0ac f0bb f053 ] ( palette )
+|FFFA .RESET .FRAME .ERROR ( vectors )

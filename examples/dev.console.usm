@@ -1,6 +1,6 @@
 ( hello world )
 
-&Console { stdio 1 }
+&Console { pad 8 stdio 1 }
 
 |0100 @RESET 
 	

@@ -1,11 +1,18 @@
 ( blank )
 
-:dev/r fff8 ( std read port )
-:dev/w fff9 ( std write port )
+&Console { pad 8 stdio 1 }
+&Screen  { width 2 height 2 pad 4 y 2 x 2 color 1 }
+&Sprite  { pad 8 y 2 x 2 addr 2 color 1 }
+&Mouse   { x 2 y 2 state 1 chord 1 }
 
 |0100 @RESET BRK
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
+
+|FF00 ;dev/console Console
+|FF10 ;dev/screen  Screen
+|FF20 ;dev/sprite  Sprite
+|FF50 ;dev/mouse   Mouse
 
 |FFF0 [ f2ac 35bb 2b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR
