@@ -32,9 +32,7 @@ typedef struct {
 } Memory;
 
 typedef struct Device {
-	Uint8 ptr, mem[8];
-	Uint8 (*read)(struct Device *, Memory *, Uint8);
-	Uint8 (*write)(struct Device *, Memory *, Uint8);
+	Uint16 addr;
 	Uint8 (*peek)(Uint8 *, Uint16, Uint8, Uint8);
 	Uint8 (*poke)(Uint8 *, Uint16, Uint8, Uint8);
 } Device;
@@ -44,7 +42,7 @@ typedef struct {
 	Uint16 counter, devr, devw, vreset, vframe, verror;
 	Stack wst, rst;
 	Memory ram;
-	Device dev[256];
+	Device dev[8];
 } Uxn;
 
 void setflag(Uint8 *status, char flag, int b);
@@ -52,4 +50,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-Device *portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Memory *, Uint8), Uint8 (*wfn)(Device *, Memory *, Uint8), Uint8 (*pefn)(Uint8 *, Uint16, Uint8, Uint8), Uint8 (*pofn)(Uint8 *, Uint16, Uint8, Uint8));
+Device *portuxn(Uxn *u, char *name, Uint8 (*pefn)(Uint8 *, Uint16, Uint8, Uint8), Uint8 (*pofn)(Uint8 *, Uint16, Uint8, Uint8));

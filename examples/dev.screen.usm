@@ -1,4 +1,4 @@
-( screen )
+( dev/screen )
 
 &Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 

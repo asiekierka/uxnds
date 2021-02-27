@@ -65,7 +65,7 @@ SDL_Texture *gTexture;
 Uint32 *pixels;
 
 Screen screen;
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devcontroller;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl;
 
 #pragma mark - Helpers
 
@@ -256,7 +256,7 @@ void
 domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = 0xff50; /* TODO: get dynamically */
+	Uint16 addr = devmouse->addr;
 	Uint16 x = clamp(event->motion.x / ZOOM - PAD * 8, 0, HOR * 8 - 1);
 	Uint16 y = clamp(event->motion.y / ZOOM - PAD * 8, 0, VER * 8 - 1);
 	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
@@ -283,16 +283,17 @@ domouse(Uxn *u, SDL_Event *event)
 }
 
 void
-dotext(SDL_Event *event)
+dotext(Uxn *u, SDL_Event *event)
 {
 	int i;
+	Uint16 addr = devkey->addr;
 	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
 		return;
 	for(i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i) {
 		char c = event->text.text[i];
 		if(c < ' ' || c > '~')
 			break;
-		devkey->mem[0] = c;
+		u->ram.dat[addr] = c;
 	}
 }
 
@@ -300,8 +301,8 @@ void
 doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = 0xff30; /* TODO: get dynamically */
-	if(z && event->key.keysym.sym == SDLK_h)
+	Uint16 addr = devctrl->addr;
+	if(z && event->key.keysym.sym == SDLK_h && SDL_GetModState() & KMOD_LCTRL)
 		GUIDES = !GUIDES;
 	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
 		flag = 0x01;
@@ -310,11 +311,11 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	switch(event->key.keysym.sym) {
 	case SDLK_BACKSPACE:
 		flag = 0x04;
-		if(z) devkey->mem[0] = 0x08;
+		if(z) u->ram.dat[0xff40] = 0x08;
 		break;
 	case SDLK_RETURN:
 		flag = 0x08;
-		if(z) devkey->mem[0] = 0x0d;
+		if(z) u->ram.dat[0xff40] = 0x0d;
 		break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
@@ -378,44 +379,6 @@ ppnil(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 	return b1;
 }
 
-Uint8
-defaultrw(Device *d, Memory *m, Uint8 b)
-{
-	(void)m;
-	return d->mem[b];
-}
-
-Uint8
-consolew(Device *d, Memory *m, Uint8 b)
-{
-	if(b)
-		printf("%c", b);
-	fflush(stdout);
-	(void)d;
-	(void)m;
-	return 0;
-}
-
-Uint8
-spritew(Device *d, Memory *m, Uint8 b)
-{
-	d->mem[d->ptr++] = b;
-	if(d->ptr == 7) {
-		Uint16 x = (d->mem[2] << 8) + d->mem[3];
-		Uint16 y = (d->mem[0] << 8) + d->mem[1];
-		Uint16 a = (d->mem[4] << 8) + d->mem[5];
-		Uint8 source = d->mem[6] >> 4 & 0xf;
-		Uint8 *layer = source % 2 ? screen.fg : screen.bg;
-		if(source / 2)
-			paintchr(layer, x, y, &m->dat[a]);
-		else
-			painticn(layer, x, y, &m->dat[a], d->mem[6] & 0xf);
-		screen.reqdraw = 1;
-		d->ptr = 0;
-	}
-	return 0;
-}
-
 #pragma mark - Generics
 
 int
@@ -432,14 +395,13 @@ start(Uxn *u)
 		if(tick < ticknext)
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
-		devkey->mem[0] = 0x00; /* TODO: cleanup */
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT: quit(); break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION: domouse(u, &event); break;
-			case SDL_TEXTINPUT: dotext(&event); break;
+			case SDL_TEXTINPUT: dotext(u, &event); break;
 			case SDL_KEYDOWN: doctrl(u, &event, 1); break;
 			case SDL_KEYUP: doctrl(u, &event, 0); break;
 			case SDL_WINDOWEVENT:
@@ -468,12 +430,12 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	devconsole = portuxn(&u, "console", defaultrw, consolew, ppnil, console_poke);
-	devscreen = portuxn(&u, "screen", defaultrw, defaultrw, ppnil, screen_poke);
-	devsprite = portuxn(&u, "sprite", defaultrw, spritew, ppnil, sprite_poke);
-	devcontroller = portuxn(&u, "controller", defaultrw, defaultrw, ppnil, ppnil);
-	devkey = portuxn(&u, "key", defaultrw, consolew, ppnil, ppnil);
-	devmouse = portuxn(&u, "mouse", defaultrw, defaultrw, ppnil, ppnil);
+	devconsole = portuxn(&u, "console", ppnil, console_poke);
+	devscreen = portuxn(&u, "screen", ppnil, screen_poke);
+	devsprite = portuxn(&u, "sprite", ppnil, sprite_poke);
+	devctrl = portuxn(&u, "controller", ppnil, ppnil);
+	devkey = portuxn(&u, "key", ppnil, ppnil);
+	devmouse = portuxn(&u, "mouse", ppnil, ppnil);
 
 	u.ram.dat[0xff10] = (HOR * 8 >> 8) & 0xff;
 	u.ram.dat[0xff11] = HOR * 8 & 0xff;

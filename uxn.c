@@ -34,8 +34,6 @@ Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1)
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_nop(Uxn *u) { printf("0x%02x \n", pop8(&u->wst)); fflush(stdout); }
-void op_ior(Uxn *u) { Device *dev = &u->dev[mempeek8(u, u->devr)]; if(dev) push8(&u->wst, dev->read(dev, &u->ram, pop8(&u->wst))); }
-void op_iow(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(u, u->devw)]; if(dev) dev->write(dev, &u->ram, a); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(u, a)); }
 void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempoke8(u, a, b); }
 /* Logic */
@@ -66,8 +64,6 @@ void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst,
 /* --- */
 void op_lit16(Uxn *u) { u->literal += 2; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
-void op_ior16(Uxn *u) { Uint8 a = pop8(&u->wst); Device *dev = &u->dev[mempeek8(u, u->devr)]; if(dev) push16(&u->wst, (dev->read(dev, &u->ram, a) << 8) + dev->read(dev, &u->ram, a + 1)); }
-void op_iow16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint8 b = pop8(&u->wst); Device *dev = &u->dev[mempeek8(u, u->devw)]; if(dev) { dev->write(dev, &u->ram, b); dev->write(dev, &u->ram, a); } }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(u, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(u, a, b); }
 void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
@@ -93,12 +89,12 @@ void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_nop, op_lit, op_nop, op_ior, op_iow, op_ldr, op_str, 
+	op_brk, op_nop, op_lit, op_nop, op_nop, op_nop, op_ldr, op_str, 
 	op_jmp, op_jsr, op_nop, op_rts, op_and, op_ora, op_rol, op_ror, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_wsr, op_rsw, op_nop,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
-	op_brk,   op_nop16, op_lit16, op_nop,   op_ior16, op_iow16, op_ldr16, op_str16, 
+	op_brk,   op_nop16, op_lit16, op_nop,   op_nop,   op_nop,   op_ldr16, op_str16, 
 	op_jmp,   op_jsr,   op_nop,   op_rts,   op_and16, op_ora16, op_rol16, op_ror16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_wsr16, op_rsw16, op_nop,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
@@ -211,14 +207,12 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, char *name, Uint8 (*rfn)(Device *, Memory *, Uint8), Uint8 (*wfn)(Device *, Memory *, Uint8), Uint8 (*pefn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1), Uint8 (*pofn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1))
+portuxn(Uxn *u, char *name, Uint8 (*pefn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1), Uint8 (*pofn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1))
 {
 	Device *d = &u->dev[u->devices++];
-	d->read = rfn;
-	d->write = wfn;
+	d->addr = 0xff00 + (u->devices - 1) * 0x10;
 	d->peek = pefn;
 	d->poke = pofn;
-	d->ptr = 0;
-	printf("Device #%d: %s \n", u->devices - 1, name);
+	printf("Device #%d: %s, at 0x%04x \n", u->devices - 1, name, d->addr);
 	return d;
 }

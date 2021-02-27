@@ -53,11 +53,10 @@ evaluxn(u, u->vframe); /* Each frame
 ```
 ( hello world )
 
-:dev/w fff9 ( const write port )
+&Console { pad 8 stdio 1 }
 
 |0100 @RESET 
 	
-	#00 =dev/w ( set dev/write to console ) 
 	,text1 ,print-label JSR ( print to console )
 
 BRK
@@ -65,7 +64,7 @@ BRK
 @print-label ( text )
 
 	@cliloop
-		DUP2 LDR IOW                             ( write pointer value to console )
+		DUP2 LDR =dev/console.stdio              ( write pointer value to console )
 		#0001 ADD2                               ( increment string pointer )
 		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
 	POP2
@@ -76,6 +75,8 @@ RTS
 
 |c000 @FRAME
 |d000 @ERROR 
+
+|FF00 ;dev/console Console
 
 |FFF0 [ f3f0 f30b f30a ] ( palette )
 |FFFA .RESET .FRAME .ERROR
@@ -112,10 +113,6 @@ A device that works like a NES controller, each button is a bit from a single by
 	- Example of button pointing to a subroutine
 - GUI:
 	- Line routine
-
-### Devices redesign
-
-- Possibly remove
 
 ### Assembler
 
