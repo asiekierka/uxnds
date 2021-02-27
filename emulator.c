@@ -297,9 +297,10 @@ dotext(SDL_Event *event)
 }
 
 void
-doctrl(SDL_Event *event, int z)
+doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
+	Uint16 addr = 0xff30; /* TODO: get dynamically */
 	if(z && event->key.keysym.sym == SDLK_h)
 		GUIDES = !GUIDES;
 	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
@@ -320,7 +321,7 @@ doctrl(SDL_Event *event, int z)
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
-	setflag(&devcontroller->mem[0], flag, z);
+	setflag(&u->ram.dat[addr], flag, z);
 }
 
 #pragma mark - Devices
@@ -439,8 +440,8 @@ start(Uxn *u)
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION: domouse(u, &event); break;
 			case SDL_TEXTINPUT: dotext(&event); break;
-			case SDL_KEYDOWN: doctrl(&event, 1); break;
-			case SDL_KEYUP: doctrl(&event, 0); break;
+			case SDL_KEYDOWN: doctrl(u, &event, 1); break;
+			case SDL_KEYUP: doctrl(u, &event, 0); break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
 					redraw(pixels, u);

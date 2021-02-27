@@ -1,7 +1,8 @@
 ( controller )
 
-:dev/r fff8 ( const read port )
-:dev/w fff9 ( const write port )
+&Screen     { width 2 height 2 pad 4 y 2 x 2 color 1 }
+&Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
+&Controller { buttons 1 }
 
 &Point2d { x 2 y 2 }
 
@@ -10,38 +11,36 @@
 
 |0100 @RESET 
 
-	#03 =dev/r ( set dev/read to controller ) 
-	#02 =dev/w ( set dev/write to sprite ) 
-	#0080 =pos.x #0040 =pos.y ( origin )
+	( set origin )
+	~dev/screen.width #0002 DIV2 =pos.x 
+	~dev/screen.height #0002 DIV2 =pos.y
 
-	#12 ,up_icn ~pos.x ~pos.y ,draw-sprite JSR
+	#12 ,up_icn ~pos.y ~pos.x ,draw-sprite JSR
 
 BRK
 
 |c000 @FRAME 
 
-	#03 =dev/r ( set dev/read to controller ) 
-
 	,default_icn =sprite
 
-	#00 IOR #10 NEQ ,next1 ROT JMP? POP2
+	~dev/ctrl.buttons #10 NEQ ,next1 ROT JMP? POP2
 		,up_icn =sprite
 		~pos.y #0001 SUB2 =pos.y
 	@next1
-	#00 IOR #20 NEQ ,next2 ROT JMP? POP2
+	~dev/ctrl.buttons #20 NEQ ,next2 ROT JMP? POP2
 		,down_icn =sprite
 		~pos.y #0001 ADD2 =pos.y
 	@next2
-	#00 IOR #40 NEQ ,next3 ROT JMP? POP2
+	~dev/ctrl.buttons #40 NEQ ,next3 ROT JMP? POP2
 		,left_icn =sprite
 		~pos.x #0001 SUB2 =pos.x
 	@next3
-	#00 IOR #80 NEQ ,end ROT JMP? POP2
+	~dev/ctrl.buttons #80 NEQ ,end ROT JMP? POP2
 		,right_icn =sprite
 		~pos.x #0001 ADD2 =pos.x
 	@end
 	( redraw )
-	#13 ~sprite ~pos.x ~pos.y ,draw-sprite JSR
+	#13 ~sprite ~pos.y ~pos.x ,draw-sprite JSR
 
 BRK
 
@@ -52,13 +51,17 @@ BRK
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
 
 @draw-sprite
-	IOW2 ( y byte )
-	IOW2 ( x byte )
-	IOW2 ( sprite address )
-	IOW ( layer-color )
+	=dev/sprite.x
+	=dev/sprite.y
+	=dev/sprite.addr
+	=dev/sprite.color
 	RTS
 
 |d000 @ERROR BRK 
+
+|FF10 ;dev/screen Screen
+|FF20 ;dev/sprite Sprite
+|FF30 ;dev/ctrl   Controller
 
 |FFF0 [ 02ac 05bb 0b53 ] ( palette )
 |FFFA .RESET .FRAME .ERROR

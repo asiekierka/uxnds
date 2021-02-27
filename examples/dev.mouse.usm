@@ -1,7 +1,7 @@
 ( mouse )
 
 &Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
-&Sprite { pad 8 y 2 x 2 addr 2 color 1 }
+&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 &Mouse  { x 2 y 2 state 1 chord 1 }
 
 &Point2d { x 2 y 2 }
@@ -91,15 +91,15 @@ RTS
 RTS
 
 @draw-sprite
-	=dev/sprite.x
 	=dev/sprite.y
+	=dev/sprite.x
 	=dev/sprite.addr
 	=dev/sprite.color
 	RTS
 
 @draw-sprite-chr
-	=dev/sprite.x
 	=dev/sprite.y
+	=dev/sprite.x
 	=dev/sprite.addr
 	#20 =dev/sprite.color
 	RTS
