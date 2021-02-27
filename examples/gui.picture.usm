@@ -12,7 +12,7 @@
 
 	#0000 #0000 ~dev/screen.width ~dev/screen.height #01 ,pict_large ,draw-picture JSR
 	#0008 #0010 #0080 #0080 #01 ,pict_medium ,draw-picture JSR
-	#00d0 #0090 #0020 #0020 #04 ,pict_small ,draw-picture JSR
+	#00d0 #0090 #0020 #0020 #0a ,pict_small ,draw-picture JSR
 
 BRK
 
