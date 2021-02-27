@@ -39,7 +39,7 @@ typedef struct Device {
 
 typedef struct {
 	Uint8 literal, status, devices;
-	Uint16 counter, devr, devw, vreset, vframe, verror;
+	Uint16 counter, vreset, vframe, verror;
 	Stack wst, rst;
 	Memory ram;
 	Device dev[8];

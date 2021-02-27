@@ -114,6 +114,8 @@ Uint8 opr[][2] = {
 
 /* clang-format on */
 
+#pragma mark - Core
+
 int
 haltuxn(Uxn *u, char *name, int id)
 {
@@ -191,8 +193,6 @@ loaduxn(Uxn *u, char *filepath)
 	if(!(f = fopen(filepath, "rb")))
 		return haltuxn(u, "Missing input rom.", 0);
 	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
-	u->devr = 0xfff8;
-	u->devw = 0xfff9;
 	u->vreset = mempeek16(u, 0xfffa);
 	u->vframe = mempeek16(u, 0xfffc);
 	u->verror = mempeek16(u, 0xfffe);
