@@ -197,10 +197,10 @@ drawdebugger(Uint32 *dst, Uxn *u)
 void
 redraw(Uint32 *dst, Uxn *u)
 {
-	int x, y;
+	Uint16 x, y;
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x) {
-			int key = (y * HOR + x) * 16;
+			Uint16 key = (y * HOR + x) * 16;
 			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.bg[key], 0);
 			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
 		}
