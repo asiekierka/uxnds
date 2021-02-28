@@ -3,6 +3,7 @@
 &Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 &Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
+;timer 1
 ;centerx 2 ;centery 2 ;i 2 ;j 1
 
 |0100 @RESET 
@@ -47,7 +48,25 @@ BRK
 
 @icon [ 3c7e e7c3 c3e7 7e3c ]
 
-|c000 @FRAME BRK
+|c000 @FRAME
+	
+	( update colors every 40 frames )
+	~timer #40 NEQ ,skip1 ROT JMP? POP2
+		#0fac =fffa #f0bb =fffc #f053 =fff8
+	@skip1
+	~timer #80 NEQ ,skip2 ROT JMP? POP2
+		#00fc =fffc #f0bb =fff8 #f053 =fffa
+	@skip2
+	~timer #c0 NEQ ,skip3 ROT JMP? POP2
+		#000f =fff8 #0f0f =fffa #ff00 =fffc
+	@skip3
+	~timer #00 NEQ ,skip4 ROT JMP? POP2
+		#f0ac =fff8 #f0bb =fffa #f053 =fffc
+	@skip4
+	~timer #01 ADD =timer
+
+BRK
+
 |d000 @ERROR BRK 
 
 |FF10 ;dev/screen Screen

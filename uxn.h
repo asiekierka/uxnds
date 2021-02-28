@@ -42,7 +42,7 @@ typedef struct {
 	Uint16 counter, vreset, vframe, verror;
 	Stack wst, rst;
 	Memory ram;
-	Device dev[8];
+	Device dev[16];
 } Uxn;
 
 void setflag(Uint8 *status, char flag, int b);

@@ -181,6 +181,7 @@ loadtheme(Uint8 *addr)
 	theme[2] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
 	r = *(addr + 1) & 0xf, g = *(addr + 3) & 0xf, b = *(addr + 5) & 0xf;
 	theme[3] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+	screen.reqdraw = 1;
 }
 
 void
@@ -371,7 +372,7 @@ sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	printf("system_poke\n");
+	loadtheme(&m[0xfff8]);
 	return b1;
 }
 
@@ -442,7 +443,7 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, "key", ppnil, ppnil);
 	devmouse = portuxn(&u, "mouse", ppnil, ppnil);
 
-	u.devices = 7;
+	u.devices = 15; /* pad to last device */
 	devsystem = portuxn(&u, "system", ppnil, system_poke);
 
 	/* Write screen size to dev/screen */

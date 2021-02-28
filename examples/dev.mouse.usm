@@ -231,5 +231,5 @@ RTS
 |FF20 ;dev/sprite Sprite
 |FF50 ;dev/mouse  Mouse
 
-|FFF0 .RESET .FRAME .ERROR
+|FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0f85 0fd5 0fb5 ] ( palette )

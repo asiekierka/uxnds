@@ -75,5 +75,5 @@ RTS
 |FF20 ;dev/sprite Sprite
 |FF30 ;dev/ctrl   Controller
 
-|FFF0 .RESET .FRAME .ERROR
+|FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0daf 02ff 035f ] ( palette )
