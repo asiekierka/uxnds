@@ -9,47 +9,39 @@ file_extensions:
 scope: source.usm
 
 contexts:
-  prototype:
-    - include: comments
-
   main:
-    - include: keywords
-    - include: numbers
-    - include: strings
-
-  numbers:
-    - match: '\|(\S+)\s?'
-      scope: punctuation.definition
-      pop: true
-    - match: '\_(\S+)\s?'
-      scope: punctuation.definition
-      pop: true
-    - match: '\+(\S+)\s?'
-      scope: keyword.control
-      pop: true
-    - match: '\-(\S+)\s?'
-      scope: keyword.control
-      pop: true
-    - match: '\~(\S+)\s?'
-      scope: keyword.control
-      pop: true
-    - match: '\=(\S+)\s?'
-      scope: keyword.control
-      pop: true
-
-  strings:
-    - match: '\:(\S+)\s?'
-      scope: string.control
-      pop: true
-    - match: '\;(\S+)\s?'
-      scope: string.control
-      pop: true
+    # pointer
     - match: '\@(\S+)\s?'
       scope: string.control
       pop: true
+    # jump
+    - match: '\|(\S+)\s?'
+      scope: variable.control
+      pop: true
+    # variables
+    - match: '\;(\S+)\s?'
+      scope: string.control
+      pop: true
+    # constants
+    - match: '\:(\S+)\s?'
+      scope: string.control
+      pop: true
+    # structs
     - match: '\&(\S+)\s?'
       scope: string.control
       pop: true
+
+    # Special
+
+    - match: '\~(\S+)\s?'
+      scope: entity.name.type
+      pop: true
+    - match: '\=(\S+)\s?'
+      scope: entity.name.type
+      pop: true
+
+    # Pushing to stack
+
     - match: '\,(\S+)\s?'
       scope: keyword.control
       pop: true
@@ -58,21 +50,31 @@ contexts:
       pop: true
     - match: '\.(\S+)\s?'
       scope: keyword.control
+    - match: '\+(\S+)\s?'
+      scope: string.control
       pop: true
-    - match: '\"(\S+)\s?'
-      scope: keyword.control
-      pop: true
-    - match: '\['
-      scope: punctuation.definition.keyword.usm
+    - match: '\-(\S+)\s?'
+      scope: string.control
+
+      # Blocks
+
+    - match: '\{'
+      scope: variable.control
       push:
-        - meta_scope: keyword.line.double-slash.usm
-        - match: '\]'
+        - meta_scope: variable.control
+        - match: '\}'
           pop: true
 
-  comments:
     - match: '\('
-      scope: punctuation.definition.comment.usm
+      scope: comment
       push:
-        - meta_scope: comment.line.double-slash.usm
+        - meta_scope: comment.line
         - match: '\)'
+          pop: true
+
+    - match: '\['
+      scope: keyword
+      push:
+        - meta_scope: keyword.line
+        - match: '\]'
           pop: true

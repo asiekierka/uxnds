@@ -304,18 +304,16 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	Uint16 addr = devctrl->addr;
 	if(z && event->key.keysym.sym == SDLK_h && SDL_GetModState() & KMOD_LCTRL)
 		GUIDES = !GUIDES;
-	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
-		flag = 0x01;
-	if(SDL_GetModState() & KMOD_LALT || SDL_GetModState() & KMOD_RALT)
-		flag = 0x02;
 	switch(event->key.keysym.sym) {
+	case SDLK_LCTRL: flag = 0x01; break;
+	case SDLK_LALT: flag = 0x02; break;
 	case SDLK_BACKSPACE:
 		flag = 0x04;
-		if(z) u->ram.dat[0xff40] = 0x08;
+		if(z) u->ram.dat[devkey->addr] = 0x08;
 		break;
 	case SDLK_RETURN:
 		flag = 0x08;
-		if(z) u->ram.dat[0xff40] = 0x0d;
+		if(z) u->ram.dat[devkey->addr] = 0x0d;
 		break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;

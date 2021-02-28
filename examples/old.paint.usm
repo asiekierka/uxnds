@@ -4,6 +4,7 @@
 :dev/w fff9 ( std write port )
 
 &Point2d { x 2 y 2 }
+
 ;mouse Point2d
 ;state 1 ;color 1 ;brush 2
 

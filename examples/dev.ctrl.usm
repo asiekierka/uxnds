@@ -4,58 +4,70 @@
 &Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
 
-&Point2d { x 2 y 2 }
-
-;pos Point2d 
-;sprite 2
+;slime-color 1
 
 |0100 @RESET 
 
 	( set origin )
-	~dev/screen.width #0002 DIV2 =pos.x 
-	~dev/screen.height #0002 DIV2 =pos.y
-
-	#12 ,up_icn ~pos.y ~pos.x ,draw-sprite JSR
+	~dev/screen.width #0002 DIV2 =dev/sprite.x 
+	~dev/screen.height #0002 DIV2 =dev/sprite.y
+	,default_icn =dev/sprite.addr
+	#11 =dev/sprite.color
+	#0a =slime-color
 
 BRK
 
 |c000 @FRAME 
-
-	,default_icn =sprite
-
-	~dev/ctrl.buttons #10 NEQ ,next1 ROT JMP? POP2
-		,up_icn =sprite
-		~pos.y #0001 SUB2 =pos.y
-	@next1
-	~dev/ctrl.buttons #20 NEQ ,next2 ROT JMP? POP2
-		,down_icn =sprite
-		~pos.y #0001 ADD2 =pos.y
-	@next2
-	~dev/ctrl.buttons #40 NEQ ,next3 ROT JMP? POP2
-		,left_icn =sprite
-		~pos.x #0001 SUB2 =pos.x
-	@next3
-	~dev/ctrl.buttons #80 NEQ ,end ROT JMP? POP2
-		,right_icn =sprite
-		~pos.x #0001 ADD2 =pos.x
-	@end
-	( redraw )
-	#13 ~sprite ~pos.y ~pos.x ,draw-sprite JSR
+	
+	#0a =slime-color
+	( hold ctrl key to change slime color )
+	,no-ctrl ~dev/ctrl.buttons #0f AND #01 NEQ JMP? POP2
+		#05 =slime-color
+	@no-ctrl
+	( hold alt key to change slime color )
+	,no-alt ~dev/ctrl.buttons #0f AND #02 NEQ JMP? POP2
+		#0f =slime-color
+	@no-alt
+	( detect movement )
+	,no-up ~dev/ctrl.buttons #f0 AND #10 NEQ JMP? POP2
+		( clear ) #10 =dev/sprite.color
+		( move ) ~dev/sprite.y #0001 SUB2 =dev/sprite.y ,up_icn =dev/sprite.addr
+		( draw ) ,redraw JSR BRK
+	@no-up
+	,no-down ~dev/ctrl.buttons #f0 AND #20 NEQ JMP? POP2
+		( clear ) #10 =dev/sprite.color
+		( move ) ~dev/sprite.y #0001 ADD2 =dev/sprite.y ,down_icn =dev/sprite.addr
+		( draw ) ,redraw JSR BRK
+	@no-down
+	,no-left ~dev/ctrl.buttons #f0 AND #40 NEQ JMP? POP2
+		( clear ) #10 =dev/sprite.color
+		( move ) ~dev/sprite.x #0001 SUB2 =dev/sprite.x ,left_icn =dev/sprite.addr
+		( draw ) ,redraw JSR BRK
+	@no-left
+	,no-right ~dev/ctrl.buttons #f0 AND #80 NEQ JMP? POP2
+		( clear ) #10 =dev/sprite.color
+		( move ) ~dev/sprite.x #0001 ADD2 =dev/sprite.x ,right_icn =dev/sprite.addr
+		( draw ) ,redraw JSR BRK
+	@no-right
 
 BRK
+
+@redraw
+	
+	( draw face )
+	#11 =dev/sprite.color
+	( draw slime )
+	,slime_icn =dev/sprite.addr
+	~slime-color =dev/sprite.color
+
+RTS
 
 @default_icn [ 3c7e ffdb ffe7 7e3c ]
 @up_icn      [ 2466 e7db ffff 7e3c ]
 @down_icn    [ 3c7e ffff dbe7 6624 ]
 @left_icn    [ 3c7e ef1f 1fef 7e3c ]
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
-
-@draw-sprite
-	=dev/sprite.x
-	=dev/sprite.y
-	=dev/sprite.addr
-	=dev/sprite.color
-	RTS
+@slime_icn   [ 0000 183c 3c18 0000 ]
 
 |d000 @ERROR BRK 
 
@@ -63,5 +75,5 @@ BRK
 |FF20 ;dev/sprite Sprite
 |FF30 ;dev/ctrl   Controller
 
-|FFF0 [ 02ac 05bb 0b53 ] ( palette )
+|FFF0 [ 0daf 02ff 035f ] ( palette )
 |FFFA .RESET .FRAME .ERROR
