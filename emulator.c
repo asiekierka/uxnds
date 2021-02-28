@@ -65,7 +65,7 @@ SDL_Texture *gTexture;
 Uint32 *pixels;
 
 Screen screen;
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl;
+Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl, *devsystem;
 
 #pragma mark - Helpers
 
@@ -369,6 +369,13 @@ sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
+system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	printf("system_poke\n");
+	return b1;
+}
+
+Uint8
 ppnil(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	(void)m;
@@ -384,7 +391,7 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
-	loadtheme(u->ram.dat + 0xfff0);
+	loadtheme(u->ram.dat + 0xfff8);
 	if(screen.reqdraw)
 		redraw(pixels, u);
 	while(1) {
@@ -435,10 +442,14 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, "key", ppnil, ppnil);
 	devmouse = portuxn(&u, "mouse", ppnil, ppnil);
 
-	u.ram.dat[0xff10] = (HOR * 8 >> 8) & 0xff;
-	u.ram.dat[0xff11] = HOR * 8 & 0xff;
-	u.ram.dat[0xff12] = (VER * 8 >> 8) & 0xff;
-	u.ram.dat[0xff13] = VER * 8 & 0xff;
+	u.devices = 7;
+	devsystem = portuxn(&u, "system", ppnil, system_poke);
+
+	/* Write screen size to dev/screen */
+	u.ram.dat[devscreen->addr + 0] = (HOR * 8 >> 8) & 0xff;
+	u.ram.dat[devscreen->addr + 1] = HOR * 8 & 0xff;
+	u.ram.dat[devscreen->addr + 2] = (VER * 8 >> 8) & 0xff;
+	u.ram.dat[devscreen->addr + 3] = VER * 8 & 0xff;
 
 	start(&u);
 	quit();

@@ -53,5 +53,5 @@ BRK
 |FF10 ;dev/screen Screen
 |FF20 ;dev/sprite Sprite
 
-|FFF0 [ f0ac f0bb f053 ] ( palette )
-|FFFA .RESET .FRAME .ERROR ( vectors )
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ f0ac f0bb f053 ] ( palette )

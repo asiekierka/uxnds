@@ -91,5 +91,5 @@ BRK
 
 |d000 @ERROR BRK 
 
-|FFF0 [ f1c3 f12e f12a ] ( palette )
-|FFFA .RESET .FRAME .ERROR
+|FFF0 .RESET .FRAME .ERROR
+|FFF8 [ f1c3 f12e f12a ] ( palette )

@@ -295,11 +295,15 @@ pass1(FILE *f)
 			addr += 1;
 		else {
 			switch(w[0]) {
-			case '|': addr = shex(w + 1); break;
+			case '|':
+				if(shex(w + 1) < addr)
+					return error("Memory Overlap", w);
+				addr = shex(w + 1);
+				break;
 			case '<': addr -= shex(w + 1); break;
 			case '>': addr += shex(w + 1); break;
-			case '=': addr += 4; break; /* STR helper */
-			case '~': addr += 4; break; /* LDR helper */
+			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
+			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
 			case ',': addr += 3; break;
 			case '.': addr += (slen(w + 1) == 2 ? 1 : 2); break;
 			case '+': /* signed positive */
@@ -345,12 +349,12 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2? "STR2" : "STR"), 0); }
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); }
 		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); }
+		else if(w[0] == '=' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("STR2"), 0); }
+		else if(w[0] == '~' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("LDR2"), 0); }
 		else if((l = findlabel(w + 1))) pushshort(findlabeladdr(w+1), w[0] == ',');
-		else {
-			return error("Unknown label in second pass", w);
-		}
+		else return error("Unknown label in second pass", w);
 		/* clang-format on */
 	}
 	return 1;

@@ -4,8 +4,10 @@
 &Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 &Mouse  { x 2 y 2 state 1 chord 1 }
 
+&Label2d { x 2 y 2 color 1 addr 2 }
 &Point2d { x 2 y 2 }
 
+;label Label2d
 ;cat Point2d 
 ;mouse Point2d
 ;pos Point2d
@@ -23,48 +25,58 @@
 
 BRK
 
-|c000 @FRAME
+|0200 @FRAME
 	
-	( clear last cursor )
-	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
-	( record mouse positions )
-	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	,draw-cursor JSR
+
 	( reset timer -> move cat tail )
-	~dev/mouse.state #01 NEQ ,no-click ROT JMP? POP2
+	,no-click ~dev/mouse.state #00 EQU JMP? POP2
 		#50 =timer
 	@no-click
-
 	( detect click )
-	~dev/mouse.state #11 NEQ ,no-click12 ROT JMP? POP2
-		,mouse12_text #0058 #0040 ,draw-label JSR
+	,no-click12 ~dev/mouse.state #11 NEQ JMP? POP2
+		#0058 #0040 #01 ,mouse12_text ,draw-label JSR
 		#10 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 		~color ,mouse12_icn #0048 #0040 ,draw-sprite JSR
 		,end-click JMP
 	@no-click12
-	~dev/mouse.state #01 NEQ ,no-click1 ROT JMP? POP2
-		,mouse1_text #0058 #0040 ,draw-label JSR
+	,no-click1 ~dev/mouse.state #01 NEQ JMP? POP2
+		#0058 #0040 #01 ,mouse1_text ,draw-label JSR
 		#12 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 		~color ,mouse1_icn #0048 #0040 ,draw-sprite JSR
 		,end-click JMP
 	@no-click1
-	~dev/mouse.state #10 NEQ ,no-click2 ROT JMP? POP2
-		,mouse2_text #0058 #0040 ,draw-label JSR
+	,no-click2 ~dev/mouse.state #10 NEQ JMP? POP2
+		#0058 #0040 #01 ,mouse2_text ,draw-label JSR
 		#13 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 		~color ,mouse2_icn #0048 #0040 ,draw-sprite JSR
 		,end-click JMP
 	@no-click2
 	( default )
-	,mouse0_text #0058 #0040 ,draw-label JSR
+	#0058 #0040 #01 ,mouse0_text ,draw-label JSR
 	~color ,mouse0_icn #0048 #0040 ,draw-sprite JSR
-	#11 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
 	@end-click
-	
 	( animate )
 	,animate-polycat JSR
 	( update last pos )
 	~timer #01 ADD =timer
 
 BRK
+
+@draw-cursor
+
+	~mouse.x ~dev/mouse.x NEQU2
+	~mouse.y ~dev/mouse.y NEQU2
+
+	#0000 EQU2 RTS? ( Return if unchanged )
+
+	( clear last cursor )
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	( record mouse positions )
+	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	#11 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+
+RTS
 
 @draw-polycat
 
@@ -117,14 +129,16 @@ RTS
 
 RTS
 
-@draw-label ( text x1 y1 )
-	=pos.y =pos.x
+@draw-label ( x y color addr )
+	
+	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x ~label.addr
 	@draw-label-loop
-		( draw ) ~pos.x ~pos.y =dev/sprite.y =dev/sprite.x DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~pos.x #0008 ADD2 =pos.x
+		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
 	POP2
+
 RTS
 
 @draw-sprite
@@ -211,10 +225,11 @@ RTS
 @mouse2_text   [ mouse _2 ] <1 .00
 @mouse12_text  [ mouse 12 ] <1 .00
 
+|d000 @ERROR BRK 
+
 |FF10 ;dev/screen Screen
 |FF20 ;dev/sprite Sprite
 |FF50 ;dev/mouse  Mouse
 
-|d000 @ERROR BRK 
-|FFF0 [ 0f85 0fd5 0fb5 ] ( palette )
-|FFFA .RESET .FRAME .ERROR
+|FFF0 .RESET .FRAME .ERROR
+|FFF8 [ 0f85 0fd5 0fb5 ] ( palette )

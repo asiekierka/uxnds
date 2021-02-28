@@ -180,5 +180,5 @@ RTS
 
 |d000 @ERROR BRK 
 
-|FFF0 [ e2af eab2 e652 ] ( palette )
-|FFFA .RESET .FRAME .ERROR
+|FFF0 .RESET .FRAME .ERROR
+|FFF8 [ e2af eab2 e652 ] ( palette )
