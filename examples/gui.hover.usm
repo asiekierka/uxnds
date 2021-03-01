@@ -4,8 +4,6 @@
 &Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 &Mouse  { x 2 y 2 state 1 chord 1 }
 
-&Label2d { x 2 y 2 color 1 addr 2 }
-&Picture2d { x 2 y 2 width 2 height 2 color 1 addr 2 }
 &Rect2d { x1 2 y1 2 x2 2 y2 2 }
 &Point2d { x 2 y 2 }
 
@@ -95,10 +93,8 @@ RTS
 RTS
 
 @clear_icn   [ 0000 0000 0000 0000 ]
-@pointer_icn  [ 80c0 e0f0 f8e0 1000 ]
+@pointer_icn [ 80c0 e0f0 f8e0 1000 ]
 @hand_icn    [ 4040 4070 f8f8 f870 ]
-
-@text [ Label Text ] <1 .00 ( add characters to memory )
 
 |d000 @ERROR BRK 
 

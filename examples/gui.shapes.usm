@@ -6,13 +6,12 @@
 &Label2d { x 2 y 2 color 1 addr 2 }
 &Picture2d { x 2 y 2 width 2 height 2 color 1 addr 2 }
 &Rect2d { x1 2 y1 2 x2 2 y2 2 }
-&Point2d { x 2 y 2 }
 
 ;label Label2d
 ;pict Picture2d
 ;rect Rect2d
 
-;color 1 ;x1 2 ;x2 2 ;y1 2 ;y2 2
+;color 1
 
 |0100 @RESET
 	

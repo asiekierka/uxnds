@@ -4,7 +4,6 @@
 &Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
 &Picture2d { x 2 y 2 width 2 height 2 color 1 addr 2 }
-&Point2d { x 2 y 2 }
 
 ;pict Picture2d
 

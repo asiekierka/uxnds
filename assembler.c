@@ -17,17 +17,17 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 typedef struct {
-	int ptr;
-	Uint8 data[65536];
+	Uint8 data[256 * 256];
+	Uint16 ptr;
 } Program;
 
 typedef struct {
+	Uint8 len, length[16], size, refs;
 	char name[64], params[16][64];
-	Uint8 len, length[16], size;
 } Macro;
 
 typedef struct {
-	Uint8 len, offset;
+	Uint8 len, offset, refs;
 	Uint16 addr;
 	char name[64];
 	Macro *macro;
@@ -222,6 +222,7 @@ makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
 	l = &labels[labelslen++];
 	l->addr = addr;
 	l->len = len;
+	l->refs = 0;
 	scpy(name, l->name, 64);
 	if(m)
 		l->macro = m;
@@ -246,9 +247,10 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	Macro *m = NULL;
 	fscanf(f, "%s", wv);
 	origin = *addr;
-	if((m = findmacro(wv)))
+	if((m = findmacro(wv))) {
 		len = m->size;
-	else
+		m->refs++;
+	} else
 		len = shex(wv);
 	*addr += len;
 	return makelabel(id, origin, len, m);
@@ -349,15 +351,27 @@ pass2(FILE *f)
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); }
-		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); }
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
 		else if(w[0] == '=' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("STR2"), 0); }
 		else if(w[0] == '~' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("LDR2"), 0); }
-		else if((l = findlabel(w + 1))) pushshort(findlabeladdr(w+1), w[0] == ',');
+		else if((l = findlabel(w + 1))) { pushshort(findlabeladdr(w+1), w[0] == ','); l->refs++; }
 		else return error("Unknown label in second pass", w);
 		/* clang-format on */
 	}
 	return 1;
+}
+
+void
+cleanup(void)
+{
+	int i;
+	for(i = 0; i < labelslen; ++i)
+		if(!labels[i].refs)
+			printf("--- Unused label: %s\n", labels[i].name);
+	for(i = 0; i < macroslen; ++i)
+		if(!macros[i].refs)
+			printf("--- Unused macro: %s\n", macros[i].name);
 }
 
 int
@@ -373,5 +387,6 @@ main(int argc, char *argv[])
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
 	printf("Assembled %s.\n\n", argv[2]);
+	cleanup();
 	return 0;
 }

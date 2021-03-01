@@ -10,7 +10,6 @@
 ;label Label2d
 ;cat Point2d 
 ;mouse Point2d
-;pos Point2d
 ;color 1
 ;timer 1
 
@@ -106,9 +105,7 @@ RTS
 	@animate-polycat-tail-next2
 	( look-at )
 	~mouse.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP? POP2
-	@animate-polycat-left
 		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP? POP2
-		@animate-polycat-left-up 
 			,polycat #0040 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 			,polycat #0050 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
@@ -118,7 +115,6 @@ RTS
 		RTS
 	@animate-polycat-right
 		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP? POP2
-		@animate-polycat-right-up 
 			,polycat #0060 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 			,polycat #0070 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR
 		RTS
@@ -217,9 +213,6 @@ RTS
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@chord0_text   [ no chord ] <1 .00
-@chord1_text   [ chord 1_ ] <1 .00
-@chord2_text   [ chord _2 ] <1 .00
 @mouse0_text   [ no click ] <1 .00
 @mouse1_text   [ mouse 1_ ] <1 .00
 @mouse2_text   [ mouse _2 ] <1 .00
