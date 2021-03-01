@@ -37,8 +37,6 @@ evaluxn(u, u->vframe); /* Each frame
 - `=label`, helper to STR, equivalent to `,label STR`, or `label STR2`.
 - `~label`, helper to LDR, equivalent to `,label LDR2`, or `,label LDR2`.
 - `|0010`, move to position in the program.
-- `<23`, move the program position `23` bytes backward.
-- `>12`, move the program position `12` bytes forward.
 - `( comment )`, toggle parsing on/off.
 - `[ 0123 abcd ]`, write shorts to memory.
 - `[ Hello World ]`, write text to memory.
@@ -53,33 +51,35 @@ evaluxn(u, u->vframe); /* Each frame
 ```
 ( hello world )
 
-&Console { pad 8 stdio 1 }
+&Console { pad 8 char 1 byte 1 }
 
 |0100 @RESET 
 	
-	,text1 ,print-label JSR ( print to console )
+	,text1 ,print-label JSR
+	,text2 ,print-label JSR
 
 BRK
 
 @print-label ( text )
 
 	@cliloop
-		DUP2 LDR =dev/console.stdio              ( write pointer value to console )
+		DUP2 LDR =dev/console.char               ( write pointer value to console )
 		#0001 ADD2                               ( increment string pointer )
 		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
 	POP2
-		
+
 RTS                 
 
-@text1 [ Hello World ] <1 .00 ( add text to memory, return 1 byte, add null byte )
+@text1 [ Hello World 0a00 ] ( store text with a linebreak and null byte )
+@text2 [ Welcome to UxnVM 0a00 ]
 
 |c000 @FRAME
 |d000 @ERROR 
 
 |FF00 ;dev/console Console
 
-|FFF0 .RESET .FRAME .ERROR
-|FFF8 [ f3f0 f30b f30a ] ( palette )
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
 ```
 
 ## Emulator

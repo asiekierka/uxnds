@@ -140,7 +140,7 @@ RTS
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@text [ Label Text ] <1 .00 ( add characters to memory )
+@text [ Label Text 00 ] ( add characters to memory )
 
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 

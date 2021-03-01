@@ -280,7 +280,10 @@ pass1(FILE *f)
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']')
 				continue;
-			addr += sihx(w) ? 2 : slen(w) + 1;
+			if(sihx(w))
+				addr += slen(w) == 4 ? 2 : 1;
+			else
+				addr += slen(w) + 1;
 		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0, NULL))
 				return error("Pass1 failed", w);
@@ -302,8 +305,6 @@ pass1(FILE *f)
 					return error("Memory Overlap", w);
 				addr = shex(w + 1);
 				break;
-			case '<': addr -= shex(w + 1); break;
-			case '>': addr += shex(w + 1); break;
 			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
 			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
 			case ',': addr += 3; break;
@@ -335,11 +336,11 @@ pass2(FILE *f)
 		/* clang-format off */
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
-			if(slen(w) == 4 && sihx(w)) pushshort(shex(w), 0); else pushtext(w, 0);
+			if(slen(w) == 4 && sihx(w)) pushshort(shex(w), 0); 
+			else if(slen(w) == 2 && sihx(w)) pushbyte(shex(w), 0); 
+			else pushtext(w, 0);
 		}
 		else if(w[0] == '|') p.ptr = shex(w + 1);
-		else if(w[0] == '<') p.ptr -= shex(w + 1);
-		else if(w[0] == '>') p.ptr += shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);

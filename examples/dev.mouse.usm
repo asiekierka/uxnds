@@ -213,10 +213,10 @@ RTS
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@mouse0_text   [ no click ] <1 .00
-@mouse1_text   [ mouse 1_ ] <1 .00
-@mouse2_text   [ mouse _2 ] <1 .00
-@mouse12_text  [ mouse 12 ] <1 .00
+@mouse0_text   [ no click 00 ]
+@mouse1_text   [ mouse 1_ 00 ]
+@mouse2_text   [ mouse _2 00 ]
+@mouse12_text  [ mouse 12 00 ]
 
 |d000 @ERROR BRK 
 

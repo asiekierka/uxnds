@@ -332,7 +332,7 @@ console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
 	case 0x09: printf("%02x", b1); break;
-	case 0x0a: printf("%d", b1); break;
+	case 0x0b: printf("%04x", (m[ptr + 0x0a] << 8) + b1); break;
 	}
 	fflush(stdout);
 	(void)m;
@@ -377,6 +377,8 @@ Uint8
 system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	loadtheme(&m[0xfff8]);
+	(void)ptr;
+	(void)b0;
 	return b1;
 }
 
