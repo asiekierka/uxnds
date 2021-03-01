@@ -26,4 +26,4 @@ RTS
 |FF00 ;dev/console Console
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ f3f0 f30b f30a ] ( palette )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

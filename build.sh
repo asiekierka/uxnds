@@ -20,5 +20,5 @@ cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werr
 # cc uxn.c emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
 
 # run
-./bin/assembler examples/gui.hover.usm bin/boot.rom
+./bin/assembler examples/dev.mouse.usm bin/boot.rom
 ./bin/emulator bin/boot.rom
