@@ -1,6 +1,6 @@
 ( hello world )
 
-&Console { pad 8 stdio 1 }
+&Console { pad 8 char 1 byte 1 }
 
 |0100 @RESET 
 	
@@ -11,11 +11,11 @@ BRK
 @print-label ( text )
 
 	@cliloop
-		DUP2 LDR =dev/console.stdio              ( write pointer value to console )
+		DUP2 LDR =dev/console.char               ( write pointer value to console )
 		#0001 ADD2                               ( increment string pointer )
 		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
 	POP2
-		
+
 RTS                 
 
 @text1 [ Hello World ] <1 .00 ( add text to memory, return 1 byte, add null byte )

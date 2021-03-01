@@ -329,7 +329,11 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 Uint8
 console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	printf("%c", b1);
+	switch(b0) {
+	case 0x08: printf("%c", b1); break;
+	case 0x09: printf("%02x", b1); break;
+	case 0x0a: printf("%d", b1); break;
+	}
 	fflush(stdout);
 	(void)m;
 	(void)ptr;

@@ -22,31 +22,32 @@
 
 BRK
 
-
 |0200 @FRAME 
 
 	,pointer_icn =cursor
 
 	#01 =color
-
+	( matrix comparison )
 	~dev/mouse.x ~r1.x1 GTH2 ~dev/mouse.x ~r1.x2 LTH2 #0101 EQU2
 	~dev/mouse.y ~r1.y1 GTH2 ~dev/mouse.y ~r1.y2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,skip1 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip1
-	~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR
+	#0101 NEQ2 ,draw1 ROT JMP? POP2 #02 =color ,hand_icn =cursor 
+	@draw1 ~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR
 	
 	#01 =color
-
-	~dev/mouse.x ~r2.x1 GTH2 ~dev/mouse.x ~r2.x2 LTH2 #0101 EQU2
-	~dev/mouse.y ~r2.y1 GTH2 ~dev/mouse.y ~r2.y2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,skip2 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip2
-	~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR
+	( 2-step comparison )
+	,draw2 ~dev/mouse.x ~r2.x1 GTH2 ~dev/mouse.x ~r2.x2 LTH2 #0101 NEQ2 JMP? POP2
+		,draw2 ~dev/mouse.y ~r2.y1 GTH2 ~dev/mouse.y ~r2.y2 LTH2 #0101 NEQ2 JMP? POP2
+			#03 =color ,hand_icn =cursor 
+	@draw2 ~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR
 	
 	#01 =color
-
-	~dev/mouse.x ~r3.x1 GTH2 ~dev/mouse.x ~r3.x2 LTH2 #0101 EQU2
-	~dev/mouse.y ~r3.y1 GTH2 ~dev/mouse.y ~r3.y2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,skip3 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip3
-	~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR
+	( 4-step comparison )
+	,draw3 ~dev/mouse.x ~r3.x1 LTH2 JMP? POP2
+		,draw3 ~dev/mouse.x ~r3.x2 GTH2 JMP? POP2
+			,draw3 ~dev/mouse.y ~r3.y1 LTH2 JMP? POP2
+				,draw3 ~dev/mouse.y ~r3.y2 GTH2 JMP? POP2
+					#02 =color ,hand_icn =cursor
+	@draw3 ~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR
 
 	,draw-cursor JSR
 
