@@ -1,0 +1,109 @@
+( draw routines )
+
+&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+&Mouse  { x 2 y 2 state 1 chord 1 }
+
+&Label2d { x 2 y 2 color 1 addr 2 }
+&Picture2d { x 2 y 2 width 2 height 2 color 1 addr 2 }
+&Rect2d { x1 2 y1 2 x2 2 y2 2 }
+&Point2d { x 2 y 2 }
+
+;color 1
+;cursor 2
+;mouse Point2d 
+;rect Rect2d ;r1 Rect2d ;r2 Rect2d ;r3 Rect2d
+
+|0100 @RESET
+	
+	#0020 #0030 #0060 #0060 =r1.y2 =r1.x2 =r1.y1 =r1.x1
+	#0058 #0050 #0090 #0080 =r2.y2 =r2.x2 =r2.y1 =r2.x1
+	#0048 #0048 #0080 #0098 =r3.y2 =r3.x2 =r3.y1 =r3.x1
+
+BRK
+
+
+|0200 @FRAME 
+
+	,pointer_icn =cursor
+
+	#01 =color
+
+	~dev/mouse.x ~r1.x1 GTH2 ~dev/mouse.x ~r1.x2 LTH2 #0101 EQU2
+	~dev/mouse.y ~r1.y1 GTH2 ~dev/mouse.y ~r1.y2 LTH2 #0101 EQU2
+	#0101 NEQ2 ,skip1 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip1
+	~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR
+	
+	#01 =color
+
+	~dev/mouse.x ~r2.x1 GTH2 ~dev/mouse.x ~r2.x2 LTH2 #0101 EQU2
+	~dev/mouse.y ~r2.y1 GTH2 ~dev/mouse.y ~r2.y2 LTH2 #0101 EQU2
+	#0101 NEQ2 ,skip2 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip2
+	~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR
+	
+	#01 =color
+
+	~dev/mouse.x ~r3.x1 GTH2 ~dev/mouse.x ~r3.x2 LTH2 #0101 EQU2
+	~dev/mouse.y ~r3.y1 GTH2 ~dev/mouse.y ~r3.y2 LTH2 #0101 EQU2
+	#0101 NEQ2 ,skip3 ROT JMP? POP2 #02 =color ,hand_icn =cursor @skip3
+	~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR
+
+	,draw-cursor JSR
+
+BRK 
+
+@draw-cursor
+
+	~mouse.x ~dev/mouse.x NEQU2
+	~mouse.y ~dev/mouse.y NEQU2
+
+	#0000 EQU2 RTS? ( Return if unchanged )
+
+	( clear last cursor )
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	( record mouse positions )
+	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	#11 ~cursor ~mouse.x ~mouse.y ,draw-sprite JSR
+
+RTS
+
+@line-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	@line-rect-hor
+		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
+		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
+		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
+		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+	~rect.y1 =dev/screen.y
+	@line-rect-ver
+		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
+		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
+		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
+
+RTS
+
+@draw-sprite
+
+	=dev/sprite.y
+	=dev/sprite.x
+	=dev/sprite.addr
+	=dev/sprite.color
+
+RTS
+
+@clear_icn   [ 0000 0000 0000 0000 ]
+@pointer_icn  [ 80c0 e0f0 f8e0 1000 ]
+@hand_icn    [ 4040 4070 f8f8 f870 ]
+
+@text [ Label Text ] <1 .00 ( add characters to memory )
+
+|d000 @ERROR BRK 
+
+|FF10 ;dev/screen Screen
+|FF20 ;dev/sprite Sprite
+|FF50 ;dev/mouse  Mouse
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 0f0f 0fff 0ff0 ] ( palette )

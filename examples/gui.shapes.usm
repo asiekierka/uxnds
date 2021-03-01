@@ -39,16 +39,16 @@ BRK
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
 	@line-rect-hor
+		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
 		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
 		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
-		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
 		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
 	~rect.y1 =dev/screen.y
 	@line-rect-ver
 		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
 		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
 		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,line-rect-ver ~dev/screen.y ~rect.y2 LTH2 JMP? POP2
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
 
 RTS
 
