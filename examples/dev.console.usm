@@ -13,10 +13,10 @@ BRK
 
 @print-label ( text )
 
-	@cliloop
+	@print-label-loop
 		DUP2 LDR =dev/console.char               ( write pointer value to console )
 		#0001 ADD2                               ( increment string pointer )
-		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
+		DUP2 LDR #00 NEQ ,print-label-loop ROT JMP? POP2  ( while *ptr!=0 goto loop )
 	POP2
 
 RTS                 

@@ -51,21 +51,23 @@ evaluxn(u, u->vframe); /* Each frame
 ```
 ( hello world )
 
-&Console { pad 8 char 1 byte 1 }
+&Console { pad 8 char 1 byte 1 short 2 }
 
 |0100 @RESET 
 	
 	,text1 ,print-label JSR
 	,text2 ,print-label JSR
+	#ab =dev/console.byte
+	#cdef =dev/console.short
 
 BRK
 
 @print-label ( text )
 
-	@cliloop
+	@print-label-loop
 		DUP2 LDR =dev/console.char               ( write pointer value to console )
 		#0001 ADD2                               ( increment string pointer )
-		DUP2 LDR #00 NEQ ,cliloop ROT JMP? POP2  ( while *ptr!=0 goto loop )
+		DUP2 LDR #00 NEQ ,print-label-loop ROT JMP? POP2  ( while *ptr!=0 goto loop )
 	POP2
 
 RTS                 
