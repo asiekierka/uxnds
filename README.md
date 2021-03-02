@@ -84,21 +84,6 @@ RTS
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
 ```
 
-## Emulator
-
-### Controller(dev/ctrl)
-
-A device that works like a NES controller, each button is a bit from a single byte. Press `h` to toggle debugger.
-
-- `0x01` Ctrl
-- `0x02` Alt
-- `0x04` Escape
-- `0x08` Return
-- `0x10` Up
-- `0x20` Down
-- `0x40` Left
-- `0x80` Right
-
 ## TODOs
 
 ### OS Boot Disk
@@ -115,6 +100,7 @@ A device that works like a NES controller, each button is a bit from a single by
 	- Example of button pointing to a subroutine
 - GUI:
 	- Line routine
+	- Extra frame buffer addressing? Mirror sprites?
 
 ### Assembler
 

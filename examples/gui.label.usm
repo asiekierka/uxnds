@@ -3,7 +3,7 @@
 &Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 &Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
-&Label2d { x 2 y 2 color 1 addr 2 width 2 }
+&Label2d { x 2 y 2 color 1 addr 2 }
 &Rect2d { x1 2 y1 2 x2 2 y2 2 }
 &Point2d { x 2 y 2 }
 
