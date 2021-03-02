@@ -139,18 +139,22 @@ RTS
 RTS
 
 @draw-sprite
+
 	=dev/sprite.y
 	=dev/sprite.x
 	=dev/sprite.addr
 	=dev/sprite.color
-	RTS
+
+RTS
 
 @draw-sprite-chr
+
 	=dev/sprite.y
 	=dev/sprite.x
 	=dev/sprite.addr
 	#20 =dev/sprite.color
-	RTS
+
+RTS
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]

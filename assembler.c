@@ -44,8 +44,8 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "---", "---", "---", "LDR", "STR",
-	"JMP", "JSR", "---", "RTS", "AND", "ORA", "ROL", "ROR",
+	"BRK", "NOP", "LIT", "JMP", "JSR", "RTS", "LDR", "STR",
+	"---", "---", "---", "---", "AND", "XOR", "ROL", "ROR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "---", "WSR", "RSW",
 	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
 };
@@ -247,11 +247,13 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	Macro *m = NULL;
 	fscanf(f, "%s", wv);
 	origin = *addr;
-	if((m = findmacro(wv))) {
+	if(sihx(wv))
+		len = shex(wv);
+	else if((m = findmacro(wv))) {
 		len = m->size;
 		m->refs++;
 	} else
-		len = shex(wv);
+		return error("Invalid macro", wv);
 	*addr += len;
 	return makelabel(id, origin, len, m);
 }

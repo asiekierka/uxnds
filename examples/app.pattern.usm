@@ -1,0 +1,181 @@
+( app/hex )
+
+&Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+&Mouse  { x 2 y 2 state 1 chord 1 }
+
+&Point2d { x 2 y 2 }
+&Rect2d  { x1 2 y1 2 x2 2 y2 2 }
+&Point   { x 1 y 1 }
+&Editor  { x1 2 y1 2 }
+
+;pixel Point
+;window Rect2d
+;mouse Point2d
+;editor Editor
+;rect Rect2d
+
+;color 1
+
+|0100 @RESET
+	
+	#0030 =window.x1 #0030 =window.y1 #0090 =window.x2 #00a0 =window.y2
+
+	#0040 =editor.x1 #0040 =editor.y
+
+	#0040 #0040 #01 ,draw-editor JSR
+
+BRK
+
+|0200 @FRAME 
+	
+	,no-click ~dev/mouse.state #00 EQU JMP? POP2
+
+		( load ) ,pattern ~dev/mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 LDR
+		( mask ) #01 #07 ~dev/mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB ROL 
+		XOR
+		( save ) ,pattern ~dev/mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 STR
+
+		,redraw JSR
+
+	@no-click
+
+	,draw-cursor JSR
+
+BRK 
+
+@redraw
+		
+	#0000 #0000 ~dev/screen.width ~dev/screen.height #03 ,pattern ,tile-rect JSR
+
+	~window.x1 #0001 ADD2 ~window.y1 ~window.x2 #0004 ADD2 ~window.y2 #0004 ADD2 #00 ,fill-rect JSR
+	~window.x1 ~window.y1 #0001 ADD2 ~window.x2 #0001 ADD2 ~window.y2 #0004 ADD2 #00 ,fill-rect JSR
+	~window.x1 #0001 SUB2 ~window.y1 #0001 SUB2 ~window.x2 ~window.y2 #00 ,line-rect JSR
+	~window.x1 #0002 SUB2 ~window.y1 #0002 SUB2 ~window.x2 #0001 ADD2 ~window.y2 #0001 ADD2 #02 ,line-rect JSR
+	~window.x1 ~window.y1 ~window.x2 ~window.y2 #00 ,fill-rect JSR
+
+	~editor.x1 =dev/sprite.x
+	~editor.y1 =dev/sprite.y
+	,pattern =dev/sprite.addr
+
+	#02 =color
+
+	#00 =pixel.y
+	@redraw-ver
+		#00 =pixel.x
+		~editor.x1 =dev/sprite.x
+		@redraw-hor
+
+			( get bit )
+			,cell0_icn #00
+			,pattern #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB ROR #01 AND ( get bit )
+			#0008 MUL2 ADD2 =dev/sprite.addr ( add *8 )
+
+			( draw ) ~color =dev/sprite.color
+			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+			( incr ) ~pixel.x #01 ADD =pixel.x
+			,redraw-hor ~dev/sprite.x ~editor.x1 #0040 ADD2 LTH2 JMP? POP2
+		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		( incr ) ~pixel.y #01 ADD =pixel.y
+		,redraw-ver ~dev/sprite.y ~editor.y1 #0040 ADD2 LTH2 JMP? POP2
+
+	,pattern =dev/sprite.addr
+	~dev/sprite.y #0040 SUB2 =dev/sprite.y
+	~dev/sprite.x #0008 ADD2 =dev/sprite.x
+	( draw ) #01 =dev/sprite.color
+
+RTS
+
+@fill-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	@fill-rect-ver
+		~rect.x1 =dev/screen.x
+		@fill-rect-hor
+			( draw ) ~color =dev/screen.color
+			( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
+			,fill-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
+		,fill-rect-ver ~dev/screen.y ~rect.y2 LTH2 JMP? POP2
+
+RTS
+
+@line-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	@line-rect-hor
+		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
+		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
+		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
+		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+	~rect.y1 =dev/screen.y
+	@line-rect-ver
+		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
+		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
+		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
+
+RTS
+
+@tile-rect ( x1 y1 x2 y2 color addr )
+
+	=dev/sprite.addr =color =rect.y2 =rect.x2 DUP2 =dev/sprite.y =rect.y1 DUP2 =dev/sprite.x =rect.x1
+
+	@tile-rect-ver
+		~rect.x1 =dev/sprite.x
+		@tile-rect-hor
+			( draw ) ~color =dev/sprite.color
+			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+			,tile-rect-hor ~dev/sprite.x ~rect.x2 LTH2 JMP? POP2
+		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		,tile-rect-ver ~dev/sprite.y ~rect.y2 LTH2 JMP? POP2
+
+RTS
+
+@draw-editor
+
+	 =color DUP2 =dev/sprite.y =editor.y1 DUP2 =dev/sprite.x =editor.x1
+
+	,redraw JSR
+
+	
+RTS
+
+@draw-cursor
+
+	~mouse.x ~dev/mouse.x NEQU2
+	~mouse.y ~dev/mouse.y NEQU2
+
+	#0000 EQU2 RTS? ( Return if unchanged )
+
+	( clear last cursor )
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	( record mouse positions )
+	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	#13 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+
+RTS
+
+@draw-sprite
+
+	=dev/sprite.y
+	=dev/sprite.x
+	=dev/sprite.addr
+	=dev/sprite.color
+
+RTS
+
+@pattern     [ 0000 0000 0000 0000 ]
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+@cell0_icn   [ 7c82 8282 8282 7c00 ]
+@cell1_icn   [ 7cfe fefe fefe 7c00 ]
+
+|d000 @ERROR BRK 
+
+|FF10 ;dev/screen Screen
+|FF20 ;dev/sprite Sprite
+|FF50 ;dev/mouse  Mouse
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
