@@ -23,14 +23,18 @@
 
 |0100 @RESET
 	
-	,pattern =editor.addr
-	#0030 =window.x1 #0030 =window.y1 #00b0 =window.x2 #0090 =window.y2
+	#0030 =window.x1 #0030 =window.y1 #00a8 =window.x2 #0090 =window.y2
 
-	#0040 =editor.x1 #0040 =editor.y
+	#0040 =editor.y ( TODO: Remove )
+
+	~window.x1 #0010 ADD2 =editor.x1
+	~window.y1 #0010 ADD2 =editor.y1
+
+	( starting addr )
+	,pattern =editor.addr
 
 	,draw-window JSR
-
-	#0040 #0040 #01 ,draw-editor JSR
+	,draw-editor JSR
 
 BRK
 
@@ -41,13 +45,13 @@ BRK
 		,no-ctrl-up ~dev/ctrl.buttons #10 EQU JMP? POP2
 			~editor.addr #0001 ADD2 =editor.addr
 			,draw-window JSR
-			,redraw JSR
+			,draw-editor JSR
 		@no-ctrl-up
 
 		,no-ctrl-down ~dev/ctrl.buttons #20 EQU JMP? POP2
 			~editor.addr #0001 SUB2 =editor.addr
 			,draw-window JSR
-			,redraw JSR
+			,draw-editor JSR
 		@no-ctrl-down
 
 	@no-ctrl
@@ -60,7 +64,7 @@ BRK
 		( save ) ~editor.addr ~dev/mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 STR
 
 		,draw-window JSR
-		,redraw JSR
+		,draw-editor JSR
 
 	@no-click
 
@@ -70,29 +74,18 @@ BRK
 
 @draw-window 
 	
-	#0000 #0000 ~dev/screen.width ~dev/screen.height #03 ~editor.addr ,tile-rect JSR
-
-	~window.x1 #0001 SUB2 ~window.y1 #0001 SUB2 ~window.x2 ~window.y2 #01 ,line-rect JSR
-	~window.x1 ~window.y1 ~window.x2 ~window.y2 #02 ,fill-rect JSR
-	~window.x1 ~window.y1 #04 ,window_name ,draw-label-left JSR
+	( desktop )    #0000 #0000 ~dev/screen.width ~dev/screen.height #03 ~editor.addr ,tile-rect JSR
+	( outline )    ~window.x1 #0001 SUB2 ~window.y1 #0001 SUB2 ~window.x2 ~window.y2 #01 ,line-rect JSR
+	( background ) ~window.x1 ~window.y1 ~window.x2 ~window.y2 #02 ,fill-rect JSR
+	( label )      ~window.x1 ~window.y1 #04 ,window_name ,draw-label-left JSR
 
 RTS
 
 @draw-editor
 
-	 =color DUP2 =dev/sprite.y =editor.y1 DUP2 =dev/sprite.x =editor.x1
-
-	,redraw JSR
-	
-RTS
-
-@redraw
-
 	~editor.x1 =dev/sprite.x
 	~editor.y1 =dev/sprite.y
 	~editor.addr =dev/sprite.addr
-
-	#02 =color
 
 	#00 =pixel.y
 	@redraw-ver
@@ -118,6 +111,7 @@ RTS
 	~window.x2 #0008 SUB2 =dev/sprite.x
 	( draw ) #01 =dev/sprite.color
 
+	( TODO: Make a loop.. )
 	~window.x1 #0058 ADD2 ~window.y1 #0010 ADD2 #08 ~editor.addr ,draw-byte JSR
 	~window.x1 #0058 ADD2 ~window.y1 #0018 ADD2 #08 ~editor.addr #0001 ADD2 ,draw-byte JSR
 	~window.x1 #0058 ADD2 ~window.y1 #0020 ADD2 #08 ~editor.addr #0002 ADD2 ,draw-byte JSR
@@ -285,4 +279,4 @@ RTS
 |FF50 ;dev/mouse  Mouse
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0ff4 0f04 0ff4 ] ( palette )
+|FFF8 [ 0fcf 0fc4 0fc4 ] ( palette )

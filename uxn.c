@@ -42,7 +42,7 @@ void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempok
 /* Logic */
 void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
 void op_xor(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
-void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << a); }
+void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << (a % 8)); }
 void op_ror(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b >> a); }
 /* Stack */
 void op_pop(Uxn *u) { pop8(&u->wst); }
@@ -68,7 +68,7 @@ void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(u, 
 void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(u, a, b); }
 void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
 void op_xor16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b ^ a); }
-void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << a); }
+void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << (a % 16)); }
 void op_ror16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b >> a); }
 /* Stack(16-bits) */
 void op_pop16(Uxn *u) { pop16(&u->wst); }
