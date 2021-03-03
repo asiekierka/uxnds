@@ -14,9 +14,8 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-#define MODE 2
-#define HOR 64 / MODE
-#define VER 48 / MODE
+#define HOR 48
+#define VER 32
 #define PAD 2
 #define RES (HOR * VER * 16)
 
@@ -32,7 +31,7 @@ typedef struct {
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
 int HEIGHT = 8 * VER + 8 * PAD * 2;
-int FPS = 30, GUIDES = 1, ZOOM = MODE;
+int FPS = 30, GUIDES = 0, ZOOM = 2;
 
 Uint32 theme[] = {
 	0x000000,

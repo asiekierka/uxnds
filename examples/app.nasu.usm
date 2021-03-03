@@ -1,0 +1,464 @@
+( app/nasu )
+
+&Screen     { width 2 height 2 pad 4 x 2 y 2 color 1 }
+&Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
+&Controller { buttons 1 }
+&Mouse      { x 2 y 2 state 1 chord 1 }
+
+&Label2d { x 2 y 2 color 1 addr 2 }
+&Rect2d  { x1 2 y1 2 x2 2 y2 2 }
+&Point2d { x 2 y 2 }
+&Point { x 1 y 1 }
+
+&BankView  { x 2 y 2 addr 2 }
+&TileView  { x 2 y 2 addr 2 }
+&OverView  { x 2 y 2 addr 2 }
+
+;label Label2d
+;bankview BankView
+;tileview TileView
+;overview OverView
+;rect Rect2d
+;mouse Point2d
+;color 1
+;i 1 ;j 2
+;pt Point
+;addr 2
+
+|0100 @RESET
+	
+	#0010 =bankview.x #0060 =bankview.y ,bank1 =bankview.addr
+	#00b0 =tileview.x #0060 =tileview.y ,bank1 #0123 ADD2 =tileview.addr
+	#00b0 =overview.x #0020 =overview.y
+
+	,draw-bankview JSR
+	,draw-tileview JSR
+	,draw-overview JSR
+
+BRK
+
+|0200 @FRAME 
+
+	,draw-cursor JSR
+
+BRK 
+
+@draw-bankview
+	
+	~bankview.x #0002 SUB2 ~bankview.y #0002 SUB2 ~bankview.x #0090 ADD2 ~bankview.y #0090 ADD2 #03 ,line-rect JSR
+
+	( position )
+
+	~bankview.x =dev/sprite.x
+	~bankview.y #0010 SUB2 =dev/sprite.y
+	~bankview.addr ,draw-short JSR
+
+	( guides )
+
+	#00 =i ,font_hex =dev/sprite.addr
+	@draw-bankview-guides
+		~bankview.x #000a SUB2 =dev/sprite.x
+		~bankview.y #00 ~i #09 MUL ADD2 =dev/sprite.y
+		( draw ) #02 =dev/sprite.color
+		~bankview.x #00 ~i #09 MUL ADD2 =dev/sprite.x
+		~bankview.y #0092 ADD2 =dev/sprite.y
+		( draw ) #02 =dev/sprite.color
+		~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+		( incr ) ~i #01 ADD =i
+		,draw-bankview-guides ~i #10 LTH JMP? POP2
+
+	( body )
+
+	~bankview.x =dev/sprite.x ~bankview.y =dev/sprite.y
+	#00 =pt.x #00 =pt.y ~bankview.addr =dev/sprite.addr
+
+	@draw-bankview-tiles-ver
+		#00 =pt.x
+		~bankview.x =dev/sprite.x
+		@draw-bankview-tiles-hor
+
+			( draw ) #01 =dev/sprite.color
+
+			( TODO )
+			,no-highlight ~dev/sprite.addr ~tileview.addr NEQ2 JMP? POP2
+				( draw ) #02 =dev/sprite.color
+			@no-highlight
+
+
+			( incr ) ~dev/sprite.x #0009 ADD2 =dev/sprite.x
+			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+			( incr ) ~pt.x #01 ADD =pt.x
+			,draw-bankview-tiles-hor ~pt.x #10 LTH JMP? POP2
+		( incr ) ~pt.y #01 ADD =pt.y
+		( incr ) ~dev/sprite.y #0009 ADD2 =dev/sprite.y
+		,draw-bankview-tiles-ver ~pt.y #10 LTH JMP? POP2
+
+RTS
+
+@draw-tileview
+
+	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0090 ADD2 ~tileview.y #0090 ADD2 #03 ,line-rect JSR
+
+	( position )
+
+	~tileview.x =dev/sprite.x
+	~tileview.y #0010 SUB2 =dev/sprite.y
+	~tileview.addr ,draw-short JSR
+
+	( draw ver line )
+	~tileview.y #0008 SUB2 =dev/screen.y
+	~tileview.x #0047 ADD2 =dev/screen.x
+	@draw-hor
+		( draw ) #02 =dev/screen.color
+		( incr ) ~dev/screen.y #0002 ADD2 =dev/screen.y
+	~dev/screen.y ~tileview.y #0098 ADD2 LTH2 ,draw-hor ROT JMP? POP2
+
+	( draw hor line )
+	~tileview.y #0047 ADD2 =dev/screen.y
+	~tileview.x #0008 SUB2 =dev/screen.x
+	@draw-ver
+		( draw ) #02 =dev/screen.color
+		( incr ) ~dev/screen.x #0002 ADD2 =dev/screen.x
+	~dev/screen.x ~tileview.x #0098 ADD2 LTH2 ,draw-ver ROT JMP? POP2
+
+	( body )
+
+	~tileview.x =dev/sprite.x
+	~tileview.y =dev/sprite.y
+	~tileview.addr #02f0 ADD2 =tileview.addr
+	,draw-tileview-icn JSR
+
+	~tileview.x #0048 ADD2 =dev/sprite.x
+	~tileview.y =dev/sprite.y
+	~tileview.addr #0008 ADD2 =tileview.addr
+	,draw-tileview-icn JSR
+
+	~tileview.x =dev/sprite.x
+	~tileview.y #0048 ADD2 =dev/sprite.y
+	~tileview.addr #0010 ADD2 =tileview.addr
+	,draw-tileview-icn JSR
+
+	~tileview.x #0048 ADD2 =dev/sprite.x
+	~tileview.y #0048 ADD2 =dev/sprite.y
+	~tileview.addr #0018 ADD2 =tileview.addr
+	,draw-tileview-icn JSR
+
+RTS
+
+@draw-overview
+
+	~overview.x #0002 SUB2 ~overview.y #0002 SUB2 ~overview.x #0020 ADD2 ~overview.y #0020 ADD2 #03 ,line-rect JSR
+	~overview.x ~overview.y #0010 SUB2 #02 ,over_txt ,draw-label-left JSR
+
+RTS
+
+@draw-tileview-icn
+
+	#00 =pt.x #00 =pt.y 
+	@redraw-ver
+		#00 =pt.x
+		@redraw-hor
+			( get bit )
+			,cell0_icn #00
+			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB ROR #01 AND ( get bit )
+			#0008 MUL2 ADD2 =dev/sprite.addr ( add *8 )
+			( draw ) #01 =dev/sprite.color
+			( incr ) ~dev/sprite.x #0009 ADD2 =dev/sprite.x
+			( incr ) ~pt.x #01 ADD =pt.x
+			,redraw-hor ~pt.x #08 LTH JMP? POP2
+		( incr ) ~dev/sprite.y #0009 ADD2 =dev/sprite.y
+		( incr ) ~pt.y #01 ADD =pt.y
+		~dev/sprite.x #0048 SUB2 =dev/sprite.x
+		,redraw-ver ~pt.y #08 LTH JMP? POP2
+
+RTS
+
+@draw-cursor
+
+	~mouse.x ~dev/mouse.x NEQU2
+	~mouse.y ~dev/mouse.y NEQU2
+
+	#0000 EQU2 RTS? ( Return if unchanged )
+
+	( clear last cursor )
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	( record mouse positions )
+	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	#12 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+
+RTS
+
+@draw-short ( short )
+
+	=addr
+	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
+	( draw ) #02 =dev/sprite.color
+	~dev/sprite.x #0008 ADD2 =dev/sprite.x
+	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
+	( draw ) #02 =dev/sprite.color
+	~dev/sprite.x #0008 ADD2 =dev/sprite.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
+	( draw ) #02 =dev/sprite.color
+	~dev/sprite.x #0008 ADD2 =dev/sprite.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
+	( draw ) #02 =dev/sprite.color
+
+RTS
+
+( Utils )
+
+@fill-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	@fill-rect-ver
+		~rect.x1 =dev/screen.x
+		@fill-rect-hor
+			( draw ) ~color =dev/screen.color
+			( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
+			,fill-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
+		,fill-rect-ver ~dev/screen.y ~rect.y2 LTH2 JMP? POP2
+
+RTS
+
+@line-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	@line-rect-hor
+		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
+		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
+		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
+		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+	~rect.y1 =dev/screen.y
+	@line-rect-ver
+		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
+		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
+		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
+
+RTS
+
+@draw-label-left ( x y color addr )
+	
+	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
+	~label.addr
+	@draw-label-left-loop
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( incr ) #0001 ADD2
+		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		DUP2 #0001 ADD2  LDR #00 NEQ ,draw-label-left-loop ROT JMP? POP2
+	POP2
+
+RTS
+
+@draw-sprite
+
+	=dev/sprite.y
+	=dev/sprite.x
+	=dev/sprite.addr
+	=dev/sprite.color
+
+RTS
+
+@cell0_icn   [ 0000 0000 0000 0000 ]
+@cell1_icn   [ 7eff ffff ffff ff7e ]
+
+@bank_txt    [ BANKVIEW 00 ]
+@tile_txt    [ TILEVIEW 00 ]
+@over_txt    [ OVERVIEW 00 ]
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@font_hex ( 0-F ) 
+[
+	7c82 8282 8282 7c00 3010 1010 1010 1000
+	7c82 027c 8080 fe00 7c82 027c 0282 7c00
+	4282 82fe 0202 0200 fc82 807c 0282 7c00
+	7c82 80fc 8282 7c00 7c82 021e 0202 0200
+	7c82 827c 8282 7c00 7c82 827e 0202 0400
+	7c82 027e 8282 7e00 fc82 82fc 8282 fc00
+	7c82 8080 8082 7c00 fc82 8282 8282 fc00
+	7c82 80f0 8082 7c00 7c82 80f0 8080 8000
+]
+
+@font ( spectrum-zx font ) 
+[
+	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
+	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
+	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
+	0038 446c 107c 1000 000c 0808 0838 3800 003e 2222 2266 6600 0000 0822 0022 0800
+	0000 1018 1c18 1000 0000 0818 3818 0800 0008 1c00 001c 0800 0028 2828 2800 2800
+	003e 4a4a 3a0a 0a00 000c 3046 620c 3000 0000 0000 0000 ffff 0010 3800 3810 0038
+	0008 1c2a 0808 0800 0008 0808 2a1c 0800 0000 0804 7e04 0800 0000 1020 7e20 1000
+	0000 4040 7e00 0000 0000 0024 6624 0000 0000 1038 7c00 0000 0000 007c 3810 0000
+	0000 0000 0000 0000 0008 0808 0800 0800 0014 1400 0000 0000 0024 7e24 247e 2400
+	0008 1e28 1c0a 3c08 0042 0408 1020 4200 0030 4832 4c44 3a00 0008 1000 0000 0000
+	0004 0808 0808 0400 0010 0808 0808 1000 0000 1408 3e08 1400 0000 0808 3e08 0800
+	0000 0000 0008 0810 0000 0000 3c00 0000 0000 0000 0000 0800 0000 0204 0810 2000
+	003c 464a 5262 3c00 0018 2808 0808 3e00 003c 4202 3c40 7e00 003c 421c 0242 3c00
+	0008 1828 487e 0800 007e 407c 0242 3c00 003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00 0000 0008 0000 0800 0000 0800 0008 0810
+	0000 0810 2010 0800 0000 003e 003e 0000 0000 1008 0408 1000 003c 4202 0c00 0800
+	003c 425a 5442 3c00 0018 2442 7e42 4200 007c 427c 4242 7c00 003c 4240 4042 3c00
+	0078 4442 4244 7800 007e 407c 4040 7e00 003e 4040 7c40 4000 003c 4240 4e42 3c00
+	0042 427e 4242 4200 003e 0808 0808 3e00 0002 0202 4242 3c00 0044 4870 4844 4200
+	0040 4040 4040 7e00 0042 665a 4242 4200 0042 6252 4a46 4200 003c 4242 4242 3c00
+	007c 4242 7c40 4000 003c 4242 524a 3c00 007c 4242 7c44 4200 003c 403c 0242 3c00
+	00fe 1010 1010 1000 0042 4242 4242 3c00 0042 4242 4224 1800 0042 4242 5a66 4200
+	0042 2418 1824 4200 0082 4428 1010 1000 007e 0408 1020 7e00 000c 0808 0808 0c00
+	0040 2010 0804 0200 0018 0808 0808 1800 0008 1422 0000 0000 0000 0000 0000 7e00
+	0008 0400 0000 0000 0000 1c02 1e22 1e00 0020 203c 2222 3c00 0000 1e20 2020 1e00
+	0002 021e 2222 1e00 0000 1c22 3c20 1e00 000c 101c 1010 1000 0000 1c22 221e 021c
+	0020 202c 3222 2200 0008 0018 0808 0400 0008 0008 0808 4830 0020 2428 3028 2400
+	0010 1010 1010 0c00 0000 6854 5454 5400 0000 5864 4444 4400 0000 3844 4444 3800
+	0000 7844 4478 4040 0000 3c44 443c 0406 0000 2c30 2020 2000 0000 3840 3804 7800
+	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
+	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
+	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
+]
+
+|E000 @bank1 
+[
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 1838 1818 1818 7e00
+	7cc6 0e3c 78e0 fe00 7e0c 183c 06c6 7c00
+	1c3c 6ccc fe0c 0c00 fcc0 fc06 06c6 7c00
+	3c60 c0fc c6c6 7c00 fec6 0c18 3030 3000
+	78c4 e478 8686 7c00 7cc6 c67e 060c 7800
+	386c c6c6 fec6 c600 fcc6 c6fc c6c6 fc00
+	3c66 c0c0 c066 3c00 f8cc c6c6 c6cc f800
+	fec0 c0fc c0c0 fe00 fec0 c0fc c0c0 c000
+	3e60 c0ce c666 3e00 c6c6 c6fe c6c6 c600
+	3c18 1818 1818 3c00 1e06 0606 c6c6 7c00
+	c6cc d8f0 d8cc c600 6060 6060 6060 7e00
+	c6ee fefe d6c6 c600 c6e6 f6fe dece c600
+	7cc6 c6c6 c6c6 7c00 fcc6 c6fc c0c0 c000
+	7cc6 c6c6 decc 7a00 fcc6 c6fc d8cc c600
+	78cc c07c 06c6 7c00 7e18 1818 1818 1800
+	c6c6 c6c6 c6c6 7c00 c6c6 c6ee 7c38 1000
+	c6c6 d6fe feee c600 c6ee 7c38 7cee c600
+	6666 663c 1818 1800 fe0e 1c38 70e0 fe00
+	fc04 2438 2020 c000 0408 1030 d010 1000
+	10fe 8282 0204 3800 00fe 1010 1010 fe00
+	08fe 1828 4888 1800 40fc 4444 4444 8800
+	10fc 10fc 1010 1000 7c44 8404 0408 3000
+	80fe 8888 0808 3000 fc04 0404 0404 fc00
+	44fe 4444 0404 3800 c004 c404 0808 f000
+	fc04 0810 2844 8200 40fe 4244 4040 3e00
+	8282 4202 0408 7000 7c44 7c84 0404 3800
+	1cf0 10fe 1010 3000 a4a4 a404 0408 7000
+	7c00 fe10 1010 6000 4040 4078 4440 4000
+	0808 fe08 0808 7000 7800 0000 0000 fc00
+	fc04 0468 1028 c600 10fe 0408 3cd2 1000
+	0404 0408 0810 6000 1008 8884 8484 8400
+	8080 fc80 8080 7c00 fc04 0404 0408 7000
+	0020 5088 8402 0000 10fe 1010 9292 9200
+	fc04 0408 5020 1000 f00e 601c 00e0 1e00
+	0810 2040 8482 7e00 0404 4828 1028 c400
+	fc20 fc20 2020 1c00 20fc 2424 2820 2000
+	7808 0808 0808 fe00 fc04 04fc 0404 fc00
+	fc00 fc04 0408 7000 4444 4444 0408 3000
+	1050 5050 5252 9c00 8080 8084 8488 f000
+	fc84 8484 8484 fc00 fc84 8404 0404 3800
+	c000 0404 0808 f000 fc04 fc04 0408 7000
+	0000 7c04 1810 1000 0000 0418 7010 1000
+	0000 107c 4404 1800 0000 3810 1010 7c00
+	0000 087c 1828 4800 0000 207c 2428 2000
+	0000 3808 0808 7c00 0000 7808 7808 7800
+	0000 5454 0404 3800 0020 7820 7caa b2e4
+	0000 8884 8282 a240 0078 00f8 0404 0870
+	0038 0078 1020 508e 0024 7220 3c62 a26c
+	0020 24f2 4a4a 88b0 0020 f810 fc08 807c
+	0008 1020 4020 1008 0084 84be 8484 8498
+	0000 7c08 0040 807e 0010 fc08 7c80 807c
+	0080 8080 8084 8870 0008 fe38 4838 0830
+	0044 44fe 4448 403c 0078 1020 fc20 403c
+	0040 f04e 4080 908e 0020 f840 7884 0478
+	0000 3cc2 0202 0418 00fe 0810 2020 201c
+	0040 2c30 4080 807c 0040 ee44 849c a61c
+	0000 9e84 80a0 a09e 0010 bc52 d2a6 aa4e
+	0040 dc62 424e d24e 0000 3854 92a2 a24c
+	0084 be84 849c a69c 00e0 4486 8484 8870
+	0020 1830 148a ca9a 0000 2050 8804 0200
+	00be 84be 849c a69c 0010 fc10 fc70 9874
+	0070 1414 7ca6 a4c8 0020 f422 60a2 a27c
+	0010 bc52 d2a2 a24c 0040 f044 f242 423c
+	0050 5c6a c22c 2020 0088 bcca 8abc 0810
+	0010 1c10 1070 9874 0020 9880 f884 0478
+	0088 8888 8808 1060 00f0 2078 8464 9478
+	0048 d464 4444 c442 0078 1020 7884 0478
+	0040 dc62 4242 c24c 1078 2034 5828 201c
+	0010 1020 2052 528c 0000 2078 2078 b4e4
+	0000 0088 8484 a440 e0fe ff7f 0302 0000
+	010d 0800 362c 0860 6000 2030 0008 0d01
+	0101 0343 6777 7b78 0000 8084 ccdc bc3c
+	3307 07e3 383f 1c0c 98c7 c892 30f8 7060
+	0001 0103 4367 777b 0000 0080 84cc dcbc
+	7833 0707 e338 7ff0 3c98 c7c8 9230 f83c
+	0010 7f7f 7f1f 0f0f 0333 393a 3818 0000
+	1038 3c74 7676 7e7d 0000 110a 342a 5120
+	7f67 6370 383e 7cb8 510a 04ea 797f 7039
+	5838 1030 f0f0 e0c0 0008 1c3c 7a7a 7a7e
+	0000 0011 0a34 2a51 7f7d 3f37 333b 3a78
+	2051 0a04 ea39 7ff0 bc58 3810 30f8 fc3e
+	0000 0006 0e0c 0000 0000 0000 0000 0f18
+	0000 0000 f83e 3b18 1014 1010 3878 f830
+	0000 0000 060e 0c00 0000 0000 0000 000f
+	0000 0000 00f8 7ef3 1810 1410 1038 7cde
+	000d 1e1e 1e1f 0f07 78f0 001a 3f35 353f
+	0000 80e0 e070 7321 1a07 0c18 78fe fcf0
+	0001 0200 387c 7e3f 3f40 6060 2030 1301
+	c0e0 30d0 d0d0 d000 070f 021d 1f1a 1a02
+	387c fcfc fcfe bebe 1c3e 3f3f 3f7f 7d7d
+	7d7f 5f3b 3c3f 1e00 1c3e 3f1f 3f7f 7d7d
+	0000 0060 6265 3f1f 703c 3c18 0000 0207
+	cf7a 5a10 0000 c080 8584 86c6 e773 73e1
+	804e 77f3 fbf9 fa78 1139 7d39 0000 e0e7
+	0000 0707 1610 0038 cf1f 1710 3330 3020
+	3830 40c7 0766 e06c 60c0 8004 9eff f0f8
+	2401 07fe ff7f 3f7f cf7a 0afe fc00 0000
+	8586 83c3 e170 70e0 60c0 8000 98fc feff
+	2400 07fe ff7f ff03 030f 2362 643c 1c1e
+	1f3d 6d4f eef3 2003 0707 1f3f 0f47 0300
+	0000 0307 0f0f 1f1f 0023 574f 572f df21
+	0000 0000 8080 0000 230f 1ef0 1c3f 1f1e
+	0080 1830 34fe fefe 0000 0104 0606 0707
+	0f3f 7ff8 f87f 3f0f 1f1f 1f0b 0101 0000
+	031f 3f3f 7800 03ff 0000 0000 0000 0000
+	2327 1f07 0f1f 7f3f e080 8040 e0e0 e0c0
+	0307 0f1f 3f7f ff1f 1f10 0c12 122c 3f3f
+	3736 3636 1616 1202 107e ffff f676 3a1a
+	0000 3804 0000 0000 0000 0038 4000 0000
+	fca0 8080 0000 0000 0727 574f 5727 c121
+	1d0f 0f1f 1f1e 3830 0000 3810 4c18 8624
+	0042 0a40 1002 0802 0000 8040 080c 0a84
+	0000 cf20 2020 262e e0e0 c000 0000 0000
+	2f23 2120 2000 0000 c1b1 596d 353b 1f03
+	0002 0008 0200 2800 0410 0210 0400 0a00
+	c1b1 596d 353b 1f03 000f 1fff fc63 1f03
+	0000 fec6 c6fe 0000 0000 0606 0c18 7060
+	0000 0606 0404 0808 0810 3030 3030 1008
+	0000 0103 0100 0000 030e f800 0000 0000
+	2265 2525 2525 7772 6295 1525 4585 f7f2
+	a2a5 a5a5 f5f5 2722 f285 85e5 1515 f7e2
+	6295 5565 b595 9762 2050 5050 5050 7020
+	0000 0000 0000 0000 6cec 6c6c 6c6f f700
+	bcb2 b2b2 bcb0 3000 0000 0000 0000 0000
+]
+
+|F300 @bank2
+|F500 @bank3
+|F700 @bank4	
+
+|FE00 @ERROR BRK 
+
+|FF10 ;dev/screen Screen
+|FF20 ;dev/sprite Sprite
+|FF30 ;dev/ctrl   Controller
+|FF50 ;dev/mouse  Mouse
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 0fcf 0fc4 0fc4 ] ( palette )

@@ -1,9 +1,9 @@
 ( app/hex )
 
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+&Screen     { width 2 height 2 pad 4 x 2 y 2 color 1 }
+&Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
-&Mouse  { x 2 y 2 state 1 chord 1 }
+&Mouse      { x 2 y 2 state 1 chord 1 }
 
 &Label2d { x 2 y 2 color 1 addr 2 }
 &Point2d { x 2 y 2 }
