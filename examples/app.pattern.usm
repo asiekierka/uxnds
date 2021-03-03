@@ -39,13 +39,13 @@ BRK
 	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP? POP2
 
 		,no-ctrl-up ~dev/ctrl.buttons #10 EQU JMP? POP2
-			~editor.addr #0001 SUB2 =editor.addr
+			~editor.addr #0001 ADD2 =editor.addr
 			,draw-window JSR
 			,redraw JSR
 		@no-ctrl-up
 
 		,no-ctrl-down ~dev/ctrl.buttons #20 EQU JMP? POP2
-			~editor.addr #0001 ADD2 =editor.addr
+			~editor.addr #0001 SUB2 =editor.addr
 			,draw-window JSR
 			,redraw JSR
 		@no-ctrl-down
@@ -68,19 +68,6 @@ BRK
 
 BRK 
 
-@draw-label-left ( x y color addr )
-	
-	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
-	~label.addr
-	@draw-label-left-loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
-		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		DUP2 #0001 ADD2  LDR #00 NEQ ,draw-label-left-loop ROT JMP? POP2
-	POP2
-
-RTS
-
 @draw-window 
 	
 	#0000 #0000 ~dev/screen.width ~dev/screen.height #03 ~editor.addr ,tile-rect JSR
@@ -97,15 +84,6 @@ RTS
 
 	,redraw JSR
 	
-RTS
-
-@draw-byte ( x y color addr )
-	
-	( load ) =addr =color =dev/sprite.y =dev/sprite.x
-	,font_hex #00 ~addr LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr ~color =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ~addr LDR #0f AND #08 MUL ADD2 =dev/sprite.addr ~color =dev/sprite.color
-
 RTS
 
 @redraw
@@ -148,6 +126,28 @@ RTS
 	~window.x1 #0058 ADD2 ~window.y1 #0038 ADD2 #08 ~editor.addr #0005 ADD2 ,draw-byte JSR
 	~window.x1 #0058 ADD2 ~window.y1 #0040 ADD2 #08 ~editor.addr #0006 ADD2 ,draw-byte JSR
 	~window.x1 #0058 ADD2 ~window.y1 #0048 ADD2 #08 ~editor.addr #0007 ADD2 ,draw-byte JSR
+
+RTS
+
+@draw-label-left ( x y color addr )
+	
+	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
+	~label.addr
+	@draw-label-left-loop
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( incr ) #0001 ADD2
+		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		DUP2 #0001 ADD2  LDR #00 NEQ ,draw-label-left-loop ROT JMP? POP2
+	POP2
+
+RTS
+
+@draw-byte ( x y color addr )
+	
+	( load ) =addr =color =dev/sprite.y =dev/sprite.x
+	,font_hex #00 ~addr LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr ~color =dev/sprite.color
+	~dev/sprite.x #0008 ADD2 =dev/sprite.x
+	,font_hex #00 ~addr LDR #0f AND #08 MUL ADD2 =dev/sprite.addr ~color =dev/sprite.color
 
 RTS
 
