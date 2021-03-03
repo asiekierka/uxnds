@@ -25,8 +25,6 @@
 	
 	#0030 =window.x1 #0030 =window.y1 #00a8 =window.x2 #0090 =window.y2
 
-	#0040 =editor.y ( TODO: Remove )
-
 	~window.x1 #0010 ADD2 =editor.x1
 	~window.y1 #0010 ADD2 =editor.y1
 

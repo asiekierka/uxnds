@@ -226,7 +226,7 @@ makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
 	scpy(name, l->name, 64);
 	if(m)
 		l->macro = m;
-	printf("New label: %s, at 0x%02x[%d]\n", l->name, l->addr, l->len);
+	printf("New label: %s, at 0x%04x[%d]\n", l->name, l->addr, l->len);
 	return 1;
 }
 

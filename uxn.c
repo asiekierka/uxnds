@@ -90,23 +90,23 @@ void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_jmp, op_jsr, op_rts, op_ldr, op_str, 
-	op_jmp, op_jsr, op_nop, op_rts, op_and, op_xor, op_rol, op_ror, 
+	op_nop, op_nop, op_nop, op_nop, op_and, op_xor, op_rol, op_ror, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_nop, op_wsr, op_rsw,
 	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
 	/* 16-bit */
 	op_brk,   op_nop16, op_lit16, op_jmp,   op_jsr,   op_rts,   op_ldr16, op_str16, 
-	op_jmp,   op_jsr,   op_nop,   op_rts,   op_and16, op_xor16, op_rol16, op_ror16, 
+	op_nop,   op_nop,   op_nop,   op_nop,   op_and16, op_xor16, op_rol16, op_ror16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_wsr16, op_rsw16, op_nop,
 	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
 };
 
 Uint8 opr[][2] = { 
-	{0,0}, {0,0}, {0,0}, {0,0}, {1,1}, {1,0}, {2,1}, {3,0},
+	{0,0}, {0,0}, {0,0}, {2,0}, {2,0}, {0,0}, {2,1}, {3,0},
 	{2,0}, {2,0}, {0,0}, {0,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {1,0}, {0,1}, {2,1},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
 	/* 16-bit */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {2,2}, {4,0}, /* TODO */
+	{0,0}, {0,0}, {0,0}, {2,0}, {2,0}, {0,0}, {2,2}, {4,0}, /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
 	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {2,0}, {0,2}, {0,0}, /* TODO */
 	{4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}
