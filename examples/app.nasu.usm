@@ -28,24 +28,60 @@
 |0100 @RESET
 	
 	#0010 =bankview.x #0060 =bankview.y ,bank1 =bankview.addr
-	#00b0 =tileview.x #0060 =tileview.y ,bank1 #0123 ADD2 =tileview.addr
-	#00b0 =overview.x #0020 =overview.y
+	#00b0 =tileview.x #0060 =tileview.y ,bank1 #0448 ADD2 =tileview.addr
+	#0010 =overview.x #0010 =overview.y
 
-	,draw-bankview JSR
-	,draw-tileview JSR
-	,draw-overview JSR
+	,redraw JSR
 
 BRK
 
 |0200 @FRAME 
+	
+	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP? POP2
+
+		,no-ctrl-up ~dev/ctrl.buttons #10 EQU JMP? POP2
+			~tileview.addr #0008 ADD2 =tileview.addr
+			,redraw JSR
+		@no-ctrl-up
+
+		,no-ctrl-down ~dev/ctrl.buttons #20 EQU JMP? POP2
+			~tileview.addr #0008 SUB2 =tileview.addr
+			,redraw JSR
+		@no-ctrl-down
+
+	@no-ctrl
+
+	,no-click ~dev/mouse.state #00 EQU JMP? POP2
+
+		~dev/mouse.x ~bankview.x GTH2 ~dev/mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
+		~dev/mouse.y ~bankview.y GTH2 ~dev/mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
+		#0101 NEQ2 ,no-click ROT JMP? POP2
+
+		( touch in bankview )
+		~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
+		~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+		~bankview.addr ADD2 =tileview.addr
+		,redraw JSR
+
+
+
+	@no-click
 
 	,draw-cursor JSR
 
 BRK 
 
+@redraw
+	
+	,draw-bankview JSR
+	,draw-tileview JSR
+	,draw-overview JSR
+
+RTS
+
 @draw-bankview
 	
-	~bankview.x #0002 SUB2 ~bankview.y #0002 SUB2 ~bankview.x #0090 ADD2 ~bankview.y #0090 ADD2 #03 ,line-rect JSR
+	~bankview.x #0002 SUB2 ~bankview.y #0002 SUB2 ~bankview.x #0081 ADD2 ~bankview.y #0081 ADD2 #03 ,line-rect JSR
 
 	( position )
 
@@ -58,10 +94,10 @@ BRK
 	#00 =i ,font_hex =dev/sprite.addr
 	@draw-bankview-guides
 		~bankview.x #000a SUB2 =dev/sprite.x
-		~bankview.y #00 ~i #09 MUL ADD2 =dev/sprite.y
+		~bankview.y #00 ~i #08 MUL ADD2 =dev/sprite.y
 		( draw ) #02 =dev/sprite.color
-		~bankview.x #00 ~i #09 MUL ADD2 =dev/sprite.x
-		~bankview.y #0092 ADD2 =dev/sprite.y
+		~bankview.x #00 ~i #08 MUL ADD2 =dev/sprite.x
+		~bankview.y #0083 ADD2 =dev/sprite.y
 		( draw ) #02 =dev/sprite.color
 		~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
 		( incr ) ~i #01 ADD =i
@@ -71,33 +107,28 @@ BRK
 
 	~bankview.x =dev/sprite.x ~bankview.y =dev/sprite.y
 	#00 =pt.x #00 =pt.y ~bankview.addr =dev/sprite.addr
-
 	@draw-bankview-tiles-ver
 		#00 =pt.x
 		~bankview.x =dev/sprite.x
 		@draw-bankview-tiles-hor
-
 			( draw ) #01 =dev/sprite.color
-
-			( TODO )
-			,no-highlight ~dev/sprite.addr ~tileview.addr NEQ2 JMP? POP2
-				( draw ) #02 =dev/sprite.color
+			,no-highlight ~dev/sprite.addr ~tileview.addr LTH2 JMP? POP2
+				,no-highlight ~dev/sprite.addr ~tileview.addr #0018 ADD2 GTH2 JMP? POP2
+				( draw ) #0c =dev/sprite.color
 			@no-highlight
-
-
-			( incr ) ~dev/sprite.x #0009 ADD2 =dev/sprite.x
+			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			,draw-bankview-tiles-hor ~pt.x #10 LTH JMP? POP2
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~dev/sprite.y #0009 ADD2 =dev/sprite.y
+		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 		,draw-bankview-tiles-ver ~pt.y #10 LTH JMP? POP2
 
 RTS
 
 @draw-tileview
 
-	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0090 ADD2 ~tileview.y #0090 ADD2 #03 ,line-rect JSR
+	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0081 ADD2 ~tileview.y #0081 ADD2 #03 ,line-rect JSR
 
 	( position )
 
@@ -105,50 +136,67 @@ RTS
 	~tileview.y #0010 SUB2 =dev/sprite.y
 	~tileview.addr ,draw-short JSR
 
-	( draw ver line )
-	~tileview.y #0008 SUB2 =dev/screen.y
-	~tileview.x #0047 ADD2 =dev/screen.x
-	@draw-hor
-		( draw ) #02 =dev/screen.color
-		( incr ) ~dev/screen.y #0002 ADD2 =dev/screen.y
-	~dev/screen.y ~tileview.y #0098 ADD2 LTH2 ,draw-hor ROT JMP? POP2
-
-	( draw hor line )
-	~tileview.y #0047 ADD2 =dev/screen.y
-	~tileview.x #0008 SUB2 =dev/screen.x
-	@draw-ver
-		( draw ) #02 =dev/screen.color
-		( incr ) ~dev/screen.x #0002 ADD2 =dev/screen.x
-	~dev/screen.x ~tileview.x #0098 ADD2 LTH2 ,draw-ver ROT JMP? POP2
-
 	( body )
 
 	~tileview.x =dev/sprite.x
 	~tileview.y =dev/sprite.y
-	~tileview.addr #02f0 ADD2 =tileview.addr
+	~tileview.addr =tileview.addr
 	,draw-tileview-icn JSR
 
-	~tileview.x #0048 ADD2 =dev/sprite.x
+	~tileview.x #0040 ADD2 =dev/sprite.x
 	~tileview.y =dev/sprite.y
 	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR
 
 	~tileview.x =dev/sprite.x
-	~tileview.y #0048 ADD2 =dev/sprite.y
-	~tileview.addr #0010 ADD2 =tileview.addr
+	~tileview.y #0040 ADD2 =dev/sprite.y
+	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR
 
-	~tileview.x #0048 ADD2 =dev/sprite.x
-	~tileview.y #0048 ADD2 =dev/sprite.y
-	~tileview.addr #0018 ADD2 =tileview.addr
+	~tileview.x #0040 ADD2 =dev/sprite.x
+	~tileview.y #0040 ADD2 =dev/sprite.y
+	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR
+
+	~tileview.addr #0018 SUB2 =tileview.addr
 
 RTS
 
 @draw-overview
 
-	~overview.x #0002 SUB2 ~overview.y #0002 SUB2 ~overview.x #0020 ADD2 ~overview.y #0020 ADD2 #03 ,line-rect JSR
-	~overview.x ~overview.y #0010 SUB2 #02 ,over_txt ,draw-label-left JSR
+	~overview.x =dev/sprite.x ~overview.y =dev/sprite.y
+	#00 =pt.x #00 =pt.y ~tileview.addr =dev/sprite.addr
+
+	( draw hor line )
+	#0040 =dev/screen.y
+	#0000 =dev/screen.x
+	@draw-ver
+		( draw ) #02 =dev/screen.color
+		( incr ) ~dev/screen.x #0002 ADD2 =dev/screen.x
+	~dev/screen.x ~tileview.x ~dev/screen.width ADD2 LTH2 ,draw-ver ROT JMP? POP2
+
+	( draw ver line )
+	#0000 =dev/screen.y
+	#0040 =dev/screen.x
+	@draw-hor
+		( draw ) #02 =dev/screen.color
+		( incr ) ~dev/screen.y #0002 ADD2 =dev/screen.y
+	~dev/screen.y #0040 LTH2 ,draw-hor ROT JMP? POP2
+
+	( body )
+
+	@draw-overview-tiles-ver
+		#00 =pt.x
+		~overview.x =dev/sprite.x
+		@draw-overview-tiles-hor
+			( draw ) #01 =dev/sprite.color
+			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+			( incr ) ~pt.x #01 ADD =pt.x
+			,draw-overview-tiles-hor ~pt.x #04 LTH JMP? POP2
+		( incr ) ~pt.y #01 ADD =pt.y
+		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		,draw-overview-tiles-ver ~pt.y #04 LTH JMP? POP2
 
 RTS
 
@@ -163,12 +211,12 @@ RTS
 			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB ROR #01 AND ( get bit )
 			#0008 MUL2 ADD2 =dev/sprite.addr ( add *8 )
 			( draw ) #01 =dev/sprite.color
-			( incr ) ~dev/sprite.x #0009 ADD2 =dev/sprite.x
+			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 			( incr ) ~pt.x #01 ADD =pt.x
 			,redraw-hor ~pt.x #08 LTH JMP? POP2
-		( incr ) ~dev/sprite.y #0009 ADD2 =dev/sprite.y
+		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 		( incr ) ~pt.y #01 ADD =pt.y
-		~dev/sprite.x #0048 SUB2 =dev/sprite.x
+		~dev/sprite.x #0040 SUB2 =dev/sprite.x
 		,redraw-ver ~pt.y #08 LTH JMP? POP2
 
 RTS
@@ -261,7 +309,7 @@ RTS
 RTS
 
 @cell0_icn   [ 0000 0000 0000 0000 ]
-@cell1_icn   [ 7eff ffff ffff ff7e ]
+@cell1_icn   [ 7cfe fefe fefe 7c00 ]
 
 @bank_txt    [ BANKVIEW 00 ]
 @tile_txt    [ TILEVIEW 00 ]
@@ -319,7 +367,7 @@ RTS
 
 |E000 @bank1 
 [
-	0000 0000 0000 0000 0000 0000 0000 0000
+	0103 070f 1f3f 7fff 0000 0000 0000 0000
 	0000 0000 0000 0000 0000 0000 0000 0000
 	0000 0000 0000 0000 0000 0000 0000 0000
 	0000 0000 0000 0000 0000 0000 0000 0000
