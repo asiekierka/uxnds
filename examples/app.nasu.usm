@@ -67,8 +67,9 @@ BRK
 
 		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
 			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000c LTH2 JMP? POP2
-			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
+			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000e GTH2 JMP? POP2
 			~mouse.x ~bankview.x SUB2 #0008 DIV2 #000c SUB2 SWP POP =bankview.mode
+			,redraw JSR ,click-end JMP
 		@no-toolbar-click
 
 		( bankview )
@@ -132,8 +133,6 @@ BRK
 
 BRK 
 
-
-
 @redraw
 	
 	,draw-bankview JSR
@@ -156,19 +155,15 @@ RTS
 	~bankview.x #0060 ADD2 =dev/sprite.x
 	~bankview.y #0010 SUB2 =dev/sprite.y
 	,tool_selector =dev/sprite.addr
-	#01 =dev/sprite.color
+	#01 ~bankview.mode #00 EQU ADD =dev/sprite.color
 
 	~dev/sprite.x #0008 ADD2 =dev/sprite.x
 	,tool_hand =dev/sprite.addr
-	#02 =dev/sprite.color
+	#01 ~bankview.mode #01 EQU ADD =dev/sprite.color
 
 	~dev/sprite.x #0008 ADD2 =dev/sprite.x
 	,tool_eraser =dev/sprite.addr
-	#02 =dev/sprite.color
-
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,tool_copy =dev/sprite.addr
-	#02 =dev/sprite.color
+	#01 ~bankview.mode #02 EQU ADD =dev/sprite.color
 
 	( guides )
 
@@ -379,8 +374,7 @@ RTS
 
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
 @tool_hand     [ 4040 4070 f8f8 f870 ]
-@tool_eraser   [ 0814 2244 a850 2d00 ]
-@tool_copy     [ 5824 5a42 4242 3c00 ]
+@tool_eraser   [ 2050 b87c 3e1c 0800 ]
 
 @blank_icn   [ 0000 0000 0000 0000 ]
 @cell1_icn   [ 7cfe fefe fefe 7c00 ]
