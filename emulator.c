@@ -192,6 +192,14 @@ drawdebugger(Uint32 *dst, Uxn *u)
 		drawicn(dst, x, y, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
 		drawicn(dst, x + 8, y, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
+	for(x = 0; x < 32; ++x) {
+		drawpixel(dst, x, HEIGHT / 2, 2);
+		drawpixel(dst, WIDTH - x, HEIGHT / 2, 2);
+		drawpixel(dst, WIDTH / 2, HEIGHT - x, 2);
+		drawpixel(dst, WIDTH / 2, x, 2);
+		drawpixel(dst, WIDTH / 2 - 16 + x, HEIGHT / 2, 2);
+		drawpixel(dst, WIDTH / 2, HEIGHT / 2 - 16 + x, 2);
+	}
 }
 
 void
