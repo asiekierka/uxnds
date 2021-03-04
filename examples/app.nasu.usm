@@ -20,6 +20,7 @@
 ;i 1
 ;pt Point
 ;addr 2
+;pos Point2d
 
 |0100 @RESET
 	
@@ -60,19 +61,42 @@ BRK
 
 	@no-ctrl
 
-	,no-click ~dev/mouse.state #00 EQU JMP? POP2
+	,click-end ~dev/mouse.state #00 EQU JMP? POP2
 
 		~dev/mouse.x ~bankview.x GTH2 ~dev/mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
 		~dev/mouse.y ~bankview.y GTH2 ~dev/mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,no-click ROT JMP? POP2
+		#0101 NEQ2 ,no-bank-click ROT JMP? POP2
 
 		( touch in bankview )
 		~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
 		~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 		~bankview.addr ADD2 =tileview.addr
+		,redraw JSR ,click-end JMP
+
+		@no-bank-click
+
+		~dev/mouse.x ~tileview.x GTH2 ~dev/mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
+		~dev/mouse.y ~tileview.y GTH2 ~dev/mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
+		#0101 NEQ2 ,click-end ROT JMP? POP2
+
+		( touch in tileview )
+
+		~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 
+		~dev/mouse.y ~tileview.y SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 #0002 MUL2 ADD2 
+		#0008 MUL2
+		~tileview.addr ADD2 =addr ( addr offset )
+
+		~dev/mouse.x ~tileview.x SUB2 ~dev/mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
+		~dev/mouse.y ~tileview.y SUB2 ~dev/mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
+
+		( load ) ~addr ~pos.y #0008 DIV2 ADD2 LDR
+		( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB ROL 
+		XOR
+		( save ) ~addr ~pos.y #0008 DIV2 ADD2 STR
+
 		,redraw JSR
 
-	@no-click
+	@click-end
 
 	,draw-cursor JSR
 
@@ -236,7 +260,6 @@ RTS
 	~dev/sprite.x #0008 ADD2 =dev/sprite.x
 	,tool_copy =dev/sprite.addr
 	#02 =dev/sprite.color
-
 
 RTS
 
