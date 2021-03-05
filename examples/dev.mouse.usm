@@ -158,6 +158,10 @@ RTS
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+@mouse0_icn  [ 7c82 92ee 8282 4438 ]
+@mouse1_icn  [ 7cf2 f2ee 8282 4438 ]
+@mouse2_icn  [ 7c9e 9eee 8282 4438 ]
+@mouse12_icn [ 7cfe feee 8282 4438 ]
 
 @polycat [
 	081c 3e3e 7f7f ffff 081c 3e3e 7f7f fffc
@@ -175,11 +179,6 @@ RTS
 	c0f0 f0e0 e080 8000 c0f2 faf9 fef8 b000
 	c0f0 f0e0 e080 8000 c0f1 faf9 fef8 b000
 ]
-
-@mouse0_icn  [ 7c82 92ee 8282 4438 ]
-@mouse1_icn  [ 7cf2 f2ee 8282 4438 ]
-@mouse2_icn  [ 7c9e 9eee 8282 4438 ]
-@mouse12_icn [ 7cfe feee 8282 4438 ]
 
 @font ( spectrum-zx font ) 
 [
@@ -217,7 +216,7 @@ RTS
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@mouse0_text   [ no click 00 ]
+@mouse0_text   [ no 20 click 00 ]
 @mouse1_text   [ mouse 1_ 00 ]
 @mouse2_text   [ mouse _2 00 ]
 @mouse12_text  [ mouse 12 00 ]

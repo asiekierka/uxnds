@@ -21,8 +21,8 @@ BRK
 
 RTS                 
 
-@text1 [ Hello World 0a00 ] ( store text with a linebreak and null byte )
-@text2 [ Welcome to UxnVM 0a00 ]
+@text1 [ Hello 20 World 0a00 ] ( store text with a linebreak and null byte )
+@text2 [ Welcome 20 to 20 UxnVM 0a00 ]
 
 |c000 @FRAME
 |d000 @ERROR 
