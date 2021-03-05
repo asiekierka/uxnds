@@ -1,8 +1,15 @@
 ( app/nasu )
 
+(
+	arrows - move
+	click  - Paint/Select cell
+	1 2 3  - Select brush
+)
+
 &Screen     { width 2 height 2 pad 4 x 2 y 2 color 1 }
 &Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
+&Keyboard   { key 1 }
 &Mouse      { x 2 y 2 state 1 chord 1 change 1 }
 &File       { pad 8 name 2 length 2 load 2 save 2 }
 
@@ -41,6 +48,16 @@ BRK
 
 	( keyboard controls )
 
+	,no-key ~dev/key #00 EQU JMP? POP2
+	
+		,no-key ~dev/key #31 LTH JMP? POP2
+		,no-key ~dev/key #33 GTH JMP? POP2
+		( select ) ~dev/key #31 SUB =bankview.mode
+		( release ) #00 =dev/key
+		,redraw JSR 
+
+	@no-key
+
 	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP? POP2
 
 		,no-ctrl-up ~dev/ctrl.buttons #10 EQU JMP? POP2
@@ -69,7 +86,7 @@ BRK
 		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
 
 			( brush )
-			
+
 			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP? POP2
 			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
 				( select ) ~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
@@ -694,6 +711,7 @@ RTS
 |FF10 ;dev/screen Screen
 |FF20 ;dev/sprite Sprite
 |FF30 ;dev/ctrl   Controller
+|FF40 ;dev/key     Keyboard
 |FF50 ;dev/mouse  Mouse
 |FF60 ;dev/file   File
 

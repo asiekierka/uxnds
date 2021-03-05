@@ -90,17 +90,6 @@ RTS
 
 - Load external disk in disk2
 - Build hex editor
-- Build sprite editor
-
-### Examples
-
-- Basics:
-	- Simple drag/drop redraw
-	- Window basics with open/close drag/drop redraw
-	- Example of button pointing to a subroutine
-- GUI:
-	- Line routine
-	- Extra frame buffer addressing? Mirror sprites?
 
 ### Assembler
 
