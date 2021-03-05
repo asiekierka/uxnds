@@ -3,7 +3,8 @@
 &Screen     { width 2 height 2 pad 4 x 2 y 2 color 1 }
 &Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
-&Mouse      { x 2 y 2 state 1 chord 1 }
+&Mouse      { x 2 y 2 state 1 chord 1 change 1 }
+&File       { pad 8 name 2 length 2 binary 2 }
 
 &Rect2d  { x1 2 y1 2 x2 2 y2 2 }
 &Point2d { x 2 y 2 }
@@ -37,7 +38,7 @@
 BRK
 
 @FRAME 
-	
+
 	( keyboard controls )
 
 	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP? POP2
@@ -67,10 +68,20 @@ BRK
 
 		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
 			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000c LTH2 JMP? POP2
-			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000e GTH2 JMP? POP2
-			~mouse.x ~bankview.x SUB2 #0008 DIV2 #000c SUB2 SWP POP =bankview.mode
+			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
+			~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
+			( release ) #00 =dev/mouse.state
 			,redraw JSR ,click-end JMP
 		@no-toolbar-click
+
+		( save button )
+
+		,no-save-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
+			,no-save-click ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #000f NEQU2 JMP? POP2
+			( save ) ,save_name =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.binary
+			( release ) #00 =dev/mouse.state
+			,redraw JSR ,click-end JMP
+		@no-save-click
 
 		( bankview )
 
@@ -108,13 +119,15 @@ BRK
 			~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 			~bankview.addr ADD2 =tileview.addr
 			,redraw JSR ,click-end JMP
+
 		@no-bank-click
 
 		( tileview )
 
 		~dev/mouse.x ~tileview.x GTH2 ~dev/mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
 		~dev/mouse.y ~tileview.y GTH2 ~dev/mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,click-end ROT JMP? POP2
+		#0101 NEQ2 ,no-tile-click ROT JMP? POP2
+
 			~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 
 			~dev/mouse.y ~tileview.y SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 #0002 MUL2 ADD2 
 			#0008 MUL2
@@ -125,13 +138,15 @@ BRK
 			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB ROL 
 			XOR
 			( save ) ~addr ~pos.y #0008 DIV2 ADD2 STR
-		,redraw JSR
+			,redraw JSR
+
+		@no-tile-click
 
 	@click-end
 
 	,draw-cursor JSR
 
-BRK 
+BRK
 
 @redraw
 	
@@ -152,7 +167,7 @@ RTS
 
 	( toolbar )
 
-	~bankview.x #0060 ADD2 =dev/sprite.x
+	~bankview.x #0068 ADD2 =dev/sprite.x
 	~bankview.y #0010 SUB2 =dev/sprite.y
 	,tool_selector =dev/sprite.addr
 	#01 ~bankview.mode #00 EQU ADD =dev/sprite.color
@@ -164,6 +179,10 @@ RTS
 	~dev/sprite.x #0008 ADD2 =dev/sprite.x
 	,tool_eraser =dev/sprite.addr
 	#01 ~bankview.mode #02 EQU ADD =dev/sprite.color
+
+	~tileview.x #0078 ADD2 =dev/sprite.x
+	,save_icn =dev/sprite.addr
+	#01 =dev/sprite.color
 
 	( guides )
 
@@ -375,9 +394,10 @@ RTS
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
 @tool_hand     [ 4040 4070 f8f8 f870 ]
 @tool_eraser   [ 2050 b87c 3e1c 0800 ]
-
-@blank_icn   [ 0000 0000 0000 0000 ]
-@cell1_icn   [ 7cfe fefe fefe 7c00 ]
+@blank_icn     [ 0000 0000 0000 0000 ]
+@cell1_icn     [ 7cfe fefe fefe 7c00 ]
+@save_icn      [ fe82 8282 848e f400 ]
+@save_name     [ nasu_export.chr 00 ]
 
 @font_hex ( 0-F ) 
 [
@@ -566,6 +586,7 @@ RTS
 |FF20 ;dev/sprite Sprite
 |FF30 ;dev/ctrl   Controller
 |FF50 ;dev/mouse  Mouse
+|FF60 ;dev/file   File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 35ac c03c afac ] ( palette )

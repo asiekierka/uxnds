@@ -64,7 +64,7 @@ SDL_Texture *gTexture;
 Uint32 *pixels;
 
 Screen screen;
-Device *devconsole, *devscreen, *devmouse, *devkey, *devsprite, *devctrl, *devsystem;
+Device *devscreen, *devmouse, *devkey, *devctrl;
 
 #pragma mark - Helpers
 
@@ -381,6 +381,24 @@ sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
+file_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	FILE *f;
+	ptr += 8;
+	if(b0 == 0x0d) {
+		char *name = &m[(m[ptr] << 8) + m[ptr + 1]];
+		Uint16 length = (m[ptr + 2] << 8) + m[ptr + 3];
+		Uint16 addr = (m[ptr + 4] << 8) + b1;
+		f = fopen(name, "w");
+		if(!fwrite(&m[addr], length, 1, f))
+			return error("Save", "Failure");
+		fclose(f);
+		printf("Exported %s[%d bytes]\n", name, length);
+	}
+	return b1;
+}
+
+Uint8
 system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	loadtheme(&m[0xfff8]);
@@ -449,15 +467,22 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	devconsole = portuxn(&u, "console", ppnil, console_poke);
+	portuxn(&u, "console", ppnil, console_poke);
 	devscreen = portuxn(&u, "screen", ppnil, screen_poke);
-	devsprite = portuxn(&u, "sprite", ppnil, sprite_poke);
+	portuxn(&u, "sprite", ppnil, sprite_poke);
 	devctrl = portuxn(&u, "controller", ppnil, ppnil);
 	devkey = portuxn(&u, "key", ppnil, ppnil);
 	devmouse = portuxn(&u, "mouse", ppnil, ppnil);
-
-	u.devices = 15; /* pad to last device */
-	devsystem = portuxn(&u, "system", ppnil, system_poke);
+	portuxn(&u, "file", ppnil, file_poke);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "empty", ppnil, ppnil);
+	portuxn(&u, "system", ppnil, system_poke);
 
 	/* Write screen size to dev/screen */
 	u.ram.dat[devscreen->addr + 0] = (HOR * 8 >> 8) & 0xff;
