@@ -67,7 +67,7 @@ BRK
 		( toolbar )
 
 		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
-			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000c LTH2 JMP? POP2
+			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP? POP2
 			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
 			~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
 			( release ) #00 =dev/mouse.state
