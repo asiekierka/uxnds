@@ -67,30 +67,29 @@ BRK
 		( toolbar )
 
 		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
-			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP? POP2
-			,no-toolbar-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
-			~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
-			( release ) #00 =dev/mouse.state
-			,redraw JSR ,click-end JMP
-		@no-toolbar-click
 
-		( load button )
+			( brush )
+			
+			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP? POP2
+			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP? POP2
+				( select ) ~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
+				( release ) #00 =dev/mouse.state
+				,redraw JSR ,click-end JMP
+			@no-brush-click
 
-		,no-load-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
 			,no-load-click ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #000e NEQU2 JMP? POP2
-			( load ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.load
-			( release ) #00 =dev/mouse.state
-			,redraw JSR ,click-end JMP
-		@no-load-click
+				( load ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.load
+				( release ) #00 =dev/mouse.state
+				,redraw JSR ,click-end JMP
+			@no-load-click
 
-		( save button )
-
-		,no-save-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP? POP2
 			,no-save-click ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #000f NEQU2 JMP? POP2
-			( save ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.save
-			( release ) #00 =dev/mouse.state
-			,redraw JSR ,click-end JMP
-		@no-save-click
+				( save ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.save
+				( release ) #00 =dev/mouse.state
+				,redraw JSR ,click-end JMP
+			@no-save-click
+
+		@no-toolbar-click
 
 		( bankview )
 
@@ -188,6 +187,10 @@ RTS
 	~dev/sprite.x #0008 ADD2 =dev/sprite.x
 	,tool_eraser =dev/sprite.addr
 	#01 ~bankview.mode #02 EQU ADD =dev/sprite.color
+
+	~tileview.x #0070 ADD2 =dev/sprite.x
+	,load_icn =dev/sprite.addr
+	#01 =dev/sprite.color
 
 	~tileview.x #0078 ADD2 =dev/sprite.x
 	,save_icn =dev/sprite.addr
@@ -405,7 +408,8 @@ RTS
 @tool_eraser   [ 2050 b87c 3e1c 0800 ]
 @blank_icn     [ 0000 0000 0000 0000 ]
 @cell1_icn     [ 7cfe fefe fefe 7c00 ]
-@save_icn      [ fe82 8282 848e f400 ]
+@load_icn      [ feaa d6aa d4aa f400 ]
+@save_icn      [ fe82 8282 848a f400 ]
 @filename      [ nasu_project.chr 00 ]
 
 @font_hex ( 0-F ) 
