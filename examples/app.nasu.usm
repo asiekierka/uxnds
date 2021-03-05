@@ -1,8 +1,8 @@
-( app/nasu )
+( 
+	app/nasu : spritesheet editor
 
-(
-	arrows - move
-	click  - Paint/Select cell
+	arrows - move selection
+	click  - Paint cell
 	1 2 3  - Select brush
 )
 
@@ -49,7 +49,7 @@ BRK
 	( keyboard controls )
 
 	,no-key ~dev/key #00 EQU JMP? POP2
-	
+
 		,no-key ~dev/key #31 LTH JMP? POP2
 		,no-key ~dev/key #33 GTH JMP? POP2
 		( select ) ~dev/key #31 SUB =bankview.mode
@@ -159,6 +159,14 @@ BRK
 			~tileview.addr ADD2 =addr ( addr offset )
 			~dev/mouse.x ~tileview.x SUB2 ~dev/mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~dev/mouse.y ~tileview.y SUB2 ~dev/mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
+			,no-fill-mode ~bankview.mode #01 NEQ JMP? POP2
+				( fill row ) #ff ~addr ~pos.y #0008 DIV2 ADD2 STR
+				,redraw JSR ,click-end JMP
+			@no-fill-mode
+			,no-erase-mode ~bankview.mode #02 NEQ JMP? POP2
+				( erase row ) #00 ~addr ~pos.y #0008 DIV2 ADD2 STR
+				,redraw JSR ,click-end JMP
+			@no-erase-mode
 			( load ) ~addr ~pos.y #0008 DIV2 ADD2 LDR
 			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB ROL 
 			XOR
