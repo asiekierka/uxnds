@@ -89,7 +89,6 @@ pushtext(char *s, int lit)
 		pushbyte(0x22, 0);
 	while((c = s[i++]))
 		pushbyte(c, 0);
-	pushbyte(' ', 0);
 }
 
 Macro *
@@ -285,7 +284,7 @@ pass1(FILE *f)
 			if(sihx(w))
 				addr += slen(w) == 4 ? 2 : 1;
 			else
-				addr += slen(w) + 1;
+				addr += slen(w);
 		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0, NULL))
 				return error("Pass1 failed", w);
