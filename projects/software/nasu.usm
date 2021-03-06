@@ -33,11 +33,11 @@
 |0100 @RESET
 	
 	~dev/screen.width #0002 DIV2 #008a SUB2 =bankview.x 
-	~dev/screen.height #0002 DIV2 #0040 SUB2 =bankview.y 
+	~dev/screen.height #0002 DIV2 #003f SUB2 =bankview.y 
 	,bank1 =bankview.addr
 
-	~dev/screen.width #0002 DIV2 #0004 ADD2 =tileview.x 
-	~dev/screen.height #0002 DIV2 #0040 SUB2 =tileview.y 
+	~dev/screen.width #0002 DIV2 #0002 ADD2 =tileview.x 
+	~dev/screen.height #0002 DIV2 #003f SUB2 =tileview.y 
 	,bank1 #0448 ADD2 =tileview.addr
 
 	,redraw JSR
@@ -171,15 +171,61 @@ BRK
 			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB ROL 
 			XOR
 			( save ) ~addr ~pos.y #0008 DIV2 ADD2 STR
-			,redraw JSR
+			,redraw JSR ,click-end JMP
 
 		@no-tile-click
+
+		( operations )
+
+		,no-operations ~dev/mouse.y ~tileview.y SUB2 #0008 DIV2 #000c NEQ2 JMP? POP2
+
+			,no-move-up ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0011 NEQ2 JMP? POP2
+				,op_shiftup JSR 
+				( release ) #00 =dev/mouse.state
+				,redraw JSR ,click-end JMP
+			@no-move-up
+
+			,no-move-down ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0012 NEQ2 JMP? POP2
+				,op_shiftdown JSR 
+				( release ) #00 =dev/mouse.state
+				,redraw JSR ,click-end JMP
+			@no-move-down
+
+		@no-operations
 
 	@click-end
 
 	,draw-cursor JSR
 
 BRK
+
+@op_shiftup
+	
+	~tileview.addr LDR
+	~tileview.addr #0001 ADD2 LDR ~tileview.addr STR
+	~tileview.addr #0002 ADD2 LDR ~tileview.addr #0001 ADD2 STR
+	~tileview.addr #0003 ADD2 LDR ~tileview.addr #0002 ADD2 STR
+	~tileview.addr #0004 ADD2 LDR ~tileview.addr #0003 ADD2 STR
+	~tileview.addr #0005 ADD2 LDR ~tileview.addr #0004 ADD2 STR
+	~tileview.addr #0006 ADD2 LDR ~tileview.addr #0005 ADD2 STR
+	~tileview.addr #0007 ADD2 LDR ~tileview.addr #0006 ADD2 STR
+	~tileview.addr #0007 ADD2 STR
+
+RTS
+
+@op_shiftdown
+	
+	~tileview.addr #0007 ADD2 LDR
+	~tileview.addr #0006 ADD2 LDR ~tileview.addr #0007 ADD2 STR
+	~tileview.addr #0005 ADD2 LDR ~tileview.addr #0006 ADD2 STR
+	~tileview.addr #0004 ADD2 LDR ~tileview.addr #0005 ADD2 STR
+	~tileview.addr #0003 ADD2 LDR ~tileview.addr #0004 ADD2 STR
+	~tileview.addr #0002 ADD2 LDR ~tileview.addr #0003 ADD2 STR
+	~tileview.addr #0001 ADD2 LDR ~tileview.addr #0002 ADD2 STR
+	~tileview.addr LDR ~tileview.addr #0001 ADD2 STR
+	~tileview.addr STR
+
+RTS
 
 @redraw
 	
@@ -229,7 +275,7 @@ RTS
 		~bankview.y #00 ~i #08 MUL ADD2 =dev/sprite.y
 		( draw ) #02 =dev/sprite.color
 		~bankview.x #00 ~i #08 MUL ADD2 =dev/sprite.x
-		~bankview.y #0089 ADD2 =dev/sprite.y
+		~bankview.y #0088 ADD2 =dev/sprite.y
 		( draw ) #02 =dev/sprite.color
 		~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
 		( incr ) ~i #01 ADD =i
@@ -328,6 +374,16 @@ RTS
 		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 	,draw-tileview-bytes ~i #08 LTH JMP? POP2
 
+	( operations )
+
+	~dev/sprite.y #0008 ADD2 =dev/sprite.y
+	,movedown_icn =dev/sprite.addr
+	#01 =dev/sprite.color
+	~dev/sprite.x #0008 SUB2 =dev/sprite.x
+	,moveup_icn =dev/sprite.addr
+	#01 =dev/sprite.color
+
+	( draw tiles )
 	~tileview.y =dev/sprite.y
 	#00 =pt.x #00 =pt.y ~tileview.addr =dev/sprite.addr
 
@@ -435,18 +491,20 @@ RTS
 @cell1_icn     [ 7cfe fefe fefe 7c00 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filename      [ nasu_project.chr 00 ]
+@moveup_icn    [ 0010 387c fe10 1000 ]
+@movedown_icn  [ 0010 1010 fe7c 3810 ]
+@filename      [ nasu-io.bit 00 ]
 
 @font_hex ( 0-F ) 
 [
-	7c82 8282 8282 7c00 3010 1010 1010 1000
-	7c82 027c 8080 fe00 7c82 027c 0282 7c00
-	4282 82fe 0202 0200 fc82 807c 0282 7c00
-	7c82 80fc 8282 7c00 7c82 021e 0202 0200
-	7c82 827c 8282 7c00 7c82 827e 0202 0400
-	7c82 027e 8282 7e00 fc82 82fc 8282 fc00
-	7c82 8080 8082 7c00 fc82 8282 8282 fc00
-	7c82 80f0 8082 7c00 7c82 80f0 8080 8000
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
+	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8280 f080 827c 007c 8280 f080 8080
 ]
 
 |E000 @bank1 
@@ -719,7 +777,7 @@ RTS
 |FF10 ;dev/screen Screen
 |FF20 ;dev/sprite Sprite
 |FF30 ;dev/ctrl   Controller
-|FF40 ;dev/key     Keyboard
+|FF40 ;dev/key    Keyboard
 |FF50 ;dev/mouse  Mouse
 |FF60 ;dev/file   File
 
