@@ -127,7 +127,7 @@ findlabeladdr(char *s)
 			return l->addr + o;
 		o += l->macro->length[i];
 	}
-	printf("Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->macro->name);
 	return 0;
 }
 
@@ -143,7 +143,7 @@ findlabellen(char *s)
 	for(i = 0; i < l->macro->len; ++i)
 		if(scmp(l->macro->params[i], param, 64))
 			return l->macro->length[i];
-	printf("Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->macro->name);
 	return 0;
 }
 

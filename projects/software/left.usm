@@ -65,7 +65,18 @@ BRK
 
 	,no-keys ~dev/key #00 EQU JMP? POP2
 
+		( insert )
+		~document.eof #0001 ADD2 =document.eof
+
+		~document.eof =j ( end -> start )
+
+		@insert-loop
+		~j #0001 SUB2 LDR ~j STR
+		( decr ) ~j #0001 SUB2 =j
+		,insert-loop ~j ~selection.from GTH2 JMP? POP2
+
 		~dev/key ~selection.from STR
+		~position.x #0001 ADD2 =position.x ,select JSR
 		( release ) #00 =dev/key
 		,redraw JSR
 
@@ -154,7 +165,7 @@ RTS
 				RTS
 		@no-reached
 
-		,no-space ~j LDR #0a NEQ JMP? POP2
+		,no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
 			#0000 =pt.x
 		@no-space
@@ -258,7 +269,7 @@ RTS
 	#0000 =j ( j is linebreaks )
 	@find-scroll-offset
 		,find-scroll-offset-end ~scroll.y ~j EQU2 JMP? POP2
-		,no-break ~textarea.addr LDR #0a NEQ JMP? POP2
+		,no-break ~textarea.addr LDR #0a ~textarea.addr LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( incr ) ~j #0001 ADD2 =j
 		@no-break
 		( incr ) ~textarea.addr #0001 ADD2 =textarea.addr
@@ -273,7 +284,7 @@ RTS
 
 	@draw-textarea-loop
 
-		,no-linebreak ~j LDR #0a NEQ JMP? POP2
+		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( fill clear )
 			@fill-clear
 				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
