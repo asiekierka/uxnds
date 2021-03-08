@@ -63,24 +63,35 @@ BRK
 
 	( keys )
 
-	,no-keys ~dev/key #00 EQU JMP? POP2
+	,keys-end ~dev/key #00 EQU JMP? POP2
+
+		,no-backspace ~dev/key #08 NEQ JMP? POP2
+			( erase )
+			~position.x #0001 SUB2 =position.x ,select JSR
+			~document.eof #0001 SUB2 =document.eof
+			~selection.from =j ( start -> end )
+			@erase-loop
+				~j #0001 ADD2 LDR ~j STR
+				( incr ) ~j #0001 ADD2 =j
+				,erase-loop ~j ~document.eof LTH2 JMP? POP2
+			( release ) #00 =dev/key
+			,redraw JSR
+			,keys-end JMP
+		@no-backspace
 
 		( insert )
 		~document.eof #0001 ADD2 =document.eof
-
 		~document.eof =j ( end -> start )
-
 		@insert-loop
-		~j #0001 SUB2 LDR ~j STR
-		( decr ) ~j #0001 SUB2 =j
-		,insert-loop ~j ~selection.from GTH2 JMP? POP2
-
+			~j #0001 SUB2 LDR ~j STR
+			( decr ) ~j #0001 SUB2 =j
+			,insert-loop ~j ~selection.from GTH2 JMP? POP2
 		~dev/key ~selection.from STR
 		~position.x #0001 ADD2 =position.x ,select JSR
 		( release ) #00 =dev/key
 		,redraw JSR
 
-	@no-keys
+	@keys-end
 
 	( mouse )
 
