@@ -89,12 +89,12 @@ BRK
 		( scrollbar )
 		,no-click-scroll ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
 
-			,no-click-scroll-up ~dev/mouse.y #0008 DIV2 #0000 NEQ2 JMP? POP2
+			,no-click-scroll-up ~dev/mouse.y #0008 GTH2 JMP? POP2
 				,scroll-up JSR
 				,click-end JMP
 			@no-click-scroll-up 
 
-			,no-click-scroll-down ~dev/mouse.y #0008 DIV2 #0008 MUL2 ~dev/screen.height #0008 SUB2 NEQ2 JMP? POP2
+			,no-click-scroll-down ~dev/mouse.y ~dev/screen.height #0008 SUB2 LTH2 JMP? POP2
 				,scroll-down JSR
 				,click-end JMP
 			@no-click-scroll-down 
@@ -269,7 +269,7 @@ RTS
 	#0000 =j ( j is linebreaks )
 	@find-scroll-offset
 		,find-scroll-offset-end ~scroll.y ~j EQU2 JMP? POP2
-		,no-break ~textarea.addr LDR #0a ~textarea.addr LDR #0d NEQ #0101 EQU2 JMP? POP2
+		,no-break ~textarea.addr LDR #0a NEQ ~textarea.addr LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( incr ) ~j #0001 ADD2 =j
 		@no-break
 		( incr ) ~textarea.addr #0001 ADD2 =textarea.addr
@@ -435,8 +435,8 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath      [ test.txt 00 ]
-@filepath1     [ projects/software/left.usm 00 ]
+@filepath1      [ test.txt 00 ]
+@filepath     [ projects/software/left.usm 00 ]
 
 |4000 ;document Document
 
@@ -451,4 +451,4 @@ RTS
 |FF60 ;dev/file    File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ a1f3 a14d a16c ] ( palette )
+|FFF8 [ 0a4f 0a4f 0a4f ] ( palette )
