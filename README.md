@@ -96,6 +96,11 @@ RTS
 - Includes
 - Defines
 
+## Palettes
+
+- `[ 6a03 4a0d aa0c ]`, purple/cyan
+- `[ a1f3 a14d a16c ]`, grey-pink/teal
+
 ## Refs
 
 https://code.9front.org/hg/plan9front/file/a7f9946e238f/sys/src/games/nes/cpu.c

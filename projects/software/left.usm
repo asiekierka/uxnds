@@ -3,17 +3,19 @@
 )
 
 &Console    { pad 8 stdio 1 }
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+&Screen 	{ width 2 height 2 pad 4 x 2 y 2 color 1 }
+&Sprite 	{ pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
-&Keyboard { key 1 }
-&Mouse  { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
+&Keyboard 	{ key 1 }
+&Mouse  	{ x 2 y 2 state 1 chord 1 xt 1 yt 1 }
 &File       { pad 8 name 2 length 2 load 2 save 2 }
 
-&Range2d { from 2 to 2 }
-&Point2d { x 2 y 2 }
-&Label2d { x 2 y 2 color 1 addr 2 }
-&Textarea2d { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 sela 2 selb 2 }
+&Document   { eof 2 body 8000 }
+
+&Range2d 	{ from 2 to 2 }
+&Point2d 	{ x 2 y 2 }
+&Label2d 	{ x 2 y 2 color 1 addr 2 }
+&Textarea2d { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 }
 
 ;selection Range2d
 ;pt Point2d ;mouse Point2d ;position Point2d ;scroll Point2d
@@ -24,39 +26,50 @@
 |0100 @RESET
 	
 	( load file )
-	,filepath =dev/file.name #3000 =dev/file.length ,body =dev/file.load
+	,filepath ,load-file JSR
 
 	( place textarea )
 	#0018 =textarea.x1 ~dev/screen.height #0008 SUB2 =textarea.y2
 
+	,select JSR
 	,redraw JSR
 
 BRK
 
-|2000 @FRAME
+@FRAME
 		
 	( ctrl )
 
-	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP? POP2
-		
-		,no-ctrl-down ~dev/ctrl.buttons #10 EQU JMP? POP2
-			#aa NOP
+	,no-ctrl ~dev/ctrl #00 EQU JMP? POP2
+
+		,no-ctrl-down ~dev/ctrl #04 ROR #01 NEQ JMP? POP2
+			~position.y #0001 SUB2 =position.y
+			,select JSR ,redraw JSR ,no-ctrl JMP
 		@no-ctrl-down
-		,no-ctrl-up ~dev/ctrl.buttons #20 EQU JMP? POP2
-			#bb NOP
+		,no-ctrl-up ~dev/ctrl #04 ROR #02 NEQ JMP? POP2
+			~position.y #0001 ADD2 =position.y
+			,select JSR ,redraw JSR ,no-ctrl JMP
 		@no-ctrl-up
-		,no-ctrl-left ~dev/ctrl.buttons #40 EQU JMP? POP2
-			~textarea.sela #0001 ADD2 =textarea.sela
-			~textarea.selb #0001 ADD2 =textarea.selb
-			,redraw JSR
+		,no-ctrl-left ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
+			~position.x #0001 SUB2 =position.x
+			,select JSR ,redraw JSR ,no-ctrl JMP
 		@no-ctrl-left
-		,no-ctrl-right ~dev/ctrl.buttons #80 EQU JMP? POP2
-			~textarea.sela #0001 SUB2 =textarea.sela
-			~textarea.selb #0001 SUB2 =textarea.selb
-			,redraw JSR
+		,no-ctrl-right ~dev/ctrl #04 ROR #08 NEQ JMP? POP2
+			~position.x #0001 ADD2 =position.x
+			,select JSR ,redraw JSR ,no-ctrl JMP
 		@no-ctrl-right
 
 	@no-ctrl
+
+	( keys )
+
+	,no-keys ~dev/key #00 EQU JMP? POP2
+
+		~dev/key ~selection.from STR
+		( release ) #00 =dev/key
+		,redraw JSR
+
+	@no-keys
 
 	( mouse )
 
@@ -84,9 +97,9 @@ BRK
 
 		( select body )
 		~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
-		~dev/mouse.x ~textarea.x1 SUB2 #0008 DIV2  =position.x
+		~dev/mouse.x ~textarea.x1 SUB2 #0008 ADD2 #0008 DIV2  =position.x
 
-		,select-target JSR
+		,select JSR
 		,redraw JSR
 
 	@click-end
@@ -94,6 +107,18 @@ BRK
 	,draw-cursor JSR
 
 BRK 
+
+@load-file ( path )
+
+	=dev/file.name #8000 =dev/file.length ,document.body =dev/file.load
+
+	( get file length )
+	,document.body =document.eof
+	@load-file-loop
+		( incr ) ~document.eof #0001 ADD2 =document.eof
+	,load-file-loop ~document.eof LDR #00 NEQ JMP? POP2
+
+RTS
 
 @scroll-up
 	
@@ -110,14 +135,20 @@ RTS
 
 RTS
 
-@select-target
+@select
 	
-	,body =j #0000 =pt.x #0000 =pt.y
+	,document.body =j #0000 =pt.x #0000 =pt.y
 
-	@select-target-loop
+	@select-loop
 
 		,no-reached ~pt.y ~position.y NEQ2 JMP? POP2
 			,no-reached ~pt.x ~position.x NEQ2 JMP? POP2
+
+				,no-ctrl-yes ~dev/ctrl #0f AND #01 NEQ JMP? POP2
+					~j =selection.to
+					RTS
+				@no-ctrl-yes
+
 				~j =selection.from
 				~j #0001 ADD2 =selection.to
 				RTS
@@ -130,7 +161,7 @@ RTS
 
 		( incr ) ~pt.x #0001 ADD2 =pt.x
 		( incr ) ~j #0001 ADD2 =j
-	,select-target-loop ~j LDR #00 NEQ JMP? POP2
+	,select-loop ~j LDR #00 NEQ JMP? POP2
 
 RTS
 
@@ -221,19 +252,20 @@ RTS
 
 @draw-textarea ( x y color addr )
 	
-	,body =textarea.addr
+	,document.body =textarea.addr
  
 	( scroll to position )
-	#0000 =j
+	#0000 =j ( j is linebreaks )
 	@find-scroll-offset
-		,skip ~scroll.y ~j EQU2 JMP? POP2
+		,find-scroll-offset-end ~scroll.y ~j EQU2 JMP? POP2
 		,no-break ~textarea.addr LDR #0a NEQ JMP? POP2
 			( incr ) ~j #0001 ADD2 =j
 		@no-break
 		( incr ) ~textarea.addr #0001 ADD2 =textarea.addr
 	,find-scroll-offset ~textarea.addr LDR #00 NEQ JMP? POP2
-	@skip
+	@find-scroll-offset-end
 
+	~textarea.addr #0000 ADD2 =textarea.addr
 	#0000 =dev/sprite.y
 	~textarea.addr =j
 
@@ -248,7 +280,7 @@ RTS
 				,font =dev/sprite.addr
 				#01 =dev/sprite.color
 				,fill-clear ~dev/sprite.x ~dev/screen.width #0010 SUB2 LTH2 JMP? POP2
-			#0008 =dev/sprite.x
+			#0010 =dev/sprite.x
 			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 		@no-linebreak
 
@@ -256,12 +288,14 @@ RTS
 
 		( get character )
 		,font #00 ~j LDR #20 SUB #0008 MUL2 ADD2 =dev/sprite.addr
+
+		( draw ) #01 
+		~j ~selection.from #0001 SUB2 GTH2 
+		~j ~selection.to LTH2 #0101 EQU2
+		#05 MUL ADD =dev/sprite.color
+
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		( draw ) #01 
-		~j ~selection.from #0001 ADD2 GTH2 
-		~j ~selection.to #0002 ADD2 LTH2 #0101 EQU2
-		#05 MUL ADD =dev/sprite.color
 
 	,draw-textarea-loop ~j LDR #00 NEQ JMP? POP2
 
@@ -308,8 +342,12 @@ RTS
 		DUP2 LDR #00 NEQ ,draw-titlebar-loop ROT JMP? POP2
 	POP2
 
-	( sel from )
-	~selection.from ,draw-short JSR
+	( selection )
+	~selection.from ,document.body SUB2 ,draw-short JSR
+
+	( length )
+	~dev/screen.width #0040 SUB2 =dev/sprite.x
+	~document.eof ,document.body SUB2 ,draw-short JSR
 
 RTS
 
@@ -386,9 +424,10 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath      [ projects/software/left.usm 00 ]
+@filepath      [ test.txt 00 ]
+@filepath1     [ projects/software/left.usm 00 ]
 
-|4000 @body [ ]
+|4000 ;document Document
 
 |d000 @ERROR BRK 
 
@@ -401,4 +440,4 @@ RTS
 |FF60 ;dev/file    File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 6a03 4a0d aa0c ] ( palette )
+|FFF8 [ a1f3 a14d a16c ] ( palette )
