@@ -10,32 +10,24 @@
 &Mouse  { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
 &File       { pad 8 name 2 length 2 load 2 save 2 }
 
+&Range2d { from 2 to 2 }
 &Point2d { x 2 y 2 }
 &Label2d { x 2 y 2 color 1 addr 2 }
-&Textarea2d { x1 2 y1 2 x2 2 y2 2 color 1 addr 2 cursor 1 sela 2 selb 2 }
+&Textarea2d { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 sela 2 selb 2 }
 
-;scroll-position Point2d
-;scroll-target Point2d
-
-;selection Point2d
-;target Point2d ;pt Point2d ;pt2 Point2d ;mouse Point2d
+;selection Range2d
+;pt Point2d ;mouse Point2d ;position Point2d ;scroll Point2d
 ;textarea Textarea2d
 ;label Label2d
-;i 1 ;j 2 ;addr 2 ;color 1
+;j 2 ;addr 2
 
 |0100 @RESET
+	
+	( load file )
+	,filepath =dev/file.name #3000 =dev/file.length ,body =dev/file.load
 
-	,filepath =dev/file.name
-	#0900 =dev/file.length
-	,body =dev/file.load
-
-	#0005 =selection.y
-
-	#02 =textarea.color
-	#0064 =textarea.sela 
-	#0065 =textarea.selb
-	#0018 =textarea.x1
-	~dev/screen.height #0008 SUB2 =textarea.y2
+	( place textarea )
+	#0018 =textarea.x1 ~dev/screen.height #0008 SUB2 =textarea.y2
 
 	,redraw JSR
 
@@ -71,7 +63,7 @@ BRK
 	,click-end ~dev/mouse.state #00 EQU JMP? POP2
 
 		( scrollbar )
-		,no-click-scroll ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP
+		,no-click-scroll ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
 
 			,no-click-scroll-up ~dev/mouse.y #0008 DIV2 #0000 NEQ2 JMP? POP2
 				,scroll-up JSR
@@ -84,15 +76,16 @@ BRK
 			@no-click-scroll-down 
 
 			( on scrollbar )
-			#cc NOP
+			~dev/mouse.y #0008 SUB2 =scroll.y
+			,redraw JSR
+			,click-end JMP
 
 		@no-click-scroll
 
 		( select body )
-		~dev/mouse.x #0008 DIV2 #0003 SUB2 =target.x
-		~dev/mouse.y #0008 DIV2 =target.y
+		~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
+		~dev/mouse.x ~textarea.x1 SUB2 #0008 DIV2  =position.x
 
-		~dev/mouse.y #0008 DIV2 ~scroll-position.y ADD2 =selection.y
 		,select-target JSR
 		,redraw JSR
 
@@ -104,40 +97,40 @@ BRK
 
 @scroll-up
 	
-	~scroll-position.y #0000 EQU2 RTS?
-
-	( decr ) ~scroll-position.y #0001 SUB2 =scroll-position.y
+	( clamp ) ~scroll.y #0000 EQU2 RTS?
+	( decr ) ~scroll.y #0001 SUB2 =scroll.y
 	,redraw JSR
 
 RTS
 
 @scroll-down
 		
-	( incr ) ~scroll-position.y #0001 ADD2 =scroll-position.y
+	( incr ) ~scroll.y #0001 ADD2 =scroll.y
 	,redraw JSR
 
 RTS
 
 @select-target
 	
-	#0000 =j #0000 =pt.x #0000 =pt.y
+	,body =j #0000 =pt.x #0000 =pt.y
 
 	@select-target-loop
 
-		,no-reached ~pt.y ~target.y NEQ2 JMP? POP2
-			,no-reached ~pt.x ~target.x NEQ2 JMP? POP2
-				~j #0001 ADD2 =textarea.sela ~j #0002 ADD2 =textarea.selb
+		,no-reached ~pt.y ~position.y NEQ2 JMP? POP2
+			,no-reached ~pt.x ~position.x NEQ2 JMP? POP2
+				~j =selection.from
+				~j #0001 ADD2 =selection.to
 				RTS
 		@no-reached
 
-		,no-space ,body ~j ADD2 LDR #0a NEQ JMP? POP2
+		,no-space ~j LDR #0a NEQ JMP? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
 			#0000 =pt.x
 		@no-space
 
 		( incr ) ~pt.x #0001 ADD2 =pt.x
 		( incr ) ~j #0001 ADD2 =j
-	,select-target-loop ,body ~j ADD2 LDR #00 NEQ JMP? POP2
+	,select-target-loop ~j LDR #00 NEQ JMP? POP2
 
 RTS
 
@@ -148,13 +141,17 @@ RTS
 	,draw-titlebar JSR
 	,draw-lines JSR
 
-	~dev/screen.width #0028 SUB2 =dev/sprite.x
-	~dev/screen.height #0008 SUB2 =dev/sprite.y
-	~textarea.sela ,draw-short JSR
+	( save/load icons )
 
-	~dev/screen.width #0050 SUB2 =dev/sprite.x
 	~dev/screen.height #0008 SUB2 =dev/sprite.y
-	~scroll-position.y ,draw-short JSR
+
+	~dev/screen.width #0018 SUB2 =dev/sprite.x
+	,load_icn =dev/sprite.addr
+	#02 =dev/sprite.color
+
+	~dev/screen.width #0010 SUB2 =dev/sprite.x
+	,save_icn =dev/sprite.addr
+	#02 =dev/sprite.color
 
 RTS
 
@@ -168,12 +165,12 @@ RTS
 
 		#0000 =dev/sprite.x
 		
-		~scroll-position.y ~j ADD2 =addr
+		~scroll.y ~j ADD2 =addr
 		,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #08 ~addr ~selection.y EQU2 ADD =dev/sprite.color
+		( draw ) #02 ~addr ~position.y EQU2 ADD =dev/sprite.color
 		~dev/sprite.x #0008 ADD2 =dev/sprite.x
 		,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #08 ~addr ~selection.y EQU2 ADD =dev/sprite.color
+		( draw ) #02 ~addr ~position.y EQU2 ADD =dev/sprite.color
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 		,draw-lines-loop ~j ~dev/screen.height #0008 DIV2 NEQ2 JMP? POP2
@@ -229,22 +226,22 @@ RTS
 	( scroll to position )
 	#0000 =j
 	@find-scroll-offset
+		,skip ~scroll.y ~j EQU2 JMP? POP2
 		,no-break ~textarea.addr LDR #0a NEQ JMP? POP2
 			( incr ) ~j #0001 ADD2 =j
 		@no-break
-		,skip ~scroll-position.y ~j EQU2 JMP? POP2
 		( incr ) ~textarea.addr #0001 ADD2 =textarea.addr
 	,find-scroll-offset ~textarea.addr LDR #00 NEQ JMP? POP2
 	@skip
 
 	#0000 =dev/sprite.y
-	#0000 =j
+	~textarea.addr =j
 
 	#0018 =dev/sprite.x
 
 	@draw-textarea-loop
 
-		,no-linebreak ~textarea.addr ~j ADD2 LDR #0a NEQ JMP? POP2
+		,no-linebreak ~j LDR #0a NEQ JMP? POP2
 			( fill clear )
 			@fill-clear
 				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
@@ -258,20 +255,19 @@ RTS
 		,draw-textarea-end ~dev/sprite.y ~dev/screen.height #0010 SUB2 GTH2 JMP? POP2
 
 		( get character )
-		~dev/sprite.y #0008 DIV2 ~scroll-position.y ADD2 =target.y ( current line )
-		,font #00 ~textarea.addr ~j ADD2 LDR #20 SUB #0008 MUL2 ADD2 =dev/sprite.addr
+		,font #00 ~j LDR #20 SUB #0008 MUL2 ADD2 =dev/sprite.addr
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		( draw ) #01 ~target.y ~selection.y EQU2 #0d MUL ADD =dev/sprite.color
+		( draw ) #01 
+		~j ~selection.from #0001 ADD2 GTH2 
+		~j ~selection.to #0002 ADD2 LTH2 #0101 EQU2
+		#05 MUL ADD =dev/sprite.color
 
-	,draw-textarea-loop ~textarea.addr ~j ADD2 LDR #00 NEQ JMP? POP2
+	,draw-textarea-loop ~j LDR #00 NEQ JMP? POP2
 
 	@draw-textarea-end
 
-
-
 RTS
-
 
 @draw-scrollbar
 		
@@ -289,7 +285,7 @@ RTS
 	( draw ) #08 =dev/sprite.color
 
 	( at )
-	~scroll-position.y #0008 ADD2 =dev/sprite.y
+	~scroll.y #0008 ADD2 =dev/sprite.y
 	,scrollbar_fg =dev/sprite.addr
 	( draw ) #08 =dev/sprite.color
 
@@ -301,7 +297,7 @@ RTS
 
 @draw-titlebar
 	
-	#0018 ~dev/screen.height #0008 SUB2 #01 ,filepath 
+	#0018 ~dev/screen.height #0008 SUB2 #09 ,filepath 
 
 	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
 	~label.addr
@@ -311,6 +307,9 @@ RTS
 		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 		DUP2 LDR #00 NEQ ,draw-titlebar-loop ROT JMP? POP2
 	POP2
+
+	( sel from )
+	~selection.from ,draw-short JSR
 
 RTS
 
@@ -385,6 +384,8 @@ RTS
 @scrollbar_fg  [ ffff ffff ffff ffff ]
 @arrowup_icn   [ 0010 387c fe10 1010 ]
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
+@load_icn      [ feaa d6aa d4aa f400 ]
+@save_icn      [ fe82 8282 848a f400 ]
 @filepath      [ projects/software/left.usm 00 ]
 
 |4000 @body [ ]
@@ -400,4 +401,4 @@ RTS
 |FF60 ;dev/file    File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 6a0c 4a0b aa03 ] ( palette )
+|FFF8 [ 6a03 4a0d aa0c ] ( palette )
