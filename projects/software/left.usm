@@ -17,7 +17,6 @@
 ;scroll-position Point2d
 ;scroll-target Point2d
 
-
 ;selection Point2d
 ;target Point2d ;pt Point2d ;pt2 Point2d ;mouse Point2d
 ;textarea Textarea2d
@@ -27,7 +26,7 @@
 |0100 @RESET
 
 	,filepath =dev/file.name
-	#0300 =dev/file.length
+	#0900 =dev/file.length
 	,body =dev/file.load
 
 	#0005 =selection.y
@@ -239,27 +238,37 @@ RTS
 	@skip
 
 	#0000 =dev/sprite.y
+	#0000 =j
 
-	( draw )
-	@draw-textarea-ver
-		#0018 =dev/sprite.x
-		@draw-textarea-hor
+	#0018 =dev/sprite.x
 
-			( get character )
-			~dev/sprite.y #0008 DIV2 ~scroll-position.y ADD2 =target.y
-			~dev/sprite.x #0018 SUB2 #0008 DIV2 =target.x
+	@draw-textarea-loop
 
-			,font #00 
+		,no-linebreak ~textarea.addr ~j ADD2 LDR #0a NEQ JMP? POP2
+			( fill clear )
+			@fill-clear
+				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+				,font =dev/sprite.addr
+				#01 =dev/sprite.color
+				,fill-clear ~dev/sprite.x ~dev/screen.width #0010 SUB2 LTH2 JMP? POP2
+			#0008 =dev/sprite.x
+			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		@no-linebreak
 
-			#45
+		,draw-textarea-end ~dev/sprite.y ~dev/screen.height #0010 SUB2 GTH2 JMP? POP2
 
-			#0008 MUL2 ADD2 =dev/sprite.addr
+		( get character )
+		~dev/sprite.y #0008 DIV2 ~scroll-position.y ADD2 =target.y ( current line )
+		,font #00 ~textarea.addr ~j ADD2 LDR #20 SUB #0008 MUL2 ADD2 =dev/sprite.addr
+		( incr ) ~j #0001 ADD2 =j
+		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( draw ) #01 ~target.y ~selection.y EQU2 #0d MUL ADD =dev/sprite.color
 
-			#01 ~target.y ~selection.y EQU2 #0d MUL ADD =dev/sprite.color
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-			,draw-textarea-hor ~dev/sprite.x ~dev/screen.width #0010 SUB2 LTH2 JMP? POP2
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-		,draw-textarea-ver ~dev/sprite.y ~dev/screen.height #0010 SUB2 LTH2 JMP? POP2
+	,draw-textarea-loop ~textarea.addr ~j ADD2 LDR #00 NEQ JMP? POP2
+
+	@draw-textarea-end
+
+
 
 RTS
 
