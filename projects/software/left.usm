@@ -59,12 +59,12 @@ BRK
 	,ctrl-end ~dev/ctrl #00 EQU JMP? POP2
 
 		,no-ctrl-down ~dev/ctrl #04 ROR #01 NEQ JMP? POP2
-			~position.y #0001 SUB2 =position.y
-			,select JSR	,ctrl-end JMP
+			,move-up JSR	
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-down
 		,no-ctrl-up ~dev/ctrl #04 ROR #02 NEQ JMP? POP2
-			~position.y #0001 ADD2 =position.y
-			,select JSR	,ctrl-end JMP
+			,get-position JSR ~position.y #0001 SUB2 =position.y ,select JSR
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-up
 		,no-ctrl-left ~dev/ctrl #40 NEQ JMP? POP2
 			~selection.from #0001 SUB2 DUP2 =selection.from =selection.to
@@ -85,6 +85,17 @@ BRK
 				,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 			@no-aright
 		@no-alt
+		( ctrl )
+		,no-ctrl ~dev/ctrl #0f AND #01 NEQ JMP? POP2
+			,no-cleft ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
+				,find-linestart JSR #0001 ADD2 DUP2 =selection.from =selection.to
+				,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
+			@no-cleft
+			,no-cright ~dev/ctrl #04 ROR #08 NEQ JMP? POP2
+				,find-lineend JSR #0001 SUB2 DUP2 =selection.from =selection.to
+				,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
+			@no-cright
+		@no-ctrl
 
 	@ctrl-end
 
@@ -193,33 +204,79 @@ RTS
 
 RTS
 
-@select
+@find-linestart
+
+	~selection.from =j
+	@goto-linestart-loop
+		~j
+		~j LDR #0a EQU RTS?
+		~j LDR #0d EQU RTS?
+		POP2
+		( decr ) ~j #0001 SUB2 =j
+	,goto-linestart-loop ~j LDR #00 NEQ JMP? POP2
+
+RTS
+
+@find-lineend
+
+	~selection.from =j
+	@goto-lineend-loop
+		( incr ) ~j #0001 ADD2 =j
+		~j
+		~j LDR #0a EQU RTS?
+		~j LDR #0d EQU RTS?
+		POP2
+	,goto-lineend-loop ~j LDR #00 NEQ JMP? POP2
+
+RTS
+
+@move-up
 	
-	,document.body =j #0000 =pt.x #0000 =pt.y
+	,find-linestart JSR =selection.from
+	,find-lineend JSR =selection.to
+
+RTS
+
+@get-position ( selection -> position )
+
+	,document.body =j #0000 =position.x #0000 =position.y
+
+	@get-position-loop
+
+		,no-position-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
+			( incr ) ~position.y #0001 ADD2 =position.y
+			#0000 =position.x
+		@no-position-space
+
+		,no-position-reached ~j ~selection.from NEQ2 JMP? POP2
+			RTS
+		@no-position-reached
+
+		( incr ) ~position.x #0001 ADD2 =position.x
+		( incr ) ~j #0001 ADD2 =j
+	,get-position-loop ~j LDR #00 NEQ JMP? POP2
+
+RTS
+
+@select ( position -> selection )
+	
+	,document.body =selection.from #0000 =pt.x #0000 =pt.y
 
 	@select-loop
 
-		,no-reached ~pt.y ~position.y NEQ2 JMP? POP2
-			,no-reached ~pt.x ~position.x NEQ2 JMP? POP2
-
-				,no-ctrl-yes ~dev/ctrl #0f AND #01 NEQ JMP? POP2
-					~j =selection.to
-					RTS
-				@no-ctrl-yes
-
-				~j =selection.from
-				~j #0001 ADD2 =selection.to
-				RTS
-		@no-reached
-
-		,no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
+		,no-space ~selection.from LDR #0a NEQ ~selection.from LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
 			#0000 =pt.x
 		@no-space
 
+		,no-reached ~pt.y ~position.y #0001 SUB2 GTH2 ~pt.x ~position.x #0001 SUB2 GTH2 #0101 NEQ2 JMP? POP2
+			~selection.from #0001 ADD2 =selection.to
+			RTS
+		@no-reached
+
 		( incr ) ~pt.x #0001 ADD2 =pt.x
-		( incr ) ~j #0001 ADD2 =j
-	,select-loop ~j LDR #00 NEQ JMP? POP2
+		( incr ) ~selection.from #0001 ADD2 =selection.from
+	,select-loop ~selection.from LDR #00 NEQ JMP? POP2
 
 RTS
 
@@ -333,11 +390,15 @@ RTS
 	@draw-textarea-loop
 
 		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
+			( draw linebreak )
+			,linebreak_icn =dev/sprite.addr
+			#02 =dev/sprite.color
+
 			( fill clear )
 			@fill-clear
+				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 				,font =dev/sprite.addr
 				#01 =dev/sprite.color
-				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 				,fill-clear ~dev/sprite.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
 			#0010 =dev/sprite.x
 			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
@@ -475,6 +536,7 @@ RTS
 
 ]
 
+@linebreak_icn [ 003e 7474 3414 1400 ]
 @blank_icn     [ 0000 0000 0000 0000 ]
 @cursor_icn    [ 80c0 e0f0 f8e0 1000 ]
 @scrollbar_bg  [ aa55 aa55 aa55 aa55 ]
