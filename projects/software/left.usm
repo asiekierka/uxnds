@@ -335,10 +335,10 @@ RTS
 		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
 			( fill clear )
 			@fill-clear
-				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 				,font =dev/sprite.addr
 				#01 =dev/sprite.color
-				,fill-clear ~dev/sprite.x ~dev/screen.width #0010 SUB2 LTH2 JMP? POP2
+				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+				,fill-clear ~dev/sprite.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
 			#0010 =dev/sprite.x
 			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
 		@no-linebreak
@@ -483,8 +483,8 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath1      [ test.txt 00 ]
-@filepath     [ projects/software/left.usm 00 ]
+@filepath1     [ test.txt 00 ]
+@filepath      [ projects/software/left.usm 00 ]
 
 |4000 ;document Document
 
@@ -499,4 +499,4 @@ RTS
 |FF60 ;dev/file    File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0a4f 0a4f 0a4f ] ( palette )
+|FFF8 [ 40ff c09f a09f ] ( palette )
