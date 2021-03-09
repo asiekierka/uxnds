@@ -1,5 +1,20 @@
 ( 
 	app/left : text editor
+
+	TODO
+		- Follow cursor when moving out of the screen
+		- Moving should using selection instead of position
+		- Slowdown ctrl keys
+		- Save/Load
+		- Select blank lines
+		- Real scrolling distance
+		- page up/down move with ctrl+arrow
+		- Select line by clicking line number
+		- Syntax highlight?
+		- Double-click select word
+		- Right-click find next instance of selection
+		- Mouse block selection
+		- Copy/Cut/Paste
 )
 
 &Console    { pad 8 stdio 1 }
@@ -51,12 +66,14 @@ BRK
 			,select JSR ,redraw JSR ,no-ctrl JMP
 		@no-ctrl-up
 		,no-ctrl-left ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
-			~position.x #0001 SUB2 =position.x
-			,select JSR ,redraw JSR ,no-ctrl JMP
+			~selection.from #0001 SUB2 =selection.from
+			~selection.from #0001 ADD2 =selection.to
+			,redraw JSR ,no-ctrl JMP
 		@no-ctrl-left
 		,no-ctrl-right ~dev/ctrl #04 ROR #08 NEQ JMP? POP2
-			~position.x #0001 ADD2 =position.x
-			,select JSR ,redraw JSR ,no-ctrl JMP
+			~selection.from #0001 ADD2 =selection.from
+			~selection.from #0001 ADD2 =selection.to
+			,redraw JSR ,no-ctrl JMP
 		@no-ctrl-right
 
 	@no-ctrl
@@ -87,7 +104,8 @@ BRK
 			( decr ) ~j #0001 SUB2 =j
 			,insert-loop ~j ~selection.from GTH2 JMP? POP2
 		~dev/key ~selection.from STR
-		~position.x #0001 ADD2 =position.x ,select JSR
+		~selection.from #0001 ADD2 =selection.from
+		~selection.from #0001 ADD2 =selection.to
 		( release ) #00 =dev/key
 		,redraw JSR
 
