@@ -9,12 +9,13 @@
 		- Select blank lines
 		- Real scrolling distance
 		- page up/down move with ctrl+arrow
-		- Select line by clicking line number
+		- Select entire line by clicking line number
 		- Syntax highlight?
 		- Double-click select word
 		- Right-click find next instance of selection
 		- Mouse block selection
 		- Copy/Cut/Paste
+		- x scroll
 )
 
 &Console    { pad 8 stdio 1 }
@@ -55,28 +56,37 @@ BRK
 		
 	( ctrl )
 
-	,no-ctrl ~dev/ctrl #00 EQU JMP? POP2
+	,ctrl-end ~dev/ctrl #00 EQU JMP? POP2
 
 		,no-ctrl-down ~dev/ctrl #04 ROR #01 NEQ JMP? POP2
 			~position.y #0001 SUB2 =position.y
-			,select JSR ,redraw JSR ,no-ctrl JMP
+			,select JSR	,ctrl-end JMP
 		@no-ctrl-down
 		,no-ctrl-up ~dev/ctrl #04 ROR #02 NEQ JMP? POP2
 			~position.y #0001 ADD2 =position.y
-			,select JSR ,redraw JSR ,no-ctrl JMP
+			,select JSR	,ctrl-end JMP
 		@no-ctrl-up
-		,no-ctrl-left ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
-			~selection.from #0001 SUB2 =selection.from
-			~selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,no-ctrl JMP
+		,no-ctrl-left ~dev/ctrl #40 NEQ JMP? POP2
+			~selection.from #0001 SUB2 DUP2 =selection.from =selection.to
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-left
-		,no-ctrl-right ~dev/ctrl #04 ROR #08 NEQ JMP? POP2
-			~selection.from #0001 ADD2 =selection.from
-			~selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,no-ctrl JMP
+		,no-ctrl-right ~dev/ctrl #80 NEQ JMP? POP2
+			~selection.from #0001 ADD2 DUP2 =selection.from =selection.to
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-right
+		( alt )
+		,no-alt ~dev/ctrl #0f AND #02 NEQ JMP? POP2
+			,no-aleft ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
+				~selection.to #0001 SUB2 =selection.to
+				,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
+			@no-aleft
+			,no-aright ~dev/ctrl #04 ROR #08 NEQ JMP? POP2
+				~selection.to #0001 ADD2 =selection.to
+				,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
+			@no-aright
+		@no-alt
 
-	@no-ctrl
+	@ctrl-end
 
 	( keys )
 
@@ -84,7 +94,8 @@ BRK
 
 		,no-backspace ~dev/key #08 NEQ JMP? POP2
 			( erase )
-			~position.x #0001 SUB2 =position.x ,select JSR
+			~selection.from #0001 SUB2 =selection.from
+			~selection.from #0001 ADD2 =selection.to
 			~document.eof #0001 SUB2 =document.eof
 			~selection.from =j ( start -> end )
 			@erase-loop
@@ -160,6 +171,13 @@ BRK
 
 RTS
 
+@clamp-selection
+
+	~selection.from ~selection.to LTH2 RTS?
+	~selection.from #0001 ADD2 =selection.to
+
+RTS
+
 @scroll-up
 	
 	( clamp ) ~scroll.y #0000 EQU2 RTS?
@@ -207,10 +225,11 @@ RTS
 
 @redraw
 
+	,draw-lines JSR
+
 	,draw-textarea JSR
 	,draw-scrollbar JSR
 	,draw-titlebar JSR
-	,draw-lines JSR
 
 	( save/load icons )
 
