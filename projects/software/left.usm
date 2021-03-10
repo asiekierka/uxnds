@@ -4,9 +4,8 @@
 	TODO
 		- Follow cursor when moving out of the screen
 		- Save/Load
-		- Select blank lines
 		- Real scrolling distance
-		- page up/down move with ctrl+arrow
+		- Page up/down move with ctrl+arrow
 		- Double-click select word
 		- Right-click find next instance of selection
 		- Mouse down selection
@@ -14,6 +13,7 @@
 		- x scroll
 		- Don't scroll past oef
 		- Don't draw past eof
+		- Draw tab characters
 )
 
 &Console    { pad 8 stdio 1 }
@@ -162,21 +162,21 @@ BRK
 
 		( line number )
 		,no-click-line ~dev/mouse.x #0010 GTH2 JMP? POP2
-			~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0001 =position.x ,select JSR
-			,clamp-selection JSR ,redraw JSR ,click-end JMP
+			~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
+			,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
+			,redraw JSR ,click-end JMP
 		@no-click-line
 
 		( select body )
 		~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
 		~dev/mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-		,select JSR
+		,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
 		,redraw JSR
 
 	@click-end
 
-	( decr ctrl lock )
-	,skip-unlock ~ctrl_lock #00 EQU JMP? POP2 ~ctrl_lock #01 SUB =ctrl_lock @skip-unlock
+	( unlock ) ,skip-unlock ~ctrl_lock #00 EQU JMP? POP2 ~ctrl_lock #01 SUB =ctrl_lock @skip-unlock
 
 	,draw-cursor JSR
 
@@ -198,14 +198,6 @@ RTS
 
 	~selection.from ~selection.to LTH2 RTS?
 	~selection.from #0001 ADD2 =selection.to
-
-RTS
-
-@scroll-up
-	
-	( clamp ) ~scroll.y #0000 EQU2 RTS?
-	( decr ) ~scroll.y #0001 SUB2 =scroll.y
-	,redraw JSR
 
 RTS
 
@@ -244,7 +236,8 @@ RTS
 		,find-wordstart-end ~j LDR #0a EQU JMP? POP2
 		,find-wordstart-end ~j LDR #0d EQU JMP? POP2
 		,find-wordstart-loop ~j ,document.body GTH2 JMP? POP2
-	@find-wordstart-end ~j #0001 SUB2
+	@find-wordstart-end 
+	( return ) ~j #0001 SUB2
 
 RTS
 
@@ -257,28 +250,39 @@ RTS
 		,find-wordend-end ~j LDR #0a EQU JMP? POP2
 		,find-wordend-end ~j LDR #0d EQU JMP? POP2
 		,find-wordend-loop ~j ,document.body GTH2 JMP? POP2
-	@find-wordend-end ~j #0001 ADD2
+	@find-wordend-end 
+	( return ) ~j #0001 ADD2
 
 RTS
 
-@get-position ( selection -> position )
+@find-line ( position -> addr )
 
-	,document.body =j #0000 =position.x #0000 =position.y
-
-	@get-position-loop
-
-		,no-position-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
-			( incr ) ~position.y #0001 ADD2 =position.y
-			#0000 =position.x
-		@no-position-space
-
-		,no-position-reached ~j ~selection.from NEQ2 JMP? POP2
-			RTS
-		@no-position-reached
-
-		( incr ) ~position.x #0001 ADD2 =position.x
+	,document.body =j #0000 =pt.y
+	@find-line-loop
+		,find-line-end ~pt.y ~position.y #0001 SUB2 GTH2 JMP? POP2
+		,find-line-no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
+			( incr ) ~pt.y #0001 ADD2 =pt.y
+		@find-line-no-space
 		( incr ) ~j #0001 ADD2 =j
-	,get-position-loop ~j LDR #00 NEQ JMP? POP2
+	,find-line-loop ~j LDR #00 NEQ JMP? POP2
+	@find-line-end
+	( return ) ~j
+
+RTS
+
+@find-selection ( position -> addr )
+
+	,find-line JSR ( find line )
+
+	#0000 =pt.x
+
+	@find-selection-loop
+		,find-selection-end ~j ~pt.x ADD2 LDR #0a EQU JMP? POP2
+		,find-selection-end ~j ~pt.x ADD2 LDR #0d EQU JMP? POP2
+		( incr ) ~pt.x #0001 ADD2 =pt.x
+		,find-selection-loop ~pt.x ~position.x #0001 SUB2 LTH2 JMP? POP2
+	@find-selection-end
+	( return ) ~pt.x ADD2
 
 RTS
 
@@ -304,10 +308,11 @@ RTS
 
 RTS
 
+( drawing functions )
+
 @redraw
 
 	,draw-lines JSR
-
 	,draw-textarea JSR
 	,draw-scrollbar JSR
 	,draw-titlebar JSR
@@ -329,22 +334,18 @@ RTS
 @draw-lines
 	
 	#0000 =j
-	#0000 =dev/sprite.x
-	#0000 =dev/sprite.y
-
+	#0000 =dev/sprite.x #0000 =dev/sprite.y
 	@draw-lines-loop
-
-		#0000 =dev/sprite.x
-		
 		~scroll.y ~j ADD2 =addr
+		#0000 =dev/sprite.x
 		,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 ~addr ~position.y EQU2 ADD =dev/sprite.color
-		~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =dev/sprite.color
+		#0008 =dev/sprite.x
 		,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 ~addr ~position.y EQU2 ADD =dev/sprite.color
+		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =dev/sprite.color
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-		,draw-lines-loop ~j ~dev/screen.height #0008 DIV2 NEQ2 JMP? POP2
+		,draw-lines-loop ~j ~dev/screen.height #0008 SUB2 #0008 DIV2 NEQ2 JMP? POP2
 
 RTS
 
@@ -413,21 +414,6 @@ RTS
 
 	@draw-textarea-loop
 
-		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
-			( draw linebreak )
-			,linebreak_icn =dev/sprite.addr
-			#02 =dev/sprite.color
-
-			( fill clear )
-			@fill-clear
-				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-				,font =dev/sprite.addr
-				#01 =dev/sprite.color
-				,fill-clear ~dev/sprite.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
-			#0010 =dev/sprite.x
-			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-		@no-linebreak
-
 		,draw-textarea-end ~dev/sprite.y ~dev/screen.height #0010 SUB2 GTH2 JMP? POP2
 
 		( get character )
@@ -437,6 +423,23 @@ RTS
 		~j ~selection.from #0001 SUB2 GTH2 
 		~j ~selection.to LTH2 #0101 EQU2
 		#05 MUL ADD =dev/sprite.color
+
+		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP? POP2
+			( draw linebreak )
+			,linebreak_icn =dev/sprite.addr
+			( draw ) #03
+			~j ~selection.from #0001 SUB2 GTH2 
+			~j ~selection.to LTH2 #0101 EQU2
+			#05 MUL ADD =dev/sprite.color
+			( fill clear )
+			@fill-clear
+				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+				,font =dev/sprite.addr
+				#01 =dev/sprite.color
+				,fill-clear ~dev/sprite.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
+			#0010 =dev/sprite.x
+			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		@no-linebreak
 
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~dev/sprite.x #0007 ADD2 =dev/sprite.x
@@ -488,10 +491,6 @@ RTS
 
 	( selection )
 	~selection.from ,document.body SUB2 ,draw-short JSR
-
-	( length )
-	~dev/screen.width #0040 SUB2 =dev/sprite.x
-	~document.eof ,document.body SUB2 ,draw-short JSR
 
 RTS
 
