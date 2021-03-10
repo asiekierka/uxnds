@@ -8,12 +8,12 @@
 		- Page up/down move with ctrl+arrow
 		- Double-click select word
 		- Right-click find next instance of selection
-		- Mouse down selection
 		- Copy/Cut/Paste
 		- x scroll
 		- Don't scroll past oef
 		- Don't draw past eof
 		- Draw tab characters
+		- Blink cursor
 )
 
 &Console    { pad 8 stdio 1 }
@@ -30,8 +30,11 @@
 &Point2d 	{ x 2 y 2 }
 &Label2d 	{ x 2 y 2 color 1 addr 2 }
 &Textarea2d { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 }
+&Touch2d    { x1 2 y1 2 x2 2 y2 2 state 1 }
 
-;ctrl_lock 1
+;touch Touch2d
+
+;lock 1
 ;selection Range2d
 ;pt Point2d ;mouse Point2d ;position Point2d ;scroll Point2d
 ;textarea Textarea2d
@@ -56,25 +59,30 @@ BRK
 
 	( ctrl )
 
-	,ctrl-end ~dev/ctrl #00 EQU ~ctrl_lock #00 NEQ #0000 NEQ2 JMP? POP2
+	,ctrl-end ~dev/ctrl #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP? POP2
 
-		( lock ) #04 =ctrl_lock
+		( lock ) #04 =lock
 
 		,no-ctrl-up ~dev/ctrl #10 NEQ JMP? POP2
-			,find-wordstart JSR DUP2 =selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,ctrl-end JMP
+			( clamp ) ,no-ctrl-up ~position.y #0000 EQU2 JMP? POP2
+			,find-lineoffset JSR =position.x 
+			~position.y #0001 SUB2 =position.y 
+			,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-up
 		,no-ctrl-down ~dev/ctrl #20 NEQ JMP? POP2
-			,find-wordend JSR DUP2 =selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,ctrl-end JMP
+			,find-lineoffset JSR =position.x ~position.y #0001 ADD2 =position.y 
+			,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-down
 		,no-ctrl-left ~dev/ctrl #40 NEQ JMP? POP2
+			( clamp ) ,no-ctrl-left ~selection.from ,document.body EQU2 JMP? POP2
 			~selection.from #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,ctrl-end JMP
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-left
 		,no-ctrl-right ~dev/ctrl #80 NEQ JMP? POP2
 			~selection.from #0001 ADD2 DUP2 =selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,ctrl-end JMP
+			,clamp-selection JSR ,redraw JSR ,ctrl-end JMP
 		@no-ctrl-right
 		( alt )
 		,no-alt ~dev/ctrl #0f AND #02 NEQ JMP? POP2
@@ -143,44 +151,66 @@ BRK
 
 	( mouse )
 
-	,click-end ~dev/mouse.state #00 EQU JMP? POP2
+	,touch-end ~dev/mouse.state #00 EQU JMP? POP2
 
-		( scrollbar )
-		,no-click-scroll ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
-			,no-click-scroll-up ~dev/mouse.y #0008 GTH2 JMP? POP2
-				( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
-				,redraw JSR ,click-end JMP
-			@no-click-scroll-up 
-			,no-click-scroll-down ~dev/mouse.y ~dev/screen.height #0008 SUB2 LTH2 JMP? POP2
-				( incr ) ~scroll.y #0001 ADD2 =scroll.y
-				,redraw JSR ,click-end JMP
-			@no-click-scroll-down 
-			( on scrollbar )
-			~dev/mouse.y #0008 SUB2 =scroll.y
-			,redraw JSR ,click-end JMP
-		@no-click-scroll
+		,touch-linebar ~dev/mouse.x #0010 LTH2 JMP? POP2
+		,touch-body ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP? POP2
+		,touch-scrollbar JMP
 
-		( line number )
-		,no-click-line ~dev/mouse.x #0010 GTH2 JMP? POP2
-			~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
-			,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
-			,redraw JSR ,click-end JMP
-		@no-click-line
+	@touch-end
 
-		( select body )
-		~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
-		~dev/mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
+	~dev/mouse.state =touch.state
 
-		,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
-		,redraw JSR
-
-	@click-end
-
-	( unlock ) ,skip-unlock ~ctrl_lock #00 EQU JMP? POP2 ~ctrl_lock #01 SUB =ctrl_lock @skip-unlock
+	( unlock ) ,skip-unlock ~lock #00 EQU JMP? POP2 ~lock #01 SUB =lock @skip-unlock
 
 	,draw-cursor JSR
 
 BRK 
+
+@touch-scrollbar
+
+	,no-click-scroll-up ~dev/mouse.y #0008 GTH2 JMP? POP2
+		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
+		,redraw JSR ,touch-end JMP
+	@no-click-scroll-up 
+	,no-click-scroll-down ~dev/mouse.y ~dev/screen.height #0008 SUB2 LTH2 JMP? POP2
+		( incr ) ~scroll.y #0001 ADD2 =scroll.y
+		,redraw JSR ,touch-end JMP
+	@no-click-scroll-down 
+	~dev/mouse.y #0008 SUB2 =scroll.y
+	,redraw JSR 
+	,touch-end JMP
+
+RTS
+
+@touch-linebar
+
+	~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
+	,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
+	,redraw JSR 
+	,touch-end JMP
+
+RTS
+
+@touch-body
+
+	~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
+	~dev/mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
+
+	,touch-when ~dev/mouse.state ~touch.state NEQ JMP? POP2
+		( on drag )
+		,find-selection JSR =selection.to
+		,clamp-selection JSR
+		,redraw JSR
+		,touch-end JMP
+
+	@touch-when
+		( on click )
+		,find-selection JSR DUP2 =selection.from #0001 ADD2 =selection.to
+		,redraw JSR
+		,touch-end JMP
+
+RTS
 
 @load-file ( path )
 
@@ -252,6 +282,19 @@ RTS
 		,find-wordend-loop ~j ,document.body GTH2 JMP? POP2
 	@find-wordend-end 
 	( return ) ~j #0001 ADD2
+
+RTS
+
+@find-lineoffset ( return character offset from linestart )
+
+	#0000 =j
+	@find-lineoffset-loop
+		( incr ) ~j #0001 ADD2 =j
+		,find-lineoffset-end ~selection.from ~j SUB2 LDR #0a EQU JMP? POP2
+		,find-lineoffset-end ~selection.from ~j SUB2 LDR #0d EQU JMP? POP2
+		,find-lineoffset-loop ~selection.from ~j SUB2 ,document.body GTH2 JMP? POP2
+	@find-lineoffset-end 
+	( return ) ~j
 
 RTS
 
@@ -568,8 +611,8 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath1      [ test.txt 00 ]
-@filepath     [ projects/software/left.usm 00 ]
+@filepath1     [ test.txt 00 ]
+@filepath      [ projects/software/left.usm 00 ]
 
 |4000 ;document Document
 
