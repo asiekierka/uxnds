@@ -5,7 +5,6 @@
 		- Follow cursor when moving out of the screen
 		- Save/Load
 		- Real scrolling distance
-		- Page up/down move with ctrl+arrow
 		- Double-click select word
 		- Right-click find next instance of selection
 		- Copy/Cut/Paste
@@ -61,7 +60,7 @@ BRK
 
 	,ctrl-end ~dev/ctrl #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP? POP2
 
-		( lock ) #04 =lock
+		( lock ) #03 =lock
 
 		,no-ctrl-up ~dev/ctrl #10 NEQ JMP? POP2
 			( clamp ) ,no-ctrl-up ~position.y #0000 EQU2 JMP? POP2
@@ -105,6 +104,14 @@ BRK
 		@no-alt
 		( ctrl )
 		,no-ctrl ~dev/ctrl #0f AND #01 NEQ JMP? POP2
+			,no-cup ~dev/ctrl #04 ROR #01 NEQ JMP? POP2
+				~scroll.y #0004 SUB2 =scroll.y
+				,redraw JSR ,ctrl-end JMP
+			@no-cup
+			,no-cdown ~dev/ctrl #04 ROR #02 NEQ JMP? POP2
+				~scroll.y #0004 ADD2 =scroll.y
+				,redraw JSR ,ctrl-end JMP
+			@no-cdown
 			,no-cleft ~dev/ctrl #04 ROR #04 NEQ JMP? POP2
 				,goto-linestart JSR ,redraw JSR ,ctrl-end JMP
 			@no-cleft
@@ -197,9 +204,9 @@ RTS
 	~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
 	~dev/mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-	,touch-when ~dev/mouse.state ~touch.state NEQ JMP? POP2
+	,touch-when ~dev/mouse.state ~touch.state NEQ ~dev/ctrl #0f AND #02 NEQ #0101 EQU2 JMP? POP2
 		( on drag )
-		,find-selection JSR =selection.to
+		,find-selection JSR #0001 ADD2 =selection.to
 		,clamp-selection JSR
 		,redraw JSR
 		,touch-end JMP
