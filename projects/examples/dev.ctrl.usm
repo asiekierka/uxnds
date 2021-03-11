@@ -21,33 +21,33 @@ BRK
 	
 	#0a =slime-color
 	( hold ctrl key to change slime color )
-	,no-ctrl ~dev/ctrl.buttons #0f AND #01 NEQ JMP? POP2
+	,no-ctrl ~dev/ctrl.buttons #0f AND #01 NEQ JMP2? POP2
 		#05 =slime-color
 	@no-ctrl
 	( hold alt key to change slime color )
-	,no-alt ~dev/ctrl.buttons #0f AND #02 NEQ JMP? POP2
+	,no-alt ~dev/ctrl.buttons #0f AND #02 NEQ JMP2? POP2
 		#0f =slime-color
 	@no-alt
 	( detect movement )
-	,no-up ~dev/ctrl.buttons #f0 AND #10 NEQ JMP? POP2
+	,no-up ~dev/ctrl.buttons #f0 AND #10 NEQ JMP2? POP2
 		( clear ) #10 =dev/sprite.color
 		( move ) ~dev/sprite.y #0001 SUB2 =dev/sprite.y ,up_icn =dev/sprite.addr
-		( draw ) ,redraw JSR BRK
+		( draw ) ,redraw JSR2 BRK
 	@no-up
-	,no-down ~dev/ctrl.buttons #f0 AND #20 NEQ JMP? POP2
+	,no-down ~dev/ctrl.buttons #f0 AND #20 NEQ JMP2? POP2
 		( clear ) #10 =dev/sprite.color
 		( move ) ~dev/sprite.y #0001 ADD2 =dev/sprite.y ,down_icn =dev/sprite.addr
-		( draw ) ,redraw JSR BRK
+		( draw ) ,redraw JSR2 BRK
 	@no-down
-	,no-left ~dev/ctrl.buttons #f0 AND #40 NEQ JMP? POP2
+	,no-left ~dev/ctrl.buttons #f0 AND #40 NEQ JMP2? POP2
 		( clear ) #10 =dev/sprite.color
 		( move ) ~dev/sprite.x #0001 SUB2 =dev/sprite.x ,left_icn =dev/sprite.addr
-		( draw ) ,redraw JSR BRK
+		( draw ) ,redraw JSR2 BRK
 	@no-left
-	,no-right ~dev/ctrl.buttons #f0 AND #80 NEQ JMP? POP2
+	,no-right ~dev/ctrl.buttons #f0 AND #80 NEQ JMP2? POP2
 		( clear ) #10 =dev/sprite.color
 		( move ) ~dev/sprite.x #0001 ADD2 =dev/sprite.x ,right_icn =dev/sprite.addr
-		( draw ) ,redraw JSR BRK
+		( draw ) ,redraw JSR2 BRK
 	@no-right
 
 BRK

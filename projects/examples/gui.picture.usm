@@ -9,9 +9,9 @@
 
 |0100 @RESET
 
-	#0000 #0000 ~dev/screen.width ~dev/screen.height #01 ,pict_large ,draw-picture JSR
-	#0008 #0010 #0080 #0080 #01 ,pict_medium ,draw-picture JSR
-	#00d0 #0090 #0020 #0020 #0a ,pict_small ,draw-picture JSR
+	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
+	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2
+	#0020 #0090 #0020 #0020 #0a ,pict_small ,draw-picture JSR2
 
 BRK
 
@@ -24,9 +24,9 @@ BRK
 			( draw ) ~pict.color =dev/sprite.color
 			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
-		,draw-picture-hor ~dev/sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP? POP2
+		,draw-picture-hor ~dev/sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
 		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-	,draw-picture-ver ~dev/sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP? POP2
+	,draw-picture-ver ~dev/sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
 
 RTS
 

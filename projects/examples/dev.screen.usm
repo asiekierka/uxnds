@@ -18,7 +18,7 @@
 	@draw-hor
 		#03 ~i =dev/screen.x =dev/screen.color
 		~i #0002 ADD2 =i ( increment )
-	~i ~dev/screen.width LTH2 ,draw-hor ROT JMP? POP2
+	~i ~dev/screen.width LTH2 ,draw-hor ROT JMP2? POP2
 
 	( draw ver line )
 	#0000 =i
@@ -26,13 +26,13 @@
 	@draw-ver
 		#03 ~i =dev/screen.y =dev/screen.color
 		~i #0002 ADD2 =i ( increment )
-	~i ~dev/screen.width LTH2 ,draw-ver ROT JMP? POP2
+	~i ~dev/screen.width LTH2 ,draw-ver ROT JMP2? POP2
 
 	( draw blending modes )
 	@draw-blends
-		~j ,icon #00 ~j #0008 MUL2 ~dev/screen.height #0010 SUB2 ,draw-sprite JSR
+		~j ,icon #00 ~j #0008 MUL2 ~dev/screen.height #0010 SUB2 ,draw-sprite JSR2
 		~j #01 ADD =j
-	~j #10 LTH ,draw-blends ROT JMP? POP2
+	~j #10 LTH ,draw-blends ROT JMP2? POP2
 
 	( draw pixel in the middle )
 	#01 ~centerx ~centery =dev/screen.y =dev/screen.x =dev/screen.color
@@ -51,16 +51,16 @@ BRK
 |c000 @FRAME
 	
 	( update colors every 40 frames )
-	~timer #40 NEQ ,skip1 ROT JMP? POP2
+	~timer #40 NEQ ,skip1 ROT JMP2? POP2
 		#0fac =fffa #f0bb =fffc #f053 =fff8
 	@skip1
-	~timer #80 NEQ ,skip2 ROT JMP? POP2
+	~timer #80 NEQ ,skip2 ROT JMP2? POP2
 		#00fc =fffc #f0bb =fff8 #f053 =fffa
 	@skip2
-	~timer #c0 NEQ ,skip3 ROT JMP? POP2
+	~timer #c0 NEQ ,skip3 ROT JMP2? POP2
 		#000f =fff8 #0f0f =fffa #ff00 =fffc
 	@skip3
-	~timer #00 NEQ ,skip4 ROT JMP? POP2
+	~timer #00 NEQ ,skip4 ROT JMP2? POP2
 		#f0ac =fff8 #f0bb =fffa #f053 =fffc
 	@skip4
 	~timer #01 ADD =timer

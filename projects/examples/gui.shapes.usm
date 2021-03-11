@@ -15,22 +15,22 @@
 
 |0100 @RESET
 	
-	#0010 #0020 #0040 #0060 #01 ,fill-rect JSR
-	#0020 #0030 #0050 #0070 #02 ,fill-rect JSR
-	#0030 #0040 #0060 #0080 #03 ,fill-rect JSR
-	#0070 #0020 #00a0 #0060 #01 ,line-rect JSR
-	#0080 #0030 #00b0 #0070 #02 ,line-rect JSR
-	#0090 #0040 #00c0 #0080 #03 ,line-rect JSR
+	#0010 #0020 #0040 #0060 #01 ,fill-rect JSR2
+	#0020 #0030 #0050 #0070 #02 ,fill-rect JSR2
+	#0030 #0040 #0060 #0080 #03 ,fill-rect JSR2
+	#0070 #0020 #00a0 #0060 #01 ,line-rect JSR2
+	#0080 #0030 #00b0 #0070 #02 ,line-rect JSR2
+	#0090 #0040 #00c0 #0080 #03 ,line-rect JSR2
 
-	#0000 #0080 #0020 #0020 #01 ,pict_small ,draw-picture JSR
-	#0010 #0088 #0020 #0020 #02 ,pict_small ,draw-picture JSR
-	#0020 #0090 #0020 #0020 #03 ,pict_small ,draw-picture JSR
-	#0030 #0098 #0020 #0020 #04 ,pict_small ,draw-picture JSR
+	#0000 #0080 #0020 #0020 #01 ,pict_small ,draw-picture JSR2
+	#0010 #0088 #0020 #0020 #02 ,pict_small ,draw-picture JSR2
+	#0020 #0090 #0020 #0020 #03 ,pict_small ,draw-picture JSR2
+	#0030 #0098 #0020 #0020 #04 ,pict_small ,draw-picture JSR2
 
-	#0028 #0068 #01 ,text ,draw-label JSR
-	#0038 #0078 #02 ,text ,draw-label JSR
-	#0048 #0088 #03 ,text ,draw-label JSR
-	#0058 #0098 #04 ,text ,draw-label JSR
+	#0028 #0068 #01 ,text ,draw-label JSR2
+	#0038 #0078 #02 ,text ,draw-label JSR2
+	#0048 #0088 #03 ,text ,draw-label JSR2
+	#0058 #0098 #04 ,text ,draw-label JSR2
 	
 BRK
 
@@ -41,13 +41,13 @@ BRK
 		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
 		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
 		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
-		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
 	~rect.y1 =dev/screen.y
 	@line-rect-ver
 		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
 		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
 		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
 RTS
 
@@ -59,9 +59,9 @@ RTS
 		@fill-rect-hor
 			( draw ) ~color =dev/screen.color
 			( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
-			,fill-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+			,fill-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
 		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,fill-rect-ver ~dev/screen.y ~rect.y2 LTH2 JMP? POP2
+		,fill-rect-ver ~dev/screen.y ~rect.y2 LTH2 JMP2? POP2
 
 RTS
 
@@ -74,9 +74,9 @@ RTS
 			( draw ) ~pict.color =dev/sprite.color
 			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
 			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
-		,draw-picture-hor ~dev/sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP? POP2
+		,draw-picture-hor ~dev/sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
 		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-	,draw-picture-ver ~dev/sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP? POP2
+	,draw-picture-ver ~dev/sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
 
 RTS
 
@@ -87,7 +87,7 @@ RTS
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP? POP2
+		DUP2 LDR #00 NEQ ,draw-label-loop ROT JMP2? POP2
 	POP2
 
 RTS

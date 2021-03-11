@@ -28,26 +28,26 @@ BRK
 	( matrix comparison )
 	~dev/mouse.x ~r1.x1 GTH2 ~dev/mouse.x ~r1.x2 LTH2 #0101 EQU2
 	~dev/mouse.y ~r1.y1 GTH2 ~dev/mouse.y ~r1.y2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,draw1 ROT JMP? POP2 #02 =color ,hand_icn =cursor 
-	@draw1 ~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR
+	#0101 NEQ2 ,draw1 ROT JMP2? POP2 #02 =color ,hand_icn =cursor 
+	@draw1 ~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR2
 	
 	#01 =color
 	( 2-step comparison )
-	,draw2 ~dev/mouse.x ~r2.x1 GTH2 ~dev/mouse.x ~r2.x2 LTH2 #0101 NEQ2 JMP? POP2
-		,draw2 ~dev/mouse.y ~r2.y1 GTH2 ~dev/mouse.y ~r2.y2 LTH2 #0101 NEQ2 JMP? POP2
+	,draw2 ~dev/mouse.x ~r2.x1 GTH2 ~dev/mouse.x ~r2.x2 LTH2 #0101 NEQ2 JMP2? POP2
+		,draw2 ~dev/mouse.y ~r2.y1 GTH2 ~dev/mouse.y ~r2.y2 LTH2 #0101 NEQ2 JMP2? POP2
 			#03 =color ,hand_icn =cursor 
-	@draw2 ~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR
+	@draw2 ~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR2
 	
 	#01 =color
 	( 4-step comparison )
-	,draw3 ~dev/mouse.x ~r3.x1 LTH2 JMP? POP2
-		,draw3 ~dev/mouse.x ~r3.x2 GTH2 JMP? POP2
-			,draw3 ~dev/mouse.y ~r3.y1 LTH2 JMP? POP2
-				,draw3 ~dev/mouse.y ~r3.y2 GTH2 JMP? POP2
+	,draw3 ~dev/mouse.x ~r3.x1 LTH2 JMP2? POP2
+		,draw3 ~dev/mouse.x ~r3.x2 GTH2 JMP2? POP2
+			,draw3 ~dev/mouse.y ~r3.y1 LTH2 JMP2? POP2
+				,draw3 ~dev/mouse.y ~r3.y2 GTH2 JMP2? POP2
 					#02 =color ,hand_icn =cursor
-	@draw3 ~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR
+	@draw3 ~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR2
 
-	,draw-cursor JSR
+	,draw-cursor JSR2
 
 BRK 
 
@@ -59,10 +59,10 @@ BRK
 	#0000 EQU2 RTS? ( Return if unchanged )
 
 	( clear last cursor )
-	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR
+	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
 	( record mouse positions )
 	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
-	#11 ~cursor ~mouse.x ~mouse.y ,draw-sprite JSR
+	#11 ~cursor ~mouse.x ~mouse.y ,draw-sprite JSR2
 
 RTS
 
@@ -73,13 +73,13 @@ RTS
 		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
 		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
 		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
-		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP? POP2
+		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
 	~rect.y1 =dev/screen.y
 	@line-rect-ver
 		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
 		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
 		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP? POP2
+		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
 RTS
 
