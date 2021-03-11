@@ -270,7 +270,7 @@ RTS
 	( guides )
 
 	#00 =i ,font_hex =SPRT.addr
-	@draw-bankview-guides
+	$guides
 		~bankview.x #0010 SUB2 =SPRT.x
 		~bankview.y #00 ~i #08 MUL ADD2 =SPRT.y
 		( draw ) #02 =SPRT.color
@@ -279,28 +279,28 @@ RTS
 		( draw ) #02 =SPRT.color
 		~SPRT.addr #0008 ADD2 =SPRT.addr
 		( incr ) ~i #01 ADD =i
-		,draw-bankview-guides ~i #10 LTH JMP2? POP2
+		,$guides ~i #10 LTH JMP2? POP2
 
 	( body )
 
 	~bankview.x =SPRT.x ~bankview.y =SPRT.y
 	#00 =pt.x #00 =pt.y ~bankview.addr =SPRT.addr
-	@draw-bankview-tiles-ver
+	$ver
 		#00 =pt.x
 		~bankview.x =SPRT.x
-		@draw-bankview-tiles-hor
+		$hor
 			( draw ) #01 =SPRT.color
-			,no-highlight ~SPRT.addr ~tileview.addr LTH2 JMP2? POP2
-				,no-highlight ~SPRT.addr ~tileview.addr #0018 ADD2 GTH2 JMP2? POP2
+			,$no-highlight ~SPRT.addr ~tileview.addr LTH2 JMP2? POP2
+			,$no-highlight ~SPRT.addr ~tileview.addr #0018 ADD2 GTH2 JMP2? POP2
 				( draw ) #0c =SPRT.color
-			@no-highlight
+			$no-highlight
 			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
-			,draw-bankview-tiles-hor ~pt.x #10 LTH JMP2? POP2
+			,$hor ~pt.x #10 LTH JMP2? POP2
 		( incr ) ~pt.y #01 ADD =pt.y
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-		,draw-bankview-tiles-ver ~pt.y #10 LTH JMP2? POP2
+		,$ver ~pt.y #10 LTH JMP2? POP2
 
 RTS
 
@@ -344,18 +344,18 @@ RTS
 	( line hor )
 	~tileview.y #003f ADD2 =SCRN.y
 	~tileview.x =SCRN.x
-	@draw-hor
+	$line-hor
 		( draw ) #03 =SCRN.color
 		( incr ) ~SCRN.x #0002 ADD2 =SCRN.x
-	~SCRN.x ~tileview.x #0082 ADD2 LTH2 ,draw-hor ROT JMP2? POP2
+	~SCRN.x ~tileview.x #0082 ADD2 LTH2 ,$line-hor ROT JMP2? POP2
 
 	( line ver )
 	~tileview.y =SCRN.y
 	~tileview.x #003f ADD2 =SCRN.x
-	@draw-ver
+	$line-ver
 		( draw ) #03 =SCRN.color
 		( incr ) ~SCRN.y #0002 ADD2 =SCRN.y
-	~SCRN.y ~tileview.y #0081 ADD2 LTH2 ,draw-ver ROT JMP2? POP2
+	~SCRN.y ~tileview.y #0081 ADD2 LTH2 ,$line-ver ROT JMP2? POP2
 
 	( rewind ) ~tileview.addr #0018 SUB2 =tileview.addr
 
@@ -363,7 +363,7 @@ RTS
 
 	~tileview.y #0018 ADD2 =SPRT.y
 	#00 =i
-	@draw-tileview-bytes
+	$bytes
 		~tileview.x #0088 ADD2 =SPRT.x
 		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
 		( draw ) #02 =SPRT.color
@@ -372,7 +372,7 @@ RTS
 		( draw ) #02 =SPRT.color
 		( incr ) ~i #01 ADD =i
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-	,draw-tileview-bytes ~i #08 LTH JMP2? POP2
+	,$bytes ~i #08 LTH JMP2? POP2
 
 	( operations )
 
@@ -387,27 +387,27 @@ RTS
 	~tileview.y =SPRT.y
 	#00 =pt.x #00 =pt.y ~tileview.addr =SPRT.addr
 
-	@draw-tileview-tiles-ver
+	$tiles-ver
 		#00 =pt.x
 		~tileview.x #0088 ADD2 =SPRT.x
-		@draw-tileview-tiles-hor
+		$tiles-hor
 			( draw ) #03 =SPRT.color
 			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
-			,draw-tileview-tiles-hor ~pt.x #02 LTH JMP2? POP2
+			,$tiles-hor ~pt.x #02 LTH JMP2? POP2
 		( incr ) ~pt.y #01 ADD =pt.y
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-		,draw-tileview-tiles-ver ~pt.y #02 LTH JMP2? POP2
+		,$tiles-ver ~pt.y #02 LTH JMP2? POP2
 
 RTS
 
 @draw-tileview-icn
 
 	#00 =pt.x #00 =pt.y 
-	@redraw-ver
+	$ver
 		#00 =pt.x
-		@redraw-hor
+		$hor
 			( get bit )
 			,blank_icn #00
 			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB ROR #01 AND ( get bit )
@@ -415,11 +415,11 @@ RTS
 			( draw ) #01 =SPRT.color
 			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 			( incr ) ~pt.x #01 ADD =pt.x
-			,redraw-hor ~pt.x #08 LTH JMP2? POP2
+			,$hor ~pt.x #08 LTH JMP2? POP2
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		( incr ) ~pt.y #01 ADD =pt.y
 		~SPRT.x #0040 SUB2 =SPRT.x
-		,redraw-ver ~pt.y #08 LTH JMP2? POP2
+		,$ver ~pt.y #08 LTH JMP2? POP2
 
 RTS
 
@@ -470,17 +470,17 @@ RTS
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =SCRN.y =rect.y1 DUP2 =SCRN.x =rect.x1
-	@line-rect-hor NOP
+	$hor NOP
 		( incr ) ~SCRN.x #0001 ADD2 =SCRN.x
 		( draw ) ~rect.y1 =SCRN.y ~color =SCRN.color
 		( draw ) ~rect.y2 =SCRN.y ~color =SCRN.color
-		~SCRN.x ~rect.x2 LTH2 ^line-rect-hor MUL JMPS
+		~SCRN.x ~rect.x2 LTH2 ^$hor MUL JMPS
 	~rect.y1 =SCRN.y
-	@line-rect-ver NOP
+	$ver NOP
 		( draw ) ~rect.x1 =SCRN.x ~color =SCRN.color
 		( draw ) ~rect.x2 =SCRN.x ~color =SCRN.color
 		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
-		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^line-rect-ver MUL JMPS
+		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
 
 RTS
 

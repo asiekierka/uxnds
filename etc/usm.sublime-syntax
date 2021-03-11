@@ -30,6 +30,9 @@ contexts:
     - match: '\&(\S+)\s?'
       scope: string.control
       pop: true
+    - match: '\$(\S+)\s?'
+      scope: string.control
+      pop: true
 
     # Special
 

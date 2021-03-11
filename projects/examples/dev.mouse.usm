@@ -129,11 +129,11 @@ RTS
 	
 	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
 	~label.addr
-	@draw-label-loop
+	$loop
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		DUP2 #0001 ADD2  LDR #00 NEQ ,draw-label-loop ROT JMP2? POP2
+		DUP2 #0001 ADD2  LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
 RTS

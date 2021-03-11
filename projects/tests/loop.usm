@@ -7,22 +7,24 @@
 |0100 @RESET 
 	
 	( type: padded muljmp )
-
-	@loop1 NOP
+	@part1
+	$loop NOP
 		~a #01 ADD =a
-		~a #d0 LTH ^loop1 MUL JMPS
+		~a #d0 LTH ^$loop MUL JMPS
 
 	( type: jmppop )
 
-	@loop2
+	@part2
+	$loop
 		~b #01 ADD =b
-		,loop2 ~b #d0 LTH JMP2? POP2
+		,$loop ~b #d0 LTH JMP2? POP2
 
 	( type: padded jmppop )
 
-	@loop3 NOP
+	@part3
+	$loop NOP
 		~c #01 ADD =c
-		~c #d0 LTH ^loop3 SWP JMPS? POP
+		~c #d0 LTH ^$loop SWP JMPS? POP
 
 	~a =dev/console.byte
 	~b =dev/console.byte 

@@ -27,6 +27,7 @@ evaluxn(u, u->vframe); /* Each frame
 ### Define
 
 - `@label`, assign the current address to a label.
+- `$label`, assign the current address to a local label.
 - `;variable 2`, assign an address to a label automatically.
 - `:const 1a2b`, assign an address to a label manually.
 - `&macro { x 2 y 2 }`, define a macro named `macro`.
@@ -75,16 +76,16 @@ BRK
 
 @print-label ( text )
 	
-	NOP
-	( send ) DUP2 LDR =CNSL.char
-	( incr ) #0001 ADD2
-	( loop ) DUP2 LDR #00 NEQ ^print-label MUL JMPS 
+	$loop NOP
+		( send ) DUP2 LDR =CNSL.char
+		( incr ) #0001 ADD2
+		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMPS 
 	POP2
 
-RTS                 
+RTS    
 
-@text1 [ Hello 20 World 0a00 ] ( text with linebreak and null bytes )
-@text2 [ Welcome 20 to 20 UxnVM 0a00 ]
+@text1 [ Welcome 20 to 20 UxnVM 0a00 ]
+@text2 [ Hello 20 World 0a00 ] 
 
 |c000 @FRAME
 |d000 @ERROR 

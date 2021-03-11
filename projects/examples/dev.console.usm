@@ -4,8 +4,8 @@
 
 |0100 @RESET 
 	
-	,text1 $print-label
-	,text2 $print-label
+	,text1 ,print-label JSR2
+	,text2 ,print-label JSR2
 	#ab =CNSL.byte
 	#cdef =CNSL.short
 
@@ -13,15 +13,13 @@ BRK
 
 @print-label ( text )
 	
-	@print-label-loop NOP
+	$loop NOP
 		( send ) DUP2 LDR =CNSL.char
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDR #00 NEQ ^print-label-loop MUL JMPS 
+		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMPS 
 	POP2
 
 RTS    
-
-( store text in memory )
 
 @text1 [ Welcome 20 to 20 UxnVM 0a00 ]
 @text2 [ Hello 20 World 0a00 ] 

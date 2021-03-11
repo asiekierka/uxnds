@@ -167,6 +167,15 @@ findopcode(char *s)
 	return 0;
 }
 
+char *
+sublabel(char *src, char *scope, char *name)
+{
+	scpy(scope, src, 64);
+	scpy("-", src + slen(src), 64);
+	scpy(name, src + slen(src), 64);
+	return src;
+}
+
 #pragma mark - Parser
 
 int
@@ -274,7 +283,7 @@ pass1(FILE *f)
 {
 	int ccmnt = 0, cbits = 0;
 	Uint16 addr = 0;
-	char w[64];
+	char w[64], scope[64], subw[64];
 	printf("Pass 1\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
@@ -287,6 +296,10 @@ pass1(FILE *f)
 				addr += slen(w);
 		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr, 0, NULL))
+				return error("Pass1 failed", w);
+			scpy(w + 1, scope, 64);
+		} else if(w[0] == '$') {
+			if(!makelabel(sublabel(subw, scope, w + 1), addr, 0, NULL))
 				return error("Pass1 failed", w);
 		} else if(w[0] == ';') {
 			if(!makevariable(w + 1, &addr, f))
@@ -308,8 +321,6 @@ pass1(FILE *f)
 				break;
 			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
 			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
-			case '$': addr += 4; break; /* JSR helper (lit addr-hb addr-lb jsr) */
-			case '/': addr += 4; break; /* JMP helper (lit addr-hb addr-lb jmp) */
 			case ',': addr += 3; break;
 			case '.': addr += 2; break;
 			case '^': addr += 2; break; /* Relative jump: lit addr-offset */
@@ -328,13 +339,21 @@ int
 pass2(FILE *f)
 {
 	int ccmnt = 0, cbits = 0, cmacro = 0;
-	char w[64];
+	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
 		Uint8 op = 0;
 		Label *l;
-		if(w[0] == '@') continue;
 		if(w[0] == '&') continue;
+		if(w[0] == '$') continue;
+		if(w[0] == '@') {
+			scpy(w + 1, scope, 64);
+			continue;
+		}
+		if(w[1] == '$') {
+			sublabel(subw, scope, w + 2);
+			scpy(subw, w + 1, 64);
+		}
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &cmacro, '{', '}')) continue;
 		/* clang-format off */
@@ -357,8 +376,6 @@ pass2(FILE *f)
 		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
 		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
 		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
-		else if(w[0] == '/' && (l = findlabel(w + 1))){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode("JMP2"), 0); l->refs++;}
-		else if(w[0] == '$' && (l = findlabel(w + 1))){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode("JSR2"), 0); l->refs++;}
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
