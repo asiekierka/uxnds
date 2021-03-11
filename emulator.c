@@ -310,8 +310,10 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devctrl->addr;
-	if(z && event->key.keysym.sym == SDLK_h && SDL_GetModState() & KMOD_LCTRL)
+	if(z && event->key.keysym.sym == SDLK_h && SDL_GetModState() & KMOD_LCTRL) {
 		GUIDES = !GUIDES;
+		redraw(pixels, u);
+	}
 	switch(event->key.keysym.sym) {
 	case SDLK_LCTRL: flag = 0x01; break;
 	case SDLK_LALT: flag = 0x02; break;

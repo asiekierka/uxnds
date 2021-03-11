@@ -32,7 +32,7 @@ Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1)
 /* I/O */
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
-void op_nop(Uxn *u) { printf("0x%02x \n", pop8(&u->wst)); fflush(stdout); }
+void op_nop(Uxn *u) { (void)u; }
 void op_jmp(Uxn *u) { Uint8 a = pop8(&u->wst); u->ram.ptr += getflag(&u->status, FLAG_SIGN) ? (Sint8)a : a; }
 void op_jsr(Uxn *u) { Uint8 a = pop8(&u->wst); push16(&u->rst, u->ram.ptr); u->ram.ptr += getflag(&u->status, FLAG_SIGN) ? (Sint8)a : a; }
 void op_rts(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
@@ -102,7 +102,7 @@ void (*ops[])(Uxn *u) = {
 };
 
 Uint8 opr[][2] = { 
-	{0,0}, {0,0}, {0,0}, {2,0}, {2,0}, {0,0}, {2,1}, {3,0},
+	{0,0}, {0,0}, {0,0}, {1,0}, {1,0}, {0,0}, {2,1}, {3,0},
 	{2,0}, {2,0}, {0,0}, {0,0}, {2,1}, {2,1}, {2,1}, {2,1},
 	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {1,0}, {0,1}, {2,1},
 	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},

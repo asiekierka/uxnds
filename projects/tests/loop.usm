@@ -1,0 +1,39 @@
+( hello world )
+
+&Console { pad 8 char 1 byte 1 short 2 }
+
+;a 1 ;b 1 ;c 1
+
+|0100 @RESET 
+	
+	( type: padded muljmp )
+
+	@loop1 NOP
+		~a #01 ADD =a
+		~a #d0 LTH ^loop1 MUL JMPS
+
+	( type: jmppop )
+
+	@loop2
+		~b #01 ADD =b
+		,loop2 ~b #d0 LTH JMP2? POP2
+
+	( type: padded jmppop )
+
+	@loop3 NOP
+		~c #01 ADD =c
+		~c #d0 LTH ^loop3 SWP JMPS? POP
+
+	~a =dev/console.byte
+	~b =dev/console.byte 
+	~c =dev/console.byte 
+
+BRK               
+
+|c000 @FRAME
+|d000 @ERROR 
+
+|FF00 ;dev/console Console
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

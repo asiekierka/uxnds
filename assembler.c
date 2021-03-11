@@ -184,7 +184,7 @@ makemacro(char *name, FILE *f)
 	char wv[64];
 	if(findmacro(name))
 		return error("Macro duplicate", name);
-	if(sihx(name))
+	if(sihx(name) && slen(name) % 2 == 0)
 		return error("Macro name is hex number", name);
 	if(findopcode(name))
 		return error("Macro name is invalid", name);
@@ -214,7 +214,7 @@ makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
 	Label *l;
 	if(findlabel(name))
 		return error("Label duplicate", name);
-	if(sihx(name))
+	if(sihx(name) && slen(name) % 2 == 0)
 		return error("Label name is hex number", name);
 	if(findopcode(name))
 		return error("Label name is invalid", name);
@@ -309,9 +309,10 @@ pass1(FILE *f)
 			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
 			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
 			case ',': addr += 3; break;
-			case '.': addr += (slen(w + 1) == 2 ? 1 : 2); break;
-			case '+': /* signed positive */
-			case '-': /* signed negative */
+			case '.': addr += 2; break;
+			case '^': addr += 2; break; /* Relative jump: lit addr-offset */
+			case '+':                   /* signed positive */
+			case '-':                   /* signed negative */
 			case '#': addr += (slen(w + 1) == 2 ? 2 : 3); break;
 			default: return error("Unknown label in first pass", w);
 			}
@@ -343,21 +344,24 @@ pass2(FILE *f)
 		}
 		else if(w[0] == '|') p.ptr = shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
+		else if(w[0] == '^' && (l = findlabel(w + 1))) { 
+			int off = l->addr - p.ptr - 3;
+			if(off < -126 || off > 126){ printf("Address %s is too far(%d).\n", w, off); return 0; } 
+			printf("relative %s[%d]\n", w, l->addr - p.ptr - 4);
+			pushbyte((Sint8)(l->addr - p.ptr - 3), 1); l->refs++; 
+		}
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
-		else if(w[0] == '.' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 0);
-		else if(w[0] == '.' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 0);
+		else if(w[0] == '.' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 0); l->refs++; }
+		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
-		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w+1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
-		else if(w[0] == '=' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("STR2"), 0); }
-		else if(w[0] == '~' && sihx(w + 1)) { pushshort(shex(w + 1), 1); pushbyte(findopcode("LDR2"), 0); }
-		else if((l = findlabel(w + 1))) { pushshort(findlabeladdr(w+1), w[0] == ','); l->refs++; }
 		else return error("Unknown label in second pass", w);
 		/* clang-format on */
 	}

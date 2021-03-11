@@ -45,7 +45,7 @@
 	,filepath ,load-file JSR2
 
 	( place textarea )
-	#0018 =textarea.x1 ~dev/screen.height #0008 SUB2 =textarea.y2
+	#0018 =textarea.x1 ~SCRN.height #0008 SUB2 =textarea.y2
 
 	,select JSR2
 	,redraw JSR2
@@ -56,62 +56,62 @@ BRK
 
 	( ctrl )
 
-	,ctrl-end ~dev/ctrl #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP2? POP2
+	,ctrl-end ~CTRL #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP2? POP2
 		( lock ) #04 =lock
-		,no-ctrl-up ~dev/ctrl #10 NEQ JMP2? POP2
+		,no-ctrl-up ~CTRL #10 NEQ JMP2? POP2
 			( clamp ) ,no-ctrl-up ~position.y #0000 EQU2 JMP2? POP2
 			,find-lineoffset JSR2 =position.x 
 			~position.y #0001 SUB2 =position.y 
 			,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-up
-		,no-ctrl-down ~dev/ctrl #20 NEQ JMP2? POP2
+		,no-ctrl-down ~CTRL #20 NEQ JMP2? POP2
 			,find-lineoffset JSR2 =position.x ~position.y #0001 ADD2 =position.y 
 			,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-down
-		,no-ctrl-left ~dev/ctrl #40 NEQ JMP2? POP2
+		,no-ctrl-left ~CTRL #40 NEQ JMP2? POP2
 			( clamp ) ,no-ctrl-left ~selection.from ,document.body EQU2 JMP2? POP2
 			~selection.from #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-left
-		,no-ctrl-right ~dev/ctrl #80 NEQ JMP2? POP2
+		,no-ctrl-right ~CTRL #80 NEQ JMP2? POP2
 			~selection.from #0001 ADD2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-right
 		( alt )
-		,no-alt ~dev/ctrl #0f AND #02 NEQ JMP2? POP2
-			,no-aup ~dev/ctrl #04 ROR #01 NEQ JMP2? POP2
+		,no-alt ~CTRL #0f AND #02 NEQ JMP2? POP2
+			,no-aup ~CTRL #04 ROR #01 NEQ JMP2? POP2
 				,find-wordstart JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aup
-			,no-adown ~dev/ctrl #04 ROR #02 NEQ JMP2? POP2
+			,no-adown ~CTRL #04 ROR #02 NEQ JMP2? POP2
 				,find-wordend JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-adown
-			,no-aleft ~dev/ctrl #04 ROR #04 NEQ JMP2? POP2
+			,no-aleft ~CTRL #04 ROR #04 NEQ JMP2? POP2
 				~selection.to #0001 SUB2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aleft
-			,no-aright ~dev/ctrl #04 ROR #08 NEQ JMP2? POP2
+			,no-aright ~CTRL #04 ROR #08 NEQ JMP2? POP2
 				~selection.to #0001 ADD2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aright
 		@no-alt
 		( ctrl )
-		,no-ctrl ~dev/ctrl #0f AND #01 NEQ JMP2? POP2
-			,no-cup ~dev/ctrl #04 ROR #01 NEQ JMP2? POP2
+		,no-ctrl ~CTRL #0f AND #01 NEQ JMP2? POP2
+			,no-cup ~CTRL #04 ROR #01 NEQ JMP2? POP2
 				~scroll.y #0004 SUB2 =scroll.y
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cup
-			,no-cdown ~dev/ctrl #04 ROR #02 NEQ JMP2? POP2
+			,no-cdown ~CTRL #04 ROR #02 NEQ JMP2? POP2
 				~scroll.y #0004 ADD2 =scroll.y
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cdown
-			,no-cleft ~dev/ctrl #04 ROR #04 NEQ JMP2? POP2
+			,no-cleft ~CTRL #04 ROR #04 NEQ JMP2? POP2
 				,goto-linestart JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cleft
-			,no-cright ~dev/ctrl #04 ROR #08 NEQ JMP2? POP2
+			,no-cright ~CTRL #04 ROR #08 NEQ JMP2? POP2
 				,goto-lineend JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cright
 		@no-ctrl
@@ -120,39 +120,39 @@ BRK
 
 	( keys )
 
-	,keys-end ~dev/key #00 EQU JMP2? POP2
+	,keys-end ~KEYS #00 EQU JMP2? POP2
 
-		,no-backspace ~dev/key #08 NEQ JMP2? POP2
+		,no-backspace ~KEYS #08 NEQ JMP2? POP2
 			( erase )
 			~selection.to ~selection.from SUB2 ,shift-left JSR2
 			~selection.from #0001 SUB2 =selection.from
 			~selection.from #0001 ADD2 =selection.to
-			( release ) #00 =dev/key
+			( release ) #00 =KEYS
 			,redraw JSR2
 			,keys-end JMP2
 		@no-backspace
 
 		( insert )
 		~selection.to ~selection.from SUB2 ,shift-right JSR2
-		~dev/key ~selection.from STR
+		~KEYS ~selection.from STR
 		~selection.from #0001 ADD2 =selection.from
 		~selection.from #0001 ADD2 =selection.to
-		( release ) #00 =dev/key
+		( release ) #00 =KEYS
 		,redraw JSR2
 
 	@keys-end
 
 	( mouse )
 
-	,touch-end ~dev/mouse.state #00 EQU JMP2? POP2
+	,touch-end ~MOUS.state #00 EQU JMP2? POP2
 
-		,touch-linebar ~dev/mouse.x #0010 LTH2 JMP2? POP2
-		,touch-body ~dev/mouse.x ~dev/screen.width #0008 SUB2 LTH2 JMP2? POP2
+		,touch-linebar ~MOUS.x #0010 LTH2 JMP2? POP2
+		,touch-body ~MOUS.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
 		,touch-scrollbar JMP2
 
 	@touch-end
 
-	~dev/mouse.state =touch.state
+	~MOUS.state =touch.state
 
 	( unlock ) ,skip-unlock ~lock #00 EQU JMP2? POP2 ~lock #01 SUB =lock @skip-unlock
 
@@ -162,15 +162,15 @@ BRK
 
 @touch-scrollbar
 
-	,no-click-scroll-up ~dev/mouse.y #0008 GTH2 JMP2? POP2
+	,no-click-scroll-up ~MOUS.y #0008 GTH2 JMP2? POP2
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
 		,redraw JSR2 ,touch-end JMP2
 	@no-click-scroll-up 
-	,no-click-scroll-down ~dev/mouse.y ~dev/screen.height #0008 SUB2 LTH2 JMP2? POP2
+	,no-click-scroll-down ~MOUS.y ~SCRN.height #0008 SUB2 LTH2 JMP2? POP2
 		( incr ) ~scroll.y #0001 ADD2 =scroll.y
 		,redraw JSR2 ,touch-end JMP2
 	@no-click-scroll-down 
-	~dev/mouse.y #0008 SUB2 =scroll.y
+	~MOUS.y #0008 SUB2 =scroll.y
 	,redraw JSR2 
 	,touch-end JMP2
 
@@ -178,7 +178,7 @@ RTS
 
 @touch-linebar
 
-	~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
+	~MOUS.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
 	,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 	,redraw JSR2 
 	,touch-end JMP2
@@ -187,10 +187,10 @@ RTS
 
 @touch-body
 
-	~dev/mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
-	~dev/mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
+	~MOUS.y #0008 DIV2 ~scroll.y ADD2 =position.y
+	~MOUS.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-	,touch-when ~dev/mouse.state ~touch.state NEQ ~dev/ctrl #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
+	,touch-when ~MOUS.state ~touch.state NEQ ~CTRL #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
 		( on drag )
 		,find-selection JSR2 #0001 ADD2 =selection.to
 		,clamp-selection JSR2
@@ -207,7 +207,7 @@ RTS
 
 @load-file ( path )
 
-	=dev/file.name #8000 =dev/file.length ,document.body =dev/file.load
+	=FILE.name #8000 =FILE.length ,document.body =FILE.load
 
 	( get file length )
 	,document.body =document.eof
@@ -379,75 +379,75 @@ RTS
 
 	( save/load icons )
 
-	~dev/screen.height #0008 SUB2 =dev/sprite.y
+	~SCRN.height #0008 SUB2 =SPRT.y
 
-	~dev/screen.width #0018 SUB2 =dev/sprite.x
-	,load_icn =dev/sprite.addr
-	#02 =dev/sprite.color
+	~SCRN.width #0018 SUB2 =SPRT.x
+	,load_icn =SPRT.addr
+	#02 =SPRT.color
 
-	~dev/screen.width #0010 SUB2 =dev/sprite.x
-	,save_icn =dev/sprite.addr
-	#02 =dev/sprite.color
+	~SCRN.width #0010 SUB2 =SPRT.x
+	,save_icn =SPRT.addr
+	#02 =SPRT.color
 
 RTS
 
 @draw-lines
 	
 	#0000 =j
-	#0000 =dev/sprite.x #0000 =dev/sprite.y
+	#0000 =SPRT.x #0000 =SPRT.y
 	@draw-lines-loop
 		~scroll.y ~j ADD2 =addr
-		#0000 =dev/sprite.x
-		,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =dev/sprite.color
-		#0008 =dev/sprite.x
-		,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =dev/sprite.color
+		#0000 =SPRT.x
+		,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =SPRT.color
+		#0008 =SPRT.x
+		,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
+		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =SPRT.color
 		( incr ) ~j #0001 ADD2 =j
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-		,draw-lines-loop ~j ~dev/screen.height #0008 SUB2 #0008 DIV2 NEQ2 JMP2? POP2
+		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+		,draw-lines-loop ~j ~SCRN.height #0008 SUB2 #0008 DIV2 NEQ2 JMP2? POP2
 
 RTS
 
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #0e =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #0e =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #0e =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #0e =dev/sprite.color
+	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	( draw ) #0e =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
+	( draw ) #0e =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	( draw ) #0e =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
+	( draw ) #0e =SPRT.color
 
 RTS
 
 @draw-cursor
 
-	~mouse.x ~dev/mouse.x NEQU2
-	~mouse.y ~dev/mouse.y NEQU2
+	~mouse.x ~MOUS.x NEQU2
+	~mouse.y ~MOUS.y NEQU2
 
 	#0000 EQU2 RTS? ( Return if unchanged )
 
 	( clear last cursor )
-	~mouse.x =dev/sprite.x
-	~mouse.y =dev/sprite.y
-	,blank_icn =dev/sprite.addr
-	#10 =dev/sprite.color
+	~mouse.x =SPRT.x
+	~mouse.y =SPRT.y
+	,blank_icn =SPRT.addr
+	#10 =SPRT.color
 
 	( record mouse positions )
-	~dev/mouse.x =mouse.x 
-	~dev/mouse.y =mouse.y
+	~MOUS.x =mouse.x 
+	~MOUS.y =mouse.y
 
 	( draw new cursor )
-	~mouse.x =dev/sprite.x
-	~mouse.y =dev/sprite.y
-	,cursor_icn =dev/sprite.addr
-	#13 =dev/sprite.color
+	~mouse.x =SPRT.x
+	~mouse.y =SPRT.y
+	,cursor_icn =SPRT.addr
+	#13 =SPRT.color
 
 RTS
 
@@ -467,42 +467,42 @@ RTS
 	@find-scroll-offset-end
 
 	~textarea.addr #0000 ADD2 =textarea.addr
-	#0000 =dev/sprite.y
+	#0000 =SPRT.y
 	~textarea.addr =j
 
-	#0018 =dev/sprite.x
+	#0018 =SPRT.x
 
 	@draw-textarea-loop
 
-		,draw-textarea-end ~dev/sprite.y ~dev/screen.height #0010 SUB2 GTH2 JMP2? POP2
+		,draw-textarea-end ~SPRT.y ~SCRN.height #0010 SUB2 GTH2 JMP2? POP2
 
 		( get character )
-		,font #00 ~j LDR #20 SUB #0008 MUL2 ADD2 =dev/sprite.addr
+		,font #00 ~j LDR #20 SUB #0008 MUL2 ADD2 =SPRT.addr
 
 		( draw ) #01 
 		~j ~selection.from #0001 SUB2 GTH2 
 		~j ~selection.to LTH2 #0101 EQU2
-		#05 MUL ADD =dev/sprite.color
+		#05 MUL ADD =SPRT.color
 
 		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( draw linebreak )
-			,linebreak_icn =dev/sprite.addr
+			,linebreak_icn =SPRT.addr
 			( draw ) #03
 			~j ~selection.from #0001 SUB2 GTH2 
 			~j ~selection.to LTH2 #0101 EQU2
-			#05 MUL ADD =dev/sprite.color
+			#05 MUL ADD =SPRT.color
 			( fill clear )
 			@fill-clear
-				( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-				,font =dev/sprite.addr
-				#01 =dev/sprite.color
-				,fill-clear ~dev/sprite.x ~dev/screen.width #0008 SUB2 LTH2 JMP2? POP2
-			#0010 =dev/sprite.x
-			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+				( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
+				,font =SPRT.addr
+				#01 =SPRT.color
+				,fill-clear ~SPRT.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
+			#0010 =SPRT.x
+			( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		@no-linebreak
 
 		( incr ) ~j #0001 ADD2 =j
-		( incr ) ~dev/sprite.x #0007 ADD2 =dev/sprite.x
+		( incr ) ~SPRT.x #0007 ADD2 =SPRT.x
 
 	,draw-textarea-loop ~j LDR #00 NEQ JMP2? POP2
 
@@ -512,40 +512,40 @@ RTS
 
 @draw-scrollbar
 		
-	~dev/screen.width #0008 SUB2 =dev/sprite.x
-	#0000 =dev/sprite.y
-	,scrollbar_bg =dev/sprite.addr
+	~SCRN.width #0008 SUB2 =SPRT.x
+	#0000 =SPRT.y
+	,scrollbar_bg =SPRT.addr
 
 	@draw-scrollbar-loop
-	( draw ) #08 =dev/sprite.color
-	( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-	,draw-scrollbar-loop ~dev/sprite.y ~dev/screen.height LTH2 JMP2? POP2
+	( draw ) #08 =SPRT.color
+	( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+	,draw-scrollbar-loop ~SPRT.y ~SCRN.height LTH2 JMP2? POP2
 
-	#0000 =dev/sprite.y
-	,arrowup_icn =dev/sprite.addr
-	( draw ) #08 =dev/sprite.color
+	#0000 =SPRT.y
+	,arrowup_icn =SPRT.addr
+	( draw ) #08 =SPRT.color
 
 	( at )
-	~scroll.y #0008 ADD2 =dev/sprite.y
-	,scrollbar_fg =dev/sprite.addr
-	( draw ) #08 =dev/sprite.color
+	~scroll.y #0008 ADD2 =SPRT.y
+	,scrollbar_fg =SPRT.addr
+	( draw ) #08 =SPRT.color
 
-	~dev/screen.height #0008 SUB2 =dev/sprite.y
-	,arrowdown_icn =dev/sprite.addr
-	( draw ) #08 =dev/sprite.color
+	~SCRN.height #0008 SUB2 =SPRT.y
+	,arrowdown_icn =SPRT.addr
+	( draw ) #08 =SPRT.color
 
 RTS
 
 @draw-titlebar
 	
-	#0018 ~dev/screen.height #0008 SUB2 #09 ,filepath 
+	#0018 ~SCRN.height #0008 SUB2 #09 ,filepath 
 
-	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
+	( load ) =label.addr =label.color =SPRT.y =SPRT.x 
 	~label.addr
 	@draw-titlebar-loop
-		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =SPRT.addr ~label.color =SPRT.color
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 		DUP2 LDR #00 NEQ ,draw-titlebar-loop ROT JMP2? POP2
 	POP2
 
@@ -628,20 +628,20 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath      [ test.txt 00 ]
-@filepath1     [ projects/software/left.usm 00 ]
+@filepath1     [ projects/examples/jumptest.usm 00 ]
+@filepath      [ projects/software/left.usm 00 ]
 
 |4000 ;document Document
 
 |d000 @ERROR BRK 
 
 |FF00 ;dev/console Console
-|FF10 ;dev/screen  Screen
-|FF20 ;dev/sprite  Sprite
-|FF30 ;dev/ctrl    Controller
-|FF40 ;dev/key     Keyboard
-|FF50 ;dev/mouse   Mouse
-|FF60 ;dev/file    File
+|FF10 ;SCRN Screen
+|FF20 ;SPRT Sprite
+|FF30 ;CTRL Controller
+|FF40 ;KEYS Keyboard
+|FF50 ;MOUS Mouse
+|FF60 ;FILE File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ a0fe a0f7 a0f2 ] ( palette )

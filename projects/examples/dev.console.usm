@@ -6,17 +6,17 @@
 	
 	,text1 ,print-label JSR2
 	,text2 ,print-label JSR2
-	#ab =dev/console.byte
-	#cdef =dev/console.short
+	#ab =CNSL.byte
+	#cdef =CNSL.short
 
 BRK
 
 @print-label ( text )
-
-	@print-label-loop
-		DUP2 LDR =dev/console.char               ( write pointer value to console )
-		#0001 ADD2                               ( increment string pointer )
-		DUP2 LDR #00 NEQ ,print-label-loop ROT JMP2? POP2  ( while *ptr!=0 goto loop )
+	
+	@print-label-loop NOP
+		( send ) DUP2 LDR =CNSL.char
+		( incr ) #0001 ADD2
+		DUP2 LDR #00 NEQ ^print-label-loop MUL JMPS 
 	POP2
 
 RTS                 
@@ -27,7 +27,7 @@ RTS
 |c000 @FRAME
 |d000 @ERROR 
 
-|FF00 ;dev/console Console
+|FF00 ;CNSL Console
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

@@ -45,16 +45,15 @@ contexts:
     - match: '\,(\S+)\s?'
       scope: keyword.control
       pop: true
+    - match: '\.(\S+)\s?'
+      scope: keyword.control
+      pop: true
+    - match: '\^(\S+)\s?'
+      scope: keyword.control
+      pop: true
     - match: '\#(\S+)\s?'
       scope: keyword.control
       pop: true
-    - match: '\.(\S+)\s?'
-      scope: keyword.control
-    - match: '\+(\S+)\s?'
-      scope: string.control
-      pop: true
-    - match: '\-(\S+)\s?'
-      scope: string.control
 
       # Blocks
 

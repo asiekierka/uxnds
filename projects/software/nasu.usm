@@ -32,12 +32,12 @@
 
 |0100 @RESET
 	
-	~dev/screen.width #0002 DIV2 #008a SUB2 =bankview.x 
-	~dev/screen.height #0002 DIV2 #003f SUB2 =bankview.y 
+	~SCRN.width #0002 DIV2 #008a SUB2 =bankview.x 
+	~SCRN.height #0002 DIV2 #003f SUB2 =bankview.y 
 	,bank1 =bankview.addr
 
-	~dev/screen.width #0002 DIV2 #0002 ADD2 =tileview.x 
-	~dev/screen.height #0002 DIV2 #003f SUB2 =tileview.y 
+	~SCRN.width #0002 DIV2 #0002 ADD2 =tileview.x 
+	~SCRN.height #0002 DIV2 #003f SUB2 =tileview.y 
 	,bank1 #0448 ADD2 =tileview.addr
 
 	,redraw JSR2
@@ -48,28 +48,28 @@ BRK
 
 	( keyboard controls )
 
-	,no-key ~dev/key #00 EQU JMP2? POP2
+	,no-key ~KEYS #00 EQU JMP2? POP2
 
-		,no-key ~dev/key #31 LTH JMP2? POP2
-		,no-key ~dev/key #33 GTH JMP2? POP2
-		( select ) ~dev/key #31 SUB =bankview.mode
-		( release ) #00 =dev/key
+		,no-key ~KEYS #31 LTH JMP2? POP2
+		,no-key ~KEYS #33 GTH JMP2? POP2
+		( select ) ~KEYS #31 SUB =bankview.mode
+		( release ) #00 =KEYS
 		,redraw JSR2 
 
 	@no-key
 
-	,no-ctrl ~dev/ctrl.buttons #00 EQU JMP2? POP2
+	,no-ctrl ~CTRL.buttons #00 EQU JMP2? POP2
 
-		,no-ctrl-up ~dev/ctrl.buttons #10 EQU JMP2? POP2
+		,no-ctrl-up ~CTRL.buttons #10 EQU JMP2? POP2
 			~tileview.addr #0080 ADD2 =tileview.addr
 		@no-ctrl-up
-		,no-ctrl-down ~dev/ctrl.buttons #20 EQU JMP2? POP2
+		,no-ctrl-down ~CTRL.buttons #20 EQU JMP2? POP2
 			~tileview.addr #0080 SUB2 =tileview.addr
 		@no-ctrl-down
-		,no-ctrl-left ~dev/ctrl.buttons #40 EQU JMP2? POP2
+		,no-ctrl-left ~CTRL.buttons #40 EQU JMP2? POP2
 			~tileview.addr #0008 ADD2 =tileview.addr
 		@no-ctrl-left
-		,no-ctrl-right ~dev/ctrl.buttons #80 EQU JMP2? POP2
+		,no-ctrl-right ~CTRL.buttons #80 EQU JMP2? POP2
 			~tileview.addr #0008 SUB2 =tileview.addr
 		@no-ctrl-right
 		~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
@@ -79,30 +79,30 @@ BRK
 
 	( mouse controls )
 
-	,click-end ~dev/mouse.state #00 EQU JMP2? POP2
+	,click-end ~MOUS.state #00 EQU JMP2? POP2
 
 		( toolbar )
 
-		,no-toolbar-click ~dev/mouse.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP2? POP2
+		,no-toolbar-click ~MOUS.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP2? POP2
 
 			( brush )
 
-			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP2? POP2
-			,no-brush-click ~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP2? POP2
+			,no-brush-click ~MOUS.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP2? POP2
+			,no-brush-click ~MOUS.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP2? POP2
 				( select ) ~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
-				( release ) #00 =dev/mouse.state
+				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-brush-click
 
-			,no-load-click ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #000e NEQU2 JMP2? POP2
-				( load ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.load
-				( release ) #00 =dev/mouse.state
+			,no-load-click ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #000e NEQU2 JMP2? POP2
+				( load ) ,filename  =FILE.name #0800 =FILE.length ~bankview.addr =FILE.load
+				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-load-click
 
-			,no-save-click ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #000f NEQU2 JMP2? POP2
-				( save ) ,filename  =dev/file.name #0800 =dev/file.length ~bankview.addr =dev/file.save
-				( release ) #00 =dev/mouse.state
+			,no-save-click ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #000f NEQU2 JMP2? POP2
+				( save ) ,filename  =FILE.name #0800 =FILE.length ~bankview.addr =FILE.save
+				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-save-click
 
@@ -110,8 +110,8 @@ BRK
 
 		( bankview )
 
-		~dev/mouse.x ~bankview.x GTH2 ~dev/mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
-		~dev/mouse.y ~bankview.y GTH2 ~dev/mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
+		~MOUS.x ~bankview.x GTH2 ~MOUS.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
+		~MOUS.y ~bankview.y GTH2 ~MOUS.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
 		#0101 NEQ2 ,no-bank-click ROT JMP2? POP2
 
 			,not-copy-mode ~bankview.mode #01 NEQ JMP2? POP2
@@ -119,8 +119,8 @@ BRK
 				@copy-loop
 					( load ) ~tileview.addr ~i ADD LDR 
 					( get touch addr )
-					~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-					~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
+					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
 					,copy-loop ~i #08 LTH JMP2? POP2
@@ -132,16 +132,16 @@ BRK
 				@erase-loop
 					#00 
 					( get touch addr )
-					~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-					~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
+					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
 					,erase-loop ~i #08 LTH JMP2? POP2
 				,redraw JSR2 ,click-end JMP2
 			@not-erase-mode
 
-			~dev/mouse.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-			~dev/mouse.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+			~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
+			~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 			~bankview.addr ADD2 =tileview.addr
 			,redraw JSR2 ,click-end JMP2
 
@@ -149,16 +149,16 @@ BRK
 
 		( tileview )
 
-		~dev/mouse.x ~tileview.x GTH2 ~dev/mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
-		~dev/mouse.y ~tileview.y GTH2 ~dev/mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
+		~MOUS.x ~tileview.x GTH2 ~MOUS.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
+		~MOUS.y ~tileview.y GTH2 ~MOUS.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
 		#0101 NEQ2 ,no-tile-click ROT JMP2? POP2
 
-			~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 
-			~dev/mouse.y ~tileview.y SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 #0002 MUL2 ADD2 
+			~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 
+			~MOUS.y ~tileview.y SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 #0002 MUL2 ADD2 
 			#0008 MUL2
 			~tileview.addr ADD2 =addr ( addr offset )
-			~dev/mouse.x ~tileview.x SUB2 ~dev/mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
-			~dev/mouse.y ~tileview.y SUB2 ~dev/mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
+			~MOUS.x ~tileview.x SUB2 ~MOUS.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
+			~MOUS.y ~tileview.y SUB2 ~MOUS.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
 			,no-fill-mode ~bankview.mode #01 NEQ JMP2? POP2
 				( fill row ) #ff ~addr ~pos.y #0008 DIV2 ADD2 STR
 				,redraw JSR2 ,click-end JMP2
@@ -177,17 +177,17 @@ BRK
 
 		( operations )
 
-		,no-operations ~dev/mouse.y ~tileview.y SUB2 #0008 DIV2 #000c NEQ2 JMP2? POP2
+		,no-operations ~MOUS.y ~tileview.y SUB2 #0008 DIV2 #000c NEQ2 JMP2? POP2
 
-			,no-move-up ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0011 NEQ2 JMP2? POP2
+			,no-move-up ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0011 NEQ2 JMP2? POP2
 				,op_shiftup JSR2 
-				( release ) #00 =dev/mouse.state
+				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-move-up
 
-			,no-move-down ~dev/mouse.x ~tileview.x SUB2 #0008 DIV2 #0012 NEQ2 JMP2? POP2
+			,no-move-down ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0012 NEQ2 JMP2? POP2
 				,op_shiftdown JSR2 
-				( release ) #00 =dev/mouse.state
+				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-move-down
 
@@ -240,66 +240,66 @@ RTS
 
 	( position )
 
-	~bankview.x =dev/sprite.x
-	~bankview.y #0010 SUB2 =dev/sprite.y
+	~bankview.x =SPRT.x
+	~bankview.y #0010 SUB2 =SPRT.y
 	~bankview.addr ,draw-short JSR2
 
 	( toolbar )
 
-	~bankview.x #0068 ADD2 =dev/sprite.x
-	~bankview.y #0010 SUB2 =dev/sprite.y
-	,tool_selector =dev/sprite.addr
-	#01 ~bankview.mode #00 EQU ADD =dev/sprite.color
+	~bankview.x #0068 ADD2 =SPRT.x
+	~bankview.y #0010 SUB2 =SPRT.y
+	,tool_selector =SPRT.addr
+	#01 ~bankview.mode #00 EQU ADD =SPRT.color
 
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,tool_hand =dev/sprite.addr
-	#01 ~bankview.mode #01 EQU ADD =dev/sprite.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,tool_hand =SPRT.addr
+	#01 ~bankview.mode #01 EQU ADD =SPRT.color
 
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,tool_eraser =dev/sprite.addr
-	#01 ~bankview.mode #02 EQU ADD =dev/sprite.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,tool_eraser =SPRT.addr
+	#01 ~bankview.mode #02 EQU ADD =SPRT.color
 
-	~tileview.x #0070 ADD2 =dev/sprite.x
-	,load_icn =dev/sprite.addr
-	#01 =dev/sprite.color
+	~tileview.x #0070 ADD2 =SPRT.x
+	,load_icn =SPRT.addr
+	#01 =SPRT.color
 
-	~tileview.x #0078 ADD2 =dev/sprite.x
-	,save_icn =dev/sprite.addr
-	#01 =dev/sprite.color
+	~tileview.x #0078 ADD2 =SPRT.x
+	,save_icn =SPRT.addr
+	#01 =SPRT.color
 
 	( guides )
 
-	#00 =i ,font_hex =dev/sprite.addr
+	#00 =i ,font_hex =SPRT.addr
 	@draw-bankview-guides
-		~bankview.x #0010 SUB2 =dev/sprite.x
-		~bankview.y #00 ~i #08 MUL ADD2 =dev/sprite.y
-		( draw ) #02 =dev/sprite.color
-		~bankview.x #00 ~i #08 MUL ADD2 =dev/sprite.x
-		~bankview.y #0088 ADD2 =dev/sprite.y
-		( draw ) #02 =dev/sprite.color
-		~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+		~bankview.x #0010 SUB2 =SPRT.x
+		~bankview.y #00 ~i #08 MUL ADD2 =SPRT.y
+		( draw ) #02 =SPRT.color
+		~bankview.x #00 ~i #08 MUL ADD2 =SPRT.x
+		~bankview.y #0088 ADD2 =SPRT.y
+		( draw ) #02 =SPRT.color
+		~SPRT.addr #0008 ADD2 =SPRT.addr
 		( incr ) ~i #01 ADD =i
 		,draw-bankview-guides ~i #10 LTH JMP2? POP2
 
 	( body )
 
-	~bankview.x =dev/sprite.x ~bankview.y =dev/sprite.y
-	#00 =pt.x #00 =pt.y ~bankview.addr =dev/sprite.addr
+	~bankview.x =SPRT.x ~bankview.y =SPRT.y
+	#00 =pt.x #00 =pt.y ~bankview.addr =SPRT.addr
 	@draw-bankview-tiles-ver
 		#00 =pt.x
-		~bankview.x =dev/sprite.x
+		~bankview.x =SPRT.x
 		@draw-bankview-tiles-hor
-			( draw ) #01 =dev/sprite.color
-			,no-highlight ~dev/sprite.addr ~tileview.addr LTH2 JMP2? POP2
-				,no-highlight ~dev/sprite.addr ~tileview.addr #0018 ADD2 GTH2 JMP2? POP2
-				( draw ) #0c =dev/sprite.color
+			( draw ) #01 =SPRT.color
+			,no-highlight ~SPRT.addr ~tileview.addr LTH2 JMP2? POP2
+				,no-highlight ~SPRT.addr ~tileview.addr #0018 ADD2 GTH2 JMP2? POP2
+				( draw ) #0c =SPRT.color
 			@no-highlight
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
+			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			,draw-bankview-tiles-hor ~pt.x #10 LTH JMP2? POP2
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		,draw-bankview-tiles-ver ~pt.y #10 LTH JMP2? POP2
 
 RTS
@@ -308,96 +308,96 @@ RTS
 
 	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0080 ADD2 ~tileview.y #0081 ADD2 #03 ,line-rect JSR2
 
-	~tileview.x #0028 ADD2 =dev/sprite.x
-	~tileview.y #0010 SUB2 =dev/sprite.y
-	~tileview.addr =dev/sprite.addr
-	#03 =dev/sprite.color
+	~tileview.x #0028 ADD2 =SPRT.x
+	~tileview.y #0010 SUB2 =SPRT.y
+	~tileview.addr =SPRT.addr
+	#03 =SPRT.color
 
 	( position )
 
-	~tileview.x =dev/sprite.x
-	~tileview.y #0010 SUB2 =dev/sprite.y
+	~tileview.x =SPRT.x
+	~tileview.y #0010 SUB2 =SPRT.y
 	~tileview.addr ,draw-short JSR2
 
 	( body )
 
-	~tileview.x =dev/sprite.x
-	~tileview.y =dev/sprite.y
+	~tileview.x =SPRT.x
+	~tileview.y =SPRT.y
 	~tileview.addr =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =dev/sprite.x
-	~tileview.y =dev/sprite.y
+	~tileview.x #0040 ADD2 =SPRT.x
+	~tileview.y =SPRT.y
 	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x =dev/sprite.x
-	~tileview.y #0040 ADD2 =dev/sprite.y
+	~tileview.x =SPRT.x
+	~tileview.y #0040 ADD2 =SPRT.y
 	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =dev/sprite.x
-	~tileview.y #0040 ADD2 =dev/sprite.y
+	~tileview.x #0040 ADD2 =SPRT.x
+	~tileview.y #0040 ADD2 =SPRT.y
 	~tileview.addr #0008 ADD2 =tileview.addr
 	,draw-tileview-icn JSR2
 
 	( line hor )
-	~tileview.y #003f ADD2 =dev/screen.y
-	~tileview.x =dev/screen.x
+	~tileview.y #003f ADD2 =SCRN.y
+	~tileview.x =SCRN.x
 	@draw-hor
-		( draw ) #03 =dev/screen.color
-		( incr ) ~dev/screen.x #0002 ADD2 =dev/screen.x
-	~dev/screen.x ~tileview.x #0082 ADD2 LTH2 ,draw-hor ROT JMP2? POP2
+		( draw ) #03 =SCRN.color
+		( incr ) ~SCRN.x #0002 ADD2 =SCRN.x
+	~SCRN.x ~tileview.x #0082 ADD2 LTH2 ,draw-hor ROT JMP2? POP2
 
 	( line ver )
-	~tileview.y =dev/screen.y
-	~tileview.x #003f ADD2 =dev/screen.x
+	~tileview.y =SCRN.y
+	~tileview.x #003f ADD2 =SCRN.x
 	@draw-ver
-		( draw ) #03 =dev/screen.color
-		( incr ) ~dev/screen.y #0002 ADD2 =dev/screen.y
-	~dev/screen.y ~tileview.y #0081 ADD2 LTH2 ,draw-ver ROT JMP2? POP2
+		( draw ) #03 =SCRN.color
+		( incr ) ~SCRN.y #0002 ADD2 =SCRN.y
+	~SCRN.y ~tileview.y #0081 ADD2 LTH2 ,draw-ver ROT JMP2? POP2
 
 	( rewind ) ~tileview.addr #0018 SUB2 =tileview.addr
 
 	( bytes )
 
-	~tileview.y #0018 ADD2 =dev/sprite.y
+	~tileview.y #0018 ADD2 =SPRT.y
 	#00 =i
 	@draw-tileview-bytes
-		~tileview.x #0088 ADD2 =dev/sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 =dev/sprite.color
-		~dev/sprite.x #0008 ADD2 =dev/sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-		( draw ) #02 =dev/sprite.color
+		~tileview.x #0088 ADD2 =SPRT.x
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+		( draw ) #02 =SPRT.color
+		~SPRT.x #0008 ADD2 =SPRT.x
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
+		( draw ) #02 =SPRT.color
 		( incr ) ~i #01 ADD =i
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 	,draw-tileview-bytes ~i #08 LTH JMP2? POP2
 
 	( operations )
 
-	~dev/sprite.y #0008 ADD2 =dev/sprite.y
-	,movedown_icn =dev/sprite.addr
-	#01 =dev/sprite.color
-	~dev/sprite.x #0008 SUB2 =dev/sprite.x
-	,moveup_icn =dev/sprite.addr
-	#01 =dev/sprite.color
+	~SPRT.y #0008 ADD2 =SPRT.y
+	,movedown_icn =SPRT.addr
+	#01 =SPRT.color
+	~SPRT.x #0008 SUB2 =SPRT.x
+	,moveup_icn =SPRT.addr
+	#01 =SPRT.color
 
 	( draw tiles )
-	~tileview.y =dev/sprite.y
-	#00 =pt.x #00 =pt.y ~tileview.addr =dev/sprite.addr
+	~tileview.y =SPRT.y
+	#00 =pt.x #00 =pt.y ~tileview.addr =SPRT.addr
 
 	@draw-tileview-tiles-ver
 		#00 =pt.x
-		~tileview.x #0088 ADD2 =dev/sprite.x
+		~tileview.x #0088 ADD2 =SPRT.x
 		@draw-tileview-tiles-hor
-			( draw ) #03 =dev/sprite.color
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
+			( draw ) #03 =SPRT.color
+			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
+			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			,draw-tileview-tiles-hor ~pt.x #02 LTH JMP2? POP2
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		,draw-tileview-tiles-ver ~pt.y #02 LTH JMP2? POP2
 
 RTS
@@ -411,57 +411,57 @@ RTS
 			( get bit )
 			,blank_icn #00
 			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB ROR #01 AND ( get bit )
-			#0008 MUL2 ADD2 =dev/sprite.addr ( add *8 )
-			( draw ) #01 =dev/sprite.color
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+			#0008 MUL2 ADD2 =SPRT.addr ( add *8 )
+			( draw ) #01 =SPRT.color
+			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 			( incr ) ~pt.x #01 ADD =pt.x
 			,redraw-hor ~pt.x #08 LTH JMP2? POP2
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
+		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		( incr ) ~pt.y #01 ADD =pt.y
-		~dev/sprite.x #0040 SUB2 =dev/sprite.x
+		~SPRT.x #0040 SUB2 =SPRT.x
 		,redraw-ver ~pt.y #08 LTH JMP2? POP2
 
 RTS
 
 @draw-cursor
 
-	~mouse.x ~dev/mouse.x NEQU2
-	~mouse.y ~dev/mouse.y NEQU2
+	~mouse.x ~MOUS.x NEQU2
+	~mouse.y ~MOUS.y NEQU2
 
 	#0000 EQU2 RTS? ( Return if unchanged )
 
 	( clear last cursor )
-	~mouse.x =dev/sprite.x
-	~mouse.y =dev/sprite.y
-	,blank_icn =dev/sprite.addr
-	#10 =dev/sprite.color
+	~mouse.x =SPRT.x
+	~mouse.y =SPRT.y
+	,blank_icn =SPRT.addr
+	#10 =SPRT.color
 
 	( record mouse positions )
-	~dev/mouse.x =mouse.x 
-	~dev/mouse.y =mouse.y
+	~MOUS.x =mouse.x 
+	~MOUS.y =mouse.y
 
 	( draw new cursor )
-	~mouse.x =dev/sprite.x
-	~mouse.y =dev/sprite.y
-	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =dev/sprite.addr
-	#12 =dev/sprite.color
+	~mouse.x =SPRT.x
+	~mouse.y =SPRT.y
+	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =SPRT.addr
+	#12 =SPRT.color
 
 RTS
 
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #02 =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #02 =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #02 =dev/sprite.color
-	~dev/sprite.x #0008 ADD2 =dev/sprite.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =dev/sprite.addr
-	( draw ) #02 =dev/sprite.color
+	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	( draw ) #02 =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
+	( draw ) #02 =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	( draw ) #02 =SPRT.color
+	~SPRT.x #0008 ADD2 =SPRT.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
+	( draw ) #02 =SPRT.color
 
 RTS
 
@@ -469,18 +469,18 @@ RTS
 
 @line-rect ( x1 y1 x2 y2 color )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	( load ) =color =rect.y2 =rect.x2 DUP2 =SCRN.y =rect.y1 DUP2 =SCRN.x =rect.x1
 	@line-rect-hor
-		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
-		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
-		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
-		,line-rect-hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
-	~rect.y1 =dev/screen.y
+		( incr ) ~SCRN.x #0001 ADD2 =SCRN.x
+		( draw ) ~rect.y1 =SCRN.y ~color =SCRN.color
+		( draw ) ~rect.y2 =SCRN.y ~color =SCRN.color
+		,line-rect-hor ~SCRN.x ~rect.x2 LTH2 JMP2? POP2
+	~rect.y1 =SCRN.y
 	@line-rect-ver
-		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
-		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
-		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,line-rect-ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		( draw ) ~rect.x1 =SCRN.x ~color =SCRN.color
+		( draw ) ~rect.x2 =SCRN.x ~color =SCRN.color
+		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
+		,line-rect-ver ~SCRN.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
 RTS
 
@@ -774,12 +774,12 @@ RTS
 
 |FE00 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
-|FF30 ;dev/ctrl   Controller
-|FF40 ;dev/key    Keyboard
-|FF50 ;dev/mouse  Mouse
-|FF60 ;dev/file   File
+|FF10 ;SCRN Screen
+|FF20 ;SPRT Sprite
+|FF30 ;CTRL Controller
+|FF40 ;KEYS Keyboard
+|FF50 ;MOUS Mouse
+|FF60 ;FILE File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ e0fc 30cc 30ac ] ( palette )
