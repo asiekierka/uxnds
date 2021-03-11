@@ -116,27 +116,27 @@ BRK
 
 			,not-copy-mode ~bankview.mode #01 NEQ JMP2? POP2
 				#00 =i
-				@copy-loop
+				@copy-loop NOP
 					( load ) ~tileview.addr ~i ADD LDR 
 					( get touch addr )
 					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
 					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
-					,copy-loop ~i #08 LTH JMP2? POP2
+					~i #08 LTH ^copy-loop MUL JMPS
 				,redraw JSR2 ,click-end JMP2
 			@not-copy-mode
 
 			,not-erase-mode ~bankview.mode #02 NEQ JMP2? POP2
 				#00 =i
-				@erase-loop
+				@erase-loop NOP
 					#00 
 					( get touch addr )
 					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
 					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
-					,erase-loop ~i #08 LTH JMP2? POP2
+					~i #08 LTH ^erase-loop MUL JMPS
 				,redraw JSR2 ,click-end JMP2
 			@not-erase-mode
 
@@ -470,17 +470,17 @@ RTS
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =SCRN.y =rect.y1 DUP2 =SCRN.x =rect.x1
-	@line-rect-hor
+	@line-rect-hor NOP
 		( incr ) ~SCRN.x #0001 ADD2 =SCRN.x
 		( draw ) ~rect.y1 =SCRN.y ~color =SCRN.color
 		( draw ) ~rect.y2 =SCRN.y ~color =SCRN.color
-		,line-rect-hor ~SCRN.x ~rect.x2 LTH2 JMP2? POP2
+		~SCRN.x ~rect.x2 LTH2 ^line-rect-hor MUL JMPS
 	~rect.y1 =SCRN.y
-	@line-rect-ver
+	@line-rect-ver NOP
 		( draw ) ~rect.x1 =SCRN.x ~color =SCRN.color
 		( draw ) ~rect.x2 =SCRN.x ~color =SCRN.color
 		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
-		,line-rect-ver ~SCRN.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^line-rect-ver MUL JMPS
 
 RTS
 

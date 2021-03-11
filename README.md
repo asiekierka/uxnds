@@ -24,19 +24,30 @@ evaluxn(u, u->vframe); /* Each frame
 
 ## Assembly Syntax
 
-- `ADD`, an opcode.
+### Define
+
 - `@label`, assign the current address to a label.
 - `;variable 2`, assign an address to a label automatically.
 - `:const 1a2b`, assign an address to a label manually.
 - `&macro { x 2 y 2 }`, define a macro named `macro`.
+
+### Program
+
+- `ADD`, push an opcode.
 - `.address`, push label address to memory.
 - `,literal`, push label address to stack, prefixed with `LIT LEN`.
-- `#1a`, a literal byte/short.
-- `+1a`, a literal signed byte/short.
-- `-1a`, a literal signed byte/short(negative).
+- `#1a`, push a literal byte/short.
+- `+1a`, push a literal signed byte/short.
+- `-1a`, push a literal signed byte/short(negative).
+- `|0010`, move to position in the program.
+
+### Helpers
+
 - `=label`, helper to STR, equivalent to `,label STR`, or `label STR2`.
 - `~label`, helper to LDR, equivalent to `,label LDR2`, or `,label LDR2`.
-- `|0010`, move to position in the program.
+
+### Blocks
+
 - `( comment )`, toggle parsing on/off.
 - `[ 0123 abcd ]`, write shorts to memory.
 - `[ Hello World ]`, write text to memory.
@@ -64,15 +75,15 @@ BRK
 
 @print-label ( text )
 	
-	@print-label-loop NOP
-		( send ) DUP2 LDR =CNSL.char
-		( incr ) #0001 ADD2
-		DUP2 LDR #00 NEQ ^print-label-loop MUL JMPS 
+	NOP
+	( send ) DUP2 LDR =CNSL.char
+	( incr ) #0001 ADD2
+	( loop ) DUP2 LDR #00 NEQ ^print-label MUL JMPS 
 	POP2
 
 RTS                 
 
-@text1 [ Hello 20 World 0a00 ] ( store text with a linebreak and null byte )
+@text1 [ Hello 20 World 0a00 ] ( text with linebreak and null bytes )
 @text2 [ Welcome 20 to 20 UxnVM 0a00 ]
 
 |c000 @FRAME
@@ -95,13 +106,8 @@ RTS
 
 - Includes
 - Defines
-- Jump relative
 - Local loops
 - Jump helpers
-
-NOTE: OPCODES should not be relative, but there should be a relative accessor for addresses, like:
-
-$relative_name JMP
 
 ## Notes
 

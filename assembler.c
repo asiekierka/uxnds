@@ -308,6 +308,8 @@ pass1(FILE *f)
 				break;
 			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
 			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
+			case '$': addr += 4; break; /* JSR helper (lit addr-hb addr-lb jsr) */
+			case '/': addr += 4; break; /* JMP helper (lit addr-hb addr-lb jmp) */
 			case ',': addr += 3; break;
 			case '.': addr += 2; break;
 			case '^': addr += 2; break; /* Relative jump: lit addr-offset */
@@ -347,15 +349,16 @@ pass2(FILE *f)
 		else if(w[0] == '^' && (l = findlabel(w + 1))) { 
 			int off = l->addr - p.ptr - 3;
 			if(off < -126 || off > 126){ printf("Address %s is too far(%d).\n", w, off); return 0; } 
-			printf("relative %s[%d]\n", w, l->addr - p.ptr - 4);
 			pushbyte((Sint8)(l->addr - p.ptr - 3), 1); l->refs++; 
 		}
 		else if(w[0] == ':') fscanf(f, "%s", w);
 		else if(w[0] == ';') fscanf(f, "%s", w);
 		else if(w[0] == '.' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 0); l->refs++; }
 		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
-		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
-		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w+1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
+		else if(w[0] == '=' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
+		else if(w[0] == '~' && (l = findlabel(w + 1)) && l->len){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
+		else if(w[0] == '/' && (l = findlabel(w + 1))){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode("JMP2"), 0); l->refs++;}
+		else if(w[0] == '$' && (l = findlabel(w + 1))){ pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode("JSR2"), 0); l->refs++;}
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
