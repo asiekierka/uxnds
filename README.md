@@ -22,43 +22,9 @@ evaluxn(u, u->vreset); /* Once on start */
 evaluxn(u, u->vframe); /* Each frame
 ```
 
-## Assembly Syntax
+## Uxambly
 
-### Define
-
-- `@label`, assign the current address to a label.
-- `$label`, assign the current address to a local label.
-- `;variable 2`, assign an address to a label automatically.
-- `:const 1a2b`, assign an address to a label manually.
-- `&macro { x 2 y 2 }`, define a macro named `macro`.
-
-### Program
-
-- `ADD`, push an opcode.
-- `.address`, push label address to memory.
-- `,literal`, push label address to stack, prefixed with `LIT LEN`.
-- `#1a`, push a literal byte/short.
-- `+1a`, push a literal signed byte/short.
-- `-1a`, push a literal signed byte/short(negative).
-- `|0010`, move to position in the program.
-
-### Helpers
-
-- `=label`, helper to STR, equivalent to `,label STR`, or `label STR2`.
-- `~label`, helper to LDR, equivalent to `,label LDR2`, or `,label LDR2`.
-
-### Blocks
-
-- `( comment )`, toggle parsing on/off.
-- `[ 0123 abcd ]`, write shorts to memory.
-- `[ Hello World ]`, write text to memory.
-
-### Operator modes
-
-- `#1234 #0001 ADD2`, 16-bits operators have the short flag `2`.
-- `#12 #11 GTH JMP?`, conditional operators have the cond flag `?`.
-- `+21 -03 MULS`, signed operators have the cond flag `S`.
-- `ADDS2?`, modes can be combined.
+Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 ```
 ( hello world )
@@ -107,7 +73,6 @@ RTS
 
 - Includes
 - Defines
-- Local loops
 - Jump helpers
 
 ## Notes

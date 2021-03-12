@@ -211,9 +211,9 @@ RTS
 
 	( get file length )
 	,document.body =document.eof
-	@load-file-loop NOP
+	$loop NOP
 		( incr ) ~document.eof #0001 ADD2 =document.eof
-	~document.eof LDR #00 NEQ ^load-file-loop MUL JMPS
+	~document.eof LDR #00 NEQ ^$loop MUL JMPS
 
 RTS
 
@@ -221,10 +221,10 @@ RTS
 
 	=i
 	~selection.from #0001 SUB2 =j ( start -> end )
-	@shift-left-loop NOP
+	$loop NOP
 		( move ) ~j ~i ADD2 LDR ~j STR
 		( incr ) ~j #0001 ADD2 =j
-		~j ~document.eof LTH2 ^shift-left-loop MUL JMPS
+		~j ~document.eof LTH2 ^$loop MUL JMPS
 	~document.eof ~i SUB2 =document.eof
 
 RTS
@@ -250,11 +250,11 @@ RTS
 
 @goto-linestart
 
-	@goto-linestart-loop NOP
+	$loop NOP
 		~selection.from #0001 SUB2 LDR #0a EQU RTS?
 		~selection.from #0001 SUB2 LDR #0d EQU RTS?
 		( decr ) ~selection.from DUP2 =selection.to #0001 SUB2 =selection.from
-	~selection.from LDR #00 NEQ ^goto-linestart-loop MUL JMPS
+	~selection.from LDR #00 NEQ ^$loop MUL JMPS
 	( clamp at document body )
 	~selection.from ,document.body GTH2 RTS?
 	,document.body DUP2 =selection.from #0001 ADD2 =selection.to
@@ -263,11 +263,11 @@ RTS
 
 @goto-lineend
 	
-	@goto-lineend-loop NOP
+	$loop NOP
 		~selection.from LDR #0a EQU RTS?
 		~selection.from LDR #0d EQU RTS?
 		( incr ) ~selection.from #0001 ADD2 DUP2 #0001 ADD2 =selection.to =selection.from
-		~selection.from LDR #00 NEQ ^goto-lineend-loop MUL JMPS
+		~selection.from LDR #00 NEQ ^$loop MUL JMPS
 	( clamp at document body )
 	~selection.from ,document.eof LTH2 RTS?
 	,document.eof #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
@@ -277,13 +277,13 @@ RTS
 @find-wordstart
 
 	~selection.to =j
-	@find-wordstart-loop NOP
+	$loop NOP
 		( decr ) ~j #0001 SUB2 =j
-		,find-wordstart-end ~j LDR #20 EQU JMP2? POP2
-		,find-wordstart-end ~j LDR #0a EQU JMP2? POP2
-		,find-wordstart-end ~j LDR #0d EQU JMP2? POP2
-		~j ,document.body GTH2 ^find-wordstart-loop MUL JMPS
-	@find-wordstart-end 
+		,$end ~j LDR #20 EQU JMP2? POP2
+		,$end ~j LDR #0a EQU JMP2? POP2
+		,$end ~j LDR #0d EQU JMP2? POP2
+		~j ,document.body GTH2 ^$loop MUL JMPS
+	$end 
 	( return ) ~j #0001 SUB2
 
 RTS
@@ -291,13 +291,13 @@ RTS
 @find-wordend
 	
 	~selection.to =j
-	@find-wordend-loop NOP
+	$loop NOP
 		( incr ) ~j #0001 ADD2 =j
-		,find-wordend-end ~j LDR #20 EQU JMP2? POP2
-		,find-wordend-end ~j LDR #0a EQU JMP2? POP2
-		,find-wordend-end ~j LDR #0d EQU JMP2? POP2
-		~j ,document.body GTH2 ^find-wordend-loop MUL JMPS
-	@find-wordend-end 
+		,$end ~j LDR #20 EQU JMP2? POP2
+		,$end ~j LDR #0a EQU JMP2? POP2
+		,$end ~j LDR #0d EQU JMP2? POP2
+		~j ,document.body GTH2 ^$loop MUL JMPS
+	$end 
 	( return ) ~j #0001 ADD2
 
 RTS
@@ -305,12 +305,12 @@ RTS
 @find-lineoffset ( return character offset from linestart )
 
 	#0000 =j
-	@find-lineoffset-loop NOP
+	$loop NOP
 		( incr ) ~j #0001 ADD2 =j
-		,find-lineoffset-end ~selection.from ~j SUB2 LDR #0a EQU JMP2? POP2
-		,find-lineoffset-end ~selection.from ~j SUB2 LDR #0d EQU JMP2? POP2
-		~selection.from ~j SUB2 ,document.body GTH2 ^find-lineoffset-loop MUL JMPS
-	@find-lineoffset-end 
+		,$end ~selection.from ~j SUB2 LDR #0a EQU JMP2? POP2
+		,$end ~selection.from ~j SUB2 LDR #0d EQU JMP2? POP2
+		~selection.from ~j SUB2 ,document.body GTH2 ^$loop MUL JMPS
+	$end 
 	( return ) ~j
 
 RTS
@@ -318,14 +318,14 @@ RTS
 @find-line ( position -> addr )
 
 	,document.body =j #0000 =pt.y
-	@find-line-loop NOP
-		,find-line-end ~pt.y ~position.y #0001 SUB2 GTH2 JMP2? POP2
-		,find-line-no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2? POP2
+	$loop NOP
+		,$end ~pt.y ~position.y #0001 SUB2 GTH2 JMP2? POP2
+		,$no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
-		@find-line-no-space
+		$no-space
 		( incr ) ~j #0001 ADD2 =j
-	~j LDR #00 NEQ ^find-line-loop MUL JMPS
-	@find-line-end
+	~j LDR #00 NEQ ^$loop MUL JMPS
+	$end
 	( return ) ~j
 
 RTS
@@ -336,12 +336,12 @@ RTS
 
 	#0000 =pt.x
 
-	@find-selection-loop NOP
-		,find-selection-end ~j ~pt.x ADD2 LDR #0a EQU JMP2? POP2
-		,find-selection-end ~j ~pt.x ADD2 LDR #0d EQU JMP2? POP2
+	$loop NOP
+		,$end ~j ~pt.x ADD2 LDR #0a EQU JMP2? POP2
+		,$end ~j ~pt.x ADD2 LDR #0d EQU JMP2? POP2
 		( incr ) ~pt.x #0001 ADD2 =pt.x
-		~pt.x ~position.x #0001 SUB2 LTH2 ^find-selection-loop MUL JMPS
-	@find-selection-end
+		~pt.x ~position.x #0001 SUB2 LTH2 ^$loop MUL JMPS
+	$end
 	( return ) ~pt.x ADD2
 
 RTS
@@ -350,18 +350,18 @@ RTS
 	
 	,document.body =selection.from #0000 =pt.x #0000 =pt.y
 
-	@select-loop
-		,no-space ~selection.from LDR #0a NEQ ~selection.from LDR #0d NEQ #0101 EQU2 JMP2? POP2
+	$loop
+		,$no-space ~selection.from LDR #0a NEQ ~selection.from LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
 			#0000 =pt.x
-		@no-space
-		,no-reached ~pt.y ~position.y #0001 SUB2 GTH2 ~pt.x ~position.x #0001 SUB2 GTH2 #0101 NEQ2 JMP2? POP2
+		$no-space
+		,$no-reached ~pt.y ~position.y #0001 SUB2 GTH2 ~pt.x ~position.x #0001 SUB2 GTH2 #0101 NEQ2 JMP2? POP2
 			~selection.from #0001 ADD2 =selection.to
 			RTS
-		@no-reached
+		$no-reached
 		( incr ) ~pt.x #0001 ADD2 =pt.x
 		( incr ) ~selection.from #0001 ADD2 =selection.from
-	,select-loop ~selection.from LDR #00 NEQ JMP2? POP2
+	,$loop ~selection.from LDR #00 NEQ JMP2? POP2
 
 RTS
 
@@ -392,17 +392,17 @@ RTS
 	
 	#0000 =j
 	#0000 =SPRT.x #0000 =SPRT.y
-	@draw-lines-loop
+	$loop
 		~scroll.y ~j ADD2 =addr
 		#0000 =SPRT.x
 		,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
-		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =SPRT.color
+		( draw ) #02 ~addr ~position.y EQU2 #0c MUL ADD =SPRT.color
 		#0008 =SPRT.x
 		,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
-		( draw ) #02 ~addr ~position.y EQU2 #06 MUL ADD =SPRT.color
+		( draw ) #02 ~addr ~position.y EQU2 #0c MUL ADD =SPRT.color
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-		,draw-lines-loop ~j ~SCRN.height #0008 SUB2 #0008 DIV2 NEQ2 JMP2? POP2
+		,$loop ~j ~SCRN.height #0008 SUB2 #0008 DIV2 NEQ2 JMP2? POP2
 
 RTS
 
@@ -469,9 +469,9 @@ RTS
 
 	#0018 =SPRT.x
 
-	@draw-textarea-loop
+	$loop
 
-		,draw-textarea-end ~SPRT.y ~SCRN.height #0010 SUB2 GTH2 JMP2? POP2
+		,$end ~SPRT.y ~SCRN.height #0010 SUB2 GTH2 JMP2? POP2
 
 		( get character )
 		,font #00 ~j LDR #20 SUB #0008 MUL2 ADD2 =SPRT.addr
@@ -481,29 +481,29 @@ RTS
 		~j ~selection.to LTH2 #0101 EQU2
 		#05 MUL ADD =SPRT.color
 
-		,no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2? POP2
+		,$no-linebreak ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( draw linebreak )
 			,linebreak_icn =SPRT.addr
-			( draw ) #03
+			( draw ) #02
 			~j ~selection.from #0001 SUB2 GTH2 
 			~j ~selection.to LTH2 #0101 EQU2
-			#05 MUL ADD =SPRT.color
+			#06 MUL ADD =SPRT.color
 			( fill clear )
-			@fill-clear
+			$fill-clear
 				( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
 				,font =SPRT.addr
 				#01 =SPRT.color
-				,fill-clear ~SPRT.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
+				,$fill-clear ~SPRT.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
 			#0010 =SPRT.x
 			( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-		@no-linebreak
+		$no-linebreak
 
 		( incr ) ~j #0001 ADD2 =j
 		( incr ) ~SPRT.x #0007 ADD2 =SPRT.x
 
-	,draw-textarea-loop ~j LDR #00 NEQ JMP2? POP2
+	,$loop ~j LDR #00 NEQ JMP2? POP2
 
-	@draw-textarea-end
+	$end
 
 RTS
 
@@ -513,10 +513,10 @@ RTS
 	#0000 =SPRT.y
 	,scrollbar_bg =SPRT.addr
 
-	@draw-scrollbar-loop
+	$loop
 	( draw ) #08 =SPRT.color
 	( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-	,draw-scrollbar-loop ~SPRT.y ~SCRN.height LTH2 JMP2? POP2
+	,$loop ~SPRT.y ~SCRN.height LTH2 JMP2? POP2
 
 	#0000 =SPRT.y
 	,arrowup_icn =SPRT.addr
@@ -536,16 +536,14 @@ RTS
 @draw-titlebar
 	
 	#0018 ~SCRN.height #0008 SUB2 #09 ,filepath 
-
 	( load ) =label.addr =label.color =SPRT.y =SPRT.x 
 	~label.addr
-	@draw-titlebar-loop NOP
+	$loop NOP
 		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =SPRT.addr ~label.color =SPRT.color
 		( incr ) #0001 ADD2
 		( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
-		DUP2 LDR #00 NEQ ^draw-titlebar-loop MUL JMPS
+		DUP2 LDR #00 NEQ ^$loop MUL JMPS
 	POP2
-
 	( selection )
 	~selection.from ,document.body SUB2 ,draw-short JSR2
 
@@ -625,8 +623,8 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath1     [ projects/examples/jumptest.usm 00 ]
-@filepath      [ projects/software/left.usm 00 ]
+@filepath      [ projects/examples/gui.hover.usm 00 ]
+@filepath1     [ projects/software/left.usm 00 ]
 
 |4000 ;document Document
 
@@ -641,4 +639,4 @@ RTS
 |FF60 ;FILE File
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ a0fe a0f7 a0f2 ] ( palette )
+|FFF8 [ 30ff e0f3 b0f3 ] ( palette )
