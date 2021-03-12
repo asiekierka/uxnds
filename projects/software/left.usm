@@ -2,7 +2,6 @@
 	app/left : text editor
 
 	TODO
-		- Copy/Cut/Paste
 		- Save/Load
 		- Double-click select word
 		- Right-click find next instance of selection
@@ -14,7 +13,7 @@
 			- Real scrolling distance
 )
 
-&Console    { pad 8 stdio 1 }
+&Console    { pad 8 char 1 byte 1 short 2 }
 &Screen 	{ width 2 height 2 pad 4 x 2 y 2 color 1 }
 &Sprite 	{ pad 8 x 2 y 2 addr 2 color 1 }
 &Controller { buttons 1 }
@@ -23,6 +22,7 @@
 &File       { pad 8 name 2 length 2 load 2 save 2 }
 
 &Document   { eof 2 body 8000 }
+&Clip       { len 2 body 256 }
 
 &Range2d 	{ from 2 to 2 }
 &Point2d 	{ x 2 y 2 }
@@ -162,15 +162,16 @@ BRK
 
 @touch-scrollbar
 
-	,no-click-scroll-up ~MOUS.y #0008 GTH2 JMP2? POP2
+	,$no-up ~MOUS.y #0008 GTH2 JMP2? POP2
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
-		,redraw JSR2 ,touch-end JMP2
-	@no-click-scroll-up 
-	,no-click-scroll-down ~MOUS.y ~SCRN.height #0008 SUB2 LTH2 JMP2? POP2
+		^$end JMPS
+	$no-up 
+	,$no-down ~MOUS.y ~SCRN.height #0008 SUB2 LTH2 JMP2? POP2
 		( incr ) ~scroll.y #0001 ADD2 =scroll.y
-		,redraw JSR2 ,touch-end JMP2
-	@no-click-scroll-down 
+		^$end JMPS
+	$no-down 
 	~MOUS.y #0008 SUB2 =scroll.y
+	$end
 	,redraw JSR2 
 	,touch-end JMP2
 
@@ -186,29 +187,40 @@ RTS
 RTS
 
 @touch-body
-
+	
 	~MOUS.y #0008 DIV2 ~scroll.y ADD2 =position.y
 	~MOUS.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-	,touch-when ~MOUS.state ~touch.state NEQ ~CTRL #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
+	,$no-chord-cut ~MOUS.chord #01 NEQ JMP2? POP2
+		,cut JSR2
+		( release ) #00 DUP =MOUS.state =MOUS.chord
+		^$end JMPS
+	$no-chord-cut
+	,$no-chord-paste ~MOUS.chord #10 NEQ JMP2? POP2
+		,paste JSR2
+		( release ) #00 DUP =MOUS.state =MOUS.chord
+		^$end JMPS
+	$no-chord-paste
+
+	,$end ~MOUS.state #11 EQU JMP2? POP2
+
+	,$no-drag ~MOUS.state ~touch.state NEQ ~CTRL #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
 		( on drag )
 		,find-selection JSR2 #0001 ADD2 =selection.to
 		,clamp-selection JSR2
-		,redraw JSR2
-		,touch-end JMP2
-
-	@touch-when
+		^$end JMPS
+	$no-drag
 		( on click )
 		,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
-		,redraw JSR2
-		,touch-end JMP2
+	$end
+	,redraw JSR2
+	,touch-end JMP2
 
 RTS
 
 @load-file ( path )
 
 	=FILE.name #8000 =FILE.length ,document.body =FILE.load
-
 	( get file length )
 	,document.body =document.eof
 	$loop NOP
@@ -333,9 +345,7 @@ RTS
 @find-selection ( position -> addr )
 
 	,find-line JSR2 ( find line )
-
 	#0000 =pt.x
-
 	$loop NOP
 		,$end ~j ~pt.x ADD2 LDR #0a EQU JMP2? POP2
 		,$end ~j ~pt.x ADD2 LDR #0d EQU JMP2? POP2
@@ -346,10 +356,41 @@ RTS
 
 RTS
 
+@cut
+
+	,copy JSR2
+	~selection.to ~selection.from SUB2 ,shift-left JSR2
+	~selection.from #0001 ADD2 =selection.to
+
+RTS
+
+@copy ( selection )
+	
+	#0000 =i ( start )
+	~selection.to ~selection.from SUB2 =j ( end )
+	~j =clip.len
+	$loop
+		~selection.from ~i ADD2 LDR ,clip.body ~i ADD2 STR
+		( incr ) ~i #0001 ADD2 =i
+		,$loop ~i ~j LTH2 JMP2? POP2
+
+RTS
+
+@paste
+	
+	~clip.len ,shift-right JSR2
+	#0000 =i ( start )
+	~clip.len =j ( end )
+	$loop
+		,clip.body ~i ADD2 LDR ~selection.from ~i ADD2 STR
+		( incr ) ~i #0001 ADD2 =i
+		,$loop ~i ~j LTH2 JMP2? POP2
+
+RTS
+
 @select ( position -> selection )
 	
 	,document.body =selection.from #0000 =pt.x #0000 =pt.y
-
 	$loop
 		,$no-space ~selection.from LDR #0a NEQ ~selection.from LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( incr ) ~pt.y #0001 ADD2 =pt.y
@@ -623,14 +664,15 @@ RTS
 @arrowdown_icn [ 0010 1010 fe7c 3810 ]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
-@filepath      [ projects/examples/gui.hover.usm 00 ]
-@filepath1     [ projects/software/left.usm 00 ]
+@filepath1     [ projects/examples/gui.hover.usm 00 ]
+@filepath      [ projects/software/left.usm 00 ]
 
-|4000 ;document Document
+|3000 ;document Document
+|c000 ;clip Clip
 
 |d000 @ERROR BRK 
 
-|FF00 ;dev/console Console
+|FF00 ;CNSL Console
 |FF10 ;SCRN Screen
 |FF20 ;SPRT Sprite
 |FF30 ;CTRL Controller

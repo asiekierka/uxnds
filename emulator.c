@@ -282,9 +282,9 @@ domouse(Uxn *u, SDL_Event *event)
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		setflag(&u->ram.dat[addr + 4], flag, 1);
-		if(flag == 0x01 && getflag(&u->ram.dat[addr + 4], 0x10))
-			u->ram.dat[addr + 5] = 0x01;
 		if(flag == 0x10 && getflag(&u->ram.dat[addr + 4], 0x01))
+			u->ram.dat[addr + 5] = 0x01;
+		if(flag == 0x01 && getflag(&u->ram.dat[addr + 4], 0x10))
 			u->ram.dat[addr + 5] = 0x10;
 		break;
 	}
@@ -340,8 +340,8 @@ console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
-	case 0x09: printf("%02x", b1); break;
-	case 0x0b: printf("%04x", (m[ptr + 0x0a] << 8) + b1); break;
+	case 0x09: printf("0x%02x\n", b1); break;
+	case 0x0b: printf("0x%04x\n", (m[ptr + 0x0a] << 8) + b1); break;
 	}
 	fflush(stdout);
 	(void)m;
