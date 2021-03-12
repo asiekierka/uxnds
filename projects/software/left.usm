@@ -144,6 +144,17 @@ BRK
 
 	( mouse )
 
+	,no-change ~MOUS.state ~touch.state EQU JMP2? POP2
+	
+		#0000 =SPRT.x ~SCRN.height #0008 SUB2 =SPRT.y
+		,mouse00icn =SPRT.addr
+		,nobutton1 ~MOUS.state #01 NEQ JMP2? POP2 ,mouse01icn =SPRT.addr @nobutton1
+		,nobutton2 ~MOUS.state #10 NEQ JMP2? POP2 ,mouse10icn =SPRT.addr @nobutton2
+		,nobutton3 ~MOUS.state #11 NEQ JMP2? POP2 ,mouse11icn =SPRT.addr @nobutton3
+		#01 =SPRT.color
+
+	@no-change
+
 	,touch-end ~MOUS.state #00 EQU JMP2? POP2
 
 		,touch-linebar ~MOUS.x #0010 LTH2 JMP2? POP2
@@ -654,6 +665,11 @@ RTS
 	0000 0032 4c00 0000 3c42 99a1 a199 423c
 
 ]
+
+@mouse00icn  [ 0000 0000 0000 0000 ]
+@mouse01icn  [ 0078 7878 7878 7800 ]
+@mouse10icn  [ 001e 1e1e 1e1e 1e00 ]
+@mouse11icn  [ 007e 7e7e 7e7e 7e00 ]
 
 @linebreak_icn [ 003e 7474 3414 1400 ]
 @blank_icn     [ 0000 0000 0000 0000 ]
