@@ -24,17 +24,17 @@ typedef struct {
 typedef struct {
 	Uint8 len, length[16], size, refs;
 	char name[64], params[16][64];
-} Macro;
+} Template;
 
 typedef struct {
 	Uint8 len, offset, refs;
 	Uint16 addr;
 	char name[64];
-	Macro *macro;
+	Template *template;
 } Label;
 
-int macroslen;
-Macro macros[256];
+int templateslen;
+Template templates[256];
 
 int labelslen;
 Label labels[256];
@@ -91,13 +91,13 @@ pushtext(char *s, int lit)
 		pushbyte(c, 0);
 }
 
-Macro *
-findmacro(char *s)
+Template *
+findtemplate(char *s)
 {
 	int i;
-	for(i = 0; i < macroslen; ++i)
-		if(scmp(macros[i].name, s, 64))
-			return &macros[i];
+	for(i = 0; i < templateslen; ++i)
+		if(scmp(templates[i].name, s, 64))
+			return &templates[i];
 	return NULL;
 }
 
@@ -122,12 +122,12 @@ findlabeladdr(char *s)
 	if(scin(s, '.') < 1)
 		return l->addr;
 	param = s + scin(s, '.') + 1;
-	for(i = 0; i < l->macro->len; ++i) {
-		if(scmp(l->macro->params[i], param, 64))
+	for(i = 0; i < l->template->len; ++i) {
+		if(scmp(l->template->params[i], param, 64))
 			return l->addr + o;
-		o += l->macro->length[i];
+		o += l->template->length[i];
 	}
-	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->template->name);
 	return 0;
 }
 
@@ -140,10 +140,10 @@ findlabellen(char *s)
 	if(scin(s, '.') < 1)
 		return l->len;
 	param = s + scin(s, '.') + 1;
-	for(i = 0; i < l->macro->len; ++i)
-		if(scmp(l->macro->params[i], param, 64))
-			return l->macro->length[i];
-	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->macro->name);
+	for(i = 0; i < l->template->len; ++i)
+		if(scmp(l->template->params[i], param, 64))
+			return l->template->length[i];
+	printf("!!! Warning %s.%s[%s]\n", l->name, param, l->template->name);
 	return 0;
 }
 
@@ -186,18 +186,18 @@ error(char *name, char *id)
 }
 
 int
-makemacro(char *name, FILE *f)
+maketemplate(char *name, FILE *f)
 {
 	Uint8 mode = 0;
-	Macro *m;
+	Template *m;
 	char wv[64];
-	if(findmacro(name))
-		return error("Macro duplicate", name);
+	if(findtemplate(name))
+		return error("Template duplicate", name);
 	if(sihx(name) && slen(name) % 2 == 0)
-		return error("Macro name is hex number", name);
+		return error("Template name is hex number", name);
 	if(findopcode(name))
-		return error("Macro name is invalid", name);
-	m = &macros[macroslen++];
+		return error("Template name is invalid", name);
+	m = &templates[templateslen++];
 	scpy(name, m->name, 64);
 	while(fscanf(f, "%s", wv)) {
 		if(wv[0] == '{')
@@ -213,12 +213,12 @@ makemacro(char *name, FILE *f)
 		}
 		mode = !mode;
 	}
-	printf("New macro: %s[%d:%d]\n", name, m->len, m->size);
+	printf("New template: %s[%d:%d]\n", name, m->len, m->size);
 	return 1;
 }
 
 int
-makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
+makelabel(char *name, Uint16 addr, Uint8 len, Template *m)
 {
 	Label *l;
 	if(findlabel(name))
@@ -233,17 +233,9 @@ makelabel(char *name, Uint16 addr, Uint8 len, Macro *m)
 	l->refs = 0;
 	scpy(name, l->name, 64);
 	if(m)
-		l->macro = m;
+		l->template = m;
 	printf("New label: %s, at 0x%04x[%d]\n", l->name, l->addr, l->len);
 	return 1;
-}
-
-int
-makeconst(char *id, FILE *f)
-{
-	char wv[64];
-	fscanf(f, "%s", wv);
-	return makelabel(id, shex(wv), 1, 0);
 }
 
 int
@@ -252,16 +244,16 @@ makevariable(char *id, Uint16 *addr, FILE *f)
 	char wv[64];
 	Uint16 origin;
 	Uint8 len;
-	Macro *m = NULL;
+	Template *m = NULL;
 	fscanf(f, "%s", wv);
 	origin = *addr;
 	if(sihx(wv))
 		len = shex(wv);
-	else if((m = findmacro(wv))) {
+	else if((m = findtemplate(wv))) {
 		len = m->size;
 		m->refs++;
 	} else
-		return error("Invalid macro", wv);
+		return error("Invalid template", wv);
 	*addr += len;
 	return makelabel(id, origin, len, m);
 }
@@ -305,10 +297,7 @@ pass1(FILE *f)
 			if(!makevariable(w + 1, &addr, f))
 				return error("Pass1 failed", w);
 		} else if(w[0] == '&') {
-			if(!makemacro(w + 1, f))
-				return error("Pass1 failed", w);
-		} else if(w[0] == ':') {
-			if(!makeconst(w + 1, f))
+			if(!maketemplate(w + 1, f))
 				return error("Pass1 failed", w);
 		} else if(findopcode(w) || scmp(w, "BRK", 4))
 			addr += 1;
@@ -338,7 +327,7 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, cbits = 0, cmacro = 0;
+	int ccmnt = 0, cbits = 0, ctemplate = 0;
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
@@ -355,7 +344,7 @@ pass2(FILE *f)
 			scpy(subw, w + 1, 64);
 		}
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(skipblock(w, &cmacro, '{', '}')) continue;
+		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		/* clang-format off */
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
@@ -395,9 +384,9 @@ cleanup(void)
 	for(i = 0; i < labelslen; ++i)
 		if(!labels[i].refs)
 			printf("--- Unused label: %s\n", labels[i].name);
-	for(i = 0; i < macroslen; ++i)
-		if(!macros[i].refs)
-			printf("--- Unused macro: %s\n", macros[i].name);
+	for(i = 0; i < templateslen; ++i)
+		if(!templates[i].refs)
+			printf("--- Unused template: %s\n", templates[i].name);
 }
 
 int

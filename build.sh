@@ -21,4 +21,4 @@ cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werr
 
 # run
 ./bin/assembler projects/software/left.usm bin/boot.rom
-./bin/emulator bin/boot.rom
+# ./bin/emulator bin/boot.rom

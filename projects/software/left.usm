@@ -6,6 +6,9 @@
 		- Double-click select word
 		- Right-click find next instance of selection
 		- Draw tab characters
+		- Don't redraw if nothing has changed
+		- Input on selection should erase selection range
+		- Erase on selection should erase selection range
 		- Scrollbar
 			- Don't scroll past oef
 			- Hor scroll
@@ -33,7 +36,6 @@
 ;i 2 ;j 2 ;k 1 ;l 1 ;addr 2
 
 ;selection Range2d ;position Point2d ;scroll Point2d
-
 ;pt Point2d ;mouse Point2d ;touch Touch2d
 ;textarea Textarea2d
 ;label Label2d ( remove )
@@ -42,7 +44,6 @@
 	
 	( load file )
 	,filepath ,load-file JSR2
-
 	( place textarea )
 	#0018 =textarea.x1 ~SCRN.height #0008 SUB2 =textarea.y2
 
@@ -72,11 +73,11 @@ BRK
 		,no-ctrl-left ~CTRL #40 NEQ JMP2? POP2
 			( clamp ) ,no-ctrl-left ~selection.from ,document.body EQU2 JMP2? POP2
 			~selection.from #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
-			,clamp-selection JSR2,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
+			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-left
 		,no-ctrl-right ~CTRL #80 NEQ JMP2? POP2
 			~selection.from #0001 ADD2 DUP2 =selection.from #0001 ADD2 =selection.to
-			,clamp-selection JSR2,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
+			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-right
 		( alt )
 		,no-alt ~CTRL #0f AND #02 NEQ JMP2? POP2
@@ -119,27 +120,33 @@ BRK
 
 	( keys )
 
-	,keys-end ~KEYS #00 EQU JMP2? POP2
+	,no-keys ~KEYS #00 EQU JMP2? POP2
 
-		,no-backspace ~KEYS #08 NEQ JMP2? POP2
+		,$no-backspace ~KEYS #08 NEQ JMP2? POP2
 			( erase )
-			~selection.to ~selection.from SUB2 ,shift-left JSR2
+			,$erase-multiple ~selection.to ~selection.from SUB2 #0001 NEQ2 JMP2? POP2
+			$erase-single
+				~selection.to ~selection.from SUB2 ,shift-left JSR2
+				,$erase-end JMP2
+			$erase-multiple
+				~selection.from #0001 ADD2 =selection.from
+				~selection.to ~selection.from SUB2 #0001 ADD2 ,shift-left JSR2
+			$erase-end
 			~selection.from #0001 SUB2 =selection.from
-			~selection.from #0001 ADD2 =selection.to
-			( release ) #00 =KEYS
-			,redraw JSR2
-			,keys-end JMP2
-		@no-backspace
+			,$keys-end JMP2
+		$no-backspace
 
 		( insert )
 		~selection.to ~selection.from SUB2 ,shift-right JSR2
 		~KEYS ~selection.from STR
 		~selection.from #0001 ADD2 =selection.from
-		~selection.from #0001 ADD2 =selection.to
-		( release ) #00 =KEYS
-		,redraw JSR2
 
-	@keys-end
+		$keys-end
+			~selection.from #0001 ADD2 =selection.to
+			( release ) #00 =KEYS
+			,redraw JSR2
+
+	@no-keys
 
 	( mouse )
 
@@ -532,7 +539,7 @@ RTS
 		( draw ) #01 
 		~i ~selection.from #0001 SUB2 GTH2 
 		~i ~selection.to LTH2 #0101 EQU2
-		#05 MUL ADD =SPRT.color
+		#05 MUL ADD ~i ~selection.from EQU2 ADD =SPRT.color
 
 		,$no-linebreak ~i LDR #0a NEQ ~i LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( draw linebreak )
@@ -578,10 +585,10 @@ RTS
 	#0000 =SPRT.y
 	,scrollbar_bg =SPRT.addr
 
-	$loop
+	$loop NOP
 	( draw ) #08 =SPRT.color
 	( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-	,$loop ~SPRT.y ~SCRN.height LTH2 JMP2? POP2
+	~SPRT.y ~SCRN.height LTH2 ^$loop MUL JMPS
 
 	#0000 =SPRT.y
 	,arrowup_icn =SPRT.addr
