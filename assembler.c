@@ -17,27 +17,23 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 typedef struct {
-	Uint8 data[256 * 256];
-	Uint16 ptr;
-} Program;
-
-typedef struct {
-	Uint8 len, length[16], size, refs;
 	char name[64], params[16][64];
+	Uint8 len, length[16], size, refs;
 } Template;
 
 typedef struct {
+	char name[64];
 	Uint8 len, offset, refs;
 	Uint16 addr;
-	char name[64];
 	Template *template;
 } Label;
 
-int templateslen;
-Template templates[256];
-
-int labelslen;
-Label labels[256];
+typedef struct {
+	Uint8 data[256 * 256], tlen, llen;
+	Uint16 ptr;
+	Template templates[256];
+	Label labels[256];
+} Program;
 
 Program p;
 
@@ -66,16 +62,14 @@ char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) &
 void
 pushbyte(Uint8 b, int lit)
 {
-	if(lit)
-		pushbyte(0x02, 0);
+	if(lit) pushbyte(0x02, 0);
 	p.data[p.ptr++] = b;
 }
 
 void
 pushshort(Uint16 s, int lit)
 {
-	if(lit)
-		pushbyte(0x22, 0);
+	if(lit) pushbyte(0x22, 0);
 	pushbyte((s >> 8) & 0xff, 0);
 	pushbyte(s & 0xff, 0);
 }
@@ -85,19 +79,17 @@ pushtext(char *s, int lit)
 {
 	int i = 0;
 	char c;
-	if(lit)
-		pushbyte(0x22, 0);
-	while((c = s[i++]))
-		pushbyte(c, 0);
+	if(lit) pushbyte(0x22, 0);
+	while((c = s[i++])) pushbyte(c, 0);
 }
 
 Template *
 findtemplate(char *s)
 {
 	int i;
-	for(i = 0; i < templateslen; ++i)
-		if(scmp(templates[i].name, s, 64))
-			return &templates[i];
+	for(i = 0; i < p.tlen; ++i)
+		if(scmp(p.templates[i].name, s, 64))
+			return &p.templates[i];
 	return NULL;
 }
 
@@ -107,9 +99,9 @@ findlabel(char *s)
 	int i, rng = scin(s, '.');
 	char name[64];
 	scpy(s, name, rng > 0 ? rng + 1 : 64);
-	for(i = 0; i < labelslen; ++i)
-		if(scmp(labels[i].name, name, 64))
-			return &labels[i];
+	for(i = 0; i < p.llen; ++i)
+		if(scmp(p.labels[i].name, name, 64))
+			return &p.labels[i];
 	return NULL;
 }
 
@@ -197,13 +189,11 @@ maketemplate(char *name, FILE *f)
 		return error("Template name is hex number", name);
 	if(findopcode(name))
 		return error("Template name is invalid", name);
-	m = &templates[templateslen++];
+	m = &p.templates[p.tlen++];
 	scpy(name, m->name, 64);
 	while(fscanf(f, "%s", wv)) {
-		if(wv[0] == '{')
-			continue;
-		if(wv[0] == '}')
-			break;
+		if(wv[0] == '{') continue;
+		if(wv[0] == '}') break;
 		if(mode == 0)
 			scpy(wv, m->params[m->len], 64);
 		else {
@@ -227,7 +217,7 @@ makelabel(char *name, Uint16 addr, Uint8 len, Template *m)
 		return error("Label name is hex number", name);
 	if(findopcode(name))
 		return error("Label name is invalid", name);
-	l = &labels[labelslen++];
+	l = &p.labels[p.llen++];
 	l->addr = addr;
 	l->len = len;
 	l->refs = 0;
@@ -335,6 +325,8 @@ pass2(FILE *f)
 		Label *l;
 		if(w[0] == '&') continue;
 		if(w[0] == '$') continue;
+		if(skipblock(w, &ccmnt, '(', ')')) continue;
+		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		if(w[0] == '@') {
 			scpy(w + 1, scope, 64);
 			continue;
@@ -343,8 +335,6 @@ pass2(FILE *f)
 			sublabel(subw, scope, w + 2);
 			scpy(subw, w + 1, 64);
 		}
-		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		/* clang-format off */
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
@@ -352,14 +342,13 @@ pass2(FILE *f)
 			else if(slen(w) == 2 && sihx(w)) pushbyte(shex(w), 0); 
 			else pushtext(w, 0);
 		}
-		else if(w[0] == '|') p.ptr = shex(w + 1);
-		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == '^' && (l = findlabel(w + 1))) { 
 			int off = l->addr - p.ptr - 3;
 			if(off < -126 || off > 126){ printf("Address %s is too far(%d).\n", w, off); return 0; } 
 			pushbyte((Sint8)(l->addr - p.ptr - 3), 1); l->refs++; 
 		}
-		else if(w[0] == ':') fscanf(f, "%s", w);
+		else if(w[0] == '|') p.ptr = shex(w + 1);
+		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == ';') fscanf(f, "%s", w);
 		else if(w[0] == '.' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 0); l->refs++; }
 		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
@@ -381,12 +370,12 @@ void
 cleanup(void)
 {
 	int i;
-	for(i = 0; i < labelslen; ++i)
-		if(!labels[i].refs)
-			printf("--- Unused label: %s\n", labels[i].name);
-	for(i = 0; i < templateslen; ++i)
-		if(!templates[i].refs)
-			printf("--- Unused template: %s\n", templates[i].name);
+	for(i = 0; i < p.llen; ++i)
+		if(!p.labels[i].refs)
+			printf("--- Unused label: %s\n", p.labels[i].name);
+	for(i = 0; i < p.tlen; ++i)
+		if(!p.templates[i].refs)
+			printf("--- Unused template: %s\n", p.templates[i].name);
 }
 
 int
