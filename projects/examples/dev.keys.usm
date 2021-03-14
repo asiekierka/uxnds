@@ -31,14 +31,14 @@ BRK
 	~textarea.x1 #0001 SUB2 ~textarea.y1 #0001 SUB2 ~textarea.x2 ~textarea.y2 #00 ,line-rect JSR2
 	~textarea.x1 #0002 SUB2 ~textarea.y1 #0002 SUB2 ~textarea.x2 #0001 ADD2 ~textarea.y2 #0001 ADD2 #01 ,line-rect JSR2
 
-RTS
+RTN
 
 @redraw
 		
 	~textarea.x1 ~textarea.y1 ~textarea.x2 ~textarea.y2 #01 ,fill-rect JSR2
 	~textarea.x1 ~textarea.y1 #04 ~textarea.addr ,draw-textarea JSR2
 	
-RTS
+RTN
 
 @blink-cursor
 	
@@ -50,7 +50,7 @@ RTS
 	@skip 
 	~timer #01 ADD =timer
 
-RTS
+RTN
 
 @tile-rect ( x1 y1 x2 y2 color addr )
 
@@ -65,7 +65,7 @@ RTS
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 		,$ver ~Sprite.y ~rect.y2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @fill-rect ( x1 y1 x2 y2 color )
 
@@ -79,7 +79,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		,$ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @line-rect ( x1 y1 x2 y2 color )
 
@@ -96,7 +96,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @draw-textarea ( x y color addr )
 	
@@ -115,7 +115,7 @@ RTS
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @do-textarea
 
@@ -138,7 +138,7 @@ RTS
 	#06 =Sprite.color
 	@do-textarea-end
 
-RTS
+RTN
 
 @do-cursor
 
@@ -151,7 +151,7 @@ RTS
 	~mouse.x ~Mouse.x NEQU2
 	~mouse.y ~Mouse.y NEQU2
 
-	#0000 EQU2 RTS? ( Return if unchanged )
+	#0000 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
 	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
@@ -160,7 +160,7 @@ RTS
 	#12 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
 
 
-RTS
+RTN
 
 @draw-sprite
 
@@ -169,7 +169,7 @@ RTS
 	=Sprite.addr
 	=Sprite.color
 
-RTS
+RTN
 
 @font ( spectrum-zx font ) 
 [

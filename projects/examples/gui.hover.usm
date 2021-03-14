@@ -68,7 +68,7 @@ BRK
 	~pointer.y =Sprite.y 
 	#11 =Sprite.color
 
-RTS
+RTN
 
 @line-rect ( x1 y1 x2 y2 color )
 
@@ -85,7 +85,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @pointer_icn [ 80c0 e0f0 f8e0 1000 ]

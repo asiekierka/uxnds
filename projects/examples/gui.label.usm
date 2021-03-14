@@ -37,7 +37,7 @@ BRK
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @draw-label-middle ( x y color addr )
 	
@@ -51,7 +51,7 @@ RTS
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @draw-label-right ( x y color addr )
 	
@@ -65,7 +65,7 @@ RTS
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @get-text-length ( label )
 	
@@ -75,7 +75,7 @@ RTS
 		LDR #00 NEQ ,$loop ROT JMP2? POP2
 	SWP2 POP2
 
-RTS
+RTN
 
 @font ( spectrum-zx font ) 
 [

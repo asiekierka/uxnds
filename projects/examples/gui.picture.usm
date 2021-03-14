@@ -23,7 +23,7 @@ BRK
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @pict_small [
 	ff80 8080 8080 8088 ffff fffc f8f9 f1f4

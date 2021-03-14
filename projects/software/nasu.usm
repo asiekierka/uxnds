@@ -197,7 +197,7 @@ BRK
 	~tileview.addr #0007 ADD2 LDR ~tileview.addr #0006 ADD2 STR
 	~tileview.addr #0007 ADD2 STR
 
-RTS
+RTN
 
 @op_shiftdown
 	
@@ -211,14 +211,14 @@ RTS
 	~tileview.addr LDR ~tileview.addr #0001 ADD2 STR
 	~tileview.addr STR
 
-RTS
+RTN
 
 @redraw
 	
 	,draw-bankview JSR2
 	,draw-tileview JSR2
 
-RTS
+RTN
 
 @draw-bankview
 	
@@ -288,7 +288,7 @@ RTS
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		,$ver ~pt.y #10 LTH JMP2? POP2
 
-RTS
+RTN
 
 @draw-tileview
 
@@ -386,7 +386,7 @@ RTS
 		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
 		,$tiles-ver ~pt.y #02 LTH JMP2? POP2
 
-RTS
+RTN
 
 @draw-tileview-icn
 
@@ -407,14 +407,14 @@ RTS
 		~SPRT.x #0040 SUB2 =SPRT.x
 		,$ver ~pt.y #08 LTH JMP2? POP2
 
-RTS
+RTN
 
 @draw-cursor
 
 	~mouse.x ~MOUS.x NEQU2
 	~mouse.y ~MOUS.y NEQU2
 
-	#0000 EQU2 RTS? ( Return if unchanged )
+	#0000 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
 	~mouse.x =SPRT.x
@@ -432,7 +432,7 @@ RTS
 	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =SPRT.addr
 	#12 =SPRT.color
 
-RTS
+RTN
 
 @draw-short ( short )
 
@@ -449,7 +449,7 @@ RTS
 	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 
-RTS
+RTN
 
 ( Utils )
 
@@ -468,7 +468,7 @@ RTS
 		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
 		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
 
-RTS
+RTN
 
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
 @tool_hand     [ 4040 4070 f8f8 f870 ]

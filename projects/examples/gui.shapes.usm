@@ -41,7 +41,7 @@ BRK
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @fill-rect ( x1 y1 x2 y2 color )
 
@@ -55,7 +55,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		,$ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @draw-picture ( x y width height color addr )
 	
@@ -70,7 +70,7 @@ RTS
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
 
-RTS
+RTN
 
 @draw-label ( x y color addr )
 	
@@ -82,7 +82,7 @@ RTS
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @pict_small [
 

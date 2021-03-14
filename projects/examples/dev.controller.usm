@@ -56,7 +56,7 @@ BRK
 	,slime_icn =Sprite.addr
 	~slime =Sprite.color
 
-RTS
+RTN
 
 @default_icn [ 3c7e ffdb ffe7 7e3c ]
 @up_icn      [ 2466 e7db ffff 7e3c ]

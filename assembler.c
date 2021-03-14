@@ -18,7 +18,7 @@ typedef signed short Sint16;
 
 typedef struct {
 	char name[64], items[16][64];
-	Uint8 len;
+	Uint8 len, refs;
 } Macro;
 
 typedef struct {
@@ -45,10 +45,10 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "RTS", 
+	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "RTN", 
 	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "ROL", "ROR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "---", "WSR", "RSW",
-	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "PRG"
+	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
 };
 
 int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
@@ -434,10 +434,13 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s, %d labels.\n\n", filename, p.llen);
+	printf("Assembled %s, %d labels, %d macros.\n\n", filename, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
+	for(i = 0; i < p.mlen; ++i)
+		if(!p.macros[i].refs)
+			printf("--- Unused macro: %s\n", p.macros[i].name);
 }
 
 int

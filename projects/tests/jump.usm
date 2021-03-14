@@ -1,12 +1,9 @@
 ( tests/jump )
 
-%RTS { RSW2 JMP }
-%JSR2 { PRG WSR2 JMP2 }
-%JMC { JMP2? POP2 }
-
 |0100 @RESET 
 	
 	,test1 JSR2
+	,test2 JSR2
 
 BRK
 
@@ -26,7 +23,7 @@ BRK
 
 	#33 =Console.byte
 
-	,skip1 #12 #34 LTH JMC
+	,skip1 #12 #34 LTH JMP2? POP2
 		#ff =Console.byte
 	@skip1
 
@@ -36,7 +33,7 @@ BRK
 
 	#44 =Console.byte
 
-RTS
+RTN
 
 @test2
 
@@ -51,7 +48,7 @@ RTS
 
 	@end
 
-RTS
+RTN
 
 |c000 @FRAME
 |d000 @ERROR 

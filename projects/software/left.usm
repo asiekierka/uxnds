@@ -35,7 +35,7 @@
 	( load file )
 	,filepath ,load-file JSR2
 	( place textarea )
-	#0018 =textarea.x1 ~SCRN.height #0008 SUB2 =textarea.y2
+	#0018 =textarea.x1 ~Screen.height #0008 SUB2 =textarea.y2
 
 	,select JSR2
 	,redraw JSR2
@@ -46,62 +46,62 @@ BRK
 
 	( ctrl )
 
-	,ctrl-end ~CTRL #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP2? POP2
+	,ctrl-end ~Controller #00 EQU ~lock #00 NEQ #0000 NEQ2 JMP2? POP2
 		( lock ) #04 =lock
-		,no-ctrl-up ~CTRL #10 NEQ JMP2? POP2
+		,no-ctrl-up ~Controller #10 NEQ JMP2? POP2
 			( clamp ) ,no-ctrl-up ~position.y #0000 EQU2 JMP2? POP2
 			,find-lineoffset JSR2 =position.x 
 			~position.y #0001 SUB2 =position.y 
 			,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-up
-		,no-ctrl-down ~CTRL #20 NEQ JMP2? POP2
+		,no-ctrl-down ~Controller #20 NEQ JMP2? POP2
 			,find-lineoffset JSR2 =position.x ~position.y #0001 ADD2 =position.y 
 			,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-down
-		,no-ctrl-left ~CTRL #40 NEQ JMP2? POP2
+		,no-ctrl-left ~Controller #40 NEQ JMP2? POP2
 			( clamp ) ,no-ctrl-left ~selection.from ,document.body EQU2 JMP2? POP2
 			~selection.from #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-left
-		,no-ctrl-right ~CTRL #80 NEQ JMP2? POP2
+		,no-ctrl-right ~Controller #80 NEQ JMP2? POP2
 			~selection.from #0001 ADD2 DUP2 =selection.from #0001 ADD2 =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-right
 		( alt )
-		,no-alt ~CTRL #0f AND #02 NEQ JMP2? POP2
-			,no-aup ~CTRL #04 ROR #01 NEQ JMP2? POP2
+		,no-alt ~Controller #0f AND #02 NEQ JMP2? POP2
+			,no-aup ~Controller #04 ROR #01 NEQ JMP2? POP2
 				,find-wordstart JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aup
-			,no-adown ~CTRL #04 ROR #02 NEQ JMP2? POP2
+			,no-adown ~Controller #04 ROR #02 NEQ JMP2? POP2
 				,find-wordend JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-adown
-			,no-aleft ~CTRL #04 ROR #04 NEQ JMP2? POP2
+			,no-aleft ~Controller #04 ROR #04 NEQ JMP2? POP2
 				~selection.to #0001 SUB2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aleft
-			,no-aright ~CTRL #04 ROR #08 NEQ JMP2? POP2
+			,no-aright ~Controller #04 ROR #08 NEQ JMP2? POP2
 				~selection.to #0001 ADD2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aright
 		@no-alt
 		( ctrl )
-		,no-ctrl ~CTRL #0f AND #01 NEQ JMP2? POP2
-			,no-cup ~CTRL #04 ROR #01 NEQ JMP2? POP2
+		,no-ctrl ~Controller #0f AND #01 NEQ JMP2? POP2
+			,no-cup ~Controller #04 ROR #01 NEQ JMP2? POP2
 				#0004 ,scroll-up JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cup
-			,no-cdown ~CTRL #04 ROR #02 NEQ JMP2? POP2
+			,no-cdown ~Controller #04 ROR #02 NEQ JMP2? POP2
 				#0004 ,scroll-down JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cdown
-			,no-cleft ~CTRL #04 ROR #04 NEQ JMP2? POP2
+			,no-cleft ~Controller #04 ROR #04 NEQ JMP2? POP2
 				,goto-linestart JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cleft
-			,no-cright ~CTRL #04 ROR #08 NEQ JMP2? POP2
+			,no-cright ~Controller #04 ROR #08 NEQ JMP2? POP2
 				,goto-lineend JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cright
 		@no-ctrl
@@ -110,9 +110,9 @@ BRK
 
 	( keys )
 
-	,no-keys ~KEYS #00 EQU JMP2? POP2
+	,no-keys ~Keys #00 EQU JMP2? POP2
 
-		,$no-backspace ~KEYS #08 NEQ JMP2? POP2
+		,$no-backspace ~Keys #08 NEQ JMP2? POP2
 			( erase )
 			,$erase-multiple ~selection.to ~selection.from SUB2 #0001 NEQ2 JMP2? POP2
 				~selection.to ~selection.from SUB2 ,shift-left JSR2
@@ -127,38 +127,38 @@ BRK
 
 		( insert )
 		~selection.to ~selection.from SUB2 ,shift-right JSR2
-		~KEYS ~selection.from STR
+		~Keys ~selection.from STR
 		~selection.from #0001 ADD2 =selection.from
 
 		$keys-end
 			~selection.from #0001 ADD2 =selection.to
-			( release ) #00 =KEYS
+			( release ) #00 =Keys
 			,redraw JSR2
 
 	@no-keys
 
 	( mouse )
 
-	,no-change ~MOUS.state ~touch.state EQU JMP2? POP2
+	,no-change ~Mouse.state ~touch.state EQU JMP2? POP2
 	
-		#0000 =SPRT.x ~SCRN.height #0008 SUB2 =SPRT.y
-		,mouse00icn =SPRT.addr
-		,nobutton1 ~MOUS.state #01 NEQ JMP2? POP2 ,mouse01icn =SPRT.addr @nobutton1
-		,nobutton2 ~MOUS.state #10 NEQ JMP2? POP2 ,mouse10icn =SPRT.addr @nobutton2
-		,nobutton3 ~MOUS.state #11 NEQ JMP2? POP2 ,mouse11icn =SPRT.addr @nobutton3
-		#01 =SPRT.color
+		#0000 =Sprite.x ~Screen.height #0008 SUB2 =Sprite.y
+		,mouse00icn =Sprite.addr
+		,nobutton1 ~Mouse.state #01 NEQ JMP2? POP2 ,mouse01icn =Sprite.addr @nobutton1
+		,nobutton2 ~Mouse.state #10 NEQ JMP2? POP2 ,mouse10icn =Sprite.addr @nobutton2
+		,nobutton3 ~Mouse.state #11 NEQ JMP2? POP2 ,mouse11icn =Sprite.addr @nobutton3
+		#01 =Sprite.color
 
 	@no-change
 
-	,touch-end ~MOUS.state #00 EQU JMP2? POP2
+	,touch-end ~Mouse.state #00 EQU JMP2? POP2
 
-		,touch-linebar ~MOUS.x #0010 LTH2 JMP2? POP2
-		,touch-body ~MOUS.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
+		,touch-linebar ~Mouse.x #0010 LTH2 JMP2? POP2
+		,touch-body ~Mouse.x ~Screen.width #0008 SUB2 LTH2 JMP2? POP2
 		,touch-scrollbar JMP2
 
 	@touch-end
 
-	~MOUS.state =touch.state
+	~Mouse.state =touch.state
 
 	( unlock ) ,skip-unlock ~lock #00 EQU JMP2? POP2 ~lock #01 SUB =lock @skip-unlock
 
@@ -168,49 +168,49 @@ BRK
 
 @touch-scrollbar
 
-	,$no-up ~MOUS.y #0008 GTH2 JMP2? POP2
+	,$no-up ~Mouse.y #0008 GTH2 JMP2? POP2
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
 		^$end JMPS
 	$no-up 
-	,$no-down ~MOUS.y ~SCRN.height #0008 SUB2 LTH2 JMP2? POP2
+	,$no-down ~Mouse.y ~Screen.height #0008 SUB2 LTH2 JMP2? POP2
 		( incr ) ~scroll.y #0001 ADD2 =scroll.y
 		^$end JMPS
 	$no-down 
-	~MOUS.y #0008 SUB2 =scroll.y
+	~Mouse.y #0008 SUB2 =scroll.y
 	$end
 	,redraw JSR2 
 	,touch-end JMP2
 
-RTS
+RTN
 
 @touch-linebar
 
-	~MOUS.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
+	~Mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y #0000 =position.x 
 	,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
 	,redraw JSR2 
 	,touch-end JMP2
 
-RTS
+RTN
 
 @touch-body
 	
-	~MOUS.y #0008 DIV2 ~scroll.y ADD2 =position.y
-	~MOUS.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
+	~Mouse.y #0008 DIV2 ~scroll.y ADD2 =position.y
+	~Mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-	,$no-chord-cut ~MOUS.chord #01 NEQ JMP2? POP2
+	,$no-chord-cut ~Mouse.chord #01 NEQ JMP2? POP2
 		,cut JSR2
-		( release ) #00 DUP =MOUS.state =MOUS.chord
+		( release ) #00 DUP =Mouse.state =Mouse.chord
 		^$end JMPS
 	$no-chord-cut
-	,$no-chord-paste ~MOUS.chord #10 NEQ JMP2? POP2
+	,$no-chord-paste ~Mouse.chord #10 NEQ JMP2? POP2
 		,paste JSR2
-		( release ) #00 DUP =MOUS.state =MOUS.chord
+		( release ) #00 DUP =Mouse.state =Mouse.chord
 		^$end JMPS
 	$no-chord-paste
 
-	,$end ~MOUS.state #11 EQU JMP2? POP2
+	,$end ~Mouse.state #11 EQU JMP2? POP2
 
-	,$no-drag ~MOUS.state ~touch.state NEQ ~CTRL #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
+	,$no-drag ~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 JMP2? POP2
 		( on drag )
 		,find-selection JSR2 #0001 ADD2 =selection.to
 		,clamp-selection JSR2
@@ -222,34 +222,34 @@ RTS
 	,redraw JSR2
 	,touch-end JMP2
 
-RTS
+RTN
 
 @load-file ( path )
 
-	=FILE.name #8000 =FILE.length ,document.body =FILE.load
+	=File.name #8000 =File.length ,document.body =File.load
 	( get file length )
 	,document.body =document.eof
 	$loop NOP
 		( incr ) ~document.eof #0001 ADD2 =document.eof
 	~document.eof LDR #00 NEQ ^$loop MUL JMPS
 
-RTS
+RTN
 
 @scroll-up ( length )
 	
 	DUP2 ~scroll.y LTH2 ,$clamp ROT JMP2? POP2
-		#0000 =scroll.y POP2 RTS
+		#0000 =scroll.y POP2 RTN
 	$clamp
 	~scroll.y SWP2 SUB2 =scroll.y
 
-RTS
+RTN
 
 @scroll-down ( length )
 
 	( TODO: Clamp )
 	~scroll.y SWP2 ADD2 =scroll.y
 
-RTS
+RTN
 
 @shift-left ( length )
 
@@ -261,7 +261,7 @@ RTS
 		~j ~document.eof LTH2 ^$loop MUL JMPS
 	~document.eof ~i SUB2 =document.eof
 
-RTS
+RTN
 
 @shift-right ( length )
 
@@ -273,51 +273,51 @@ RTS
 		~j ~selection.from GTH2 ^$loop MUL JMPS
 	~document.eof ~i ADD2 =document.eof
 
-RTS
+RTN
 
 @follow-selection
 
 	,$no-up ~position.y ~scroll.y GTH2 JMP2? POP2
-		~position.y =scroll.y RTS
+		~position.y =scroll.y RTN
 	$no-up
-	,$no-down ~position.y ~SCRN.height #0010 SUB2 #0008 DIV2 ~scroll.y ADD2 LTH2 JMP2? POP2
-		~position.y ~SCRN.height #0010 SUB2 #0008 DIV2 SUB2 =scroll.y RTS
+	,$no-down ~position.y ~Screen.height #0010 SUB2 #0008 DIV2 ~scroll.y ADD2 LTH2 JMP2? POP2
+		~position.y ~Screen.height #0010 SUB2 #0008 DIV2 SUB2 =scroll.y RTN
 	$no-down
 
-RTS
+RTN
 
 @clamp-selection
 
-	~selection.from ~selection.to LTH2 RTS?
+	~selection.from ~selection.to LTH2 RTN?
 	~selection.from #0001 ADD2 =selection.to
 
-RTS
+RTN
 
 @goto-linestart
 
 	$loop NOP
-		~selection.from #0001 SUB2 LDR #0a EQU RTS?
-		~selection.from #0001 SUB2 LDR #0d EQU RTS?
+		~selection.from #0001 SUB2 LDR #0a EQU RTN?
+		~selection.from #0001 SUB2 LDR #0d EQU RTN?
 		( decr ) ~selection.from DUP2 =selection.to #0001 SUB2 =selection.from
 	~selection.from LDR #00 NEQ ^$loop MUL JMPS
 	( clamp at document body )
-	~selection.from ,document.body GTH2 RTS?
+	~selection.from ,document.body GTH2 RTN?
 	,document.body DUP2 =selection.from #0001 ADD2 =selection.to
 
-RTS
+RTN
 
 @goto-lineend
 	
 	$loop NOP
-		~selection.from LDR #0a EQU RTS?
-		~selection.from LDR #0d EQU RTS?
+		~selection.from LDR #0a EQU RTN?
+		~selection.from LDR #0d EQU RTN?
 		( incr ) ~selection.from #0001 ADD2 DUP2 #0001 ADD2 =selection.to =selection.from
 		~selection.from LDR #00 NEQ ^$loop MUL JMPS
 	( clamp at document body )
-	~selection.from ,document.eof LTH2 RTS?
+	~selection.from ,document.eof LTH2 RTN?
 	,document.eof #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
 
-RTS
+RTN
 
 @find-wordstart
 
@@ -331,7 +331,7 @@ RTS
 	$end 
 	( return ) ~j #0001 SUB2
 
-RTS
+RTN
 
 @find-wordend
 	
@@ -345,7 +345,7 @@ RTS
 	$end 
 	( return ) ~j #0001 ADD2
 
-RTS
+RTN
 
 @find-lineoffset ( return character offset from linestart )
 
@@ -358,7 +358,7 @@ RTS
 	$end 
 	( return ) ~j
 
-RTS
+RTN
 
 @find-line ( position -> addr )
 
@@ -373,7 +373,7 @@ RTS
 	$end
 	( return ) ~j
 
-RTS
+RTN
 
 @find-selection ( position -> addr )
 
@@ -387,7 +387,7 @@ RTS
 	$end
 	( return ) ~pt.x ADD2
 
-RTS
+RTN
 
 @cut
 
@@ -395,7 +395,7 @@ RTS
 	~selection.to ~selection.from SUB2 ,shift-left JSR2
 	~selection.from #0001 ADD2 =selection.to
 
-RTS
+RTN
 
 @copy ( selection )
 	
@@ -407,7 +407,7 @@ RTS
 		( incr ) ~i #0001 ADD2 =i
 		~i ~j LTH2 ^$loop MUL JMPS
 
-RTS
+RTN
 
 @paste
 	
@@ -419,7 +419,7 @@ RTS
 		( incr ) ~i #0001 ADD2 =i
 		~i ~j LTH2 ^$loop MUL JMPS
 
-RTS
+RTN
 
 @select ( position -> selection )
 	
@@ -431,13 +431,13 @@ RTS
 		$no-space
 		,$no-reached ~pt.y ~position.y #0001 SUB2 GTH2 ~pt.x ~position.x #0001 SUB2 GTH2 #0101 NEQ2 JMP2? POP2
 			~selection.from #0001 ADD2 =selection.to
-			RTS
+			RTN
 		$no-reached
 		( incr ) ~pt.x #0001 ADD2 =pt.x
 		( incr ) ~selection.from #0001 ADD2 =selection.from
 	,$loop ~selection.from LDR #00 NEQ JMP2? POP2
 
-RTS
+RTN
 
 ( drawing functions )
 
@@ -448,57 +448,57 @@ RTS
 	,draw-titlebar JSR2
 
 	( save/load icons )
-	~SCRN.height #0008 SUB2 =SPRT.y
-	~SCRN.width #0018 SUB2 =SPRT.x
-	,load_icn =SPRT.addr
-	#02 =SPRT.color
-	~SCRN.width #0010 SUB2 =SPRT.x
-	,save_icn =SPRT.addr
-	#02 =SPRT.color
+	~Screen.height #0008 SUB2 =Sprite.y
+	~Screen.width #0018 SUB2 =Sprite.x
+	,load_icn =Sprite.addr
+	#02 =Sprite.color
+	~Screen.width #0010 SUB2 =Sprite.x
+	,save_icn =Sprite.addr
+	#02 =Sprite.color
 
-RTS
+RTN
 
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
-	( draw ) #0e =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
-	( draw ) #0e =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
-	( draw ) #0e =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
-	( draw ) #0e =SPRT.color
+	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+	( draw ) #0e =Sprite.color
+	~Sprite.x #0008 ADD2 =Sprite.x
+	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #0e =Sprite.color
+	~Sprite.x #0008 ADD2 =Sprite.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+	( draw ) #0e =Sprite.color
+	~Sprite.x #0008 ADD2 =Sprite.x
+	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #0e =Sprite.color
 
-RTS
+RTN
 
 @draw-cursor
 
-	~mouse.x ~MOUS.x NEQU2
-	~mouse.y ~MOUS.y NEQU2
+	~mouse.x ~Mouse.x NEQU2
+	~mouse.y ~Mouse.y NEQU2
 
-	#0000 EQU2 RTS? ( Return if unchanged )
+	#0000 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
-	~mouse.x =SPRT.x
-	~mouse.y =SPRT.y
-	,blank_icn =SPRT.addr
-	#10 =SPRT.color
+	~mouse.x =Sprite.x
+	~mouse.y =Sprite.y
+	,blank_icn =Sprite.addr
+	#10 =Sprite.color
 
 	( record mouse positions )
-	~MOUS.x =mouse.x 
-	~MOUS.y =mouse.y
+	~Mouse.x =mouse.x 
+	~Mouse.y =mouse.y
 
 	( draw new cursor )
-	~mouse.x =SPRT.x
-	~mouse.y =SPRT.y
-	,cursor_icn =SPRT.addr
-	#13 =SPRT.color
+	~mouse.x =Sprite.x
+	~mouse.y =Sprite.y
+	,cursor_icn =Sprite.addr
+	#13 =Sprite.color
 
-RTS
+RTN
 
 @draw-textarea ( x y color addr )
 	
@@ -515,100 +515,100 @@ RTS
 	~textarea.addr LDR #00 NEQ ^$find-offset MUL JMPS
 	$find-offset-end
 
-	#0018 =SPRT.x #0000 =SPRT.y
+	#0018 =Sprite.x #0000 =Sprite.y
 	~textarea.addr =i
 
 	$loop
 
-		,$end ~SPRT.y ~SCRN.height #0010 SUB2 GTH2 JMP2? POP2
+		,$end ~Sprite.y ~Screen.height #0010 SUB2 GTH2 JMP2? POP2
 
 		( get character )
-		,font #00 ~i LDR #20 SUB #0008 MUL2 ADD2 =SPRT.addr
+		,font #00 ~i LDR #20 SUB #0008 MUL2 ADD2 =Sprite.addr
 
 		( draw ) #01 
 		~i ~selection.from #0001 SUB2 GTH2 
 		~i ~selection.to LTH2 #0101 EQU2
-		#05 MUL ADD ~i ~selection.from EQU2 ADD =SPRT.color
+		#05 MUL ADD ~i ~selection.from EQU2 ADD =Sprite.color
 
 		,$no-linebreak ~i LDR #0a NEQ ~i LDR #0d NEQ #0101 EQU2 JMP2? POP2
 			( draw linebreak )
-			,linebreak_icn =SPRT.addr
+			,linebreak_icn =Sprite.addr
 			( draw ) #02
 			~i ~selection.from #0001 SUB2 GTH2 
 			~i ~selection.to LTH2 #0101 EQU2
-			#06 MUL ADD =SPRT.color
+			#06 MUL ADD =Sprite.color
 			( fill clear )
 			$fill-clear
-				( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
-				,font =SPRT.addr
-				#01 =SPRT.color
-				,$fill-clear ~SPRT.x ~SCRN.width #0008 SUB2 LTH2 JMP2? POP2
+				( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+				,font =Sprite.addr
+				#01 =Sprite.color
+				,$fill-clear ~Sprite.x ~Screen.width #0008 SUB2 LTH2 JMP2? POP2
 
 			( draw line number )
 
-			#0000 =SPRT.x
-			~scroll.y ~SPRT.y #0008 DIV2 ADD2 DUP2 SWP POP =k 
+			#0000 =Sprite.x
+			~scroll.y ~Sprite.y #0008 DIV2 ADD2 DUP2 SWP POP =k 
 			~position.y EQU2 #0c MUL =l
-			,font_hex #00 ~k #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
-			#02 ~l ADD =SPRT.color
-			#0008 =SPRT.x
-			,font_hex #00 ~k #0f AND #08 MUL ADD2 =SPRT.addr
-			#02 ~l ADD =SPRT.color
+			,font_hex #00 ~k #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+			#02 ~l ADD =Sprite.color
+			#0008 =Sprite.x
+			,font_hex #00 ~k #0f AND #08 MUL ADD2 =Sprite.addr
+			#02 ~l ADD =Sprite.color
 
-			#0010 =SPRT.x
-			( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+			#0010 =Sprite.x
+			( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 		$no-linebreak
 
 		( incr ) ~i #0001 ADD2 =i
-		( incr ) ~SPRT.x #0007 ADD2 =SPRT.x
+		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
 
 	,$loop ~i LDR #00 NEQ JMP2? POP2
 
 	$end
 
-RTS
+RTN
 
 @draw-scrollbar
 		
-	~SCRN.width #0008 SUB2 =SPRT.x
-	#0000 =SPRT.y
-	,scrollbar_bg =SPRT.addr
+	~Screen.width #0008 SUB2 =Sprite.x
+	#0000 =Sprite.y
+	,scrollbar_bg =Sprite.addr
 
 	$loop NOP
-	( draw ) #08 =SPRT.color
-	( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
-	~SPRT.y ~SCRN.height LTH2 ^$loop MUL JMPS
+	( draw ) #08 =Sprite.color
+	( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
+	~Sprite.y ~Screen.height LTH2 ^$loop MUL JMPS
 
-	#0000 =SPRT.y
-	,arrowup_icn =SPRT.addr
-	( draw ) #08 =SPRT.color
+	#0000 =Sprite.y
+	,arrowup_icn =Sprite.addr
+	( draw ) #08 =Sprite.color
 
 	( at )
-	~scroll.y #0008 ADD2 =SPRT.y
-	,scrollbar_fg =SPRT.addr
-	( draw ) #08 =SPRT.color
+	~scroll.y #0008 ADD2 =Sprite.y
+	,scrollbar_fg =Sprite.addr
+	( draw ) #08 =Sprite.color
 
-	~SCRN.height #0008 SUB2 =SPRT.y
-	,arrowdown_icn =SPRT.addr
-	( draw ) #08 =SPRT.color
+	~Screen.height #0008 SUB2 =Sprite.y
+	,arrowdown_icn =Sprite.addr
+	( draw ) #08 =Sprite.color
 
-RTS
+RTN
 
 @draw-titlebar
 	
-	#0018 ~SCRN.height #0008 SUB2 #09 ,filepath 
-	( load ) =label.addr =label.color =SPRT.y =SPRT.x 
+	#0018 ~Screen.height #0008 SUB2 #09 ,filepath 
+	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop NOP
-		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =SPRT.addr ~label.color =SPRT.color
+		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 LDR #00 NEQ ^$loop MUL JMPS
 	POP2
 	( selection )
 	~selection.from ,document.body SUB2 ,draw-short JSR2
 
-RTS
+RTN
 
 @font_hex ( 0-F TODO: should pull from @font instead.. ) 
 [
@@ -697,13 +697,13 @@ RTS
 
 |d000 @ERROR BRK 
 
-|FF00 ;CNSL { pad 8 char 1 byte 1 short 2 }
-|FF10 ;SCRN { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;SPRT { pad 8 x 2 y 2 addr 2 color 1 }
-|FF30 ;CTRL { buttons 1 }
-|FF40 ;KEYS { key 1 }
-|FF50 ;MOUS { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
-|FF60 ;FILE { pad 8 name 2 length 2 load 2 save 2 }
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;Controller { buttons 1 }
+|FF40 ;Keys { key 1 }
+|FF50 ;Mouse { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
+|FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 30ff e0f3 b0f3 ] ( palette )

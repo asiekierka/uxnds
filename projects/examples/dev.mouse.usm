@@ -72,7 +72,7 @@ BRK
 	~pointer.y =Sprite.y 
 	#11 =Sprite.color
 
-RTS
+RTN
 
 @draw-polycat
 
@@ -86,7 +86,7 @@ RTS
 	,polycat #00a0 ADD2 ~cat.x ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 	,polycat #00b0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 
-RTS
+RTN
 
 @animate-polycat
 
@@ -105,22 +105,22 @@ RTS
 		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP2? POP2
 			,polycat #0040 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0050 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
-		RTS
+		RTN
 		@animate-polycat-left-down 
 			,polycat #0020 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0030 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
-		RTS
+		RTN
 	@animate-polycat-right
 		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP2? POP2
 			,polycat #0060 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0070 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
-		RTS
+		RTN
 		@animate-polycat-right-down 
 			,polycat #0080 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0090 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
-		RTS
+		RTN
 
-RTS
+RTN
 
 @draw-label ( x y color addr )
 	
@@ -133,7 +133,7 @@ RTS
 		DUP2 #0001 ADD2  LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
-RTS
+RTN
 
 @draw-sprite
 
@@ -142,7 +142,7 @@ RTS
 	=Sprite.addr
 	=Sprite.color
 
-RTS
+RTN
 
 @draw-sprite-chr
 
@@ -151,7 +151,7 @@ RTS
 	=Sprite.addr
 	#20 =Sprite.color
 
-RTS
+RTN
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]

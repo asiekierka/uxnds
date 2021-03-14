@@ -65,7 +65,7 @@ BRK
 	( background ) ~window.x1 ~window.y1 ~window.x2 ~window.y2 #02 ,fill-rect JSR2
 	( label )      ~window.x1 ~window.y1 #04 ,window_name ,draw-label-left JSR2
 
-RTS
+RTN
 
 @draw-editor
 
@@ -94,7 +94,7 @@ RTS
 	~window.x2 #0008 SUB2 =Sprite.x
 	( draw ) #01 =Sprite.color
 
-RTS
+RTN
 
 @draw-label-left ( x y color addr )
 	
@@ -107,7 +107,7 @@ RTS
 		DUP2 LDR #00 NEQ ^$loop MUL JMPS
 	POP2
 
-RTS
+RTN
 
 @fill-rect ( x1 y1 x2 y2 color )
 
@@ -121,7 +121,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		~Screen.y ~rect.y2 LTH2 ^$ver MUL JMPS
 
-RTS
+RTN
 
 @line-rect ( x1 y1 x2 y2 color )
 
@@ -138,7 +138,7 @@ RTS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
 		~Screen.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
 
-RTS
+RTN
 
 @tile-rect ( x1 y1 x2 y2 color addr )
 
@@ -152,7 +152,7 @@ RTS
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 		~Sprite.y ~rect.y2 LTH2 ^$ver MUL JMPS
 
-RTS
+RTN
 
 @draw-cursor
 
@@ -176,7 +176,7 @@ RTS
 	~pointer.y =Sprite.y 
 	#11 =Sprite.color
 
-RTS
+RTN
 
 @pattern     [ 0000 0000 0000 0000 ]
 @clear_icn   [ 0000 0000 0000 0000 ]
