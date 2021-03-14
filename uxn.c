@@ -34,6 +34,7 @@ void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_nop(Uxn *u) { (void)u; }
 void op_jmp(Uxn *u) { Uint8 a = pop8(&u->wst); u->ram.ptr += getflag(&u->status, FLAG_SIGN) ? (Sint8)a : a; }
+void op_prg(Uxn *u) { push16(&u->wst, u->ram.ptr); }
 void op_jsr(Uxn *u) { Uint8 a = pop8(&u->wst); push16(&u->rst, u->ram.ptr); u->ram.ptr += getflag(&u->status, FLAG_SIGN) ? (Sint8)a : a; }
 void op_rts(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
 void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(u, a)); }
@@ -95,7 +96,7 @@ void (*ops[])(Uxn *u) = {
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_nop, op_wsr, op_rsw,
 	op_add, op_sub, op_mul, op_div, op_nop, op_nop, op_nop, op_nop,
 	/* 16-bit */
-	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_jmp16, op_jsr16, op_rts,
+	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_jmp16, op_jsr16,   op_rts,
 	op_equ16, op_neq16, op_gth16, op_lth16, op_and16, op_xor16, op_rol16, op_ror16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_nop,   op_wsr16, op_rsw16,
 	op_add16, op_sub16, op_mul16, op_div16, op_nop,   op_nop,   op_nop,   op_nop

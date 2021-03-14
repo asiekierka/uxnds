@@ -17,6 +17,11 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 typedef struct {
+	char name[64], items[16][64];
+	Uint8 len;
+} Macro;
+
+typedef struct {
 	char name[64];
 	unsigned int size;
 } Map;
@@ -29,9 +34,10 @@ typedef struct {
 } Label;
 
 typedef struct {
-	Uint8 data[256 * 256], llen;
+	Uint8 data[256 * 256], llen, mlen;
 	Uint16 ptr;
 	Label labels[256];
+	Macro macros[256];
 } Program;
 
 Program p;
@@ -42,7 +48,7 @@ char ops[][4] = {
 	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "RTS", 
 	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "ROL", "ROR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "---", "WSR", "RSW",
-	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
+	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "PRG"
 };
 
 int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
@@ -80,6 +86,16 @@ pushtext(char *s, int lit)
 	char c;
 	if(lit) pushbyte(0x22, 0);
 	while((c = s[i++])) pushbyte(c, 0);
+}
+
+Macro *
+findmacro(char *name)
+{
+	int i;
+	for(i = 0; i < p.mlen; ++i)
+		if(scmp(p.macros[i].name, name, 64))
+			return &p.macros[i];
+	return NULL;
 }
 
 Label *
@@ -167,6 +183,28 @@ error(char *name, char *id)
 }
 
 int
+makemacro(char *name, FILE *f)
+{
+	Macro *m;
+	char word[64];
+	if(findmacro(name))
+		return error("Macro duplicate", name);
+	if(sihx(name) && slen(name) % 2 == 0)
+		return error("Macro name is hex number", name);
+	if(findopcode(name))
+		return error("Macro name is invalid", name);
+	m = &p.macros[p.mlen++];
+	scpy(name, m->name, 64);
+	while(fscanf(f, "%s", word)) {
+		if(word[0] == '{') continue;
+		if(word[0] == '}') break;
+		scpy(word, m->items[m->len++], 64);
+	}
+	printf("New macro: %s(%d items)\n", m->name, m->len);
+	return 1;
+}
+
+int
 makelabel(char *name, Uint16 addr)
 {
 	Label *l;
@@ -197,8 +235,7 @@ makevariable(char *name, Uint16 *addr, FILE *f)
 		if(word[0] == '}') break;
 		scpy(word, l->map[l->maps].name, 64);
 		fscanf(f, "%u", &l->map[l->maps].size);
-		*addr += l->map[l->maps].size;
-		l->maps++;
+		*addr += l->map[l->maps++].size;
 	}
 	return 1;
 }
@@ -212,6 +249,119 @@ skipblock(char *w, int *cap, char a, char b)
 	}
 	if(w[0] == a) *cap = 1;
 	if(*cap) return 1;
+	return 0;
+}
+
+int
+walktoken(char *w)
+{
+	Macro *m;
+	if((m = findmacro(w))) {
+		int i, res = 0;
+		for(i = 0; i < m->len; ++i)
+			res += walktoken(m->items[i]);
+		return res;
+	}
+	if(findopcode(w) || scmp(w, "BRK", 4))
+		return 1;
+	switch(w[0]) {
+	case '=': return 4; /* STR helper (lit addr-hb addr-lb str) */
+	case '~': return 4; /* LDR helper (lit addr-hb addr-lb ldr) */
+	case ',': return 3; /* lit2 addr-hb addr-lb */
+	case '.': return 2; /* addr-hb addr-lb */
+	case '^': return 2; /* Relative jump: lit addr-offset */
+	case '+':           /* signed positive */
+	case '-':           /* signed negative */
+	case '#': return (slen(w + 1) == 2 ? 2 : 3);
+	}
+	return error("Unknown label in first pass", w);
+}
+
+int
+parsetoken(char *w)
+{
+	Uint8 op = 0;
+	Label *l;
+	Macro *m;
+
+	if(w[0] == '^' && (l = findlabel(w + 1))) {
+		int off = l->addr - p.ptr - 3;
+		if(off < -126 || off > 126) {
+			printf("Address %s is too far(%d).\n", w, off);
+			return 0;
+		}
+		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
+		l->refs++;
+		return 1;
+	}
+	if(w[0] == '=' && (l = findlabel(w + 1))) {
+		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+			return error("Invalid load helper", w);
+		pushshort(findlabeladdr(w + 1), 1);
+		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0);
+		l->refs++;
+		return 1;
+	}
+	if(w[0] == '~' && (l = findlabel(w + 1))) {
+		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+			return error("Invalid load helper", w);
+		pushshort(findlabeladdr(w + 1), 1);
+		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0);
+		l->refs++;
+		return 1;
+	}
+	if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
+		pushbyte(op, 0);
+		return 1;
+	}
+	if(w[0] == '.' && (l = findlabel(w + 1))) {
+		pushshort(findlabeladdr(w + 1), 0);
+		l->refs++;
+		return 1;
+	}
+	if(w[0] == ',' && (l = findlabel(w + 1))) {
+		pushshort(findlabeladdr(w + 1), 1);
+		l->refs++;
+		return 1;
+	}
+	if(w[0] == '#' && sihx(w + 1)) {
+		if(slen(w + 1) == 2)
+			pushbyte(shex(w + 1), 1);
+		else if(slen(w + 1) == 4)
+			pushshort(shex(w + 1), 1);
+		else
+			return 0;
+		return 1;
+	}
+
+	if(w[0] == '+' && sihx(w + 1)) {
+		if(slen(w + 1) == 2)
+			pushbyte((Sint8)shex(w + 1), 1);
+		else if(slen(w + 1) == 4)
+			pushshort((Sint16)shex(w + 1), 1);
+		else
+			return 0;
+	}
+
+	if(w[0] == '-' && sihx(w + 1)) {
+		if(slen(w + 1) == 2)
+			pushbyte((Sint8)(shex(w + 1) * -1), 1);
+		else if(slen(w + 1) == 4)
+			pushshort((Sint16)(shex(w + 1) * -1), 1);
+		else
+			return 0;
+		return 1;
+	}
+
+	if((m = findmacro(w))) {
+		int i, res = 0;
+		for(i = 0; i < m->len; ++i) {
+			if(!parsetoken(m->items[i]))
+				return 0;
+		}
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -231,6 +381,10 @@ pass1(FILE *f)
 				addr += slen(w) == 4 ? 2 : 1;
 			else
 				addr += slen(w);
+		} else if(w[0] == '%') {
+			if(!makemacro(w + 1, f))
+				return error("Pass1 failed", w);
+			scpy(w + 1, scope, 64);
 		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr))
 				return error("Pass1 failed", w);
@@ -241,25 +395,12 @@ pass1(FILE *f)
 		} else if(w[0] == ';') {
 			if(!makevariable(w + 1, &addr, f))
 				return error("Pass1 failed", w);
-		} else if(findopcode(w) || scmp(w, "BRK", 4))
-			addr += 1;
-		else {
-			switch(w[0]) {
-			case '|':
-				if(shex(w + 1) < addr)
-					return error("Memory Overlap", w);
-				addr = shex(w + 1);
-				break;
-			case '=': addr += 4; break; /* STR helper (lit addr-hb addr-lb str) */
-			case '~': addr += 4; break; /* LDR helper (lit addr-hb addr-lb ldr) */
-			case ',': addr += 3; break;
-			case '.': addr += 2; break;
-			case '^': addr += 2; break; /* Relative jump: lit addr-offset */
-			case '+':                   /* signed positive */
-			case '-':                   /* signed negative */
-			case '#': addr += (slen(w + 1) == 2 ? 2 : 3); break;
-			default: return error("Unknown label in first pass", w);
-			}
+		} else if(w[0] == '|') {
+			if(shex(w + 1) < addr)
+				return error("Memory Overwrite", w);
+			addr = shex(w + 1);
+		} else {
+			addr += walktoken(w);
 		}
 	}
 	rewind(f);
@@ -273,52 +414,33 @@ pass2(FILE *f)
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
-		Uint8 op = 0;
-		Label *l;
 		if(w[0] == ';') continue;
 		if(w[0] == '$') continue;
+		if(w[0] == '%') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
+		if(w[0] == '|') {
+			p.ptr = shex(w + 1);
+			continue;
+		}
 		if(w[0] == '@') {
 			scpy(w + 1, scope, 64);
 			continue;
 		}
 		if(w[1] == '$') {
-			sublabel(subw, scope, w + 2);
-			scpy(subw, w + 1, 64);
+			scpy(sublabel(subw, scope, w + 2), w + 1, 64);
 		}
-		/* clang-format off */
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
-			if(slen(w) == 4 && sihx(w)) pushshort(shex(w), 0); 
-			else if(slen(w) == 2 && sihx(w)) pushbyte(shex(w), 0); 
-			else pushtext(w, 0);
+			if(slen(w) == 4 && sihx(w))
+				pushshort(shex(w), 0);
+			else if(slen(w) == 2 && sihx(w))
+				pushbyte(shex(w), 0);
+			else
+				pushtext(w, 0);
+		} else if(!parsetoken(w)) {
+			return error("Unknown label in second pass", w);
 		}
-		else if(w[0] == '^' && (l = findlabel(w + 1))) { 
-			int off = l->addr - p.ptr - 3;
-			if(off < -126 || off > 126){ printf("Address %s is too far(%d).\n", w, off); return 0; } 
-			pushbyte((Sint8)(l->addr - p.ptr - 3), 1); l->refs++; 
-		}
-		else if(w[0] == '=' && (l = findlabel(w + 1))) { 
-			if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
-				return error("Invalid load helper", w);
-			pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
-		else if(w[0] == '~' && (l = findlabel(w + 1))) { 
-			if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
-				return error("Invalid load helper", w);
-			pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
-		else if(w[0] == '|') p.ptr = shex(w + 1);
-		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
-		else if(w[0] == '.' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 0); l->refs++; }
-		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
-		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
-		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
-		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
-		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)shex(w + 1), 1);
-		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)(shex(w + 1) * -1), 1);
-		else if(w[0] == '-' && sihx(w + 1) && slen(w + 1) == 4) pushshort((Sint16)(shex(w + 1) * -1), 1);
-		else return error("Unknown label in second pass", w);
-		/* clang-format on */
 	}
 	return 1;
 }

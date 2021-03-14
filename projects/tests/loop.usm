@@ -1,41 +1,46 @@
-( hello world )
+( Loop )
 
-&Console { pad 8 char 1 byte 1 short 2 }
-
-;a 1 ;b 1 ;c 1
+;a { byte 1 } ;b { byte 1 } ;c { byte 1 }
 
 |0100 @RESET 
 	
-	( type: padded muljmp )
-	@part1
+	,type1 JSR2
+	,type2 JSR2
+	,type3 JSR2
+
+BRK 
+
+@type1 ( type: padded muljmp )
+
 	$loop NOP
 		~a #01 ADD =a
 		~a #d0 LTH ^$loop MUL JMPS
+	~a =Console.byte
 
-	( type: jmppop )
+RTS
 
-	@part2
+@type2 ( type: jmppop )
+	
 	$loop
 		~b #01 ADD =b
 		,$loop ~b #d0 LTH JMP2? POP2
+	~b =Console.byte 
 
-	( type: padded jmppop )
+RTS
 
-	@part3
+@type3 ( type: padded jmppop )
+
 	$loop NOP
 		~c #01 ADD =c
 		~c #d0 LTH ^$loop SWP JMPS? POP
+	~c =Console.byte 
 
-	~a =dev/console.byte
-	~b =dev/console.byte 
-	~c =dev/console.byte 
-
-BRK               
+RTS
 
 |c000 @FRAME
 |d000 @ERROR 
 
-|FF00 ;dev/console Console
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

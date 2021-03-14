@@ -74,6 +74,14 @@ RTS
 - Jump helpers
 - Don't brk when return stack is not zeroed
 - LDRS should load from the zeropage?
+- Keep ref counts in macros
+
+### Macros
+
+```
+&RTS { RSW JMP } 
+&JSR { PRG WSR JMP }
+```
 
 ## Notes
 
