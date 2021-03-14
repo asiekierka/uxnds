@@ -90,27 +90,27 @@ void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u-
 void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_nop, op_lit, op_jmp, op_jsr, op_rts, op_ldr, op_str, 
-	op_nop, op_nop, op_nop, op_nop, op_and, op_xor, op_rol, op_ror, 
+	op_brk, op_nop, op_lit, op_ldr, op_str, op_jmp, op_jsr, op_rts, 
+	op_equ, op_neq, op_gth, op_lth, op_and, op_xor, op_rol, op_ror, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_nop, op_wsr, op_rsw,
-	op_add, op_sub, op_mul, op_div, op_equ, op_neq, op_gth, op_lth,
+	op_add, op_sub, op_mul, op_div, op_nop, op_nop, op_nop, op_nop,
 	/* 16-bit */
-	op_brk,   op_nop16, op_lit16, op_jmp16, op_jsr16, op_rts,   op_ldr16, op_str16, 
-	op_nop,   op_nop,   op_nop,   op_nop,   op_and16, op_xor16, op_rol16, op_ror16, 
-	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_wsr16, op_rsw16, op_nop,
-	op_add16, op_sub16, op_mul16, op_div16, op_equ16, op_neq16, op_gth16, op_lth16
+	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_jmp16, op_jsr16, op_rts,
+	op_equ16, op_neq16, op_gth16, op_lth16, op_and16, op_xor16, op_rol16, op_ror16, 
+	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_nop,   op_wsr16, op_rsw16,
+	op_add16, op_sub16, op_mul16, op_div16, op_nop,   op_nop,   op_nop,   op_nop
 };
 
-Uint8 opr[][2] = { 
-	{0,0}, {0,0}, {0,0}, {1,0}, {1,0}, {0,0}, {2,1}, {3,0},
-	{2,0}, {2,0}, {0,0}, {0,0}, {2,1}, {2,1}, {2,1}, {2,1},
-	{1,0}, {1,2}, {2,2}, {2,3}, {3,3}, {1,0}, {0,1}, {2,1},
-	{2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1}, {2,1},
+Uint8 opr[][4] = { /* wstack-/+ rstack-/+ */
+	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,1,0,0}, {3,0,0,0}, {1,0,0,0}, {1,0,0,2}, {0,0,2,0}, 
+	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0},
+	{1,0,0,0}, {1,2,0,0}, {2,2,0,0}, {2,3,0,0}, {3,3,0,0}, {0,0,0,0}, {1,0,0,1}, {0,1,1,0},
+	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0},
 	/* 16-bit */
-	{0,0}, {0,0}, {0,0}, {2,0}, {2,0}, {0,0}, {2,2}, {4,0}, /* TODO */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, /* TODO */
-	{0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {2,0}, {0,2}, {0,0}, /* TODO */
-	{4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}, {4,2}
+	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,2,0,0}, {4,0,0,0}, {2,0,0,0}, {2,0,0,0}, {0,0,0,0}, /* TODO */
+	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, /* TODO */
+	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,0,0,2}, {0,2,2,0}, /* TODO */
+	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}
 };
 
 /* clang-format on */
@@ -121,7 +121,6 @@ int
 haltuxn(Uxn *u, char *name, int id)
 {
 	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->counter);
-	op_nop(u);
 	return 0;
 }
 
@@ -145,9 +144,13 @@ opcuxn(Uxn *u, Uint8 instr)
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;
 	if(u->wst.ptr < opr[op][0])
-		return haltuxn(u, "Stack underflow", op);
+		return haltuxn(u, "Working-stack underflow", op);
 	if(u->wst.ptr + opr[op][1] - opr[op][0] >= 255)
-		return haltuxn(u, "Stack overflow", instr);
+		return haltuxn(u, "Working-stack overflow", instr);
+	if(u->rst.ptr < opr[op][2])
+		return haltuxn(u, "Return-stack underflow", op);
+	if(u->rst.ptr + opr[op][3] - opr[op][2] >= 255)
+		return haltuxn(u, "Return-stack overflow", instr);
 	if(!getflag(&u->status, FLAG_COND) || (getflag(&u->status, FLAG_COND) && pop8(&u->wst)))
 		(*ops[op])(u);
 	return 1;

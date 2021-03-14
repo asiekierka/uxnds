@@ -1,52 +1,60 @@
 ( tests/jump )
 
-&Console { pad 8 char 1 byte 1 short 2 }
-
 |0100 @RESET 
 
-	( skip forward with value  )
+	,test1 JSR2
+	,test2 JSR2
 
-	#11 =dev/console.byte
+BRK
+
+@test1
+	
+	( should print 11, 22, 33, 44 )
+
+	#11 =Console.byte
 	#03 JMPS BRK BRK BRK 
 
 	( skip foward with id )
 
-	#22 =dev/console.byte
+	#22 =Console.byte
 	^jump JMPS BRK BRK BRK @jump
 
 	( skip patterns )
 
-	#33 =dev/console.byte
+	#33 =Console.byte
 
 	,skip1 #12 #34 LTH JMP2? POP2
-		#ff =dev/console.byte
+		#ff =Console.byte
 	@skip1
 
 	#12 #34 LTH ^skip2 #04 SUB MUL JMPS
-		#ff =dev/console.byte
+		#ff =Console.byte
 	@skip2
 
-	#44 =dev/console.byte
+	#44 =Console.byte
+
+RTS
+
+@test2
 
 	,end JMP2
 
 	( should print aa, bb, cc, dd )
 
-	@label1 #aa =dev/console.byte ^label3 JMPS
-	@label2 #cc =dev/console.byte ^label4 JMPS
-	@label3 #bb =dev/console.byte ^label2 JMPS
-	@label4 #dd =dev/console.byte BRK
+	@label1 #aa =Console.byte ^label3 JMPS
+	@label2 #cc =Console.byte ^label4 JMPS
+	@label3 #bb =Console.byte ^label2 JMPS
+	@label4 #dd =Console.byte BRK
 
 	@end
 
 	^label1 JMPS
-
-BRK
+RTS
 
 |c000 @FRAME
 |d000 @ERROR 
 
-|FF00 ;dev/console Console
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

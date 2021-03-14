@@ -72,6 +72,8 @@ RTS
 - Includes
 - Defines
 - Jump helpers
+- Don't brk when return stack is not zeroed
+- LDRS should load from the zeropage?
 
 ## Notes
 

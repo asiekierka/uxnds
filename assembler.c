@@ -39,10 +39,10 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "JMP", "JSR", "RTS", "LDR", "STR",
-	"---", "---", "---", "---", "AND", "XOR", "ROL", "ROR",
+	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "RTS", 
+	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "ROL", "ROR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "---", "WSR", "RSW",
-	"ADD", "SUB", "MUL", "DIV", "EQU", "NEQ", "GTH", "LTH"
+	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
 };
 
 int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
