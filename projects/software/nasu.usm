@@ -6,29 +6,15 @@
 	1 2 3  - Select brush
 )
 
-&Screen     { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite     { pad 8 x 2 y 2 addr 2 color 1 }
-&Controller { buttons 1 }
-&Keyboard   { key 1 }
-&Mouse      { x 2 y 2 state 1 chord 1 change 1 }
-&File       { pad 8 name 2 length 2 load 2 save 2 }
-
-&Rect2d  { x1 2 y1 2 x2 2 y2 2 }
-&Point2d { x 2 y 2 }
-&Point { x 1 y 1 }
-
-&BankView  { x 2 y 2 mode 1 addr 2 }
-&TileView  { x 2 y 2 addr 2 }
-
-;bankview BankView
-;tileview TileView
-;rect Rect2d
-;mouse Point2d
-;color 1
-;i 1
-;pt Point
-;addr 2
-;pos Point2d
+;bankview { x 2 y 2 mode 1 addr 2 }
+;tileview { x 2 y 2 addr 2 }
+;rect { x1 2 y1 2 x2 2 y2 2 }
+;mouse { x 2 y 2 }
+;color { byte 1 }
+;i { byte 1 }
+;pt { x 1 y 1 }
+;addr { short 2 }
+;pos { x 2 y 2 }
 
 |0100 @RESET
 	
@@ -774,12 +760,12 @@ RTS
 
 |FE00 @ERROR BRK 
 
-|FF10 ;SCRN Screen
-|FF20 ;SPRT Sprite
-|FF30 ;CTRL Controller
-|FF40 ;KEYS Keyboard
-|FF50 ;MOUS Mouse
-|FF60 ;FILE File
+|FF10 ;SCRN { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;SPRT { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;CTRL { buttons 1 }
+|FF40 ;KEYS { key 1 }
+|FF50 ;MOUS { x 2 y 2 state 1 chord 1 change 1 }
+|FF60 ;FILE { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ e0fc 30cc 30ac ] ( palette )

@@ -1,20 +1,11 @@
-( dev/key )
+( Keys )
 
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-&Keyboard { key 1 }
-&Mouse  { x 2 y 2 state 1 chord 1 }
-
-&Textarea2d { x1 2 y1 2 x2 2 y2 2 color 1 addr 2 cursor 1 }
-&Rect2d { x1 2 y1 2 x2 2 y2 2 }
-&Point2d { x 2 y 2 }
-
-;mouse Point2d
-;textarea Textarea2d
-;rect Rect2d
-;color 1
-;blink 1 
-;timer 1
+;mouse { x 2 y 2 }
+;textarea { x1 2 y1 2 x2 2 y2 2 color 1 addr 2 cursor 1 }
+;rect { x1 2 y1 2 x2 2 y2 2 }
+;color { byte 1 }
+;blink { byte 1 } 
+;timer { byte 1 }
 
 |0100 @RESET 
 	
@@ -33,7 +24,7 @@ BRK
 
 @redraw-window
 	
-	#0000 #0000 ~dev/screen.width ~dev/screen.height #01 ,pattern ,tile-rect JSR2
+	#0000 #0000 ~Screen.width ~Screen.height #01 ,pattern ,tile-rect JSR2
 	( dropshadow )
 	~textarea.x2 #0001 ADD2 ~textarea.y1 ~textarea.x2 #0004 ADD2 ~textarea.y2 #0004 ADD2 #01 ,fill-rect JSR2
 	~textarea.x1 ~textarea.y2 #0001 ADD2 ~textarea.x2 #0001 ADD2 ~textarea.y2 #0004 ADD2 #01 ,fill-rect JSR2
@@ -54,8 +45,8 @@ RTS
 	,skip ~timer #10 LTH JMP2? POP2
 		#00 =timer
 		~blink #00 EQU =blink
-		,cursor =dev/sprite.addr
-		#05 ~blink ADD =dev/sprite.color
+		,cursor =Sprite.addr
+		#05 ~blink ADD =Sprite.color
 	@skip 
 	~timer #01 ADD =timer
 
@@ -63,64 +54,64 @@ RTS
 
 @tile-rect ( x1 y1 x2 y2 color addr )
 
-	=dev/sprite.addr =color =rect.y2 =rect.x2 DUP2 =dev/sprite.y =rect.y1 DUP2 =dev/sprite.x =rect.x1
+	=Sprite.addr =color =rect.y2 =rect.x2 DUP2 =Sprite.y =rect.y1 DUP2 =Sprite.x =rect.x1
 
 	$ver
-		~rect.x1 =dev/sprite.x
+		~rect.x1 =Sprite.x
 		$hor
-			( draw ) ~color =dev/sprite.color
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-			,$hor ~dev/sprite.x ~rect.x2 LTH2 JMP2? POP2
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-		,$ver ~dev/sprite.y ~rect.y2 LTH2 JMP2? POP2
+			( draw ) ~color =Sprite.color
+			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+			,$hor ~Sprite.x ~rect.x2 LTH2 JMP2? POP2
+		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
+		,$ver ~Sprite.y ~rect.y2 LTH2 JMP2? POP2
 
 RTS
 
 @fill-rect ( x1 y1 x2 y2 color )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$ver
-		~rect.x1 =dev/screen.x
+		~rect.x1 =Screen.x
 		$hor
-			( draw ) ~color =dev/screen.color
-			( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
-			,$hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
-		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,$ver ~dev/screen.y ~rect.y2 LTH2 JMP2? POP2
+			( draw ) ~color =Screen.color
+			( incr ) ~Screen.x #0001 ADD2 =Screen.x
+			,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+		( incr ) ~Screen.y #0001 ADD2 =Screen.y
+		,$ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
 
 RTS
 
 @line-rect ( x1 y1 x2 y2 color )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =dev/screen.y =rect.y1 DUP2 =dev/screen.x =rect.x1
+	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$hor
-		( incr ) ~dev/screen.x #0001 ADD2 =dev/screen.x
-		( draw ) ~rect.y1 =dev/screen.y ~color =dev/screen.color
-		( draw ) ~rect.y2 =dev/screen.y ~color =dev/screen.color
-		,$hor ~dev/screen.x ~rect.x2 LTH2 JMP2? POP2
-	~rect.y1 =dev/screen.y
+		( incr ) ~Screen.x #0001 ADD2 =Screen.x
+		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
+		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
+		,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+	~rect.y1 =Screen.y
 	$ver
-		( draw ) ~rect.x1 =dev/screen.x ~color =dev/screen.color
-		( draw ) ~rect.x2 =dev/screen.x ~color =dev/screen.color
-		( incr ) ~dev/screen.y #0001 ADD2 =dev/screen.y
-		,$ver ~dev/screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
+		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
+		( incr ) ~Screen.y #0001 ADD2 =Screen.y
+		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
 
 RTS
 
 @draw-textarea ( x y color addr )
 	
-	( load ) =textarea.addr =textarea.color =dev/sprite.y =dev/sprite.x 
+	( load ) =textarea.addr =textarea.color =Sprite.y =Sprite.x 
 	~textarea.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~textarea.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~textarea.color =Sprite.color
 		( detect linebreaks )
 		DUP2 LDR #0d NEQ ,$no-return ROT JMP2? POP2
-			~textarea.x1 =dev/sprite.x 
-			( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-			( decr ) ~dev/sprite.x #0008 SUB2 =dev/sprite.x
+			~textarea.x1 =Sprite.x 
+			( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
+			( decr ) ~Sprite.x #0008 SUB2 =Sprite.x
 		$no-return
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
@@ -129,43 +120,43 @@ RTS
 @do-textarea
 
 	( ,blink-cursor JSR2 )
-	,do-textarea-end ~dev/key #00 EQU JMP2? POP2 ( skip on no key )
+	,do-textarea-end ~Keys #00 EQU JMP2? POP2 ( skip on no key )
 	( backspace )
-	,any-key ~dev/key #08 NEQ JMP2? POP2
+	,any-key ~Keys #08 NEQ JMP2? POP2
 		,input-end ~textarea.cursor #00 EQU JMP2? POP2
 			( decr ) ~textarea.cursor #01 SUB =textarea.cursor
 			#00 ~textarea.addr #00 ~textarea.cursor ADD2 STR
 			,input-end JMP2
 	@any-key
-	~dev/key ~textarea.addr #00 ~textarea.cursor ADD2 STR
+	~Keys ~textarea.addr #00 ~textarea.cursor ADD2 STR
 	( incr ) ~textarea.cursor #01 ADD =textarea.cursor
 	@input-end
-	#00 =dev/key ( release key )
+	#00 =Keys ( release key )
 	,redraw JSR2
 	( add cursor )
-	,cursor =dev/sprite.addr
-	#06 =dev/sprite.color
+	,cursor =Sprite.addr
+	#06 =Sprite.color
 	@do-textarea-end
 
 RTS
 
 @do-cursor
 
-	,skip-drag ~dev/mouse.state #01 NEQ JMP2? POP2
+	,skip-drag ~Mouse.state #01 NEQ JMP2? POP2
 		~mouse.x =textarea.x1 ~mouse.y =textarea.y1 
 		,redraw-window JSR2
 		,redraw JSR2
 	@skip-drag 
 
-	~mouse.x ~dev/mouse.x NEQU2
-	~mouse.y ~dev/mouse.y NEQU2
+	~mouse.x ~Mouse.x NEQU2
+	~mouse.y ~Mouse.y NEQU2
 
 	#0000 EQU2 RTS? ( Return if unchanged )
 
 	( clear last cursor )
 	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
 	( record mouse positions )
-	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
+	~Mouse.x =mouse.x ~Mouse.y =mouse.y
 	#12 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
 
 
@@ -173,10 +164,10 @@ RTS
 
 @draw-sprite
 
-	=dev/sprite.y
-	=dev/sprite.x
-	=dev/sprite.addr
-	=dev/sprite.color
+	=Sprite.y
+	=Sprite.x
+	=Sprite.addr
+	=Sprite.color
 
 RTS
 
@@ -224,10 +215,10 @@ RTS
 
 |d000 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
-|FF40 ;dev/key    Keyboard
-|FF50 ;dev/mouse  Mouse
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF40 ;Keys   { key 1 }
+|FF50 ;Mouse  { x 2 y 2 state 1 chord 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ f0ff f000 f00f ] ( palette )

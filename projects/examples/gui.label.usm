@@ -1,30 +1,22 @@
 ( draw routines )
 
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-&Label2d { x 2 y 2 color 1 addr 2 }
-&Rect2d { x1 2 y1 2 x2 2 y2 2 }
-&Point2d { x 2 y 2 }
-
-;label Label2d
-;rect Rect2d
-;center Point2d
-;i 2
+;label { x 2 y 2 color 1 addr 2 }
+;rect { x1 2 y1 2 x2 2 y2 2 }
+;center { x 2 y 2 }
+;i { short 2 }
 
 |0100 @RESET
 	
 	( find screen center )
-	~dev/screen.width #0002 DIV2 =center.x
-	~dev/screen.height #0002 DIV2 =center.y
+	~Screen.width #0002 DIV2 =center.x
+	~Screen.height #0002 DIV2 =center.y
 
 	( draw ver line )
-	#0000 =i
-	~center.x =dev/screen.x
-	@draw-ver
-		#03 ~i =dev/screen.y =dev/screen.color
-		~i #0002 ADD2 =i ( increment )
-	~i ~dev/screen.width LTH2 ,draw-ver ROT JMP2? POP2
+	~center.x =Screen.x #0000 =Screen.y
+	$draw-ver
+		( draw ) #02 =Screen.color
+		( incr ) ~Screen.y #0002 ADD2 =Screen.y
+		,$draw-ver ~Screen.y ~Screen.height LTH2 JMP2? POP2
 
 	~center.x ~center.y #0010 SUB2 #0c ,text1 ,draw-label-left JSR2
 	~center.x ~center.y #0c ,text2 ,draw-label-middle JSR2
@@ -36,12 +28,12 @@ BRK
 
 @draw-label-left ( x y color addr )
 	
-	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
+	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	@draw-label-left-loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 LDR #00 NEQ ,draw-label-left-loop ROT JMP2? POP2
 	POP2
 
@@ -49,13 +41,13 @@ RTS
 
 @draw-label-middle ( x y color addr )
 	
-	( load ) =label.addr =label.color =dev/sprite.y
-	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 =dev/sprite.x 
+	( load ) =label.addr =label.color =Sprite.y
+	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 =Sprite.x 
 	~label.addr
 	@draw-label-middle-loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 LDR #00 NEQ ,draw-label-middle-loop ROT JMP2? POP2
 	POP2
 
@@ -63,13 +55,13 @@ RTS
 
 @draw-label-right ( x y color addr )
 	
-	( load ) =label.addr =label.color =dev/sprite.y
-	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 =dev/sprite.x 
+	( load ) =label.addr =label.color =Sprite.y
+	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 =Sprite.x 
 	~label.addr
 	@draw-label-right-loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 LDR #00 NEQ ,draw-label-right-loop ROT JMP2? POP2
 	POP2
 
@@ -130,8 +122,8 @@ RTS
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0f0f 0fff 0ff0 ] ( palette )

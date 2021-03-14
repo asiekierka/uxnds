@@ -1,11 +1,6 @@
 ( gui/picture )
 
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-&Picture2d { x 2 y 2 width 2 height 2 color 1 addr 2 }
-
-;pict Picture2d
+;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
 |0100 @RESET
 
@@ -17,16 +12,16 @@ BRK
 
 @draw-picture ( x y width height color addr )
 	
-	DUP2 =dev/sprite.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =dev/sprite.y =pict.y =pict.x
-	@draw-picture-ver
-		~pict.x =dev/sprite.x 
-		@draw-picture-hor
-			( draw ) ~pict.color =dev/sprite.color
-			( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
-			( incr ) ~dev/sprite.addr #0008 ADD2 =dev/sprite.addr
-		,draw-picture-hor ~dev/sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
-		( incr ) ~dev/sprite.y #0008 ADD2 =dev/sprite.y
-	,draw-picture-ver ~dev/sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
+	DUP2 =Sprite.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Sprite.y =pict.y =pict.x
+	$ver
+		~pict.x =Sprite.x 
+		$hor
+			( draw ) ~pict.color =Sprite.color
+			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+			( incr ) ~Sprite.addr #0008 ADD2 =Sprite.addr
+		,$hor ~Sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
+		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
+	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
 
 RTS
 
@@ -308,8 +303,7 @@ RTS
 |c000 @FRAME BRK 
 |d000 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0ffc 0f0b 0f03 ] ( palette )

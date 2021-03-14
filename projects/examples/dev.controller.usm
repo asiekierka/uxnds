@@ -1,0 +1,75 @@
+( Controller )
+
+;slime { color 1 }
+
+|0100 @RESET 
+	
+	( set origin )
+	~Screen.width #0002 DIV2 =Sprite.x 
+	~Screen.height #0002 DIV2 =Sprite.y
+	,default_icn =Sprite.addr
+	#11 =Sprite.color
+	#0a =slime
+
+BRK
+
+|c000 @FRAME 
+	
+	#0a =slime
+	( hold ctrl key to change slime color )
+	,no-ctrl ~Controller.buttons #0f AND #01 NEQ JMP2? POP2
+		#05 =slime
+	@no-ctrl
+	( hold alt key to change slime color )
+	,no-alt ~Controller.buttons #0f AND #02 NEQ JMP2? POP2
+		#0f =slime
+	@no-alt
+	( detect movement )
+	,no-up ~Controller.buttons #f0 AND #10 NEQ JMP2? POP2
+		( clear ) #10 =Sprite.color
+		( move ) ~Sprite.y #0001 SUB2 =Sprite.y ,up_icn =Sprite.addr
+		( draw ) ,redraw JSR2 BRK
+	@no-up
+	,no-down ~Controller.buttons #f0 AND #20 NEQ JMP2? POP2
+		( clear ) #10 =Sprite.color
+		( move ) ~Sprite.y #0001 ADD2 =Sprite.y ,down_icn =Sprite.addr
+		( draw ) ,redraw JSR2 BRK
+	@no-down
+	,no-left ~Controller.buttons #f0 AND #40 NEQ JMP2? POP2
+		( clear ) #10 =Sprite.color
+		( move ) ~Sprite.x #0001 SUB2 =Sprite.x ,left_icn =Sprite.addr
+		( draw ) ,redraw JSR2 BRK
+	@no-left
+	,no-right ~Controller.buttons #f0 AND #80 NEQ JMP2? POP2
+		( clear ) #10 =Sprite.color
+		( move ) ~Sprite.x #0001 ADD2 =Sprite.x ,right_icn =Sprite.addr
+		( draw ) ,redraw JSR2 BRK
+	@no-right
+
+BRK
+
+@redraw
+	
+	( draw face )
+	#11 =Sprite.color
+	( draw slime )
+	,slime_icn =Sprite.addr
+	~slime =Sprite.color
+
+RTS
+
+@default_icn [ 3c7e ffdb ffe7 7e3c ]
+@up_icn      [ 2466 e7db ffff 7e3c ]
+@down_icn    [ 3c7e ffff dbe7 6624 ]
+@left_icn    [ 3c7e ef1f 1fef 7e3c ]
+@right_icn   [ 3c7e f7f8 f8f7 7e3c ]
+@slime_icn   [ 0000 183c 3c18 0000 ]
+
+|d000 @ERROR BRK 
+
+|FF10 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;Controller { buttons 1 }
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 0daf 02ff 035f ] ( palette )

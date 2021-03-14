@@ -29,21 +29,19 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 ```
 ( hello world )
 
-&Console { pad 8 char 1 byte 1 short 2 }
-
-|0100 @RESET 
+@RESET 
 	
 	,text1 ,print-label JSR2
 	,text2 ,print-label JSR2
-	#ab =CNSL.byte
-	#cdef =CNSL.short
+	#ab =Console.byte
+	#cdef =Console.short
 
 BRK
 
 @print-label ( text )
 	
 	$loop NOP
-		( send ) DUP2 LDR =CNSL.char
+		( send ) DUP2 LDR =Console.char
 		( incr ) #0001 ADD2
 		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMPS 
 	POP2
@@ -56,7 +54,7 @@ RTS
 |c000 @FRAME
 |d000 @ERROR 
 
-|FF00 ;CNSL Console
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

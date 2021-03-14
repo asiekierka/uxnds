@@ -1,53 +1,46 @@
-( dev/mouse )
+( Mouse )
 
-&Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-&Mouse  { x 2 y 2 state 1 chord 1 }
-
-&Label2d { x 2 y 2 color 1 addr 2 }
-&Point2d { x 2 y 2 }
-
-;label Label2d
-;cat Point2d 
-;mouse Point2d
-;color 1
-;timer 1
+;label { x 2 y 2 color 1 addr 2 }
+;cat { x 2 y 2 } 
+;pointer { x 2 y 2 }
+;color { byte 1 }
+;timer { byte 1 }
 
 |0100 @RESET 
 
 	( position cat )
-	~dev/screen.width #0002 DIV2 =cat.x 
-	~dev/screen.height #0038 SUB2 =cat.y
+	~Screen.width #0002 DIV2 =cat.x 
+	~Screen.height #0038 SUB2 =cat.y
 	#01 =color
 	( draw polycat )
 	,draw-polycat JSR2
 
 BRK
 
-|0200 @FRAME
+@FRAME
 	
 	,draw-cursor JSR2
 
 	( reset timer -> move cat tail )
-	,no-click ~dev/mouse.state #00 EQU JMP2? POP2
+	,no-click ~Mouse.state #00 EQU JMP2? POP2
 		#50 =timer
 	@no-click
 	( detect click )
-	,no-click12 ~dev/mouse.state #11 NEQ JMP2? POP2
+	,no-click12 ~Mouse.state #11 NEQ JMP2? POP2
 		#0058 #0040 #01 ,mouse12_text ,draw-label JSR2
-		#10 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
+		#10 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse12_icn #0048 #0040 ,draw-sprite JSR2
 		,end-click JMP2
 	@no-click12
-	,no-click1 ~dev/mouse.state #01 NEQ JMP2? POP2
+	,no-click1 ~Mouse.state #01 NEQ JMP2? POP2
 		#0058 #0040 #01 ,mouse1_text ,draw-label JSR2
-		#12 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
+		#12 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse1_icn #0048 #0040 ,draw-sprite JSR2
 		,end-click JMP2
 	@no-click1
-	,no-click2 ~dev/mouse.state #10 NEQ JMP2? POP2
+	,no-click2 ~Mouse.state #10 NEQ JMP2? POP2
 		#0058 #0040 #01 ,mouse2_text ,draw-label JSR2
-		#13 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
+		#13 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse2_icn #0048 #0040 ,draw-sprite JSR2
 		,end-click JMP2
 	@no-click2
@@ -64,16 +57,20 @@ BRK
 
 @draw-cursor
 
-	~mouse.x ~dev/mouse.x NEQU2
-	~mouse.y ~dev/mouse.y NEQU2
-
-	#0000 EQU2 RTS? ( Return if unchanged )
-
 	( clear last cursor )
-	#10 ,clear_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
-	( record mouse positions )
-	~dev/mouse.x =mouse.x ~dev/mouse.y =mouse.y
-	#11 ,cursor_icn ~mouse.x ~mouse.y ,draw-sprite JSR2
+	,clear_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#10 =Sprite.color
+
+	( record pointer positions )
+	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+
+	( draw new cursor )
+	,cursor_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#11 =Sprite.color
 
 RTS
 
@@ -104,8 +101,8 @@ RTS
 		,polycat #00b0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 	@animate-polycat-tail-next2
 	( look-at )
-	~mouse.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP2? POP2
-		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP2? POP2
+	~pointer.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP2? POP2
+		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP2? POP2
 			,polycat #0040 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0050 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTS
@@ -114,7 +111,7 @@ RTS
 			,polycat #0030 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTS
 	@animate-polycat-right
-		~mouse.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP2? POP2
+		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP2? POP2
 			,polycat #0060 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0070 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTS
@@ -127,12 +124,12 @@ RTS
 
 @draw-label ( x y color addr )
 	
-	( load ) =label.addr =label.color =dev/sprite.y =dev/sprite.x 
+	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =dev/sprite.addr ~label.color =dev/sprite.color
+		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~dev/sprite.x #0008 ADD2 =dev/sprite.x
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 		DUP2 #0001 ADD2  LDR #00 NEQ ,$loop ROT JMP2? POP2
 	POP2
 
@@ -140,19 +137,19 @@ RTS
 
 @draw-sprite
 
-	=dev/sprite.y
-	=dev/sprite.x
-	=dev/sprite.addr
-	=dev/sprite.color
+	=Sprite.y
+	=Sprite.x
+	=Sprite.addr
+	=Sprite.color
 
 RTS
 
 @draw-sprite-chr
 
-	=dev/sprite.y
-	=dev/sprite.x
-	=dev/sprite.addr
-	#20 =dev/sprite.color
+	=Sprite.y
+	=Sprite.x
+	=Sprite.addr
+	#20 =Sprite.color
 
 RTS
 
@@ -223,9 +220,9 @@ RTS
 
 |d000 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
-|FF50 ;dev/mouse  Mouse
+|FF10 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF50 ;Mouse  { x 2 y 2 state 1 chord 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0f85 0fd5 0fb5 ] ( palette )

@@ -1,76 +1,65 @@
-( dev/screen )
+( Screen )
 
-&Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-;timer 1
-;centerx 2 ;centery 2 ;i 2 ;j 1
+;center { x 2 y 2 }
+;timer { byte 1 }
+;i { byte 1 }
 
 |0100 @RESET 
 
 	( find screen center )
-	~dev/screen.width #0002 DIV2 =centerx
-	~dev/screen.height #0002 DIV2 =centery
+	~Screen.width #0002 DIV2 =center.x
+	~Screen.height #0002 DIV2 =center.y
 
 	( draw hor line )
-	#0000 =i
-	~centery =dev/screen.y
-	@draw-hor
-		#03 ~i =dev/screen.x =dev/screen.color
-		~i #0002 ADD2 =i ( increment )
-	~i ~dev/screen.width LTH2 ,draw-hor ROT JMP2? POP2
+	#0000 =Screen.x ~center.y =Screen.y
+	$draw-hor
+		( draw ) #01 =Screen.color
+		( incr ) ~Screen.x #0002 ADD2 =Screen.x
+		,$draw-hor ~Screen.x ~Screen.width LTH2 JMP2? POP2
 
 	( draw ver line )
-	#0000 =i
-	~centerx =dev/screen.x
-	@draw-ver
-		#03 ~i =dev/screen.y =dev/screen.color
-		~i #0002 ADD2 =i ( increment )
-	~i ~dev/screen.width LTH2 ,draw-ver ROT JMP2? POP2
+	~center.x =Screen.x #0000 =Screen.y
+	$draw-ver
+		( draw ) #02 =Screen.color
+		( incr ) ~Screen.y #0002 ADD2 =Screen.y
+		,$draw-ver ~Screen.y ~Screen.height LTH2 JMP2? POP2
 
 	( draw blending modes )
-	@draw-blends
-		~j ,icon #00 ~j #0008 MUL2 ~dev/screen.height #0010 SUB2 ,draw-sprite JSR2
-		~j #01 ADD =j
-	~j #10 LTH ,draw-blends ROT JMP2? POP2
-
-	( draw pixel in the middle )
-	#01 ~centerx ~centery =dev/screen.y =dev/screen.x =dev/screen.color
+	#00 =i
+	#0020 =Sprite.x #0020 =Sprite.y ,icon =Sprite.addr
+	$draw-blends
+		( draw ) #00 ~i ADD =Sprite.color
+		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+		( incr ) ~i #01 ADD =i
+		,$draw-blends ~i #10 LTH JMP2? POP2
 
 BRK
 
-@draw-sprite
-	=dev/sprite.y
-	=dev/sprite.x
-	=dev/sprite.addr
-	=dev/sprite.color
-	RTS
-
-@icon [ 3c7e e7c3 c3e7 7e3c ]
-
-|c000 @FRAME
+@FRAME
 	
 	( update colors every 40 frames )
 	~timer #40 NEQ ,skip1 ROT JMP2? POP2
-		#0fac =fffa #f0bb =fffc #f053 =fff8
+		#0fac #fffa STR2 #f0bb #fffc STR2 #f053 #fff8 STR2
 	@skip1
 	~timer #80 NEQ ,skip2 ROT JMP2? POP2
-		#00fc =fffc #f0bb =fff8 #f053 =fffa
+		#00fc #fffc STR2 #f0bb #fff8 STR2 #f053 #fffa STR2
 	@skip2
 	~timer #c0 NEQ ,skip3 ROT JMP2? POP2
-		#000f =fff8 #0f0f =fffa #ff00 =fffc
+		#000f #fff8 STR2 #0f0f #fffa STR2 #ff00 #fffc STR2
 	@skip3
 	~timer #00 NEQ ,skip4 ROT JMP2? POP2
-		#f0ac =fff8 #f0bb =fffa #f053 =fffc
+		#f0ac #fff8 STR2 #f0bb #fffa STR2 #f053 #fffc STR2
 	@skip4
 	~timer #01 ADD =timer
 
 BRK
 
+@icon [ 3c7e e7c3 c3e7 7e3c ]
+
 |d000 @ERROR BRK 
 
-|FF10 ;dev/screen Screen
-|FF20 ;dev/sprite Sprite
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ f0ac f0bb f053 ] ( palette )
