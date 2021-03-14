@@ -75,6 +75,7 @@ RTN
 - Don't brk when return stack is not zeroed
 - LDRS should load from the zeropage?
 - Keep ref counts in macros
+- A fast way(2 bytes) to read from the zero page #aa LDR.
 
 ### Macros
 

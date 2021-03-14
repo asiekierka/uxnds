@@ -2,7 +2,6 @@
 
 ;center { x 2 y 2 }
 ;timer { byte 1 }
-;i { byte 1 }
 
 |0100 @RESET 
 
@@ -12,26 +11,31 @@
 
 	( draw hor line )
 	#0000 =Screen.x ~center.y =Screen.y
-	$draw-hor
+	#0000 ~Screen.width ( from/to )
+	$draw-hor NOP
 		( draw ) #01 =Screen.color
-		( incr ) ~Screen.x #0002 ADD2 =Screen.x
-		,$draw-hor ~Screen.x ~Screen.width LTH2 JMP2? POP2
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
+		OVR2 OVR2 LTH2 ^$draw-hor SWP JMPS? POP
+	POP2 POP2
 
 	( draw ver line )
 	~center.x =Screen.x #0000 =Screen.y
-	$draw-ver
+	#0000 ~Screen.height ( from/to )
+	$draw-ver NOP
 		( draw ) #02 =Screen.color
-		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-		,$draw-ver ~Screen.y ~Screen.height LTH2 JMP2? POP2
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
+		OVR2 OVR2 LTH2 ^$draw-ver SWP JMPS? POP
+	POP2 POP2
 
 	( draw blending modes )
-	#00 =i
 	#0020 =Sprite.x #0020 =Sprite.y ,icon =Sprite.addr
-	$draw-blends
-		( draw ) #00 ~i ADD =Sprite.color
-		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		( incr ) ~i #01 ADD =i
-		,$draw-blends ~i #10 LTH JMP2? POP2
+	#00 #10
+	$draw-blends NOP
+		( move ) OVR #00 SWP #0008 MUL2 #0020 ADD2 =Sprite.x
+		( draw ) OVR =Sprite.color
+		( incr ) SWP #01 ADD SWP 
+		DUP2 LTH ^$draw-blends SWP JMPS? POP
+	POP POP
 
 BRK
 
