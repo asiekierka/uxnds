@@ -256,12 +256,6 @@ int
 walktoken(char *w)
 {
 	Macro *m;
-	if((m = findmacro(w))) {
-		int i, res = 0;
-		for(i = 0; i < m->len; ++i)
-			res += walktoken(m->items[i]);
-		return res;
-	}
 	if(findopcode(w) || scmp(w, "BRK", 4))
 		return 1;
 	switch(w[0]) {
@@ -273,6 +267,12 @@ walktoken(char *w)
 	case '+':           /* signed positive */
 	case '-':           /* signed negative */
 	case '#': return (slen(w + 1) == 2 ? 2 : 3);
+	}
+	if((m = findmacro(w))) {
+		int i, res = 0;
+		for(i = 0; i < m->len; ++i)
+			res += walktoken(m->items[i]);
+		return res;
 	}
 	return error("Unknown label in first pass", w);
 }
@@ -293,38 +293,32 @@ parsetoken(char *w)
 		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
 		l->refs++;
 		return 1;
-	}
-	if(w[0] == '=' && (l = findlabel(w + 1))) {
+	} else if(w[0] == '=' && (l = findlabel(w + 1))) {
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
-			return error("Invalid load helper", w);
+			return error("Invalid store helper", w);
 		pushshort(findlabeladdr(w + 1), 1);
 		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0);
 		l->refs++;
 		return 1;
-	}
-	if(w[0] == '~' && (l = findlabel(w + 1))) {
+	} else if(w[0] == '~' && (l = findlabel(w + 1))) {
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
 			return error("Invalid load helper", w);
 		pushshort(findlabeladdr(w + 1), 1);
 		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0);
 		l->refs++;
 		return 1;
-	}
-	if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
+	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
 		pushbyte(op, 0);
 		return 1;
-	}
-	if(w[0] == '.' && (l = findlabel(w + 1))) {
+	} else if(w[0] == '.' && (l = findlabel(w + 1))) {
 		pushshort(findlabeladdr(w + 1), 0);
 		l->refs++;
 		return 1;
-	}
-	if(w[0] == ',' && (l = findlabel(w + 1))) {
+	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
 		pushshort(findlabeladdr(w + 1), 1);
 		l->refs++;
 		return 1;
-	}
-	if(w[0] == '#' && sihx(w + 1)) {
+	} else if(w[0] == '#' && sihx(w + 1)) {
 		if(slen(w + 1) == 2)
 			pushbyte(shex(w + 1), 1);
 		else if(slen(w + 1) == 4)
@@ -332,18 +326,14 @@ parsetoken(char *w)
 		else
 			return 0;
 		return 1;
-	}
-
-	if(w[0] == '+' && sihx(w + 1)) {
+	} else if(w[0] == '+' && sihx(w + 1)) {
 		if(slen(w + 1) == 2)
 			pushbyte((Sint8)shex(w + 1), 1);
 		else if(slen(w + 1) == 4)
 			pushshort((Sint16)shex(w + 1), 1);
 		else
 			return 0;
-	}
-
-	if(w[0] == '-' && sihx(w + 1)) {
+	} else if(w[0] == '-' && sihx(w + 1)) {
 		if(slen(w + 1) == 2)
 			pushbyte((Sint8)(shex(w + 1) * -1), 1);
 		else if(slen(w + 1) == 4)
@@ -351,17 +341,13 @@ parsetoken(char *w)
 		else
 			return 0;
 		return 1;
-	}
-
-	if((m = findmacro(w))) {
-		int i, res = 0;
-		for(i = 0; i < m->len; ++i) {
+	} else if((m = findmacro(w))) {
+		int i;
+		for(i = 0; i < m->len; ++i)
 			if(!parsetoken(m->items[i]))
 				return 0;
-		}
 		return 1;
 	}
-
 	return 0;
 }
 
@@ -399,9 +385,8 @@ pass1(FILE *f)
 			if(shex(w + 1) < addr)
 				return error("Memory Overwrite", w);
 			addr = shex(w + 1);
-		} else {
+		} else
 			addr += walktoken(w);
-		}
 	}
 	rewind(f);
 	return 1;
