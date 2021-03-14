@@ -11,7 +11,7 @@
 
 |0100 @RESET
 	
-	#0030 =window.x1 #0030 =window.y1 #00a8 =window.x2 #0090 =window.y2
+	#0030 =window.x1 #0030 =window.y1 #0090 =window.x2 #0090 =window.y2
 
 	~window.x1 #0010 ADD2 =editor.x1
 	~window.y1 #0010 ADD2 =editor.y1
@@ -79,38 +79,25 @@ RTS
 	~editor.addr =Sprite.addr
 
 	#00 =pixel.y
-	@redraw-ver
+	$ver
 		#00 =pixel.x
 		~editor.x1 =Sprite.x
-		@redraw-hor
-
+		$hor
 			( get bit )
 			,cell0_icn #00
 			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB ROR #01 AND ( get bit )
 			#0008 MUL2 ADD2 =Sprite.addr ( add *8 )
-
 			( draw ) #08 =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 			( incr ) ~pixel.x #01 ADD =pixel.x
-			,redraw-hor ~Sprite.x ~editor.x1 #0040 ADD2 LTH2 JMP2? POP2
+			,$hor ~Sprite.x ~editor.x1 #0040 ADD2 LTH2 JMP2? POP2
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 		( incr ) ~pixel.y #01 ADD =pixel.y
-		,redraw-ver ~Sprite.y ~editor.y1 #0040 ADD2 LTH2 JMP2? POP2
-
+		,$ver ~Sprite.y ~editor.y1 #0040 ADD2 LTH2 JMP2? POP2
 	~editor.addr =Sprite.addr
 	~window.y1 =Sprite.y
 	~window.x2 #0008 SUB2 =Sprite.x
 	( draw ) #01 =Sprite.color
-
-	( TODO: Make a loop.. )
-	~window.x1 #0058 ADD2 ~window.y1 #0010 ADD2 #08 ~editor.addr ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0018 ADD2 #08 ~editor.addr #0001 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0020 ADD2 #08 ~editor.addr #0002 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0028 ADD2 #08 ~editor.addr #0003 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0030 ADD2 #08 ~editor.addr #0004 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0038 ADD2 #08 ~editor.addr #0005 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0040 ADD2 #08 ~editor.addr #0006 ADD2 ,draw-byte JSR2
-	~window.x1 #0058 ADD2 ~window.y1 #0048 ADD2 #08 ~editor.addr #0007 ADD2 ,draw-byte JSR2
 
 RTS
 
@@ -118,67 +105,57 @@ RTS
 	
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
-	@draw-label-left-loop
+	$loop NOP
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
-		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 #0001 ADD2  LDR #00 NEQ ,draw-label-left-loop ROT JMP2? POP2
+		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
+		DUP2 LDR #00 NEQ ^$loop MUL JMPS
 	POP2
-
-RTS
-
-@draw-byte ( x y color addr )
-	
-	( load ) =addr =color =Sprite.y =Sprite.x
-	,font_hex #00 ~addr LDR #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr ~color =Sprite.color
-	~Sprite.x #0008 ADD2 =Sprite.x
-	,font_hex #00 ~addr LDR #0f AND #08 MUL ADD2 =Sprite.addr ~color =Sprite.color
 
 RTS
 
 @fill-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	@fill-rect-ver
+	$ver NOP
 		~rect.x1 =Screen.x
-		@fill-rect-hor
+		$hor NOP
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x #0001 ADD2 =Screen.x
-			,fill-rect-hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+			~Screen.x ~rect.x2 LTH2 ^$hor MUL JMPS
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,fill-rect-ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
+		~Screen.y ~rect.y2 LTH2 ^$ver MUL JMPS
 
 RTS
 
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	@line-rect-hor
+	$hor NOP
 		( incr ) ~Screen.x #0001 ADD2 =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,line-rect-hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+		~Screen.x ~rect.x2 LTH2 ^$hor MUL JMPS
 	~rect.y1 =Screen.y
-	@line-rect-ver
+	$ver NOP
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,line-rect-ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		~Screen.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
 
 RTS
 
 @tile-rect ( x1 y1 x2 y2 color addr )
 
 	=Sprite.addr =color =rect.y2 =rect.x2 DUP2 =Sprite.y =rect.y1 DUP2 =Sprite.x =rect.x1
-
-	@tile-rect-ver
+	$ver NOP
 		~rect.x1 =Sprite.x
-		@tile-rect-hor
+		$hor NOP
 			( draw ) ~color =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-			,tile-rect-hor ~Sprite.x ~rect.x2 LTH2 JMP2? POP2
+			~Sprite.x ~rect.x2 LTH2 ^$hor MUL JMPS
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-		,tile-rect-ver ~Sprite.y ~rect.y2 LTH2 JMP2? POP2
+		~Sprite.y ~rect.y2 LTH2 ^$ver MUL JMPS
 
 RTS
 
@@ -207,19 +184,7 @@ RTS
 @cell0_icn   [ 7c82 8282 8282 7c00 ]
 @cell1_icn   [ 7cfe fefe fefe 7c00 ]
 
-@window_name [ pixel-editor 00 ]
-
-@font_hex ( 0-F ) 
-[
-	7c82 8282 8282 7c00 3010 1010 1010 1000
-	7c82 027c 8080 fe00 7c82 027c 0282 7c00
-	4282 82fe 0202 0200 fc82 807c 0282 7c00
-	7c82 80fc 8282 7c00 7c82 021e 0202 0200
-	7c82 827c 8282 7c00 7c82 827e 0202 0400
-	7c82 027e 8282 7e00 fc82 82fc 8282 fc00
-	7c82 8080 8082 7c00 fc82 8282 8282 fc00
-	7c82 80f0 8082 7c00 7c82 80f0 8080 8000
-]
+@window_name [ Editor 00 ]
 
 @font ( spectrum-zx font ) 
 [
@@ -262,7 +227,7 @@ RTS
 |FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |FF30 ;Controller { buttons 1 }
-|FF50 ;Mouse  { x 2 y 2 state 1 chord 1 }
+|FF50 ;Mouse { x 2 y 2 state 1 chord 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 0fcf 0fc4 0fc4 ] ( palette )
