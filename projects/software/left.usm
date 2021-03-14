@@ -13,32 +13,22 @@
 			- Don't scroll past oef
 			- Hor scroll
 			- Real scrolling distance
-)
+)  
 
-&Console    { pad 8 char 1 byte 1 short 2 }
-&Screen 	{ width 2 height 2 pad 4 x 2 y 2 color 1 }
-&Sprite 	{ pad 8 x 2 y 2 addr 2 color 1 }
-&Controller { buttons 1 }
-&Keyboard 	{ key 1 }
-&Mouse  	{ x 2 y 2 state 1 chord 1 xt 1 yt 1 }
-&File       { pad 8 name 2 length 2 load 2 save 2 }
-
-&Document   { eof 2 body 8000 }
-&Clip       { len 2 body 256 }
-
-&Range2d 	{ from 2 to 2 }
-&Point2d 	{ x 2 y 2 }
-&Label2d 	{ x 2 y 2 color 1 addr 2 }
-&Textarea2d { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 }
-&Touch2d    { x1 2 y1 2 x2 2 y2 2 state 1 }
-
-;lock 1
-;i 2 ;j 2 ;k 1 ;l 1 ;addr 2
-
-;selection Range2d ;position Point2d ;scroll Point2d
-;pt Point2d ;mouse Point2d ;touch Touch2d
-;textarea Textarea2d
-;label Label2d ( remove )
+;lock { byte 1 }
+;k { byte 1 } 
+;l { byte 1 } 
+;i { short 2 } 
+;j { short 2 } 
+;addr { short 2 }
+;selection { from 2 to 2 } 
+;position { x 2 y 2 } 
+;scroll { x 2 y 2 }
+;pt { x 2 y 2 } 
+;mouse { x 2 y 2 } 
+;touch { x1 2 y1 2 x2 2 y2 2 state 1 }
+;textarea { x1 2 y1 2 x2 2 y2 2 addr 2 cursor 1 }
+;label { x 2 y 2 color 1 addr 2 } ( remove )
 
 |0100 @RESET
 	
@@ -125,7 +115,6 @@ BRK
 		,$no-backspace ~KEYS #08 NEQ JMP2? POP2
 			( erase )
 			,$erase-multiple ~selection.to ~selection.from SUB2 #0001 NEQ2 JMP2? POP2
-			$erase-single
 				~selection.to ~selection.from SUB2 ,shift-left JSR2
 				,$erase-end JMP2
 			$erase-multiple
@@ -703,18 +692,18 @@ RTS
 @filepath1     [ projects/examples/gui.hover.usm 00 ]
 @filepath      [ projects/software/left.usm 00 ]
 
-|3000 ;document Document
-|c000 ;clip Clip
+|3000 ;document { eof 2 body 8000 }
+|c000 ;clip { len 2 body 256 }
 
 |d000 @ERROR BRK 
 
-|FF00 ;CNSL Console
-|FF10 ;SCRN Screen
-|FF20 ;SPRT Sprite
-|FF30 ;CTRL Controller
-|FF40 ;KEYS Keyboard
-|FF50 ;MOUS Mouse
-|FF60 ;FILE File
+|FF00 ;CNSL { pad 8 char 1 byte 1 short 2 }
+|FF10 ;SCRN { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;SPRT { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;CTRL { buttons 1 }
+|FF40 ;KEYS { key 1 }
+|FF50 ;MOUS { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
+|FF60 ;FILE { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 30ff e0f3 b0f3 ] ( palette )

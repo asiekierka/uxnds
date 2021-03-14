@@ -16,23 +16,20 @@ typedef signed char Sint8;
 typedef unsigned short Uint16;
 typedef signed short Sint16;
 
-typedef struct
-{
+typedef struct {
 	char name[64];
 	unsigned int size;
 } Map;
 
 typedef struct {
 	char name[64];
-	Uint8 len, offset, refs;
+	Uint8 refs, maps;
 	Uint16 addr;
-	/* map */
 	Map map[16];
-	Uint8 maps;
 } Label;
 
 typedef struct {
-	Uint8 data[256 * 256], tlen, llen;
+	Uint8 data[256 * 256], llen;
 	Uint16 ptr;
 	Label labels[256];
 } Program;
@@ -122,7 +119,7 @@ findlabellen(char *s)
 	char *param;
 	Label *l = findlabel(s);
 	if(scin(s, '.') < 1)
-		return l->len;
+		return l->map[0].size;
 	param = s + scin(s, '.') + 1;
 	for(i = 0; i < l->maps; ++i)
 		if(scmp(l->map[i].name, param, 64))
@@ -183,7 +180,7 @@ makelabel(char *name, Uint16 addr)
 	l->addr = addr;
 	l->refs = 0;
 	scpy(name, l->name, 64);
-	printf("New label: %s, at 0x%04x[%d]\n", l->name, l->addr, l->len);
+	printf("New label: %s, at 0x%04x\n", l->name, l->addr);
 	return 1;
 }
 
@@ -302,12 +299,18 @@ pass2(FILE *f)
 			if(off < -126 || off > 126){ printf("Address %s is too far(%d).\n", w, off); return 0; } 
 			pushbyte((Sint8)(l->addr - p.ptr - 3), 1); l->refs++; 
 		}
+		else if(w[0] == '=' && (l = findlabel(w + 1))) { 
+			if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+				return error("Invalid load helper", w);
+			pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
+		else if(w[0] == '~' && (l = findlabel(w + 1))) { 
+			if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+				return error("Invalid load helper", w);
+			pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
 		else if(w[0] == '|') p.ptr = shex(w + 1);
 		else if((op = findopcode(w)) || scmp(w, "BRK", 4)) pushbyte(op, 0);
 		else if(w[0] == '.' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 0); l->refs++; }
 		else if(w[0] == ',' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); l->refs++; }
-		else if(w[0] == '=' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0); l->refs++;}
-		else if(w[0] == '~' && (l = findlabel(w + 1))) { pushshort(findlabeladdr(w + 1), 1); pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0); l->refs++;}
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 2) pushbyte(shex(w + 1), 1); 
 		else if(w[0] == '#' && sihx(w + 1) && slen(w + 1) == 4) pushshort(shex(w + 1), 1);
 		else if(w[0] == '+' && sihx(w + 1) && slen(w + 1) == 2) pushbyte((Sint8)shex(w + 1), 1);
@@ -324,7 +327,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s.\n\n", filename);
+	printf("Assembled %s, %d labels.\n\n", filename, p.llen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);

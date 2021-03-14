@@ -25,11 +25,6 @@
 BRK
 
 @FRAME 
-	
-	~pointer.x ~Mouse.x NEQU2
-	~pointer.y ~Mouse.y NEQU2
-
-	#0000 EQU2 BRK? ( Return if unchanged )
 
 	,no-ctrl ~Controller.buttons #00 EQU JMP2? POP2
 
@@ -161,6 +156,11 @@ RTS
 
 @draw-cursor
 
+	~pointer.x ~Mouse.x NEQU2
+	~pointer.y ~Mouse.y NEQU2
+
+	#0000 EQU2 BRK? ( Return if unchanged )
+	
 	( clear last cursor )
 	,clear_icn =Sprite.addr 
 	~pointer.x =Sprite.x 
