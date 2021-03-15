@@ -343,6 +343,7 @@ parsetoken(char *w)
 		return 1;
 	} else if((m = findmacro(w))) {
 		int i;
+		m->refs++;
 		for(i = 0; i < m->len; ++i)
 			if(!parsetoken(m->items[i]))
 				return 0;
