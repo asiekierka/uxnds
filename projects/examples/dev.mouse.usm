@@ -22,23 +22,23 @@ BRK
 	,draw-cursor JSR2
 
 	( reset timer -> move cat tail )
-	,no-click ~Mouse.state #00 EQU JMP2? POP2
+	,no-click ~Mouse.state #00 EQU JMP2?
 		#50 =timer
 	@no-click
 	( detect click )
-	,no-click12 ~Mouse.state #11 NEQ JMP2? POP2
+	,no-click12 ~Mouse.state #11 NEQ JMP2?
 		#0058 #0040 #01 ,mouse12_text ,draw-label JSR2
 		#10 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse12_icn #0048 #0040 ,draw-sprite JSR2
 		,end-click JMP2
 	@no-click12
-	,no-click1 ~Mouse.state #01 NEQ JMP2? POP2
+	,no-click1 ~Mouse.state #01 NEQ JMP2?
 		#0058 #0040 #01 ,mouse1_text ,draw-label JSR2
 		#12 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse1_icn #0048 #0040 ,draw-sprite JSR2
 		,end-click JMP2
 	@no-click1
-	,no-click2 ~Mouse.state #10 NEQ JMP2? POP2
+	,no-click2 ~Mouse.state #10 NEQ JMP2?
 		#0058 #0040 #01 ,mouse2_text ,draw-label JSR2
 		#13 ,cursor_icn ~pointer.x ~pointer.y ,draw-sprite JSR2
 		~color ,mouse2_icn #0048 #0040 ,draw-sprite JSR2
@@ -91,18 +91,18 @@ RTN
 @animate-polycat
 
 	( tail )
-	~timer #50 NEQ ,animate-polycat-tail-next0 ROT JMP2? POP2
+	~timer #50 NEQ ,animate-polycat-tail-next0 ROT JMP2?
 		,polycat #00c0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 	@animate-polycat-tail-next0
-	~timer #58 NEQ ,animate-polycat-tail-next1 ROT JMP2? POP2
+	~timer #58 NEQ ,animate-polycat-tail-next1 ROT JMP2?
 		,polycat #00d0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 	@animate-polycat-tail-next1
-	~timer #60 NEQ ,animate-polycat-tail-next2 ROT JMP2? POP2
+	~timer #60 NEQ ,animate-polycat-tail-next2 ROT JMP2?
 		,polycat #00b0 ADD2 ~cat.x #0008 ADD2 ~cat.y #0010 ADD2 ,draw-sprite-chr JSR2
 	@animate-polycat-tail-next2
 	( look-at )
-	~pointer.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP2? POP2
-		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP2? POP2
+	~pointer.x ~cat.x #0008 ADD2 GTH2 ,animate-polycat-right ROT JMP2?
+		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-left-down ROT JMP2?
 			,polycat #0040 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0050 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTN
@@ -111,7 +111,7 @@ RTN
 			,polycat #0030 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTN
 	@animate-polycat-right
-		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP2? POP2
+		~pointer.y ~cat.y #0008 ADD2 GTH2 ,animate-polycat-right-down ROT JMP2?
 			,polycat #0060 ADD2 ~cat.x ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 			,polycat #0070 ADD2 ~cat.x #0008 ADD2 ~cat.y #0008 ADD2 ,draw-sprite-chr JSR2
 		RTN
@@ -130,7 +130,7 @@ RTN
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 #0001 ADD2  LDR #00 NEQ ,$loop ROT JMP2? POP2
+		DUP2 #0001 ADD2  LDR #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN

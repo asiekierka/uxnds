@@ -26,15 +26,15 @@ BRK
 
 @FRAME 
 
-	,no-ctrl ~Controller.buttons #00 EQU JMP2? POP2
+	,no-ctrl ~Controller.buttons #00 EQU JMP2?
 
-		,no-ctrl-up ~Controller.buttons #10 EQU JMP2? POP2
+		,no-ctrl-up ~Controller.buttons #10 EQU JMP2?
 			~editor.addr #0001 ADD2 =editor.addr
 			,draw-window JSR2
 			,draw-editor JSR2
 		@no-ctrl-up
 
-		,no-ctrl-down ~Controller.buttons #20 EQU JMP2? POP2
+		,no-ctrl-down ~Controller.buttons #20 EQU JMP2?
 			~editor.addr #0001 SUB2 =editor.addr
 			,draw-window JSR2
 			,draw-editor JSR2
@@ -42,7 +42,7 @@ BRK
 
 	@no-ctrl
 
-	,no-click ~Mouse.state #00 EQU JMP2? POP2
+	,no-click ~Mouse.state #00 EQU JMP2?
 
 		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 LDR
 		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB ROL 
@@ -85,10 +85,10 @@ RTN
 			( draw ) #08 =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 			( incr ) ~pixel.x #01 ADD =pixel.x
-			,$hor ~Sprite.x ~editor.x1 #0040 ADD2 LTH2 JMP2? POP2
+			,$hor ~Sprite.x ~editor.x1 #0040 ADD2 LTH2 JMP2?
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 		( incr ) ~pixel.y #01 ADD =pixel.y
-		,$ver ~Sprite.y ~editor.y1 #0040 ADD2 LTH2 JMP2? POP2
+		,$ver ~Sprite.y ~editor.y1 #0040 ADD2 LTH2 JMP2?
 	~editor.addr =Sprite.addr
 	~window.y1 =Sprite.y
 	~window.x2 #0008 SUB2 =Sprite.x

@@ -19,9 +19,9 @@ BRK
 			( draw ) ~pict.color =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 			( incr ) ~Sprite.addr #0008 ADD2 =Sprite.addr
-		,$hor ~Sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
+		,$hor ~Sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2?
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
+	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2?
 
 RTN
 

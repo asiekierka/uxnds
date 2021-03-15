@@ -138,13 +138,14 @@ lituxn(Uxn *u, Uint8 instr)
 int
 opcuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 op = instr & 0x1f;
+	Uint8 op = instr & 0x1f, fcond;
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
 	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1);
 	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
+	fcond = getflag(&u->status, FLAG_COND);
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;
-	if(u->wst.ptr < opr[op][0])
+	if(u->wst.ptr < opr[op][0] || (fcond && u->wst.ptr < 1))
 		return haltuxn(u, "Working-stack underflow", op);
 	if(u->wst.ptr + opr[op][1] - opr[op][0] >= 255)
 		return haltuxn(u, "Working-stack overflow", instr);
@@ -152,8 +153,10 @@ opcuxn(Uxn *u, Uint8 instr)
 		return haltuxn(u, "Return-stack underflow", op);
 	if(u->rst.ptr + opr[op][3] - opr[op][2] >= 255)
 		return haltuxn(u, "Return-stack overflow", instr);
-	if(!getflag(&u->status, FLAG_COND) || (getflag(&u->status, FLAG_COND) && pop8(&u->wst)))
+	if(!fcond || (fcond && pop8(&u->wst)))
 		(*ops[op])(u);
+	else if(opr[op][0] >= opr[op][1])
+		u->wst.ptr -= opr[op][0] - opr[op][1];
 	return 1;
 }
 

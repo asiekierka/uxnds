@@ -15,7 +15,7 @@
 	$draw-hor NOP
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor SWP JMPS? POP
+		OVR2 OVR2 LTH2 ^$draw-hor SWP JMPS?
 	POP2 POP2
 
 	( draw ver line )
@@ -24,7 +24,7 @@
 	$draw-ver NOP
 		( draw ) #02 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver SWP JMPS? POP
+		OVR2 OVR2 LTH2 ^$draw-ver SWP JMPS?
 	POP2 POP2
 
 	( draw blending modes )
@@ -34,7 +34,7 @@
 		( move ) OVR #00 SWP #0008 MUL2 #0020 ADD2 =Sprite.x
 		( draw ) OVR =Sprite.color
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-blends SWP JMPS? POP
+		DUP2 LTH ^$draw-blends SWP JMPS?
 	POP POP
 
 BRK
@@ -42,16 +42,16 @@ BRK
 @FRAME
 	
 	( update colors every 40 frames )
-	~timer #40 NEQ ,skip1 ROT JMP2? POP2
+	~timer #40 NEQ ,skip1 ROT JMP2?
 		#0fac #fffa STR2 #f0bb #fffc STR2 #f053 #fff8 STR2
 	@skip1
-	~timer #80 NEQ ,skip2 ROT JMP2? POP2
+	~timer #80 NEQ ,skip2 ROT JMP2?
 		#00fc #fffc STR2 #f0bb #fff8 STR2 #f053 #fffa STR2
 	@skip2
-	~timer #c0 NEQ ,skip3 ROT JMP2? POP2
+	~timer #c0 NEQ ,skip3 ROT JMP2?
 		#000f #fff8 STR2 #0f0f #fffa STR2 #ff00 #fffc STR2
 	@skip3
-	~timer #00 NEQ ,skip4 ROT JMP2? POP2
+	~timer #00 NEQ ,skip4 ROT JMP2?
 		#f0ac #fff8 STR2 #f0bb #fffa STR2 #f053 #fffc STR2
 	@skip4
 	~timer #01 ADD =timer

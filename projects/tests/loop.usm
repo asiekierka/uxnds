@@ -25,7 +25,7 @@ RTN
 	
 	$loop
 		~b #01 ADD =b
-		,$loop ~b #d0 LTH JMP2? POP2
+		,$loop ~b #d0 LTH JMP2?
 	~b =Console.byte 
 
 RTN
@@ -34,7 +34,7 @@ RTN
 
 	$loop NOP
 		~c #01 ADD =c
-		~c #d0 LTH ^$loop SWP JMPS? POP
+		~c #d0 LTH ^$loop SWP JMPS?
 	~c =Console.byte 
 
 RTN
@@ -44,7 +44,7 @@ RTN
 	#00 #d0
 	$loop NOP
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$loop SWP JMPS? POP
+		DUP2 LTH ^$loop SWP JMPS?
 	POP =Console.byte
 
 RTN
@@ -54,7 +54,7 @@ RTN
 	#0000 #0d00
 	$loop NOP
 		( incr ) SWP2 #0001 ADD2 SWP2
-		OVR2 OVR2 LTH2 ^$loop SWP JMPS? POP
+		OVR2 OVR2 LTH2 ^$loop SWP JMPS?
 	POP2 =Console.short
 
 RTN

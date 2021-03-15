@@ -23,7 +23,7 @@ BRK
 
 	#33 =Console.byte
 
-	,skip1 #12 #34 LTH JMP2? POP2
+	,skip1 #12 #34 LTH JMP2?
 		#ff =Console.byte
 	@skip1
 

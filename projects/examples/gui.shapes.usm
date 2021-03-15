@@ -33,13 +33,13 @@ BRK
 		( incr ) ~Screen.x #0001 ADD2 =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+		,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2?
 
 RTN
 
@@ -51,9 +51,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x #0001 ADD2 =Screen.x
-			,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+			,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,$ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
+		,$ver ~Screen.y ~rect.y2 LTH2 JMP2?
 
 RTN
 
@@ -66,9 +66,9 @@ RTN
 			( draw ) ~pict.color =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
 			( incr ) ~Sprite.addr #0008 ADD2 =Sprite.addr
-		,$hor ~Sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2? POP2
+		,$hor ~Sprite.x ~pict.width ~pict.x ADD2 LTH2 JMP2?
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2? POP2
+	,$ver ~Sprite.y ~pict.height ~pict.y ADD2 LTH2 JMP2?
 
 RTN
 
@@ -79,7 +79,7 @@ RTN
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
+		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN

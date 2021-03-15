@@ -1,0 +1,24 @@
+( tests/cond )
+
+|0100 @RESET 
+
+	#00 #d0
+	$loop NOP
+		( incr ) SWP #01 ADD SWP 
+		DUP2 LTH ^$loop SWP JMPS?
+	POP =Console.byte
+
+BRK
+
+@routine
+	
+
+RTN
+
+|c000 @FRAME
+|d000 @ERROR 
+
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

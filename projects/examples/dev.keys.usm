@@ -42,7 +42,7 @@ RTN
 
 @blink-cursor
 	
-	,skip ~timer #10 LTH JMP2? POP2
+	,skip ~timer #10 LTH JMP2?
 		#00 =timer
 		~blink #00 EQU =blink
 		,cursor =Sprite.addr
@@ -61,9 +61,9 @@ RTN
 		$hor
 			( draw ) ~color =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-			,$hor ~Sprite.x ~rect.x2 LTH2 JMP2? POP2
+			,$hor ~Sprite.x ~rect.x2 LTH2 JMP2?
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-		,$ver ~Sprite.y ~rect.y2 LTH2 JMP2? POP2
+		,$ver ~Sprite.y ~rect.y2 LTH2 JMP2?
 
 RTN
 
@@ -75,9 +75,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x #0001 ADD2 =Screen.x
-			,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+			,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,$ver ~Screen.y ~rect.y2 LTH2 JMP2? POP2
+		,$ver ~Screen.y ~rect.y2 LTH2 JMP2?
 
 RTN
 
@@ -88,13 +88,13 @@ RTN
 		( incr ) ~Screen.x #0001 ADD2 =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 LTH2 JMP2? POP2
+		,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2? POP2
+		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2?
 
 RTN
 
@@ -105,14 +105,14 @@ RTN
 	$loop
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~textarea.color =Sprite.color
 		( detect linebreaks )
-		DUP2 LDR #0d NEQ ,$no-return ROT JMP2? POP2
+		DUP2 LDR #0d NEQ ,$no-return ROT JMP2?
 			~textarea.x1 =Sprite.x 
 			( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
 			( decr ) ~Sprite.x #0008 SUB2 =Sprite.x
 		$no-return
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2? POP2
+		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN
@@ -120,10 +120,10 @@ RTN
 @do-textarea
 
 	( ,blink-cursor JSR2 )
-	,do-textarea-end ~Keys #00 EQU JMP2? POP2 ( skip on no key )
+	,do-textarea-end ~Keys #00 EQU JMP2? ( skip on no key )
 	( backspace )
-	,any-key ~Keys #08 NEQ JMP2? POP2
-		,input-end ~textarea.cursor #00 EQU JMP2? POP2
+	,any-key ~Keys #08 NEQ JMP2?
+		,input-end ~textarea.cursor #00 EQU JMP2?
 			( decr ) ~textarea.cursor #01 SUB =textarea.cursor
 			#00 ~textarea.addr #00 ~textarea.cursor ADD2 STR
 			,input-end JMP2
@@ -142,7 +142,7 @@ RTN
 
 @do-cursor
 
-	,skip-drag ~Mouse.state #01 NEQ JMP2? POP2
+	,skip-drag ~Mouse.state #01 NEQ JMP2?
 		~mouse.x =textarea.x1 ~mouse.y =textarea.y1 
 		,redraw-window JSR2
 		,redraw JSR2
