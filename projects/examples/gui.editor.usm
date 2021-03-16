@@ -46,7 +46,7 @@ BRK
 	,no-click ~Mouse.state #00 EQU JMP2?
 
 		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 LDR
-		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB ROL 
+		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB SHL 
 		XOR
 		( save ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 STR
 
@@ -81,7 +81,7 @@ RTN
 		$hor
 			( get bit )
 			,cell0_icn #00
-			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB ROR #01 AND ( get bit )
+			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB SHR #01 AND ( get bit )
 			#0008 MUL2 ADD2 =Sprite.addr ( add *8 )
 			( draw ) #08 =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x

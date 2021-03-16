@@ -74,37 +74,37 @@ BRK
 		@no-ctrl-right
 		( alt )
 		,no-alt ~Controller #0f AND #02 NEQ JMP2?
-			,no-aup ~Controller #04 ROR #01 NEQ JMP2?
+			,no-aup ~Controller #04 SHR #01 NEQ JMP2?
 				,find-wordstart JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aup
-			,no-adown ~Controller #04 ROR #02 NEQ JMP2?
+			,no-adown ~Controller #04 SHR #02 NEQ JMP2?
 				,find-wordend JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-adown
-			,no-aleft ~Controller #04 ROR #04 NEQ JMP2?
+			,no-aleft ~Controller #04 SHR #04 NEQ JMP2?
 				~selection.to #0001 SUB2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aleft
-			,no-aright ~Controller #04 ROR #08 NEQ JMP2?
+			,no-aright ~Controller #04 SHR #08 NEQ JMP2?
 				~selection.to #0001 ADD2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aright
 		@no-alt
 		( ctrl )
 		,no-ctrl ~Controller #0f AND #01 NEQ JMP2?
-			,no-cup ~Controller #04 ROR #01 NEQ JMP2?
+			,no-cup ~Controller #04 SHR #01 NEQ JMP2?
 				#0004 ,scroll-up JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cup
-			,no-cdown ~Controller #04 ROR #02 NEQ JMP2?
+			,no-cdown ~Controller #04 SHR #02 NEQ JMP2?
 				#0004 ,scroll-down JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cdown
-			,no-cleft ~Controller #04 ROR #04 NEQ JMP2?
+			,no-cleft ~Controller #04 SHR #04 NEQ JMP2?
 				,goto-linestart JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cleft
-			,no-cright ~Controller #04 ROR #08 NEQ JMP2?
+			,no-cright ~Controller #04 SHR #08 NEQ JMP2?
 				,goto-lineend JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cright
 		@no-ctrl
@@ -464,13 +464,13 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr LDR #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x #0008 ADD2 =Sprite.x
 	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x #0008 ADD2 =Sprite.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x #0008 ADD2 =Sprite.x
 	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =Sprite.addr
@@ -552,7 +552,7 @@ RTN
 			#0000 =Sprite.x
 			~scroll.y ~Sprite.y #0008 DIV2 ADD2 DUP2 SWP POP =k 
 			~position.y EQU2 #0c MUL =l
-			,font_hex #00 ~k #f0 AND #04 ROR #08 MUL ADD2 =Sprite.addr
+			,font_hex #00 ~k #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
 			#02 ~l ADD =Sprite.color
 			#0008 =Sprite.x
 			,font_hex #00 ~k #0f AND #08 MUL ADD2 =Sprite.addr

@@ -157,7 +157,7 @@ BRK
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
 			( load ) ~addr ~pos.y #0008 DIV2 ADD2 LDR
-			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB ROL 
+			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB SHL 
 			XOR
 			( save ) ~addr ~pos.y #0008 DIV2 ADD2 STR
 			,redraw JSR2 ,click-end JMP2
@@ -354,7 +354,7 @@ RTN
 	#00 =i
 	$bytes
 		~tileview.x #0088 ADD2 =SPRT.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 		( draw ) #02 =SPRT.color
 		~SPRT.x #0008 ADD2 =SPRT.x
 		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
@@ -399,7 +399,7 @@ RTN
 		$hor
 			( get bit )
 			,blank_icn #00
-			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB ROR #01 AND ( get bit )
+			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB SHR #01 AND ( get bit )
 			#0008 MUL2 ADD2 =SPRT.addr ( add *8 )
 			( draw ) #01 =SPRT.color
 			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
@@ -440,13 +440,13 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	,font_hex #00 ,addr LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x #0008 ADD2 =SPRT.x
 	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 ROR #08 MUL ADD2 =SPRT.addr
+	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x #0008 ADD2 =SPRT.x
 	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
