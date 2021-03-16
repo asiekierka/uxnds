@@ -448,12 +448,18 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	if(argc < 3)
-		return error("Input", "Missing");
-	if(!(f = fopen(argv[1], "r")))
-		return error("Open", "Failed");
-	if(!pass1(f) || !pass2(f))
-		return error("Assembly", "Failed");
+	if(argc < 3) {
+		error("Input", "Missing");
+		return 1;
+	}
+	if(!(f = fopen(argv[1], "r"))) {
+		error("Open", "Failed");
+		return 1;
+	}
+	if(!pass1(f) || !pass2(f)) {
+		error("Assembly", "Failed");
+		return 1;
+	}
 	fwrite(p.data, sizeof(p.data), 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);

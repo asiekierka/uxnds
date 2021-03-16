@@ -58,13 +58,13 @@ Uint8 icons[][8] = {
 	{0x00, 0x7e, 0x40, 0x7c, 0x40, 0x40, 0x7e, 0x00},
 	{0x00, 0x7e, 0x40, 0x40, 0x7c, 0x40, 0x40, 0x00}};
 
-SDL_Window *gWindow;
-SDL_Renderer *gRenderer;
-SDL_Texture *gTexture;
-Uint32 *pixels;
+static SDL_Window *gWindow;
+static SDL_Renderer *gRenderer;
+static SDL_Texture *gTexture;
+static Uint32 *pixels;
 
-Screen screen;
-Device *devscreen, *devmouse, *devkey, *devctrl;
+static Screen screen;
+static Device *devscreen, *devmouse, *devkey, *devctrl;
 
 #pragma mark - Helpers
 
@@ -252,6 +252,7 @@ init(void)
 	if(!(pixels = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
 		return error("Pixels", "Failed to allocate memory");
 	clear(pixels);
+	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
 	screen.bounds.x1 = PAD * 8;
 	screen.bounds.x2 = WIDTH - PAD * 8 - 1;
@@ -385,7 +386,7 @@ sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 file_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	char *name = &m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
+	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
 	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
 	if(b0 == 0x0d) {
 		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
