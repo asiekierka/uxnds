@@ -33,63 +33,63 @@ Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1)
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_nop(Uxn *u) { (void)u; }
-void op_jmp(Uxn *u) { Uint8 a = pop8(&u->wst); u->ram.ptr += (Sint8)a; }
-void op_jsr(Uxn *u) { Uint8 a = pop8(&u->wst); push16(&u->rst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
-void op_rtn(Uxn *u) { u->ram.ptr = pop16(&u->rst); }
-void op_ldr(Uxn *u) { Uint16 a = pop16(&u->wst); push8(&u->wst, mempeek8(u, a)); }
-void op_str(Uxn *u) { Uint16 a = pop16(&u->wst); Uint8 b = pop8(&u->wst); mempoke8(u, a, b); }
+void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
+void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
+void op_rtn(Uxn *u) { u->ram.ptr = pop16(u->dst); }
+void op_ldr(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }
+void op_str(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
 /* Logic */
-void op_and(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b & a); }
-void op_xor(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b | a); }
-void op_rol(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b << (a % 8)); }
-void op_ror(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, b >> (a % 8)); }
+void op_and(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b & a); }
+void op_xor(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b | a); }
+void op_rol(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b << (a % 8)); }
+void op_ror(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b >> (a % 8)); }
 /* Stack */
-void op_pop(Uxn *u) { pop8(&u->wst); }
-void op_dup(Uxn *u) { push8(&u->wst, peek8(&u->wst, 0)); }
-void op_swp(Uxn *u) { Uint8 b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, a); }
-void op_ovr(Uxn *u) { push8(&u->wst, peek8(&u->wst, 1)); }
-void op_rot(Uxn *u) { Uint8 c = pop8(&u->wst), b = pop8(&u->wst), a = pop8(&u->wst); push8(&u->wst, b); push8(&u->wst, c); push8(&u->wst, a); }
-void op_cln(Uxn *u) { push8(&u->wst, peek8(&u->rst, 0)); }
-void op_wsr(Uxn *u) { Uint8 a = pop8(&u->wst); push8(&u->rst, a); }
-void op_rsw(Uxn *u) { Uint8 a = pop8(&u->rst); push8(&u->wst, a); }
+void op_pop(Uxn *u) { pop8(u->src); }
+void op_dup(Uxn *u) { push8(u->src, peek8(u->src, 0)); }
+void op_swp(Uxn *u) { Uint8 b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, a); }
+void op_ovr(Uxn *u) { push8(u->src, peek8(u->src, 1)); }
+void op_rot(Uxn *u) { Uint8 c = pop8(u->src), b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, c); push8(u->src, a); }
+void op_cln(Uxn *u) { push8(u->src, peek8(u->dst, 0)); }
+void op_wsr(Uxn *u) { Uint8 a = pop8(u->src); push8(u->dst, a); }
+void op_rsw(Uxn *u) { Uint8 a = pop8(u->dst); push8(u->src, a); }
 /* Arithmetic */
-void op_add(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b + (Sint8)a : b + a); }
-void op_sub(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b - (Sint8)a : b - a); }
-void op_mul(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b * (Sint8)a : b * a); }
-void op_div(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b / (Sint8)a : b / a); }
-void op_equ(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b == (Sint8)a : b == a); }
-void op_neq(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b != (Sint8)a : b != a); }
-void op_gth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b > (Sint8)a : b > a); }
-void op_lth(Uxn *u) { Uint8 a = pop8(&u->wst), b = pop8(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint8)b < (Sint8)a : b < a); }
+void op_add(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b + a); }
+void op_sub(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b - a); }
+void op_mul(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b * a); }
+void op_div(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b / a); }
+void op_equ(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b == a); }
+void op_neq(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b != a); }
+void op_gth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b > a); }
+void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b < a); }
 /* --- */
 void op_lit16(Uxn *u) { u->literal += 2; }
-void op_nop16(Uxn *u) { printf("%04x\n", pop16(&u->wst)); }
-void op_jmp16(Uxn *u) { u->ram.ptr = pop16(&u->wst); }
-void op_jsr16(Uxn *u) { push16(&u->rst, u->ram.ptr); u->ram.ptr = pop16(&u->wst); }
-void op_ldr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->wst, mempeek16(u, a)); }
-void op_str16(Uxn *u) { Uint16 a = pop16(&u->wst); Uint16 b = pop16(&u->wst); mempoke16(u, a, b); }
-void op_and16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b & a); }
-void op_xor16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b ^ a); }
-void op_rol16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b << (a % 16)); }
-void op_ror16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, b >> (a % 16)); }
+void op_nop16(Uxn *u) { printf("%04x\n", pop16(u->src)); }
+void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
+void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
+void op_ldr16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->src, mempeek16(u, a)); }
+void op_str16(Uxn *u) { Uint16 a = pop16(u->src); Uint16 b = pop16(u->src); mempoke16(u, a, b); }
+void op_and16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b & a); }
+void op_xor16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b ^ a); }
+void op_rol16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b << (a % 16)); }
+void op_ror16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b >> (a % 16)); }
 /* Stack(16-bits) */
-void op_pop16(Uxn *u) { pop16(&u->wst); }
-void op_dup16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 0)); }
-void op_swp16(Uxn *u) { Uint16 b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, a); }
-void op_ovr16(Uxn *u) { push16(&u->wst, peek16(&u->wst, 1)); }
-void op_rot16(Uxn *u) { Uint16 c = pop16(&u->wst), b = pop16(&u->wst), a = pop16(&u->wst); push16(&u->wst, b); push16(&u->wst, c); push16(&u->wst, a); }
-void op_cln16(Uxn *u) { push16(&u->wst, peek16(&u->rst, 0)); }
-void op_wsr16(Uxn *u) { Uint16 a = pop16(&u->wst); push16(&u->rst, a); }
-void op_rsw16(Uxn *u) { Uint16 a = pop16(&u->rst); push16(&u->wst, a); }
+void op_pop16(Uxn *u) { pop16(u->src); }
+void op_dup16(Uxn *u) { push16(u->src, peek16(u->src, 0)); }
+void op_swp16(Uxn *u) { Uint16 b = pop16(u->src), a = pop16(u->src); push16(u->src, b); push16(u->src, a); }
+void op_ovr16(Uxn *u) { push16(u->src, peek16(u->src, 1)); }
+void op_rot16(Uxn *u) { Uint16 c = pop16(u->src), b = pop16(u->src), a = pop16(u->src); push16(u->src, b); push16(u->src, c); push16(u->src, a); }
+void op_cln16(Uxn *u) { push16(u->src, peek16(u->dst, 0)); }
+void op_wsr16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->dst, a); }
+void op_rsw16(Uxn *u) { Uint16 a = pop16(u->dst); push16(u->src, a); }
 /* Arithmetic(16-bits) */
-void op_add16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b + (Sint16)a : b + a); }
-void op_sub16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b - (Sint16)a : b - a); }
-void op_mul16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b * (Sint16)a : b * a); }
-void op_div16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push16(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b / (Sint16)a : b / a); }
-void op_equ16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b == (Sint16)a : b == a); }
-void op_neq16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b != (Sint16)a : b != a); }
-void op_gth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b > (Sint16)a : b > a); }
-void op_lth16(Uxn *u) { Uint16 a = pop16(&u->wst), b = pop16(&u->wst); push8(&u->wst, getflag(&u->status, FLAG_SIGN) ? (Sint16)b < (Sint16)a : b < a); }
+void op_add16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b + a); }
+void op_sub16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b - a); }
+void op_mul16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b * a); }
+void op_div16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b / a); }
+void op_equ16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b == a); }
+void op_neq16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b != a); }
+void op_gth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b > a); }
+void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b < a); }
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_ldr, op_str, op_jmp, op_jsr, op_rtn, 
@@ -139,25 +139,32 @@ lituxn(Uxn *u, Uint8 instr)
 int
 opcuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 op = instr & 0x1f, fcond;
+	Uint8 op = instr & 0x1f, fcond, freturn;
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
-	setflag(&u->status, FLAG_SIGN, (instr >> 6) & 1);
+	setflag(&u->status, FLAG_RETURN, (instr >> 6) & 1);
 	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
 	fcond = getflag(&u->status, FLAG_COND);
+	freturn = getflag(&u->status, FLAG_RETURN);
+	u->src = freturn ? &u->rst : &u->wst;
+	u->dst = freturn ? &u->wst : &u->rst;
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;
-	if(u->wst.ptr < opr[op][0] || (fcond && u->wst.ptr < 1))
+	if(u->src->ptr < opr[op][0] || (fcond && u->src->ptr < 1))
 		return haltuxn(u, "Working-stack underflow", op);
-	if(u->wst.ptr + opr[op][1] - opr[op][0] >= 255)
+	if(u->src->ptr + opr[op][1] - opr[op][0] >= 255)
 		return haltuxn(u, "Working-stack overflow", instr);
-	if(u->rst.ptr < opr[op][2])
+	if(u->dst->ptr < opr[op][2])
 		return haltuxn(u, "Return-stack underflow", op);
-	if(u->rst.ptr + opr[op][3] - opr[op][2] >= 255)
+	if(u->dst->ptr + opr[op][3] - opr[op][2] >= 255)
 		return haltuxn(u, "Return-stack overflow", instr);
 	if(!fcond || (fcond && pop8(&u->wst)))
 		(*ops[op])(u);
-	else
-		u->wst.ptr -= opr[op][0] - opr[op][1];
+	else {
+		if(freturn)
+			u->src->ptr -= opr[op][2] - opr[op][3];
+		else
+			u->src->ptr -= opr[op][0] - opr[op][1];
+	}
 	return 1;
 }
 

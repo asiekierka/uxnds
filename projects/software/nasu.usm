@@ -6,6 +6,9 @@
 	1 2 3  - Select brush
 )
 
+%RTN { JMP2r }
+%RTN? { JMP2r? }
+
 ;bankview { x 2 y 2 mode 1 addr 2 }
 ;tileview { x 2 y 2 addr 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }

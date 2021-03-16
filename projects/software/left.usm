@@ -15,6 +15,9 @@
 			- Real scrolling distance
 )  
 
+%RTN { JMP2r }
+%RTN? { JMP2r? }
+
 ;lock { byte 1 }
 ;k { byte 1 } 
 ;l { byte 1 } 

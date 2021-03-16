@@ -18,7 +18,7 @@ typedef signed short Sint16;
 
 #define FLAG_HALT 0x01
 #define FLAG_SHORT 0x02
-#define FLAG_SIGN 0x04
+#define FLAG_RETURN 0x04
 #define FLAG_COND 0x08
 
 typedef struct {
@@ -39,7 +39,7 @@ typedef struct Device {
 typedef struct {
 	Uint8 literal, status, devices;
 	Uint16 counter, vreset, vframe, verror;
-	Stack wst, rst;
+	Stack wst, rst, *src, *dst;
 	Memory ram;
 	Device dev[16];
 } Uxn;

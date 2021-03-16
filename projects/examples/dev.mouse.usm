@@ -1,5 +1,7 @@
 ( Mouse )
 
+%RTN { JMP2r }
+
 ;label { x 2 y 2 color 1 addr 2 }
 ;cat { x 2 y 2 } 
 ;pointer { x 2 y 2 }

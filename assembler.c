@@ -45,7 +45,7 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "RTN", 
+	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "---", 
 	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "ROL", "ROR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "CLN", "WSR", "RSW",
 	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
@@ -155,7 +155,7 @@ findopcode(char *s)
 			continue;
 		while(s[3 + m]) {
 			if(s[3 + m] == '2') i |= (1 << 5); /* mode: short */
-			if(s[3 + m] == 'S') i |= (1 << 6); /* mode: signed */
+			if(s[3 + m] == 'r') i |= (1 << 6); /* mode: return */
 			if(s[3 + m] == '?') i |= (1 << 7); /* mode: conditional */
 			m++;
 		}

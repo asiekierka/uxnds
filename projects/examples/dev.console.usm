@@ -1,5 +1,7 @@
 ( hello world )
 
+%RTN { JMP2r }
+
 @RESET 
 	
 	,text1 ,print-label JSR2

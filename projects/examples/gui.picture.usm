@@ -1,5 +1,7 @@
 ( gui/picture )
 
+%RTN { JMP2r }
+
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
 |0100 @RESET

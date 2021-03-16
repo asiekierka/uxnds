@@ -1,5 +1,7 @@
 ( app/hex )      
 
+%RTN { JMP2r }
+
 ;label { x 2 y 2 color 1 addr 2 }
 ;pixel { x 1 y 1 }
 ;window { x1 2 y1 2 x2 2 y2 2 }
@@ -7,7 +9,6 @@
 ;editor { x1 2 y1 2 addr 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
-;addr { short 2 }
 
 |0100 @RESET
 	
