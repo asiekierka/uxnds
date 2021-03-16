@@ -1,9 +1,13 @@
 ( tests/cond )
 
 |0100 @RESET 
-
+	
+	#1234 POP2 
+	#00 DUP2?
 
 BRK
+
+
 
 |c000 @FRAME
 |d000 @ERROR 
