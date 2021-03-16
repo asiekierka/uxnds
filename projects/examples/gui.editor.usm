@@ -104,7 +104,7 @@ RTN
 		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ^$loop MUL JMPS
+		DUP2 LDR #00 NEQ ^$loop MUL JMP
 	POP2
 
 RTN
@@ -117,9 +117,9 @@ RTN
 		$hor NOP
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x #0001 ADD2 =Screen.x
-			~Screen.x ~rect.x2 LTH2 ^$hor MUL JMPS
+			~Screen.x ~rect.x2 LTH2 ^$hor MUL JMP
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		~Screen.y ~rect.y2 LTH2 ^$ver MUL JMPS
+		~Screen.y ~rect.y2 LTH2 ^$ver MUL JMP
 
 RTN
 
@@ -130,13 +130,13 @@ RTN
 		( incr ) ~Screen.x #0001 ADD2 =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor MUL JMPS
+		~Screen.x ~rect.x2 LTH2 ^$hor MUL JMP
 	~rect.y1 =Screen.y
 	$ver NOP
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		~Screen.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
+		~Screen.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMP
 
 RTN
 
@@ -148,9 +148,9 @@ RTN
 		$hor NOP
 			( draw ) ~color =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-			~Sprite.x ~rect.x2 LTH2 ^$hor MUL JMPS
+			~Sprite.x ~rect.x2 LTH2 ^$hor MUL JMP
 		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-		~Sprite.y ~rect.y2 LTH2 ^$ver MUL JMPS
+		~Sprite.y ~rect.y2 LTH2 ^$ver MUL JMP
 
 RTN
 

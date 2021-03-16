@@ -1,16 +1,27 @@
 ( tests/cond )
 
+%RTN { RSW2 JMP2 }
+%RTN? { CLN2 JMP2? }
+
 |0100 @RESET 
 
 	#00 #d0
+
 	$loop NOP
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$loop SWP JMPS?
+		DUP2 LTH ^$loop SWP JMP?
 	POP =Console.byte
+
+	,routine JSR2
 
 BRK
 
 @routine
+
+
+	CLN2 JMP2
+
+	#aa
 	
 
 RTN

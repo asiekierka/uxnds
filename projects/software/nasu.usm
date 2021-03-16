@@ -109,7 +109,7 @@ BRK
 					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^copy-loop MUL JMPS
+					~i #08 LTH ^copy-loop MUL JMP
 				,redraw JSR2 ,click-end JMP2
 			@not-copy-mode
 
@@ -122,7 +122,7 @@ BRK
 					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^erase-loop MUL JMPS
+					~i #08 LTH ^erase-loop MUL JMP
 				,redraw JSR2 ,click-end JMP2
 			@not-erase-mode
 
@@ -460,13 +460,13 @@ RTN
 		( incr ) ~SCRN.x #0001 ADD2 =SCRN.x
 		( draw ) ~rect.y1 =SCRN.y ~color =SCRN.color
 		( draw ) ~rect.y2 =SCRN.y ~color =SCRN.color
-		~SCRN.x ~rect.x2 LTH2 ^$hor MUL JMPS
+		~SCRN.x ~rect.x2 LTH2 ^$hor MUL JMP
 	~rect.y1 =SCRN.y
 	$ver NOP
 		( draw ) ~rect.x1 =SCRN.x ~color =SCRN.color
 		( draw ) ~rect.x2 =SCRN.x ~color =SCRN.color
 		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
-		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMPS
+		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMP
 
 RTN
 

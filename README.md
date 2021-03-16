@@ -43,7 +43,7 @@ BRK
 	$loop NOP
 		( send ) DUP2 LDR =Console.char
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMPS 
+		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMP
 	POP2
 
 RTN    

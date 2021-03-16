@@ -15,7 +15,7 @@
 	$draw-hor NOP
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor SWP JMPS?
+		OVR2 OVR2 LTH2 ^$draw-hor SWP JMP?
 	POP2 POP2
 
 	( draw ver line )
@@ -24,7 +24,7 @@
 	$draw-ver NOP
 		( draw ) #02 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver SWP JMPS?
+		OVR2 OVR2 LTH2 ^$draw-ver SWP JMP?
 	POP2 POP2
 
 	( draw blending modes )
@@ -34,7 +34,7 @@
 		( move ) OVR #00 SWP #0008 MUL2 #0020 ADD2 =Sprite.x
 		( draw ) OVR =Sprite.color
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-blends SWP JMPS?
+		DUP2 LTH ^$draw-blends SWP JMP?
 	POP POP
 
 BRK

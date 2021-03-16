@@ -12,12 +12,12 @@ BRK
 	( should print 11, 22, 33, 44 )
 
 	#11 =Console.byte
-	#03 JMPS BRK BRK BRK 
+	#03 JMP BRK BRK BRK 
 
 	( skip foward with id )
 
 	#22 =Console.byte
-	^jump JMPS BRK BRK BRK @jump
+	^jump JMP BRK BRK BRK @jump
 
 	( skip patterns )
 
@@ -27,7 +27,7 @@ BRK
 		#ff =Console.byte
 	@skip1
 
-	#12 #34 LTH ^skip2 #04 SUB MUL JMPS
+	#12 #34 LTH ^skip2 #04 SUB MUL JMP
 		#ff =Console.byte
 	@skip2
 
@@ -41,9 +41,9 @@ RTN
 
 	( should print aa, bb, cc, dd )
 
-	@label1 #aa =Console.byte ^label3 JMPS
-	@label2 #cc =Console.byte ^label4 JMPS
-	@label3 #bb =Console.byte ^label2 JMPS
+	@label1 #aa =Console.byte ^label3 JMP
+	@label2 #cc =Console.byte ^label4 JMP
+	@label3 #bb =Console.byte ^label2 JMP
 	@label4 #dd =Console.byte BRK
 
 	@end

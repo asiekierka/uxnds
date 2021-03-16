@@ -170,11 +170,11 @@ BRK
 
 	,$no-up ~Mouse.y #0008 GTH2 JMP2?
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
-		^$end JMPS
+		^$end JMP
 	$no-up 
 	,$no-down ~Mouse.y ~Screen.height #0008 SUB2 LTH2 JMP2?
 		( incr ) ~scroll.y #0001 ADD2 =scroll.y
-		^$end JMPS
+		^$end JMP
 	$no-down 
 	~Mouse.y #0008 SUB2 =scroll.y
 	$end
@@ -200,12 +200,12 @@ RTN
 	,$no-chord-cut ~Mouse.chord #01 NEQ JMP2?
 		,cut JSR2
 		( release ) #00 DUP =Mouse.state =Mouse.chord
-		^$end JMPS
+		^$end JMP
 	$no-chord-cut
 	,$no-chord-paste ~Mouse.chord #10 NEQ JMP2?
 		,paste JSR2
 		( release ) #00 DUP =Mouse.state =Mouse.chord
-		^$end JMPS
+		^$end JMP
 	$no-chord-paste
 
 	,$end ~Mouse.state #11 EQU JMP2?
@@ -214,7 +214,7 @@ RTN
 		( on drag )
 		,find-selection JSR2 #0001 ADD2 =selection.to
 		,clamp-selection JSR2
-		^$end JMPS
+		^$end JMP
 	$no-drag
 		( on click )
 		,find-selection JSR2 DUP2 =selection.from #0001 ADD2 =selection.to
@@ -231,7 +231,7 @@ RTN
 	,document.body =document.eof
 	$loop NOP
 		( incr ) ~document.eof #0001 ADD2 =document.eof
-	~document.eof LDR #00 NEQ ^$loop MUL JMPS
+	~document.eof LDR #00 NEQ ^$loop MUL JMP
 
 RTN
 
@@ -258,7 +258,7 @@ RTN
 	$loop NOP
 		( move ) ~j ~i ADD2 LDR ~j STR
 		( incr ) ~j #0001 ADD2 =j
-		~j ~document.eof LTH2 ^$loop MUL JMPS
+		~j ~document.eof LTH2 ^$loop MUL JMP
 	~document.eof ~i SUB2 =document.eof
 
 RTN
@@ -270,7 +270,7 @@ RTN
 	$loop NOP
 		( move ) ~j ~i SUB2 LDR ~j STR
 		( decr ) ~j #0001 SUB2 =j
-		~j ~selection.from GTH2 ^$loop MUL JMPS
+		~j ~selection.from GTH2 ^$loop MUL JMP
 	~document.eof ~i ADD2 =document.eof
 
 RTN
@@ -299,7 +299,7 @@ RTN
 		~selection.from #0001 SUB2 LDR #0a EQU RTN?
 		~selection.from #0001 SUB2 LDR #0d EQU RTN?
 		( decr ) ~selection.from DUP2 =selection.to #0001 SUB2 =selection.from
-	~selection.from LDR #00 NEQ ^$loop MUL JMPS
+	~selection.from LDR #00 NEQ ^$loop MUL JMP
 	( clamp at document body )
 	~selection.from ,document.body GTH2 RTN?
 	,document.body DUP2 =selection.from #0001 ADD2 =selection.to
@@ -312,7 +312,7 @@ RTN
 		~selection.from LDR #0a EQU RTN?
 		~selection.from LDR #0d EQU RTN?
 		( incr ) ~selection.from #0001 ADD2 DUP2 #0001 ADD2 =selection.to =selection.from
-		~selection.from LDR #00 NEQ ^$loop MUL JMPS
+		~selection.from LDR #00 NEQ ^$loop MUL JMP
 	( clamp at document body )
 	~selection.from ,document.eof LTH2 RTN?
 	,document.eof #0001 SUB2 DUP2 =selection.from #0001 ADD2 =selection.to
@@ -327,7 +327,7 @@ RTN
 		,$end ~j LDR #20 EQU JMP2?
 		,$end ~j LDR #0a EQU JMP2?
 		,$end ~j LDR #0d EQU JMP2?
-		~j ,document.body GTH2 ^$loop MUL JMPS
+		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j #0001 SUB2
 
@@ -341,7 +341,7 @@ RTN
 		,$end ~j LDR #20 EQU JMP2?
 		,$end ~j LDR #0a EQU JMP2?
 		,$end ~j LDR #0d EQU JMP2?
-		~j ,document.body GTH2 ^$loop MUL JMPS
+		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j #0001 ADD2
 
@@ -354,7 +354,7 @@ RTN
 		( incr ) ~j #0001 ADD2 =j
 		,$end ~selection.from ~j SUB2 LDR #0a EQU JMP2?
 		,$end ~selection.from ~j SUB2 LDR #0d EQU JMP2?
-		~selection.from ~j SUB2 ,document.body GTH2 ^$loop MUL JMPS
+		~selection.from ~j SUB2 ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j
 
@@ -369,7 +369,7 @@ RTN
 			( incr ) ~pt.y #0001 ADD2 =pt.y
 		$no-space
 		( incr ) ~j #0001 ADD2 =j
-	~j LDR #00 NEQ ^$loop MUL JMPS
+	~j LDR #00 NEQ ^$loop MUL JMP
 	$end
 	( return ) ~j
 
@@ -383,7 +383,7 @@ RTN
 		,$end ~j ~pt.x ADD2 LDR #0a EQU JMP2?
 		,$end ~j ~pt.x ADD2 LDR #0d EQU JMP2?
 		( incr ) ~pt.x #0001 ADD2 =pt.x
-		~pt.x ~position.x #0001 SUB2 LTH2 ^$loop MUL JMPS
+		~pt.x ~position.x #0001 SUB2 LTH2 ^$loop MUL JMP
 	$end
 	( return ) ~pt.x ADD2
 
@@ -405,7 +405,7 @@ RTN
 	$loop NOP
 		~selection.from ~i ADD2 LDR ,clip.body ~i ADD2 STR
 		( incr ) ~i #0001 ADD2 =i
-		~i ~j LTH2 ^$loop MUL JMPS
+		~i ~j LTH2 ^$loop MUL JMP
 
 RTN
 
@@ -417,7 +417,7 @@ RTN
 	$loop NOP
 		,clip.body ~i ADD2 LDR ~selection.from ~i ADD2 STR
 		( incr ) ~i #0001 ADD2 =i
-		~i ~j LTH2 ^$loop MUL JMPS
+		~i ~j LTH2 ^$loop MUL JMP
 
 RTN
 
@@ -512,7 +512,7 @@ RTN
 			( incr ) ~j #0001 ADD2 =j
 		$no-break
 		( incr ) ~textarea.addr #0001 ADD2 =textarea.addr
-	~textarea.addr LDR #00 NEQ ^$find-offset MUL JMPS
+	~textarea.addr LDR #00 NEQ ^$find-offset MUL JMP
 	$find-offset-end
 
 	#0018 =Sprite.x #0000 =Sprite.y
@@ -577,7 +577,7 @@ RTN
 	$loop NOP
 	( draw ) #08 =Sprite.color
 	( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-	~Sprite.y ~Screen.height LTH2 ^$loop MUL JMPS
+	~Sprite.y ~Screen.height LTH2 ^$loop MUL JMP
 
 	#0000 =Sprite.y
 	,arrowup_icn =Sprite.addr
@@ -603,7 +603,7 @@ RTN
 		( draw ) DUP2 LDR #00 SWP #20 SUB #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ^$loop MUL JMPS
+		DUP2 LDR #00 NEQ ^$loop MUL JMP
 	POP2
 	( selection )
 	~selection.from ,document.body SUB2 ,draw-short JSR2
