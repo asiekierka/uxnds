@@ -45,9 +45,9 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "LDR", "STR", "JMP", "JSR", "---", 
+	"BRK", "NOP", "LIT", "LDR", "STR", "---", "JMP", "JSR", 
 	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "ROL", "ROR",
-	"POP", "DUP", "SWP", "OVR", "ROT", "CLN", "WSR", "RSW",
+	"POP", "DUP", "SWP", "OVR", "ROT", "---", "CLN", "WSR",
 	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
 };
 

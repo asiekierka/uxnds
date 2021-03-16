@@ -29,6 +29,8 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 ```
 ( hello world )
 
+%RTN { JMP2r }
+
 @RESET 
 	
 	,text1 ,print-label JSR2
@@ -43,7 +45,7 @@ BRK
 	$loop NOP
 		( send ) DUP2 LDR =Console.char
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMP
+		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMP 
 	POP2
 
 RTN    
@@ -76,13 +78,6 @@ RTN
 - LDRS should load from the zeropage?
 - Keep ref counts in macros
 - A fast way(2 bytes) to read from the zero page #aa LDR.
-
-### Macros
-
-```
-&RTS { RSW JMP } 
-&JSR { PRG WSR JMP }
-```
 
 ## Notes
 
