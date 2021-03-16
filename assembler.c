@@ -264,8 +264,6 @@ walktoken(char *w)
 	case ',': return 3; /* lit2 addr-hb addr-lb */
 	case '.': return 2; /* addr-hb addr-lb */
 	case '^': return 2; /* Relative jump: lit addr-offset */
-	case '+':           /* signed positive */
-	case '-':           /* signed negative */
 	case '#': return (slen(w + 1) == 2 ? 2 : 3);
 	}
 	if((m = findmacro(w))) {
@@ -323,21 +321,6 @@ parsetoken(char *w)
 			pushbyte(shex(w + 1), 1);
 		else if(slen(w + 1) == 4)
 			pushshort(shex(w + 1), 1);
-		else
-			return 0;
-		return 1;
-	} else if(w[0] == '+' && sihx(w + 1)) {
-		if(slen(w + 1) == 2)
-			pushbyte((Sint8)shex(w + 1), 1);
-		else if(slen(w + 1) == 4)
-			pushshort((Sint16)shex(w + 1), 1);
-		else
-			return 0;
-	} else if(w[0] == '-' && sihx(w + 1)) {
-		if(slen(w + 1) == 2)
-			pushbyte((Sint8)(shex(w + 1) * -1), 1);
-		else if(slen(w + 1) == 4)
-			pushshort((Sint16)(shex(w + 1) * -1), 1);
 		else
 			return 0;
 		return 1;

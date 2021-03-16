@@ -6,8 +6,14 @@
 	1 2 3  - Select brush
 )
 
-%RTN { JMP2r }
-%RTN? { JMP2r? }
+%RTN   { JMP2r }
+%RTN?  { JMP2r? }
+%STEP8 { #0003 SHR2 #0003 SHL2 }
+
+%++ { #0001 ADD2 }
+%2/ { #0001 SHR2 } %2* { #0001 SHL2 }
+%8/ { #0003 SHR2 } %8* { #0003 SHL2 }
+%8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 
 ;bankview { x 2 y 2 mode 1 addr 2 }
 ;tileview { x 2 y 2 addr 2 }
@@ -21,12 +27,12 @@
 
 |0100 @RESET
 	
-	~SCRN.width #0002 DIV2 #008a SUB2 =bankview.x 
-	~SCRN.height #0002 DIV2 #003f SUB2 =bankview.y 
+	~SCRN.width 2/ #008a SUB2 =bankview.x 
+	~SCRN.height 2/ #003f SUB2 =bankview.y 
 	,bank1 =bankview.addr
 
-	~SCRN.width #0002 DIV2 #0002 ADD2 =tileview.x 
-	~SCRN.height #0002 DIV2 #003f SUB2 =tileview.y 
+	~SCRN.width 2/ #0002 ADD2 =tileview.x 
+	~SCRN.height 2/ #003f SUB2 =tileview.y 
 	,bank1 #0448 ADD2 =tileview.addr
 
 	,redraw JSR2
@@ -56,10 +62,10 @@ BRK
 			~tileview.addr #0080 SUB2 =tileview.addr
 		@no-ctrl-down
 		,no-ctrl-left ~CTRL.buttons #40 EQU JMP2?
-			~tileview.addr #0008 ADD2 =tileview.addr
+			~tileview.addr 8+ =tileview.addr
 		@no-ctrl-left
 		,no-ctrl-right ~CTRL.buttons #80 EQU JMP2?
-			~tileview.addr #0008 SUB2 =tileview.addr
+			~tileview.addr 8- =tileview.addr
 		@no-ctrl-right
 		~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
 		,redraw JSR2
@@ -72,24 +78,24 @@ BRK
 
 		( toolbar )
 
-		,no-toolbar-click ~MOUS.y ~bankview.y #0010 SUB2 SUB2 #0008 DIV2 #0000 NEQ2 JMP2?
+		,no-toolbar-click ~MOUS.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 JMP2?
 
 			( brush )
 
-			,no-brush-click ~MOUS.x ~bankview.x SUB2 #0008 DIV2 #000d LTH2 JMP2?
-			,no-brush-click ~MOUS.x ~bankview.x SUB2 #0008 DIV2 #000f GTH2 JMP2?
-				( select ) ~mouse.x ~bankview.x SUB2 #0008 DIV2 #000d SUB2 SWP POP =bankview.mode
+			,no-brush-click ~MOUS.x ~bankview.x SUB2 8/ #000d LTH2 JMP2?
+			,no-brush-click ~MOUS.x ~bankview.x SUB2 8/ #000f GTH2 JMP2?
+				( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
 				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-brush-click
 
-			,no-load-click ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #000e NEQU2 JMP2?
+			,no-load-click ~MOUS.x ~tileview.x SUB2 8/ #000e NEQU2 JMP2?
 				( load ) ,filename  =FILE.name #0800 =FILE.length ~bankview.addr =FILE.load
 				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-load-click
 
-			,no-save-click ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #000f NEQU2 JMP2?
+			,no-save-click ~MOUS.x ~tileview.x SUB2 8/ #000f NEQU2 JMP2?
 				( save ) ,filename  =FILE.name #0800 =FILE.length ~bankview.addr =FILE.save
 				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
@@ -108,8 +114,8 @@ BRK
 				@copy-loop NOP
 					( load ) ~tileview.addr ~i ADD LDR 
 					( get touch addr )
-					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+					~MOUS.x ~bankview.x SUB2 STEP8 
+					~MOUS.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
 					~i #08 LTH ^copy-loop MUL JMP
@@ -121,16 +127,16 @@ BRK
 				@erase-loop NOP
 					#00 
 					( get touch addr )
-					~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-					~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+					~MOUS.x ~bankview.x SUB2 STEP8 
+					~MOUS.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 STR
 					( incr ) ~i #01 ADD =i
 					~i #08 LTH ^erase-loop MUL JMP
 				,redraw JSR2 ,click-end JMP2
 			@not-erase-mode
 
-			~MOUS.x ~bankview.x SUB2 #0008 DIV2 #0008 MUL2 
-			~MOUS.y ~bankview.y SUB2 #0008 DIV2 #0008 MUL2 #0010 MUL2 ADD2
+			~MOUS.x ~bankview.x SUB2 STEP8 
+			~MOUS.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 			~bankview.addr ADD2 =tileview.addr
 			,redraw JSR2 ,click-end JMP2
 
@@ -142,39 +148,39 @@ BRK
 		~MOUS.y ~tileview.y GTH2 ~MOUS.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
 		#0101 NEQ2 ,no-tile-click ROT JMP2?
 
-			~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 
-			~MOUS.y ~tileview.y SUB2 #0008 DIV2 #0008 MUL2 #0040 DIV2 #0002 MUL2 ADD2 
-			#0008 MUL2
+			~MOUS.x ~tileview.x SUB2 STEP8 #0040 DIV2 
+			~MOUS.y ~tileview.y SUB2 STEP8 #0040 DIV2 2* ADD2 
+			8*
 			~tileview.addr ADD2 =addr ( addr offset )
 			~MOUS.x ~tileview.x SUB2 ~MOUS.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~MOUS.y ~tileview.y SUB2 ~MOUS.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
 			,no-fill-mode ~bankview.mode #01 NEQ JMP2?
-				( fill row ) #ff ~addr ~pos.y #0008 DIV2 ADD2 STR
+				( fill row ) #ff ~addr ~pos.y 8/ ADD2 STR
 				,redraw JSR2 ,click-end JMP2
 			@no-fill-mode
 			,no-erase-mode ~bankview.mode #02 NEQ JMP2?
-				( erase row ) #00 ~addr ~pos.y #0008 DIV2 ADD2 STR
+				( erase row ) #00 ~addr ~pos.y 8/ ADD2 STR
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
-			( load ) ~addr ~pos.y #0008 DIV2 ADD2 LDR
-			( mask ) #01 #07 ~pos.x #0008 DIV2 SWP POP SUB SHL 
+			( load ) ~addr ~pos.y 8/ ADD2 LDR
+			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SHL 
 			XOR
-			( save ) ~addr ~pos.y #0008 DIV2 ADD2 STR
+			( save ) ~addr ~pos.y 8/ ADD2 STR
 			,redraw JSR2 ,click-end JMP2
 
 		@no-tile-click
 
 		( operations )
 
-		,no-operations ~MOUS.y ~tileview.y SUB2 #0008 DIV2 #000c NEQ2 JMP2?
+		,no-operations ~MOUS.y ~tileview.y SUB2 8/ #000c NEQ2 JMP2?
 
-			,no-move-up ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0011 NEQ2 JMP2?
+			,no-move-up ~MOUS.x ~tileview.x SUB2 8/ #0011 NEQ2 JMP2?
 				,op_shiftup JSR2 
 				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
 			@no-move-up
 
-			,no-move-down ~MOUS.x ~tileview.x SUB2 #0008 DIV2 #0012 NEQ2 JMP2?
+			,no-move-down ~MOUS.x ~tileview.x SUB2 8/ #0012 NEQ2 JMP2?
 				,op_shiftdown JSR2 
 				( release ) #00 =MOUS.state
 				,redraw JSR2 ,click-end JMP2
@@ -240,11 +246,11 @@ RTN
 	,tool_selector =SPRT.addr
 	#01 ~bankview.mode #00 EQU ADD =SPRT.color
 
-	~SPRT.x #0008 ADD2 =SPRT.x
+	~SPRT.x 8+ =SPRT.x
 	,tool_hand =SPRT.addr
 	#01 ~bankview.mode #01 EQU ADD =SPRT.color
 
-	~SPRT.x #0008 ADD2 =SPRT.x
+	~SPRT.x 8+ =SPRT.x
 	,tool_eraser =SPRT.addr
 	#01 ~bankview.mode #02 EQU ADD =SPRT.color
 
@@ -266,7 +272,7 @@ RTN
 		~bankview.x #00 ~i #08 MUL ADD2 =SPRT.x
 		~bankview.y #0088 ADD2 =SPRT.y
 		( draw ) #02 =SPRT.color
-		~SPRT.addr #0008 ADD2 =SPRT.addr
+		~SPRT.addr 8+ =SPRT.addr
 		( incr ) ~i #01 ADD =i
 		,$guides ~i #10 LTH JMP2?
 
@@ -283,12 +289,12 @@ RTN
 			,$no-highlight ~SPRT.addr ~tileview.addr #0018 ADD2 GTH2 JMP2?
 				( draw ) #0c =SPRT.color
 			$no-highlight
-			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
-			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
+			( incr ) ~SPRT.x 8+ =SPRT.x
+			( incr ) ~SPRT.addr 8+ =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			,$hor ~pt.x #10 LTH JMP2?
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+		( incr ) ~SPRT.y 8+ =SPRT.y
 		,$ver ~pt.y #10 LTH JMP2?
 
 RTN
@@ -317,17 +323,17 @@ RTN
 
 	~tileview.x #0040 ADD2 =SPRT.x
 	~tileview.y =SPRT.y
-	~tileview.addr #0008 ADD2 =tileview.addr
+	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
 	~tileview.x =SPRT.x
 	~tileview.y #0040 ADD2 =SPRT.y
-	~tileview.addr #0008 ADD2 =tileview.addr
+	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
 	~tileview.x #0040 ADD2 =SPRT.x
 	~tileview.y #0040 ADD2 =SPRT.y
-	~tileview.addr #0008 ADD2 =tileview.addr
+	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
 	( line hor )
@@ -356,19 +362,19 @@ RTN
 		~tileview.x #0088 ADD2 =SPRT.x
 		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 		( draw ) #02 =SPRT.color
-		~SPRT.x #0008 ADD2 =SPRT.x
+		~SPRT.x 8+ =SPRT.x
 		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
 		( draw ) #02 =SPRT.color
 		( incr ) ~i #01 ADD =i
-		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+		( incr ) ~SPRT.y 8+ =SPRT.y
 	,$bytes ~i #08 LTH JMP2?
 
 	( operations )
 
-	~SPRT.y #0008 ADD2 =SPRT.y
+	~SPRT.y 8+ =SPRT.y
 	,movedown_icn =SPRT.addr
 	#01 =SPRT.color
-	~SPRT.x #0008 SUB2 =SPRT.x
+	~SPRT.x 8- =SPRT.x
 	,moveup_icn =SPRT.addr
 	#01 =SPRT.color
 
@@ -381,12 +387,12 @@ RTN
 		~tileview.x #0088 ADD2 =SPRT.x
 		$tiles-hor
 			( draw ) #03 =SPRT.color
-			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
-			( incr ) ~SPRT.addr #0008 ADD2 =SPRT.addr
+			( incr ) ~SPRT.x 8+ =SPRT.x
+			( incr ) ~SPRT.addr 8+ =SPRT.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			,$tiles-hor ~pt.x #02 LTH JMP2?
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+		( incr ) ~SPRT.y 8+ =SPRT.y
 		,$tiles-ver ~pt.y #02 LTH JMP2?
 
 RTN
@@ -400,12 +406,12 @@ RTN
 			( get bit )
 			,blank_icn #00
 			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB SHR #01 AND ( get bit )
-			#0008 MUL2 ADD2 =SPRT.addr ( add *8 )
+			8* ADD2 =SPRT.addr ( add *8 )
 			( draw ) #01 =SPRT.color
-			( incr ) ~SPRT.x #0008 ADD2 =SPRT.x
+			( incr ) ~SPRT.x 8+ =SPRT.x
 			( incr ) ~pt.x #01 ADD =pt.x
 			,$hor ~pt.x #08 LTH JMP2?
-		( incr ) ~SPRT.y #0008 ADD2 =SPRT.y
+		( incr ) ~SPRT.y 8+ =SPRT.y
 		( incr ) ~pt.y #01 ADD =pt.y
 		~SPRT.x #0040 SUB2 =SPRT.x
 		,$ver ~pt.y #08 LTH JMP2?
@@ -442,14 +448,14 @@ RTN
 	=addr
 	,font_hex #00 ,addr LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
+	~SPRT.x 8+ =SPRT.x
 	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
+	~SPRT.x 8+ =SPRT.x
+	,font_hex #00 ,addr ++ LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
-	~SPRT.x #0008 ADD2 =SPRT.x
-	,font_hex #00 ,addr #0001 ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
+	~SPRT.x 8+ =SPRT.x
+	,font_hex #00 ,addr ++ LDR #0f AND #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 
 RTN
@@ -460,7 +466,7 @@ RTN
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =SCRN.y =rect.y1 DUP2 =SCRN.x =rect.x1
 	$hor NOP
-		( incr ) ~SCRN.x #0001 ADD2 =SCRN.x
+		( incr ) ~SCRN.x ++ =SCRN.x
 		( draw ) ~rect.y1 =SCRN.y ~color =SCRN.color
 		( draw ) ~rect.y2 =SCRN.y ~color =SCRN.color
 		~SCRN.x ~rect.x2 LTH2 ^$hor MUL JMP
@@ -468,8 +474,8 @@ RTN
 	$ver NOP
 		( draw ) ~rect.x1 =SCRN.x ~color =SCRN.color
 		( draw ) ~rect.x2 =SCRN.x ~color =SCRN.color
-		( incr ) ~SCRN.y #0001 ADD2 =SCRN.y
-		~SCRN.y ~rect.y2 #0001 ADD2 LTH2 ^$ver MUL JMP
+		( incr ) ~SCRN.y ++ =SCRN.y
+		~SCRN.y ~rect.y2 ++ LTH2 ^$ver MUL JMP
 
 RTN
 
