@@ -697,7 +697,7 @@ RTN
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
 @filepath1     [ projects/examples/gui.hover.usm 00 ]
-@filepath      [ projects/software/left.usm 00 ]
+@filepath      [ projects/software/noodle.usm 00 ]
 
 |3000 ;document { eof 2 body 8000 }
 |c000 ;clip { len 2 body 256 }
@@ -709,7 +709,7 @@ RTN
 |FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |FF30 ;Controller { buttons 1 }
 |FF40 ;Keys { key 1 }
-|FF50 ;Mouse { x 2 y 2 state 1 chord 1 xt 1 yt 1 }
+|FF50 ;Mouse { x 2 y 2 state 1 chord 1 }
 |FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )

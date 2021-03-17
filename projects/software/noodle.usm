@@ -1,0 +1,92 @@
+( 
+	app/noodle : illustration program
+)
+
+%RTN   { JMP2r }
+%RTN?  { JMP2r? }
+
+%ABS { DUP #07 SHR #ff SWP MUL? } ( abs )
+%ABS2 { DUP2 #000f SHR2 #ffff SWP2 SWP POP MUL2? } ( abs2 )
+
+;cursor { x 2 y 2 }
+;a { x 2 y 2 }
+;b { x 2 y 2 }
+;d { x 2 y 2 }
+;s { x 2 y 2 }
+
+|0100 @RESET 
+
+	#0020 #0020 #0090 #0070 ,draw-line JSR2
+
+BRK
+
+@FRAME 
+
+	,draw-cursor JSR2
+
+BRK
+
+@draw-line ( x1 y1 x2 y2 )
+
+	=b.y =b.x ( target, b )
+	=a.y =a.x ( target, a )
+
+	( dx = abs[bx - ax] )
+	~b.x ~a.x SUB2 ABS2 =d.x
+
+	( dx = abs[bx - ax] )
+	~b.y ~a.y SUB2 ABS2 =d.y
+
+	( sx = ax < bx ? 1 : -1; )
+	#ffff #00 ~a.x ~b.x GTH2 #0002 MUL2 ADD2 =s.x 
+	
+	( sy = ay < by ? 1 : -1; )
+	#ffff #00 ~a.y ~b.y GTH2 #0002 MUL2 ADD2 =s.y 
+	
+
+	#01 =Screen.color
+
+RTN
+
+@draw-cursor
+
+	~cursor.x ~Mouse.x NEQU2
+	~cursor.y ~Mouse.y NEQU2
+
+	#0000 EQU2 RTN? ( Return if unchanged )
+
+	( clear last cursor )
+	~cursor.x =Sprite.x
+	~cursor.y =Sprite.y
+	,blank_icn =Sprite.addr
+	#10 =Sprite.color
+
+	( record cursor positions )
+	~Mouse.x =cursor.x 
+	~Mouse.y =cursor.y
+
+	( draw new cursor )
+	~cursor.x =Sprite.x
+	~cursor.y =Sprite.y
+	,tool_pointer =Sprite.addr
+	#12 =Sprite.color
+
+RTN
+
+@tool_pointer [ 80c0 e0f0 f8e0 1000 ]
+@tool_hand    [ 4040 4070 f8f8 f870 ]
+@tool_eraser  [ 2050 b87c 3e1c 0800 ]
+@blank_icn    [ 0000 0000 0000 0000 ]
+
+|F000 @ERROR BRK 
+
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;Controller { buttons 1 }
+|FF40 ;Keys { key 1 }
+|FF50 ;Mouse { x 2 y 2 state 1 chord 1 }
+|FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ]   ( palette )
