@@ -1,5 +1,7 @@
 ( 
 	app/noodle : illustration program
+	
+	alt-click - drag canvas
 
 	TODO
 		- Only draw-canvas when mouse has changed
@@ -14,8 +16,9 @@
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 %MOD8 { #0007 AND2  }
 
-;toolbar { x 2 y 2 }
-;cursor { x 2 y 2 }
+;center { x 2 y 2 }
+;toolbar { x1 2 y1 2 x2 2 y2 2 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 drag 1 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pos { x 2 y 2 }
@@ -25,13 +28,24 @@
 
 |0100 @RESET 
 	
-	#0038 =toolbar.x #0098 =toolbar.y
+	( load file )
+	( ,filepath ,load-file JSR2 )
 
-	#0010 =canvas.x1 #0020 =canvas.y1 
-	#0026 =canvas.w #0010 =canvas.h ,fit JSR2
+	( find screen center )
+	~Screen.width #0002 DIV2 =center.x
+	~Screen.height #0002 DIV2 =center.y
+
+	#0010 =canvas.x1 #0016 =canvas.y1 
+	#0026 =canvas.w #001a =canvas.h ( 380x260 )
+	#0010 =toolbar.x1 #0010 =toolbar.y1
+
+	,draw-background JSR2
+
+	,fit-canvas JSR2
 
 	,draw-titlebar JSR2
-	,draw-toolbar JSR2
+
+	,fit-toolbar JSR2
 
 BRK
 
@@ -39,31 +53,75 @@ BRK
 
 	,draw-cursor JSR2
 
-	,$no-touch ~Mouse.state #01 NEQ JMP2?
+	( release drag )
+	,$no-release ~Mouse.state #00 EQU ~cursor.drag #01 EQU #0101 NEQ2 JMP2?
+		#0000 #0000 ~Screen.width ~Screen.height #00 ,fill-rect JSR2
+		~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
+		,draw-background JSR2
+		,fit-canvas JSR2
+		,draw-titlebar JSR2
+		,fit-toolbar JSR2
+		#00 =cursor.drag
+		#aa =Console.byte
+	$no-release
 
-		,$no-paint ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
-		,$no-paint ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
+	,$no-touch ~Mouse.state #00 EQU JMP2?
 
-		~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+		( drag )
+		,$no-drag ~Controller #02 NEQ JMP2?
+			~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
+			~canvas.x1 ~Mouse.x ~cursor.x0 SUB2 ADD2 =canvas.x1
+			~canvas.y1 ~Mouse.y ~cursor.y0 SUB2 ADD2 =canvas.y1
+			~canvas.w 8* ~canvas.x1 ADD2 =canvas.x2 
+			~canvas.h 8* ~canvas.y1 ADD2 =canvas.y2 
+			~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #13 ,line-rect JSR2
+			#01 =cursor.drag
+			,$touch-end JMP2
+		$no-drag
 
-		,draw-canvas JSR2
+		( in toolbar )
+		,$no-touch-toolbar ~Mouse.x CLN2r ~toolbar.x1 GTH2 STH2r ~toolbar.x2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-toolbar ~Mouse.y CLN2r ~toolbar.y1 GTH2 STH2r ~toolbar.y2 LTH2 #0101 NEQ2 JMP2?
+			,$no-touch-size ~Mouse.x ~toolbar.x1 SUB2 8/ #0000 NEQ2 JMP2?
+				~Mouse.y ~toolbar.y1 SUB2 8/ SWP POP =cursor.size
+				#00 =Mouse.state
+				,draw-toolbar JSR2
+				,$touch-end JMP2
+			$no-touch-size
+		$no-touch-toolbar
 
-		$no-paint
+		( in canvas )
+		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
+			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+			,$touch-end JMP2
+		$no-touch-canvas
+
+		$touch-end
 
 	$no-touch
 
+	~Mouse.x =cursor.x0
+	~Mouse.y =cursor.y0
+
 BRK
+
+@load-file ( path )
+
+	=File.name #8000 =File.length ,data =File.load
+
+RTN
 
 @paint ( x y )
 
-	#0004 SUB2 =pos.y #0004 SUB2 =pos.x
+	#0004 SUB2 =pos.y #0004 SUB2 =pos.x ( cursor offset )
 
 	#00 =px.x #00 =px.y 
 	$ver
 		#00 =px.x
 		$hor
-			( get bit )
-			,size1_icn #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND ( get bit )
+			( addr ) ,size0_icn #00 ~cursor.size 8* ADD2
+			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
 			
 			#00 EQU ,$no-pixel ROT JMP2?
 				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,add-pixel JSR2
@@ -74,8 +132,10 @@ BRK
 		( incr ) ~px.y #01 ADD =px.y
 		,$ver ~px.y #08 LTH JMP2?
 
-RTN
+	,draw-canvas JSR2
+	,draw-toolbar JSR2
 
+RTN
 
 @add-pixel ( x y )
 
@@ -103,8 +163,6 @@ RTN
 		( incr ) ~Sprite.y 8+ =Sprite.y
 	,$ver ~Sprite.y ~canvas.y2 LTH2 JMP2?
 
-	,draw-toolbar JSR2
-
 RTN
 
 @line-rect ( x1 y1 x2 y2 color )
@@ -124,12 +182,26 @@ RTN
 
 RTN
 
+@fill-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
+	$ver
+		~rect.x1 =Screen.x
+		$hor
+			( draw ) ~color =Screen.color
+			( incr ) ~Screen.x ++ =Screen.x
+			,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+		( incr ) ~Screen.y ++ =Screen.y
+		,$ver ~Screen.y ~rect.y2 LTH2 JMP2?
+
+RTN
+
 @draw-cursor
 
 	~cursor.x ~Mouse.x NEQU2
 	~cursor.y ~Mouse.y NEQU2
 
-	#0000 EQU2 RTN? ( Return if unchanged )
+	#0000 EQU2 ~Mouse.state #00 NEQ #0101 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
 	~cursor.x =Sprite.x
@@ -144,14 +216,14 @@ RTN
 	( draw new cursor )
 	~cursor.x =Sprite.x
 	~cursor.y =Sprite.y
-	,brush_pointer =Sprite.addr
+	,brush_pointer #00 ~Controller #02 EQU #0008 MUL2 ADD2 =Sprite.addr
 	#13 =Sprite.color
 
 RTN
 
 @draw-titlebar
 	
-	~canvas.x1 ~canvas.y2 #06 ,filepath 
+	~canvas.x1 #0001 SUB2 ~canvas.y2 #06 ,filepath 
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop NOP
@@ -163,7 +235,7 @@ RTN
 
 RTN
 
-@fit
+@fit-canvas
 	
 	~canvas.w 8* ~canvas.x1 ADD2 =canvas.x2 
 	~canvas.h 8* ~canvas.y1 ADD2 =canvas.y2 
@@ -172,33 +244,88 @@ RTN
 
 RTN
 
+@fit-toolbar
+
+	~toolbar.x1 #0010 ADD2 =toolbar.x2
+	~toolbar.y1 #0040 ADD2 =toolbar.y2
+	,draw-toolbar JSR2
+
+RTN
+
 @draw-toolbar
 	
-	~toolbar.x -- ~toolbar.y -- ~toolbar.x #0010 ADD2 ~toolbar.y #0050 ADD2 #02 ,line-rect JSR2
-	~toolbar.x #0002 SUB2 ~toolbar.y #0002 SUB2 ~toolbar.x #0010 ADD2 ++ ~toolbar.y #0050 ADD2 ++ #01 ,line-rect JSR2
+	~toolbar.x1 -- ~toolbar.y1 -- ~toolbar.x2 ~toolbar.y2 #02 ,line-rect JSR2
+	~toolbar.x1 #0002 SUB2 ~toolbar.y1 #0002 SUB2 ~toolbar.x2 ++ ~toolbar.y2 ++ #01 ,line-rect JSR2
 
-	~toolbar.x =Sprite.x
-	~toolbar.y =Sprite.y
+	~toolbar.x1 =Sprite.x
+	~toolbar.y1 =Sprite.y
 	,size0_icn =Sprite.addr
 
 	( draw brush sizes )
 
 	$sizes
-		( draw ) #09 =Sprite.color
+
+		( draw ) #09 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$sizes ~Sprite.y ~toolbar.y #0040 ADD2 LTH2 JMP2?
+		,$sizes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
 
 	( draw brush tools )
 
-	~toolbar.x 8+ =Sprite.x
-	~toolbar.y =Sprite.y
+	~toolbar.x1 8+ =Sprite.x
+	~toolbar.y1 =Sprite.y
 
 	$brushes
 		( draw ) #09 =Sprite.color
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$brushes ~Sprite.y ~toolbar.y #0040 ADD2 LTH2 JMP2?
+		,$brushes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
+
+RTN
+
+@draw-background
+	
+	( draw hor line )
+	#0000 =Screen.x ~center.y =Screen.y
+	#0000 ~Screen.width ( from/to )
+	$draw-hor NOP
+		( draw ) #01 =Screen.color
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
+		OVR2 OVR2 LTH2 ^$draw-hor SWP JMP?
+	POP2 POP2
+
+	( draw ver line )
+	~center.x =Screen.x #0000 =Screen.y
+	#0000 ~Screen.height ( from/to )
+	$draw-ver NOP
+		( draw ) #01 =Screen.color
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
+		OVR2 OVR2 LTH2 ^$draw-ver SWP JMP?
+	POP2 POP2
+
+	( draw save/load icons )
+	~Screen.width #0018 SUB2 =Sprite.x
+	~Screen.height #0010 SUB2 =Sprite.y
+	,load_icn =Sprite.addr
+	#01 =Sprite.color
+	~Screen.width #0010 SUB2 =Sprite.x
+	,save_icn =Sprite.addr
+	#01 =Sprite.color
+
+	( draw width )
+	~Screen.width #0040 SUB2 =Sprite.x
+	,font_hex ~canvas.w #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
+	( draw ) #02 =Sprite.color
+	~Sprite.x 8+ =Sprite.x
+	,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #02 =Sprite.color
+	~Sprite.x 8+ =Sprite.x
+	( draw height )
+	,font_hex ~canvas.h #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
+	( draw ) #02 =Sprite.color
+	~Sprite.x 8+ =Sprite.x
+	,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #02 =Sprite.color
 
 RTN
 
@@ -223,9 +350,23 @@ RTN
 
 @mode_guideson  [ 0000 0082 4438 0000 ]
 @mode_zoomin    [ 3245 8284 4834 0200 ]
+@load_icn       [ feaa d6aa d4aa f400 ]
+@save_icn       [ fe82 8282 848a f400 ]
 
-@blank_icn    [ 0000 0000 0000 0000 ]
-@filepath      [ projects/drawings/wtf.chr 00 ]
+@blank_icn      [ 0000 0000 0000 0000 ]
+@filepath       [ noodle-io.bit 00 ]
+
+@font_hex ( 0-F TODO: should pull from @font instead.. ) 
+[
+	003c 464a 5262 3c00 0018 0808 0808 1c00
+	003c 4202 3c40 7e00 003c 421c 0242 3c00
+	000c 1424 447e 0400 007e 407c 0242 3c00
+	003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00
+	003c 4242 7e42 4200 007c 427c 4242 7c00 
+	003c 4240 4042 3c00 007c 4242 4242 7c00 
+	007e 4078 4040 7e00 007e 4078 4040 4000
+]
 
 @font ( specter8-frag font ) 
 [
@@ -280,8 +421,8 @@ RTN
 
 ]
 
-|8000 ;canvas { w 2 h 2 x1 2 y1 2 x2 2 y2 2 }
-|9000 @data
+|2000 ;canvas { w 2 h 2 x1 2 y1 2 x2 2 y2 2 }
+|3000 @data [ ]
 
 |F000 @ERROR BRK 
 
