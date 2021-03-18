@@ -2,8 +2,8 @@
 	app/noodle : illustration program
 
 	TODO
-		- Only redraw when mouse has changed
-		- Only redraw target tile
+		- Only draw-canvas when mouse has changed
+		- Only draw-canvas target tile
 )
 
 %RTN   { JMP2r }
@@ -18,12 +18,14 @@
 ;cursor { x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
-;pt { x 2 y 2 }
+;pos { x 2 y 2 }
+;pix { x 2 y 2 }
+;px { x 1 y 1 }
 ;label { x 2 y 2 color 1 addr 2 } ( remove )
 
 |0100 @RESET 
 	
-	#0008 =toolbar.x #0068 =toolbar.y
+	#0038 =toolbar.x #0098 =toolbar.y
 
 	#0010 =canvas.x1 #0020 =canvas.y1 
 	#0026 =canvas.w #0010 =canvas.h ,fit JSR2
@@ -44,6 +46,8 @@ BRK
 
 		~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
 
+		,draw-canvas JSR2
+
 		$no-paint
 
 	$no-touch
@@ -52,19 +56,40 @@ BRK
 
 @paint ( x y )
 
-	=pt.y =pt.x
+	#0004 SUB2 =pos.y #0004 SUB2 =pos.x
 
-	( get tile addr ) ,data ~pt.x 8/ ~pt.y 8/ ~canvas.w MUL2 ADD2 8* ~pt.y MOD8 ADD2 ADD2 
+	#00 =px.x #00 =px.y 
+	$ver
+		#00 =px.x
+		$hor
+			( get bit )
+			,size1_icn #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND ( get bit )
+			
+			#00 EQU ,$no-pixel ROT JMP2?
+				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,add-pixel JSR2
+			$no-pixel
 
-	( load ) DUP2 LDR
-	( mask ) #01 #07 ~pt.x MOD8 SWP POP SUB SHL XOR
-	( save ) ROT ROT STR
-
-	,redraw JSR2
+			( incr ) ~px.x #01 ADD =px.x
+			,$hor ~px.x #08 LTH JMP2?
+		( incr ) ~px.y #01 ADD =px.y
+		,$ver ~px.y #08 LTH JMP2?
 
 RTN
 
-@redraw
+
+@add-pixel ( x y )
+
+	=pix.y =pix.x
+
+	( get tile addr ) ,data ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8* ~pix.y MOD8 ADD2 ADD2 
+
+	( load ) DUP2 LDR
+	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL XOR
+	( save ) ROT ROT STR
+
+RTN
+
+@draw-canvas
 	
 	~canvas.y1 =Sprite.y
 	,data =Sprite.addr
@@ -143,7 +168,7 @@ RTN
 	~canvas.w 8* ~canvas.x1 ADD2 =canvas.x2 
 	~canvas.h 8* ~canvas.y1 ADD2 =canvas.y2 
 	~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #01 ,line-rect JSR2
-	,redraw JSR2
+	,draw-canvas JSR2
 
 RTN
 
@@ -200,7 +225,7 @@ RTN
 @mode_zoomin    [ 3245 8284 4834 0200 ]
 
 @blank_icn    [ 0000 0000 0000 0000 ]
-@filepath      [ projects/drawings/hello.chr 00 ]
+@filepath      [ projects/drawings/wtf.chr 00 ]
 
 @font ( specter8-frag font ) 
 [
