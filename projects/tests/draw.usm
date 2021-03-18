@@ -1,0 +1,88 @@
+( tests/draw )
+
+%RTN   { JMP2r }
+%RTN?  { JMP2r? }
+
+;cursor { x 2 y 2 }
+;a { x 2 y 2 }
+;b { x 2 y 2 }
+;s { x 2 y 2 }
+
+|0100 @RESET 
+	
+	#0020 #0020 #0070 #0080 ,draw-line JSR2
+	#0020 #0080 #0070 #0030 ,draw-line JSR2
+	#00a0 #0020 #0050 #00b0 ,draw-line JSR2
+	#00b0 #0090 #0030 #0010 ,draw-line JSR2
+
+BRK
+
+@draw-line ( x1 y1 x2 y2 )
+
+	=b.y =b.x ( target, b )
+	=a.y =a.x ( target, a )
+
+	~a.x =Screen.x ~a.y =Screen.y #02 =Screen.color
+	~b.x =Screen.x ~b.y =Screen.y #02 =Screen.color
+
+	( dx = abs[bx - ax] )
+	~b.x ~a.x SUB2 ABS2 =d.x
+
+	( dy = -abs[by - ay] )
+	~b.y ~a.y SUB2 ABS2 #0000 SWP2 SUB2 =d.y
+
+	( sx = ax < bx ? 1 : -1; )
+	#ffff #00 ~a.x ~b.x LTH2 #0002 MUL2 ADD2 =s.x 
+
+	( sy = ay < by ? 1 : -1; )
+	#ffff #00 ~a.y ~b.y LTH2 #0002 MUL2 ADD2 =s.y 
+
+	( err = dx + dy )
+	~d.x ~d.y ADD2 =err
+
+	( loop )
+	$loop
+
+		( putchr[ax, ay, color]; )
+		~a.x =Screen.x ~a.y =Screen.y #01 =Screen.color
+
+		( if[ax == bx && ay == by] break; )
+		,$end ~a.x ~b.x EQU2 ~a.y ~b.y EQU2 #0101 EQU2 JMP2?
+
+		( fallback, remove )
+		,$end ~i #90 GTH JMP2? ~i #01 ADD =i
+
+		( err2 = 2 * err; )
+		~err #0002 MUL2 =err2
+
+		~err2 =Console.short
+
+		( if[err2 >= dy] )
+		,$skipy ~err2 ~d.y LTH2 JMP2?
+			( err += dy; )
+			~err ~d.y ADD2 =err
+			( ax += sx; )
+			~a.x ~s.x ADD2 =a.x
+		$skipy
+
+		( if[err2 <= dx] )
+		,$skipx ~err2 ~d.x GTH2 JMP2?
+			( err += dx; )
+			~err ~d.x ADD2 =err
+			( ay += sy; )
+			~a.y ~s.y ADD2 =a.y
+		$skipx
+
+		,$loop JMP2
+
+	$end
+
+RTN
+
+|c000 @FRAME
+|d000 @ERROR 
+
+|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
+
+|FFF0 .RESET .FRAME .ERROR ( vectors )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
