@@ -7,10 +7,7 @@
 		- Only draw-canvas when mouse has changed
 		- Only draw-canvas target tile
 		- Resize buttons
-		- Zoom
 		- Clear all button
-		- Toggle guides
-		- Complete save/load
 		- Limit size
 		- Draw point inbetween
 		- Pixel cleanup brush
@@ -29,6 +26,7 @@
 ;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 zoom 1 }
 ;zoom { x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
+;origin { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pos { x 2 y 2 }
 ;pix { x 2 y 2 }
@@ -70,7 +68,7 @@ BRK
 
 	( release drag )
 	,$no-release ~Mouse.state #00 EQU ~cursor.drag #01 EQU #0101 NEQ2 JMP2?
-		#0000 #0000 ~Screen.width ~Screen.height #00 ,fill-rect JSR2
+		~origin.x1 #0002 SUB2 ~origin.y1 #0002 SUB2 ~origin.x2 #0002 ADD2 ~origin.y2 #0002 ADD2 #00 ,fill-rect JSR2
 		~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
 		,draw-background JSR2
 		,fit-canvas JSR2
@@ -82,6 +80,12 @@ BRK
 
 		( drag )
 		,$no-drag ~Controller #02 NEQ JMP2?
+			,$no-drag-start ~cursor.drag #00 NEQ JMP2?
+				~canvas.x1 =origin.x1
+				~canvas.y1 =origin.y1
+				~canvas.x2 =origin.x2
+				~canvas.y2 =origin.y2
+			$no-drag-start
 			~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
 			~canvas.x1 ~Mouse.x ~cursor.x0 SUB2 ADD2 =canvas.x1
 			~canvas.y1 ~Mouse.y ~cursor.y0 SUB2 ADD2 =canvas.y1
@@ -120,12 +124,12 @@ BRK
 		#0000 NEQ2 ,$no-toggle-zoom ROT JMP2?
 			~cursor.zoom #00 EQU =cursor.zoom
 			( release ) #00 =Mouse.state
-			~cursor.zoom =Console.byte
 			,redraw JSR2
 		$no-toggle-zoom
 		DUP2 
 		#0001 NEQ2 ,$no-load-button ROT JMP2?
 			,filepath ,load-file JSR2
+			,draw-canvas JSR2
 			( release ) #00 =Mouse.state
 		$no-load-button
 		DUP2 
@@ -139,7 +143,7 @@ BRK
 
 	$no-touch
 
-	,$no-ctrl ~Controller #00 EQU JMP2?
+	,$no-ctrl ~Controller #00 EQU ~cursor.zoom #00 EQU #0000 NEQ2 JMP2?
 
 		,$no-ctrl-up ~Controller #10 EQU JMP2?
 			~zoom.y ++ =zoom.y
@@ -410,7 +414,8 @@ RTN
 
 	( draw new cursor )
 	,$outside-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
-	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?		
+	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?	
+		,$outside-canvas ~Controller #02 EQU JMP2?
 		~cursor.x #0003 SUB2 =Sprite.x
 		~cursor.y #0003 SUB2 =Sprite.y
 		,brush_view #00 ~cursor.size 8* ADD2 =Sprite.addr
