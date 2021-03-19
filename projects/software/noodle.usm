@@ -7,6 +7,11 @@
 		- Only draw-canvas when mouse has changed
 		- Only draw-canvas target tile
 		- Resize buttons
+		- Zoom
+		- Erase
+		- Toggle guides
+		- Set eye option
+		- Complete save/load
 )
 
 %RTN   { JMP2r }
@@ -19,7 +24,7 @@
 
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 view 1 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pos { x 2 y 2 }
@@ -35,20 +40,20 @@
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
 	~Screen.height #0002 DIV2 =center.y
+	#0010 =toolbar.x1 #0010 =toolbar.y1
 
 	( default brush )
 	#04 =cursor.size
 
-	#0010 =canvas.x1 #0016 =canvas.y1 
 	#0026 =canvas.w #001a =canvas.h ( 380x260 )
-	#0010 =toolbar.x1 #0010 =toolbar.y1
+
+	( center canvas )
+	~center.x ~canvas.w 8* 2/ SUB2 =canvas.x1 
+	~center.y ~canvas.h 8* 2/ SUB2 =canvas.y1
 
 	,draw-background JSR2
-
 	,fit-canvas JSR2
-
 	,draw-titlebar JSR2
-
 	,fit-toolbar JSR2
 
 BRK
@@ -102,8 +107,31 @@ BRK
 		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
 			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
-			,$touch-end JMP2
 		$no-touch-canvas
+
+		( background interface )
+		~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
+		DUP2 
+		#0000 NEQ2 ,$no-toggle-guides ROT JMP2?
+			~cursor.view #00 EQU =cursor.view
+			( release ) #00 =Mouse.state
+			~cursor.view =Console.byte
+			~Screen.width #0020 SUB2 =Sprite.x
+			~Screen.height #0010 SUB2 =Sprite.y
+			,mode_guidesoff #00 ~cursor.view #0008 MUL2 ADD2 =Sprite.addr
+			#01 =Sprite.color
+		$no-toggle-guides
+		DUP2 
+		#0001 NEQ2 ,$no-load-button ROT JMP2?
+			( release ) #00 =Mouse.state
+			#bb =Console.byte
+		$no-load-button
+		DUP2 
+		#0002 NEQ2 ,$no-save-button ROT JMP2?
+			( release ) #00 =Mouse.state
+			#cc =Console.byte
+		$no-save-button
+		POP2
 
 		$touch-end
 
@@ -121,8 +149,10 @@ BRK
 RTN
 
 @paint ( x y )
+	
+	,erase ~Mouse.state #10 EQU JMP2?
 
-	#0004 SUB2 =pos.y #0004 SUB2 =pos.x ( cursor offset )
+	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
 
 	#00 =px.x #00 =px.y 
 	$ver
@@ -130,17 +160,38 @@ RTN
 		$hor
 			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
 			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
-			
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
 				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,add-pixel JSR2
 			$no-pixel
-
 			( incr ) ~px.x #01 ADD =px.x
 			,$hor ~px.x #08 LTH JMP2?
 		( incr ) ~px.y #01 ADD =px.y
 		,$ver ~px.y #08 LTH JMP2?
 
+	,draw-canvas JSR2
+	,draw-toolbar JSR2
+
+RTN
+
+@erase ( x y )
+
+	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
+
+	#00 =px.x #00 =px.y 
+	$ver
+		#00 =px.x
+		$hor
+			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
+			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
+			#00 EQU ,$no-pixel ROT JMP2?
+				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
+				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,remove-pixel JSR2
+			$no-pixel
+			( incr ) ~px.x #01 ADD =px.x
+			,$hor ~px.x #08 LTH JMP2?
+		( incr ) ~px.y #01 ADD =px.y
+		,$ver ~px.y #08 LTH JMP2?
 	,draw-canvas JSR2
 	,draw-toolbar JSR2
 
@@ -198,11 +249,19 @@ RTN
 @add-pixel ( x y )
 
 	=pix.y =pix.x
-
 	( get tile addr ) ,data ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8* ~pix.y MOD8 ADD2 ADD2 
-
 	( load ) DUP2 LDR
-	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL XOR
+	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL ORA
+	( save ) ROT ROT STR
+
+RTN
+
+@remove-pixel ( x y )
+
+	=pix.y =pix.x
+	( get tile addr ) ,data ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8* ~pix.y MOD8 ADD2 ADD2 
+	( load ) DUP2 LDR
+	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL #ff XOR AND
 	( save ) ROT ROT STR
 
 RTN
@@ -217,9 +276,9 @@ RTN
 			( draw ) #09 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$hor ~Sprite.x ~canvas.x2 LTH2 JMP2?
+		,$hor ~Sprite.x ~canvas.x2 NEQ2 JMP2?
 		( incr ) ~Sprite.y 8+ =Sprite.y
-	,$ver ~Sprite.y ~canvas.y2 LTH2 JMP2?
+	,$ver ~Sprite.y ~canvas.y2 NEQ2 JMP2?
 
 RTN
 
@@ -230,13 +289,13 @@ RTN
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+		,$hor ~Screen.x ~rect.x2 NEQ2 JMP2?
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 ++ LTH2 JMP2?
+		,$ver ~Screen.y ~rect.y2 ++ NEQ2 JMP2?
 
 RTN
 
@@ -248,9 +307,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x ++ =Screen.x
-			,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+			,$hor ~Screen.x ~rect.x2 NEQ2 JMP2?
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 LTH2 JMP2?
+		,$ver ~Screen.y ~rect.y2 NEQ2 JMP2?
 
 RTN
 
@@ -260,6 +319,10 @@ RTN
 	~cursor.y ~Mouse.y NEQU2
 
 	#0000 EQU2 ~Mouse.state #00 NEQ #0101 EQU2 RTN? ( Return if unchanged )
+
+	~cursor.x #0003 SUB2 =Sprite.x
+	~cursor.y #0003 SUB2 =Sprite.y
+	#10 =Sprite.color
 
 	( clear last cursor )
 	~cursor.x =Sprite.x
@@ -272,10 +335,20 @@ RTN
 	~Mouse.y =cursor.y
 
 	( draw new cursor )
+
+	,$outside-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
+	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?		
+		~cursor.x #0003 SUB2 =Sprite.x
+		~cursor.y #0003 SUB2 =Sprite.y
+		,brush_view #00 ~cursor.size #0008 MUL2 ADD2 =Sprite.addr
+		#11 ~Mouse.state ADD =Sprite.color
+	$outside-canvas
+
 	~cursor.x =Sprite.x
 	~cursor.y =Sprite.y
+
 	,brush_pointer #00 ~Controller #02 EQU #0008 MUL2 ADD2 =Sprite.addr
-	#13 =Sprite.color
+	#1f =Sprite.color
 
 RTN
 
@@ -304,7 +377,7 @@ RTN
 
 @fit-toolbar
 
-	~toolbar.x1 #0018 ADD2 =toolbar.x2
+	~toolbar.x1 #0010 ADD2 =toolbar.x2
 	~toolbar.y1 #0040 ADD2 =toolbar.y2
 	,draw-toolbar JSR2
 
@@ -313,7 +386,7 @@ RTN
 @draw-toolbar
 	
 	~toolbar.x1 -- ~toolbar.y1 -- ~toolbar.x2 ~toolbar.y2 #02 ,line-rect JSR2
-	~toolbar.x1 #0002 SUB2 ~toolbar.y1 #0002 SUB2 ~toolbar.x2 ++ ~toolbar.y2 ++ #01 ,line-rect JSR2
+	~toolbar.x1 #0002 SUB2 ~toolbar.y1 #0002 SUB2 ~toolbar.x2 ~toolbar.y2 #01 ,line-rect JSR2
 
 	~toolbar.x1 =Sprite.x
 	~toolbar.y1 =Sprite.y
@@ -339,17 +412,6 @@ RTN
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$patterns ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
 
-	( draw brush tools )
-
-	~toolbar.x1 #0010 ADD2 =Sprite.x
-	~toolbar.y1 =Sprite.y
-
-	$brushes
-		( draw ) #09 =Sprite.color
-		( incr ) ~Sprite.y 8+ =Sprite.y
-		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$brushes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
-
 RTN
 
 @draw-background
@@ -372,7 +434,7 @@ RTN
 		OVR2 OVR2 LTH2 ^$draw-ver SWP JMP?
 	POP2 POP2
 
-	( draw save/load icons )
+	( draw save/load/guides icons )
 	~Screen.width #0018 SUB2 =Sprite.x
 	~Screen.height #0010 SUB2 =Sprite.y
 	,load_icn =Sprite.addr
@@ -380,9 +442,12 @@ RTN
 	~Screen.width #0010 SUB2 =Sprite.x
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
+	~Screen.width #0020 SUB2 =Sprite.x
+	,mode_guidesoff =Sprite.addr
+	#01 =Sprite.color
 
 	( draw width )
-	~Screen.width #0040 SUB2 =Sprite.x
+	~Screen.width #0048 SUB2 =Sprite.x
 	,font_hex ~canvas.w #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
@@ -418,17 +483,29 @@ RTN
 	[ feaa aaaa aaaa fe00 ]	
 	[ fe82 fe82 fe82 fe00 ]
 
+@brush_view 
+	[ 0000 0010 0000 0000 ]
+	[ 0000 1028 1000 0000 ]
+	[ 0000 3828 3800 0000 ]
+	[ 0010 2844 2810 0000 ]
+	[ 0038 4444 4438 0000 ]
+	[ 1028 4482 4428 1000 ]
+	[ 3844 8282 8244 3800 ]
+	[ 7c82 8282 8282 7c00 ]
+    [ 7cfe fefe fefe 7c00 ]
+
 @brush_pointer  [ 80c0 e0f0 f8e0 1000 ]
 @brush_hand     [ 4040 4070 f8f8 f870 ]
 @brush_eraser   [ 2050 b87c 3e1c 0800 ]
 
 @mode_guidesoff [ 0038 4492 2810 0000 ]
+@mode_guideson  [ 0000 0082 4438 0000 ]
 @mode_zoomout   [ 3048 8484 4834 0200 ]
+
 [ 0000 0000 0000 0000 ]
 [ 0000 0000 0000 0000 ]
 [ 0000 0000 0000 0000 ]
 
-@mode_guideson  [ 0000 0082 4438 0000 ]
 @mode_zoomin    [ 3245 8284 4834 0200 ]
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]

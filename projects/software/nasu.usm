@@ -154,17 +154,16 @@ BRK
 			~tileview.addr ADD2 =addr ( addr offset )
 			~MOUS.x ~tileview.x SUB2 ~MOUS.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~MOUS.y ~tileview.y SUB2 ~MOUS.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
-			,no-fill-mode ~bankview.mode #01 NEQ JMP2?
-				( fill row ) #ff ~addr ~pos.y 8/ ADD2 STR
-				,redraw JSR2 ,click-end JMP2
-			@no-fill-mode
 			,no-erase-mode ~bankview.mode #02 NEQ JMP2?
-				( erase row ) #00 ~addr ~pos.y 8/ ADD2 STR
+				( load ) ~addr ~pos.y 8/ ADD2 LDR
+				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SHL 
+				#ff XOR AND
+				( save ) ~addr ~pos.y 8/ ADD2 STR
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
 			( load ) ~addr ~pos.y 8/ ADD2 LDR
 			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SHL 
-			XOR
+			ORA
 			( save ) ~addr ~pos.y 8/ ADD2 STR
 			,redraw JSR2 ,click-end JMP2
 

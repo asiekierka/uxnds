@@ -46,9 +46,9 @@ Program p;
 
 char ops[][4] = {
 	"BRK", "NOP", "LIT", "LDR", "STR", "---", "JMP", "JSR", 
-	"EQU", "NEQ", "GTH", "LTH", "AND", "XOR", "SHL", "SHR",
+	"EQU", "NEQ", "GTH", "LTH", "AND", "ORA", "SHL", "SHR",
 	"POP", "DUP", "SWP", "OVR", "ROT", "---", "CLN", "STH",
-	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "---"
+	"ADD", "SUB", "MUL", "DIV", "---", "---", "---", "XOR"
 };
 
 int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
