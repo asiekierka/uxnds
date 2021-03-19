@@ -41,7 +41,7 @@
 |0100 @RESET 
 	
 	( default canvas )
-	#0020 =canvas.w #0010 =canvas.h
+	#002a =canvas.w #001a =canvas.h
 
 	( default brush )
 	#04 =cursor.size
@@ -440,7 +440,7 @@ RTN
 
 @draw-toolbar
 	
-	~toolbar.x1 -- ~toolbar.y1 -- ~toolbar.x2 ~toolbar.y2 #02 ,line-rect JSR2
+	~toolbar.x1 -- ~toolbar.y1 -- ~toolbar.x2 ~toolbar.y2 #00 ,line-rect JSR2
 	~toolbar.x1 #0002 SUB2 ~toolbar.y1 #0002 SUB2 ~toolbar.x2 ~toolbar.y2 #01 ,line-rect JSR2
 
 	~toolbar.x1 =Sprite.x
@@ -450,7 +450,7 @@ RTN
 	( draw brush sizes )
 
 	$sizes
-		( draw ) #09 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
+		( draw ) #01 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$sizes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
@@ -462,7 +462,7 @@ RTN
 	,pattern_icn =Sprite.addr
 
 	$patterns
-		( draw ) #09 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.patt EQU #02 MUL ADD =Sprite.color
+		( draw ) #01 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.patt EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$patterns ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
@@ -598,7 +598,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/picture2010.bit 00 ]
+@filepath       [ projects/picture2a1a.bit 00 ]
 
 @font_hex
 [
@@ -626,4 +626,4 @@ RTN
 |FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ c0fd c0f3 c0f2 ]   ( palette )
+|FFF8 [ d0df d03f d02f ]   ( palette )
