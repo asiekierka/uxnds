@@ -161,6 +161,14 @@ BRK
 
 	$no-ctrl
 
+	,$no-keys ~Keys #00 EQU JMP2?
+		,$no-keys-toogle-zoom ~Keys #20 NEQ JMP2?
+			~cursor.zoom #00 EQU =cursor.zoom
+			,redraw JSR2
+		$no-keys-toogle-zoom 
+		( release ) #00 =Keys
+	$no-keys
+
 	~Mouse.x =cursor.x0
 	~Mouse.y =cursor.y0
 
@@ -591,7 +599,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/picture.bit 00 ]
+@filepath       [ projects/picture(20-10).bit 00 ]
 
 @font_hex
 [
