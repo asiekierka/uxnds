@@ -6,6 +6,7 @@
 	TODO
 		- Only draw-canvas when mouse has changed
 		- Only draw-canvas target tile
+		- Resize buttons
 )
 
 %RTN   { JMP2r }
@@ -18,7 +19,7 @@
 
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 drag 1 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pos { x 2 y 2 }
@@ -34,6 +35,9 @@
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
 	~Screen.height #0002 DIV2 =center.y
+
+	( default brush )
+	#04 =cursor.size
 
 	#0010 =canvas.x1 #0016 =canvas.y1 
 	#0026 =canvas.w #001a =canvas.h ( 380x260 )
@@ -62,7 +66,6 @@ BRK
 		,draw-titlebar JSR2
 		,fit-toolbar JSR2
 		#00 =cursor.drag
-		#aa =Console.byte
 	$no-release
 
 	,$no-touch ~Mouse.state #00 EQU JMP2?
@@ -82,12 +85,17 @@ BRK
 		( in toolbar )
 		,$no-touch-toolbar ~Mouse.x CLN2r ~toolbar.x1 GTH2 STH2r ~toolbar.x2 LTH2 #0101 NEQ2 JMP2?
 		,$no-touch-toolbar ~Mouse.y CLN2r ~toolbar.y1 GTH2 STH2r ~toolbar.y2 LTH2 #0101 NEQ2 JMP2?
+			( release ) #00 =Mouse.state
 			,$no-touch-size ~Mouse.x ~toolbar.x1 SUB2 8/ #0000 NEQ2 JMP2?
 				~Mouse.y ~toolbar.y1 SUB2 8/ SWP POP =cursor.size
-				#00 =Mouse.state
-				,draw-toolbar JSR2
+				( draw ) ,draw-toolbar JSR2
 				,$touch-end JMP2
 			$no-touch-size
+			,$no-touch-brush ~Mouse.x ~toolbar.x1 SUB2 8/ #0001 NEQ2 JMP2?
+				~Mouse.y ~toolbar.y1 SUB2 8/ SWP POP =cursor.patt
+				( draw ) ,draw-toolbar JSR2
+				,$touch-end JMP2
+			$no-touch-brush
 		$no-touch-toolbar
 
 		( in canvas )
@@ -120,10 +128,11 @@ RTN
 	$ver
 		#00 =px.x
 		$hor
-			( addr ) ,size0_icn #00 ~cursor.size 8* ADD2
+			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
 			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
 			
 			#00 EQU ,$no-pixel ROT JMP2?
+				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
 				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,add-pixel JSR2
 			$no-pixel
 
@@ -134,6 +143,55 @@ RTN
 
 	,draw-canvas JSR2
 	,draw-toolbar JSR2
+
+RTN
+
+@patternize
+
+	,$noplain ~cursor.patt #00 NEQ JMP2?
+		#01 RTN
+	$noplain
+
+	,$notone1 ~cursor.patt #01 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0001 AND2 #0000 EQU2 
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0001 AND2 #0000 EQU2 
+		#0101 EQU2
+		RTN
+	$notone1
+
+	,$notone2 ~cursor.patt #02 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
+		#0101 EQU2
+		RTN
+	$notone2
+
+	,$notone3 ~cursor.patt #03 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0005 AND2 #0000 EQU2 
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0005 AND2 #0000 EQU2 
+		#0101 EQU2
+		RTN
+	$notone3
+
+	,$notone4 ~cursor.patt #04 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
+		RTN
+	$notone4
+
+	,$notone5 ~cursor.patt #05 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
+		RTN
+	$notone5
+
+	,$notone6 ~cursor.patt #06 NEQ JMP2?
+		~pos.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN
+	$notone6
+
+	,$notone7 ~cursor.patt #07 NEQ JMP2?
+		~pos.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN
+	$notone7
+
+	#00
 
 RTN
 
@@ -246,7 +304,7 @@ RTN
 
 @fit-toolbar
 
-	~toolbar.x1 #0010 ADD2 =toolbar.x2
+	~toolbar.x1 #0018 ADD2 =toolbar.x2
 	~toolbar.y1 #0040 ADD2 =toolbar.y2
 	,draw-toolbar JSR2
 
@@ -259,20 +317,31 @@ RTN
 
 	~toolbar.x1 =Sprite.x
 	~toolbar.y1 =Sprite.y
-	,size0_icn =Sprite.addr
+	,size_icn =Sprite.addr
 
 	( draw brush sizes )
 
 	$sizes
-
 		( draw ) #09 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$sizes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
 
-	( draw brush tools )
+	( draw brush patterns )
 
 	~toolbar.x1 8+ =Sprite.x
+	~toolbar.y1 =Sprite.y
+	,pattern_icn =Sprite.addr
+
+	$patterns
+		( draw ) #09 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.patt EQU #02 MUL ADD =Sprite.color
+		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~Sprite.addr 8+ =Sprite.addr
+		,$patterns ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
+
+	( draw brush tools )
+
+	~toolbar.x1 #0010 ADD2 =Sprite.x
 	~toolbar.y1 =Sprite.y
 
 	$brushes
@@ -329,24 +398,35 @@ RTN
 
 RTN
 
-@size0_icn    [ 0000 0010 0000 0000 ]
-@size1_icn    [ 0000 1038 1000 0000 ]
-@size2_icn    [ 0000 3838 3800 0000 ]
-@size3_icn    [ 0010 387c 3810 0000 ]
-@size4_icn    [ 0038 7c7c 7c38 0000 ]
-@size5_icn    [ 1038 7cfe 7c38 1000 ]
-@size6_icn    [ 387c fefe fe7c 3800 ]
-@size7_icn    [ 7cfe fefe fefe 7c00 ]
+@size_icn    
+	[ 0000 0010 0000 0000 ]
+    [ 0000 1038 1000 0000 ]
+    [ 0000 3838 3800 0000 ]
+    [ 0010 387c 3810 0000 ]
+    [ 0038 7c7c 7c38 0000 ]
+    [ 1038 7cfe 7c38 1000 ]
+    [ 387c fefe fe7c 3800 ]
+    [ 7cfe fefe fefe 7c00 ]
+
+@pattern_icn 
+	[ fe82 baba ba82 fe00 ]
+	[ fed6 aad6 aad6 fe00 ]
+	[ fe92 82d6 8292 fe00 ]
+	[ fe82 92aa 9282 fe00 ]
+	[ fea6 ca92 a6ca fe00 ]
+	[ feca a692 caa6 fe00 ]
+	[ feaa aaaa aaaa fe00 ]	
+	[ fe82 fe82 fe82 fe00 ]
 
 @brush_pointer  [ 80c0 e0f0 f8e0 1000 ]
 @brush_hand     [ 4040 4070 f8f8 f870 ]
 @brush_eraser   [ 2050 b87c 3e1c 0800 ]
-@brush_pattern0 [ ffff ffff ffff ffff ]
-@brush_pattern1 [ aa55 aa55 aa55 aa55 ]
-@brush_pattern2 [ 8800 2200 8800 2200 ]
 
 @mode_guidesoff [ 0038 4492 2810 0000 ]
 @mode_zoomout   [ 3048 8484 4834 0200 ]
+[ 0000 0000 0000 0000 ]
+[ 0000 0000 0000 0000 ]
+[ 0000 0000 0000 0000 ]
 
 @mode_guideson  [ 0000 0082 4438 0000 ]
 @mode_zoomin    [ 3245 8284 4834 0200 ]
