@@ -1,7 +1,11 @@
 ( 
 	app/noodle : illustration program
 	
+	right-click - erase
 	alt-click - drag canvas
+	arrows - move zoom
+	space - toogle zoom
+	backspace - blank canvas
 
 	TODO
 		- Only draw-canvas when mouse has changed
@@ -11,6 +15,8 @@
 		- Limit size
 		- Draw point inbetween
 		- Pixel cleanup brush
+	BUGS
+		- If canvas is higher than 0, mouse picking fails
 )
 
 %RTN   { JMP2r }
@@ -23,13 +29,13 @@
 
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 zoom 1 }
-;zoom { x 2 y 2 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 }
+;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
-;pos { x 2 y 2 }
-;pix { x 2 y 2 }
+;pt0 { x 2 y 2 }
+;pt1 { x 2 y 2 }
 ;px { x 1 y 1 }
 
 |0100 @RESET 
@@ -122,7 +128,7 @@ BRK
 		~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
 		DUP2 
 		#0000 NEQ2 ,$no-toggle-zoom ROT JMP2?
-			~cursor.zoom #00 EQU =cursor.zoom
+			~zoom.active #00 EQU =zoom.active
 			( release ) #00 =Mouse.state
 			,redraw JSR2
 		$no-toggle-zoom
@@ -143,27 +149,20 @@ BRK
 
 	$no-touch
 
-	,$no-ctrl ~Controller #00 EQU ~cursor.zoom #00 EQU #0000 NEQ2 JMP2?
-
-		,$no-ctrl-up ~Controller #10 EQU JMP2?
-			~zoom.y ++ =zoom.y
-		$no-ctrl-up
-		,$no-ctrl-down ~Controller #20 EQU JMP2?
-			~zoom.y -- =zoom.y
-		$no-ctrl-down
-		,$no-ctrl-left ~Controller #40 EQU JMP2?
-			~zoom.x ++ =zoom.x
-		$no-ctrl-left
-		,$no-ctrl-right ~Controller #80 EQU JMP2?
-			~zoom.x -- =zoom.x
-		$no-ctrl-right
-		,draw-canvas JSR2
-
-	$no-ctrl
-
+	~Controller.buttons #f0 AND
+		DUP #04 SHR #01 AND #01 NEQ ,$no-up ROT JMP2?
+			( move ) ~zoom.y -- =zoom.y $no-up
+		DUP #05 SHR #01 AND #01 NEQ ,$no-down ROT JMP2?
+			( move ) ~zoom.y ++ =zoom.y $no-down
+		DUP #06 SHR #01 AND #01 NEQ ,$no-left ROT JMP2?
+			( move ) ~zoom.x -- =zoom.x $no-left
+		DUP #07 SHR #01 AND #01 NEQ ,$no-right ROT JMP2?
+			( move ) ~zoom.x ++ =zoom.x $no-right
+	#00 NEQ ,draw-canvas ROT JSR2?
+	
 	,$no-keys ~Keys #00 EQU JMP2?
 		,$no-keys-toogle-zoom ~Keys #20 NEQ JMP2?
-			~cursor.zoom #00 EQU =cursor.zoom
+			~zoom.active #00 EQU =zoom.active
 			,redraw JSR2
 		$no-keys-toogle-zoom 
 		( release ) #00 =Keys
@@ -199,18 +198,18 @@ RTN
 	
 	,erase ~Mouse.state #10 EQU JMP2?
 
-	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
+	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
 	( trim if zoomed )
-	,$no-zoom ~cursor.zoom #01 NEQ JMP2?
-		~pos.x 8/ ~zoom.x ADD2 #0003 SUB2 =pos.x
-		~pos.y 8/ ~zoom.y ADD2 #0003 SUB2 =pos.y
+	,$no-zoom ~zoom.active #01 NEQ JMP2?
+		~pt0.x 8/ ~zoom.x ADD2 #0003 SUB2 =pt0.x
+		~pt0.y 8/ ~zoom.y ADD2 #0003 SUB2 =pt0.y
 	$no-zoom
 
 	( center zoom on paint )
-	,$no-follow ~cursor.zoom JMP2?
-		~pos.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
-		~pos.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
+	,$no-follow ~zoom.active JMP2?
+		~pt0.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
+		~pt0.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
 	$no-follow
 
 	#00 =px.x #00 =px.y 
@@ -221,7 +220,7 @@ RTN
 			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
-				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,add-pixel JSR2
+				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,add-pixel JSR2
 			$no-pixel
 			( incr ) ~px.x #01 ADD =px.x
 			,$hor ~px.x #08 LTH JMP2?
@@ -235,18 +234,18 @@ RTN
 
 @erase ( x y )
 
-	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
+	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
 	( trim if zoomed )
-	,$no-zoom ~cursor.zoom #01 NEQ JMP2?
-		~pos.x 8/ ~zoom.x ADD2 #0003 SUB2 =pos.x
-		~pos.y 8/ ~zoom.y ADD2 #0003 SUB2 =pos.y
+	,$no-zoom ~zoom.active #01 NEQ JMP2?
+		~pt0.x 8/ ~zoom.x ADD2 #0003 SUB2 =pt0.x
+		~pt0.y 8/ ~zoom.y ADD2 #0003 SUB2 =pt0.y
 	$no-zoom
 
 	( center zoom on paint )
-	,$no-follow ~cursor.zoom JMP2?
-		~pos.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
-		~pos.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
+	,$no-follow ~zoom.active JMP2?
+		~pt0.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
+		~pt0.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
 	$no-follow
 
 	#00 =px.x #00 =px.y 
@@ -257,7 +256,7 @@ RTN
 			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
-				~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ,remove-pixel JSR2
+				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,remove-pixel JSR2
 			$no-pixel
 			( incr ) ~px.x #01 ADD =px.x
 			,$hor ~px.x #08 LTH JMP2?
@@ -275,42 +274,42 @@ RTN
 	$noplain
 
 	,$notone1 ~cursor.patt #01 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0001 AND2 #0000 EQU2 
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0001 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0001 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0001 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone1
 
 	,$notone2 ~cursor.patt #02 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone2
 
 	,$notone3 ~cursor.patt #03 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0005 AND2 #0000 EQU2 
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0005 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0005 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0005 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone3
 
 	,$notone4 ~cursor.patt #04 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
 		RTN
 	$notone4
 
 	,$notone5 ~cursor.patt #05 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 ~pos.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
 		RTN
 	$notone5
 
 	,$notone6 ~cursor.patt #06 NEQ JMP2?
-		~pos.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN
+		~pt0.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN
 	$notone6
 
 	,$notone7 ~cursor.patt #07 NEQ JMP2?
-		~pos.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN
+		~pt0.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN
 	$notone7
 
 	#00
@@ -321,7 +320,7 @@ RTN
 
 	SWP POP #07 AND =px.y
 	SWP POP #07 AND =px.x
-	( get tile ) ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8*
+	( get tile ) ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8*
 	( add addr ) ,data ADD2
 	#00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND
 
@@ -329,20 +328,20 @@ RTN
 
 @add-pixel ( x y )
 
-	=pix.y =pix.x
-	( get tile addr ) ,data ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8* ~pix.y MOD8 ADD2 ADD2 
+	=pt1.y =pt1.x
+	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
 	( load ) DUP2 LDR
-	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL ORA
+	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SHL ORA
 	( save ) ROT ROT STR
 
 RTN
 
 @remove-pixel ( x y )
 
-	=pix.y =pix.x
-	( get tile addr ) ,data ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8* ~pix.y MOD8 ADD2 ADD2 
+	=pt1.y =pt1.x
+	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
 	( load ) DUP2 LDR
-	( mask ) #01 #07 ~pix.x MOD8 SWP POP SUB SHL #ff XOR AND
+	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SHL #ff XOR AND
 	( save ) ROT ROT STR
 
 RTN
@@ -359,7 +358,7 @@ RTN
 
 @draw-canvas
 	
-	,draw-canvas-zoom ~cursor.zoom #01 EQU JMP2?
+	,draw-canvas-zoom ~zoom.active #01 EQU JMP2?
 
 	~canvas.y1 =Sprite.y
 	,data =Sprite.addr
@@ -377,20 +376,20 @@ RTN
 
 @draw-canvas-zoom
 	
-	~zoom.y =pix.y
+	~zoom.y =pt1.y
 	~canvas.y1 =Sprite.y
 	,data =Sprite.addr
 	$ver
 		~canvas.x1 =Sprite.x 
-		~zoom.x =pix.x
+		~zoom.x =pt1.x
 		$hor
-			( incr ) ,bigpixel_icn #0008 #00 ~pix.x ~pix.y ,get-pixel JSR2 MUL2 ADD2 =Sprite.addr
+			( incr ) ,bigpixel_icn #0008 #00 ~pt1.x ~pt1.y ,get-pixel JSR2 MUL2 ADD2 =Sprite.addr
 			( draw ) #09 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
-			( incr ) ~pix.x ++ =pix.x
+			( incr ) ~pt1.x ++ =pt1.x
 		,$hor ~Sprite.x ~canvas.x2 NEQ2 JMP2?
 		( incr ) ~Sprite.y 8+ =Sprite.y
-		( incr ) ~pix.y ++ =pix.y
+		( incr ) ~pt1.y ++ =pt1.y
 	,$ver ~Sprite.y ~canvas.y2 NEQ2 JMP2?
 
 RTN
@@ -499,7 +498,7 @@ RTN
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
 	~Screen.width #0020 SUB2 =Sprite.x
-	,zoom_icn #00 ~cursor.zoom 8* ADD2 =Sprite.addr
+	,zoom_icn #00 ~zoom.active 8* ADD2 =Sprite.addr
 	#01 =Sprite.color
 
 	( draw width )
@@ -554,13 +553,13 @@ RTN
 
 @size_icn    
 	[ 0000 0010 0000 0000 ]
-    [ 0000 1038 1000 0000 ]
-    [ 0000 3838 3800 0000 ]
-    [ 0010 387c 3810 0000 ]
-    [ 0038 7c7c 7c38 0000 ]
-    [ 1038 7cfe 7c38 1000 ]
-    [ 387c fefe fe7c 3800 ]
-    [ 7cfe fefe fefe 7c00 ]
+	[ 0000 1038 1000 0000 ]
+	[ 0000 3838 3800 0000 ]
+	[ 0010 387c 3810 0000 ]
+	[ 0038 7c7c 7c38 0000 ]
+	[ 1038 7cfe 7c38 1000 ]
+	[ 387c fefe fe7c 3800 ]
+	[ 7cfe fefe fefe 7c00 ]
 
 @pattern_icn 
 	[ fe82 baba ba82 fe00 ]
@@ -581,7 +580,7 @@ RTN
 	[ 1028 4482 4428 1000 ]
 	[ 3844 8282 8244 3800 ]
 	[ 7c82 8282 8282 7c00 ]
-    [ 7cfe fefe fefe 7c00 ]
+	[ 7cfe fefe fefe 7c00 ]
 
 @zoom_icn
 	[ 3048 8484 4834 0200 ]
@@ -599,7 +598,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/picture(20-10).bit 00 ]
+@filepath       [ projects/picture2010.bit 00 ]
 
 @font_hex
 [

@@ -67,7 +67,6 @@ RTN
 ### OS Boot Disk
 
 - Load external disk in disk2
-- Build hex editor
 
 ### Assembler
 
@@ -76,14 +75,9 @@ RTN
 - Jump helpers
 - Don't brk when return stack is not zeroed
 - LDRS should load from the zeropage?
-- Keep ref counts in macros
 - A fast way(2 bytes) to read from the zero page #aa LDR.
 
 ## Notes
-
-### Conditional Jumping
-
-I've considered automatically popping an amount of items from the stack equal to the offset between the opcode's push/pop to make the stack length more predictable, and making the pattern JMP? POP2 unecessary, but that idea would make DUP? unusable. That change was reverted.
 
 ## Palettes
 
