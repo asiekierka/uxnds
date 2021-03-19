@@ -19,9 +19,9 @@
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
-%2/ { #0001 SHR2 } %2* { #0001 SHL2 }
+%2/ { #0001 SHR2 }
 %8/ { #0003 SHR2 } %8* { #0003 SHL2 }
-%8- { #0008 SUB2 } %8+ { #0008 ADD2 }
+%8+ { #0008 ADD2 }
 %MOD8 { #0007 AND2  }
 
 ;center { x 2 y 2 }
@@ -36,6 +36,12 @@
 
 |0100 @RESET 
 	
+	( default canvas )
+	#0020 =canvas.w #0010 =canvas.h
+
+	( default brush )
+	#04 =cursor.size
+
 	( load file )
 	,filepath ,load-file JSR2
 
@@ -43,11 +49,6 @@
 	~Screen.width #0002 DIV2 =center.x
 	~Screen.height #0002 DIV2 =center.y
 	#0010 =toolbar.x1 #0010 =toolbar.y1
-
-	( default brush )
-	#04 =cursor.size
-
-	#0020 =canvas.w #0010 =canvas.h ( 380x260 )
 
 	( center canvas )
 	~center.x ~canvas.w 8* 2/ SUB2 =canvas.x1 
@@ -124,13 +125,13 @@ BRK
 		$no-toggle-zoom
 		DUP2 
 		#0001 NEQ2 ,$no-load-button ROT JMP2?
+			,filepath ,load-file JSR2
 			( release ) #00 =Mouse.state
-			#bb =Console.byte
 		$no-load-button
 		DUP2 
 		#0002 NEQ2 ,$no-save-button ROT JMP2?
+			,filepath ,save-file JSR2
 			( release ) #00 =Mouse.state
-			#cc =Console.byte
 		$no-save-button
 		POP2
 
@@ -163,7 +164,13 @@ BRK
 
 @load-file ( path )
 
-	=File.name #8000 =File.length ,data =File.load
+	=File.name ~canvas.w ~canvas.h MUL2 #0008 MUL2 =File.length ,data =File.load
+
+RTN
+
+@save-file
+
+	=File.name ~canvas.w ~canvas.h MUL2 #0008 MUL2 =File.length ,data =File.save
 
 RTN
 
@@ -229,7 +236,7 @@ RTN
 		~pos.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
 		~pos.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
 	$no-follow
-	
+
 	#00 =px.x #00 =px.y 
 	$ver
 		#00 =px.x
@@ -414,7 +421,7 @@ RTN
 
 	~cursor.x =Sprite.x
 	~cursor.y =Sprite.y
-	,brush_pointer #00 ~Controller #02 EQU 8* ADD2 =Sprite.addr
+	,pointers_icn #00 ~Controller #02 EQU 8* ADD2 =Sprite.addr
 	#1f =Sprite.color
 
 RTN
@@ -571,11 +578,9 @@ RTN
 	[ 5580 0080 0080 0080 ]
 	[ 55ff 7fff 7fff 7fff ]
 
-@brush_pointer  [ 80c0 e0f0 f8e0 1000 ]
-@brush_hand     [ 4040 4070 f8f8 f870 ]
-
-@mode_guidesoff [ 0038 4492 2810 0000 ]
-@mode_guideson  [ 0000 0082 4438 0000 ]
+@pointers_icn
+	[ 80c0 e0f0 f8e0 1000 ]
+	[ 4040 4070 f8f8 f870 ]
 
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
