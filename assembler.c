@@ -35,7 +35,7 @@ typedef struct {
 
 typedef struct {
 	Uint8 data[256 * 256], llen, mlen;
-	Uint16 ptr;
+	Uint16 ptr, count;
 	Label labels[256];
 	Macro macros[256];
 } Program;
@@ -69,6 +69,7 @@ pushbyte(Uint8 b, int lit)
 {
 	if(lit) pushbyte(0x02, 0);
 	p.data[p.ptr++] = b;
+	p.count++;
 }
 
 void
@@ -418,7 +419,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s, %d labels, %d macros.\n\n", filename, p.llen, p.mlen);
+	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, p.count / 1000.0, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
