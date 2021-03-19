@@ -8,12 +8,12 @@
 		- Only draw-canvas target tile
 		- Resize buttons
 		- Zoom
-		- Erase
+		- Clear all button
 		- Toggle guides
-		- Set eye option
 		- Complete save/load
 		- Limit size
 		- Draw point inbetween
+		- Pixel cleanup brush
 )
 
 %RTN   { JMP2r }
@@ -27,6 +27,7 @@
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
 ;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 zoom 1 }
+;zoom { x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pos { x 2 y 2 }
@@ -36,7 +37,7 @@
 |0100 @RESET 
 	
 	( load file )
-	( ,filepath ,load-file JSR2 )
+	,filepath ,load-file JSR2
 
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
@@ -46,7 +47,7 @@
 	( default brush )
 	#04 =cursor.size
 
-	#0026 =canvas.w #001a =canvas.h ( 380x260 )
+	#0020 =canvas.w #0010 =canvas.h ( 380x260 )
 
 	( center canvas )
 	~center.x ~canvas.w 8* 2/ SUB2 =canvas.x1 
@@ -54,7 +55,7 @@
 
 	,draw-background JSR2
 	,fit-canvas JSR2
-	
+
 	( fit toolbar )
 	~toolbar.x1 #0010 ADD2 =toolbar.x2
 	~toolbar.y1 #0040 ADD2 =toolbar.y2
@@ -137,6 +138,24 @@ BRK
 
 	$no-touch
 
+	,$no-ctrl ~Controller #00 EQU JMP2?
+
+		,$no-ctrl-up ~Controller #10 EQU JMP2?
+			~zoom.y ++ =zoom.y
+		$no-ctrl-up
+		,$no-ctrl-down ~Controller #20 EQU JMP2?
+			~zoom.y -- =zoom.y
+		$no-ctrl-down
+		,$no-ctrl-left ~Controller #40 EQU JMP2?
+			~zoom.x ++ =zoom.x
+		$no-ctrl-left
+		,$no-ctrl-right ~Controller #80 EQU JMP2?
+			~zoom.x -- =zoom.x
+		$no-ctrl-right
+		,draw-canvas JSR2
+
+	$no-ctrl
+
 	~Mouse.x =cursor.x0
 	~Mouse.y =cursor.y0
 
@@ -148,11 +167,32 @@ BRK
 
 RTN
 
+@fit-canvas
+	
+	~canvas.w 8* ~canvas.x1 ADD2 =canvas.x2 
+	~canvas.h 8* ~canvas.y1 ADD2 =canvas.y2 
+	~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #01 ,line-rect JSR2
+	,draw-canvas JSR2
+
+RTN
+
 @paint ( x y )
 	
 	,erase ~Mouse.state #10 EQU JMP2?
 
 	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
+
+	( trim if zoomed )
+	,$no-zoom ~cursor.zoom #01 NEQ JMP2?
+		~pos.x 8/ ~zoom.x ADD2 #0003 SUB2 =pos.x
+		~pos.y 8/ ~zoom.y ADD2 #0003 SUB2 =pos.y
+	$no-zoom
+
+	( center zoom on paint )
+	,$no-follow ~cursor.zoom JMP2?
+		~pos.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
+		~pos.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
+	$no-follow
 
 	#00 =px.x #00 =px.y 
 	$ver
@@ -178,6 +218,18 @@ RTN
 
 	#0003 SUB2 =pos.y #0003 SUB2 =pos.x ( cursor offset )
 
+	( trim if zoomed )
+	,$no-zoom ~cursor.zoom #01 NEQ JMP2?
+		~pos.x 8/ ~zoom.x ADD2 #0003 SUB2 =pos.x
+		~pos.y 8/ ~zoom.y ADD2 #0003 SUB2 =pos.y
+	$no-zoom
+
+	( center zoom on paint )
+	,$no-follow ~cursor.zoom JMP2?
+		~pos.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
+		~pos.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
+	$no-follow
+	
 	#00 =px.x #00 =px.y 
 	$ver
 		#00 =px.x
@@ -246,6 +298,16 @@ RTN
 
 RTN
 
+@get-pixel ( x y )
+
+	SWP POP #07 AND =px.y
+	SWP POP #07 AND =px.x
+	( get tile ) ~pix.x 8/ ~pix.y 8/ ~canvas.w MUL2 ADD2 8*
+	( add addr ) ,data ADD2
+	#00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND
+
+RTN
+
 @add-pixel ( x y )
 
 	=pix.y =pix.x
@@ -278,6 +340,8 @@ RTN
 
 @draw-canvas
 	
+	,draw-canvas-zoom ~cursor.zoom #01 EQU JMP2?
+
 	~canvas.y1 =Sprite.y
 	,data =Sprite.addr
 	$ver
@@ -288,6 +352,26 @@ RTN
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$hor ~Sprite.x ~canvas.x2 NEQ2 JMP2?
 		( incr ) ~Sprite.y 8+ =Sprite.y
+	,$ver ~Sprite.y ~canvas.y2 NEQ2 JMP2?
+
+RTN
+
+@draw-canvas-zoom
+	
+	~zoom.y =pix.y
+	~canvas.y1 =Sprite.y
+	,data =Sprite.addr
+	$ver
+		~canvas.x1 =Sprite.x 
+		~zoom.x =pix.x
+		$hor
+			( incr ) ,bigpixel_icn #0008 #00 ~pix.x ~pix.y ,get-pixel JSR2 MUL2 ADD2 =Sprite.addr
+			( draw ) #09 =Sprite.color
+			( incr ) ~Sprite.x 8+ =Sprite.x
+			( incr ) ~pix.x ++ =pix.x
+		,$hor ~Sprite.x ~canvas.x2 NEQ2 JMP2?
+		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~pix.y ++ =pix.y
 	,$ver ~Sprite.y ~canvas.y2 NEQ2 JMP2?
 
 RTN
@@ -415,6 +499,8 @@ RTN
 
 RTN
 
+( Generics )
+
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
@@ -443,15 +529,6 @@ RTN
 			,$hor ~Screen.x ~rect.x2 NEQ2 JMP2?
 		( incr ) ~Screen.y ++ =Screen.y
 		,$ver ~Screen.y ~rect.y2 NEQ2 JMP2?
-
-RTN
-
-@fit-canvas
-	
-	~canvas.w 8* ~canvas.x1 ADD2 =canvas.x2 
-	~canvas.h 8* ~canvas.y1 ADD2 =canvas.y2 
-	~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #01 ,line-rect JSR2
-	,draw-canvas JSR2
 
 RTN
 
@@ -490,6 +567,10 @@ RTN
 	[ 3048 8484 4834 0200 ]
 	[ 3245 8284 4834 0200 ]
 
+@bigpixel_icn 
+	[ 5580 0080 0080 0080 ]
+	[ 55ff 7fff 7fff 7fff ]
+
 @brush_pointer  [ 80c0 e0f0 f8e0 1000 ]
 @brush_hand     [ 4040 4070 f8f8 f870 ]
 
@@ -500,7 +581,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ noodle-io.bit 00 ]
+@filepath       [ projects/picture.bit 00 ]
 
 @font_hex
 [
