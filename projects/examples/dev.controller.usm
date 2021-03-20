@@ -3,7 +3,6 @@
 %++ { #0001 ADD2 }
 %-- { #0001 SUB2 }
 %2/ { #0002 DIV2 }
-%JMC2  { ROT JMP2? POP2 }
 
 ;slime { color 1 }
 
@@ -27,21 +26,21 @@ BRK
 	( hold ctrl key to change slime color )
 
 	~Controller.buttons #0f AND
-		DUP #01 NEQ ,$no-ctrl JMC2 #05 =slime $no-ctrl
-		DUP #02 NEQ ,$no-alt JMC2 #0f =slime $no-alt
+		DUP #01 NEQ ,$no-ctrl ROT JMP2? #05 =slime $no-ctrl
+		DUP #02 NEQ ,$no-alt ROT JMP2? #0f =slime $no-alt
 	POP
 
 	( clear ) #10 =Sprite.color
 
 	( detect movement )
 	~Controller.buttons #f0 AND
-		DUP #04 SHR #01 AND #01 NEQ ,$no-up JMC2 
+		DUP #04 SHR #01 AND #01 NEQ ,$no-up ROT JMP2? 
 			( move ) ~Sprite.y -- =Sprite.y ,up_icn =Sprite.addr $no-up
-		DUP #05 SHR #01 AND #01 NEQ ,$no-down JMC2 
+		DUP #05 SHR #01 AND #01 NEQ ,$no-down ROT JMP2? 
 			( move ) ~Sprite.y ++ =Sprite.y ,down_icn =Sprite.addr $no-down
-		DUP #06 SHR #01 AND #01 NEQ ,$no-left JMC2 
+		DUP #06 SHR #01 AND #01 NEQ ,$no-left ROT JMP2? 
 			( move ) ~Sprite.x -- =Sprite.x ,left_icn =Sprite.addr $no-left
-		DUP #07 SHR #01 AND #01 NEQ ,$no-right JMC2 
+		DUP #07 SHR #01 AND #01 NEQ ,$no-right ROT JMP2? 
 			( move ) ~Sprite.x ++ =Sprite.x ,right_icn =Sprite.addr $no-right
 	POP
 

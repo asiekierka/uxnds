@@ -47,7 +47,7 @@ BRK
 
 		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 LDR
 		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB SHL 
-		XOR
+		ORA
 		( save ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 STR
 
 		,draw-window JSR2
