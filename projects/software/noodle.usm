@@ -6,6 +6,8 @@
 	arrows - move zoom
 	space - toogle zoom
 	backspace - blank canvas
+	m - toggle mirror mode
+	1-8 - select brush size
 
 	TODO
 		- Only draw-canvas when mouse has changed
@@ -14,6 +16,7 @@
 		- Limit size
 		- Draw point inbetween
 		- Pixel cleanup brush
+		- Drag canvas content
 	BUGS
 		- If canvas is higher than 0, mouse picking fails
 )
@@ -29,7 +32,7 @@
 
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 }
 ;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
@@ -121,7 +124,13 @@ BRK
 		( in canvas )
 		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
+
 			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+
+			,$no-mirror-mode ~cursor.mirror #00 EQU JMP2?
+				~Mouse.x ~canvas.x1 SUB2 ~canvas.w 8* SWP2 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+			$no-mirror-mode
+
 		$no-touch-canvas
 
 		( background interface )
@@ -166,7 +175,13 @@ BRK
 			( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
 		DUP #08 NEQ ,$no-backspace ROT JMP2?
 			( erase ) ,clear JSR2 $no-backspace
+		DUP #6d NEQ ,$no-mkey ROT JMP2?
+			( mirror ) ~cursor.mirror #00 EQU =cursor.mirror $no-mkey
+		DUP 
+			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,$no-numkey ROT JMP2?
+			( size ) ~Keys #31 SUB =cursor.size ,draw-toolbar JSR2 $no-numkey
 		POP
+		
 		( release ) #00 =Keys
 	$no-keys
 
@@ -437,6 +452,12 @@ RTN
 	( draw new cursor )
 	,$outside-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?	
+		( do not draw size in toolbar )
+		,$outside-canvas
+		~Mouse.x CLN2r ~toolbar.x1 GTH2 STH2r ~toolbar.x2 LTH2 #0101 EQU2 
+		~Mouse.y CLN2r ~toolbar.y1 GTH2 STH2r ~toolbar.y2 LTH2 #0101 EQU2 
+		#0101 EQU2 JMP2?
+		( do not draw size when holding alt )
 		,$outside-canvas ~Controller #02 EQU JMP2?
 		~cursor.x #0003 SUB2 =Sprite.x
 		~cursor.y #0003 SUB2 =Sprite.y
@@ -613,7 +634,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/picture2a1a.bit 00 ]
+@filepath       [ projects/pictures/tima2a1a.bit 00 ]
 
 @font_hex ( 0-F ) 
 [
@@ -641,4 +662,4 @@ RTN
 |FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ d0ef d03f d03f ]   ( palette )
+|FFF8 [ f07c f0e2 f0c2 ]   ( palette )
