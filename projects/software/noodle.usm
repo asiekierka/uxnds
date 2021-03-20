@@ -21,8 +21,8 @@
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
-%2/ { #0001 SHR2 }
-%8/ { #0003 SHR2 } %8* { #0003 SHL2 }
+%2/ { #0001 SFT2 }
+%8/ { #0003 SFT2 } %8* { #0003 SHL2 }
 %8+ { #0008 ADD2 }
 %MOD8 { #0007 AND2  }
 
@@ -149,13 +149,13 @@ BRK
 	$no-touch
 
 	~Controller.buttons #f0 AND
-		DUP #04 SHR #01 AND #01 NEQ ,$no-up ROT JMP2?
+		DUP #04 SFT #01 AND #01 NEQ ,$no-up ROT JMP2?
 			( move ) ~zoom.y -- =zoom.y $no-up
-		DUP #05 SHR #01 AND #01 NEQ ,$no-down ROT JMP2?
+		DUP #05 SFT #01 AND #01 NEQ ,$no-down ROT JMP2?
 			( move ) ~zoom.y ++ =zoom.y $no-down
-		DUP #06 SHR #01 AND #01 NEQ ,$no-left ROT JMP2?
+		DUP #06 SFT #01 AND #01 NEQ ,$no-left ROT JMP2?
 			( move ) ~zoom.x -- =zoom.x $no-left
-		DUP #07 SHR #01 AND #01 NEQ ,$no-right ROT JMP2?
+		DUP #07 SFT #01 AND #01 NEQ ,$no-right ROT JMP2?
 			( move ) ~zoom.x ++ =zoom.x $no-right
 	#00 NEQ ,draw-canvas ROT JSR2?
 	
@@ -231,7 +231,7 @@ RTN
 		#00 =px.x
 		$hor
 			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
-			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
+			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
 				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,add-pixel JSR2
@@ -267,7 +267,7 @@ RTN
 		#00 =px.x
 		$hor
 			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
-			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND 
+			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
 				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,remove-pixel JSR2
@@ -336,7 +336,7 @@ RTN
 	SWP POP #07 AND =px.x
 	( get tile ) ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8*
 	( add addr ) ,data ADD2
-	#00 ~px.y ADD2 LDR #07 ~px.x SUB SHR #01 AND
+	#00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND
 
 RTN
 
@@ -517,14 +517,14 @@ RTN
 
 	( draw width )
 	~Screen.width #0048 SUB2 =Sprite.x
-	,font_hex ~canvas.w #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
+	,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	( draw height )
-	,font_hex ~canvas.h #f0 AND #04 SHR #08 MUL ADD2 =Sprite.addr
+	,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr

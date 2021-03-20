@@ -8,11 +8,11 @@
 
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
-%STEP8 { #0003 SHR2 #0003 SHL2 }
+%STEP8 { #0003 SFT2 #0003 SHL2 }
 
 %++ { #0001 ADD2 }
-%2/ { #0001 SHR2 } %2* { #0001 SHL2 }
-%8/ { #0003 SHR2 } %8* { #0003 SHL2 }
+%2/ { #0001 SFT2 } %2* { #0001 SHL2 }
+%8/ { #0003 SFT2 } %8* { #0003 SHL2 }
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 
 ;bankview { x 2 y 2 mode 1 addr 2 }
@@ -359,7 +359,7 @@ RTN
 	#00 =i
 	$bytes
 		~tileview.x #0088 ADD2 =SPRT.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 SFT #08 MUL ADD2 =SPRT.addr
 		( draw ) #02 =SPRT.color
 		~SPRT.x 8+ =SPRT.x
 		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =SPRT.addr
@@ -404,7 +404,7 @@ RTN
 		$hor
 			( get bit )
 			,blank_icn #00
-			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB SHR #01 AND ( get bit )
+			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB SFT #01 AND ( get bit )
 			8* ADD2 =SPRT.addr ( add *8 )
 			( draw ) #01 =SPRT.color
 			( incr ) ~SPRT.x 8+ =SPRT.x
@@ -445,13 +445,13 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
+	,font_hex #00 ,addr LDR #f0 AND #04 SFT #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x 8+ =SPRT.x
 	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x 8+ =SPRT.x
-	,font_hex #00 ,addr ++ LDR #f0 AND #04 SHR #08 MUL ADD2 =SPRT.addr
+	,font_hex #00 ,addr ++ LDR #f0 AND #04 SFT #08 MUL ADD2 =SPRT.addr
 	( draw ) #02 =SPRT.color
 	~SPRT.x 8+ =SPRT.x
 	,font_hex #00 ,addr ++ LDR #0f AND #08 MUL ADD2 =SPRT.addr

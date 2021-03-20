@@ -34,13 +34,13 @@ BRK
 
 	( detect movement )
 	~Controller.buttons #f0 AND
-		DUP #04 SHR #01 AND #01 NEQ ,$no-up ROT JMP2? 
+		DUP #04 SFT #01 AND #01 NEQ ,$no-up ROT JMP2? 
 			( move ) ~Sprite.y -- =Sprite.y ,up_icn =Sprite.addr $no-up
-		DUP #05 SHR #01 AND #01 NEQ ,$no-down ROT JMP2? 
+		DUP #05 SFT #01 AND #01 NEQ ,$no-down ROT JMP2? 
 			( move ) ~Sprite.y ++ =Sprite.y ,down_icn =Sprite.addr $no-down
-		DUP #06 SHR #01 AND #01 NEQ ,$no-left ROT JMP2? 
+		DUP #06 SFT #01 AND #01 NEQ ,$no-left ROT JMP2? 
 			( move ) ~Sprite.x -- =Sprite.x ,left_icn =Sprite.addr $no-left
-		DUP #07 SHR #01 AND #01 NEQ ,$no-right ROT JMP2? 
+		DUP #07 SFT #01 AND #01 NEQ ,$no-right ROT JMP2? 
 			( move ) ~Sprite.x ++ =Sprite.x ,right_icn =Sprite.addr $no-right
 	POP
 

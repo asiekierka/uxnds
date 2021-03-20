@@ -81,7 +81,7 @@ RTN
 		$hor
 			( get bit )
 			,cell0_icn #00
-			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB SHR #01 AND ( get bit )
+			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB SFT #01 AND ( get bit )
 			#0008 MUL2 ADD2 =Sprite.addr ( add *8 )
 			( draw ) #08 =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
