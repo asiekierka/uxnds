@@ -14,6 +14,7 @@
 %2/ { #0001 SFT2 } %2* { #0001 SHL2 }
 %8/ { #0003 SFT2 } %8* { #0003 SHL2 }
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
+%SFL { #40 SFT SFT }
 
 ;bankview { x 2 y 2 mode 1 addr 2 }
 ;tileview { x 2 y 2 addr 2 }
@@ -156,13 +157,13 @@ BRK
 			~MOUS.y ~tileview.y SUB2 ~MOUS.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
 			,no-erase-mode ~bankview.mode #02 NEQ JMP2?
 				( load ) ~addr ~pos.y 8/ ADD2 LDR
-				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SHL 
+				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 				#ff XOR AND
 				( save ) ~addr ~pos.y 8/ ADD2 STR
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
 			( load ) ~addr ~pos.y 8/ ADD2 LDR
-			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SHL 
+			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 			ORA
 			( save ) ~addr ~pos.y 8/ ADD2 STR
 			,redraw JSR2 ,click-end JMP2
