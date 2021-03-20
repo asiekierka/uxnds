@@ -11,7 +11,6 @@
 		- Only draw-canvas when mouse has changed
 		- Only draw-canvas target tile
 		- Resize buttons
-		- Clear all button
 		- Limit size
 		- Draw point inbetween
 		- Pixel cleanup brush
@@ -161,10 +160,12 @@ BRK
 	#00 NEQ ,draw-canvas ROT JSR2?
 	
 	,$no-keys ~Keys #00 EQU JMP2?
-		,$no-keys-toogle-zoom ~Keys #20 NEQ JMP2?
-			~zoom.active #00 EQU =zoom.active
-			,redraw JSR2
-		$no-keys-toogle-zoom 
+		~Keys 
+		DUP #20 NEQ ,$no-space ROT JMP2?
+			( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
+		DUP #08 NEQ ,$no-backspace ROT JMP2?
+			( erase ) ,clear JSR2 $no-backspace
+		POP
 		( release ) #00 =Keys
 	$no-keys
 
@@ -172,6 +173,19 @@ BRK
 	~Mouse.y =cursor.y0
 
 BRK
+
+@clear
+	
+	( from ) ,data
+	( to ) ~canvas.w ~canvas.h MUL2 #0008 MUL2 ,data ADD2
+	$loop NOP
+		OVR2 #00 ROT ROT STR
+		( incr ) SWP2 #0001 ADD2 SWP2
+		OVR2 OVR2 LTH2 ^$loop SWP JMP?
+	POP2 POP2
+	,redraw JSR2
+
+RTN
 
 @load-file ( path )
 
