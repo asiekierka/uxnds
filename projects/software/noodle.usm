@@ -22,7 +22,7 @@
 %RTN?  { JMP2r? }
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 }
-%8/ { #0003 SFT2 } %8* { #0003 SHL2 }
+%8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8+ { #0008 ADD2 }
 %MOD8 { #0007 AND2  }
 %SFL { #40 SFT SFT }
@@ -356,7 +356,7 @@ RTN
 	=pt1.y =pt1.x
 	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
 	( load ) DUP2 LDR
-	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SFL #ff XOR AND
+	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SFL #ff EOR AND
 	( save ) ROT ROT STR
 
 RTN

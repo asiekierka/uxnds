@@ -8,11 +8,11 @@
 
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
-%STEP8 { #0003 SFT2 #0003 SHL2 }
+%STEP8 { #0003 SFT2 #0030 SFT2 }
 
 %++ { #0001 ADD2 }
-%2/ { #0001 SFT2 } %2* { #0001 SHL2 }
-%8/ { #0003 SFT2 } %8* { #0003 SHL2 }
+%2/ { #0001 SFT2 } %2* { #0010 SFT2 }
+%8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 %SFL { #40 SFT SFT }
 
@@ -158,7 +158,7 @@ BRK
 			,no-erase-mode ~bankview.mode #02 NEQ JMP2?
 				( load ) ~addr ~pos.y 8/ ADD2 LDR
 				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
-				#ff XOR AND
+				#ff EOR AND
 				( save ) ~addr ~pos.y 8/ ADD2 STR
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
