@@ -3,7 +3,16 @@
 ;center { x 2 y 2 }
 ;timer { byte 1 }
 
-|0100 @RESET 
+( devices )
+
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ f0ac f0bb f053 ] ( palette )
+
+( program )
+
+|0200 @RESET 
 
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
@@ -60,10 +69,4 @@ BRK
 
 @icon [ 3c7e e7c3 c3e7 7e3c ]
 
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ f0ac f0bb f053 ] ( palette )
+@ERROR BRK 

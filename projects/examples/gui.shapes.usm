@@ -11,7 +11,12 @@
 ;line { x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;color { byte 1 }
 
-|0100 @RESET
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+|0200 @RESET
 	
 	#0010 #0020 #0040 #0060 #01 ,fill-rect JSR2
 	#0020 #0030 #0050 #0070 #02 ,fill-rect JSR2
@@ -171,11 +176,5 @@ RTN
 
 @text [ Label 20 Text 00 ] ( add characters to memory )
 
-|c000 @FRAME BRK 
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
+@FRAME BRK 
+@ERROR BRK 

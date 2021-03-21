@@ -4,9 +4,19 @@
 %-- { #0001 SUB2 }
 %2/ { #0002 DIV2 }
 
+( variables )
+
 ;slime { color 1 }
 
-|0100 @RESET 
+( devices )
+
+|0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { buttons 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 0daf 02ff 035f ] ( palette )
+
+|0200 @RESET 
 	
 	( set origin )
 	~Screen.width 2/ =Sprite.x 
@@ -60,11 +70,4 @@ BRK
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
 @slime_icn   [ 0000 183c 3c18 0000 ]
 
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|FF30 ;Controller { buttons 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0daf 02ff 035f ] ( palette )
+@ERROR BRK 

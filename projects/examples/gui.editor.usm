@@ -10,7 +10,14 @@
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 
-|0100 @RESET
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { buttons 1 }
+|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 0fcf 0fc4 0fc4 ] ( palette )
+
+|0200 @RESET
 	
 	#0030 =window.x1 #0030 =window.y1 #0090 =window.x2 #0090 =window.y2
 
@@ -223,12 +230,4 @@ RTN
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|FF30 ;Controller { buttons 1 }
-|FF50 ;Mouse { x 2 y 2 state 1 chord 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0fcf 0fc4 0fc4 ] ( palette )
+@ERROR BRK 

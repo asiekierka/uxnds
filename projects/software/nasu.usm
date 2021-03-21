@@ -525,6 +525,6 @@ RTN
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]
 
-|E000 @bank [ ]	
+@ERROR BRK 
 
-|FE00 @ERROR BRK 
+@bank [ ]	

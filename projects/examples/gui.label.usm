@@ -7,7 +7,12 @@
 ;center { x 2 y 2 }
 ;i { short 2 }
 
-|0100 @RESET
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 0f0f 0fff 0ff0 ] ( palette )
+
+|0200 @RESET
 	
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
@@ -121,11 +126,5 @@ RTN
 @text4 [ even 00 ]
 @text5 [ odd 00 ]
 
-|c000 @FRAME BRK 
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0f0f 0fff 0ff0 ] ( palette )
+@FRAME BRK 
+@ERROR BRK 

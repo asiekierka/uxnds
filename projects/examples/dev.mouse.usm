@@ -8,7 +8,17 @@
 ;color { byte 1 }
 ;timer { byte 1 }
 
-|0100 @RESET 
+( devices )
+
+|0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 0f85 0fd5 0fb5 ] ( palette )
+
+( program )
+
+|0200 @RESET 
 
 	( position cat )
 	~Screen.width #0002 DIV2 =cat.x 
@@ -219,12 +229,5 @@ RTN
 @mouse1_text   [ mouse 1_ 00 ]
 @mouse2_text   [ mouse _2 00 ]
 @mouse12_text  [ mouse 12 00 ]
-
-|d000 @ERROR BRK 
-
-|FF10 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|FF50 ;Mouse  { x 2 y 2 state 1 chord 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0f85 0fd5 0fb5 ] ( palette )
+ 
+@ERROR BRK 

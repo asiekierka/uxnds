@@ -4,7 +4,11 @@
 
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
-|0100 @RESET
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 0ffc 0f0b 0f03 ] ( palette )
+
+|0200 @RESET
 
 	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
 	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2
@@ -302,10 +306,5 @@ RTN
 
 ]
 
-|c000 @FRAME BRK 
-|d000 @ERROR BRK 
-
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0ffc 0f0b 0f03 ] ( palette )
+@FRAME BRK 
+@ERROR BRK 
