@@ -29,7 +29,7 @@ typedef struct {
 typedef struct {
 	char name[64];
 	Uint8 refs, maps;
-	Uint16 addr;
+	Uint16 addr, len;
 	Map map[16];
 } Label;
 
@@ -236,7 +236,8 @@ makevariable(char *name, Uint16 *addr, FILE *f)
 		if(word[0] == '}') break;
 		scpy(word, l->map[l->maps].name, 64);
 		fscanf(f, "%u", &l->map[l->maps].size);
-		*addr += l->map[l->maps++].size;
+		*addr += l->map[l->maps].size;
+		l->len += l->map[l->maps++].size;
 	}
 	return 1;
 }
@@ -384,11 +385,14 @@ pass2(FILE *f)
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
-		if(w[0] == ';') continue;
 		if(w[0] == '$') continue;
 		if(w[0] == '%') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
+		if(w[0] == ';') {
+			p.ptr += findlabel(w + 1)->len;
+			continue;
+		}
 		if(w[0] == '|') {
 			p.ptr = shex(w + 1);
 			continue;
