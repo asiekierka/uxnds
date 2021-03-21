@@ -23,6 +23,7 @@
 
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
+%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
@@ -35,6 +36,7 @@
 ;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 }
 ;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
+;line { x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pt0 { x 2 y 2 }
@@ -124,6 +126,9 @@ BRK
 		( in canvas )
 		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
+
+			~cursor.x0 ~canvas.x1 SUB2 ~cursor.y0 ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-line JSR2
+
 
 			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
 
@@ -555,6 +560,32 @@ RTN
 RTN
 
 ( Generics )
+
+@paint-line ( x1 y1 x2 y2 color )
+	
+	( load ) =color =Sprite.y =Sprite.x =line.y =line.x
+	~Sprite.x ~line.x SUB2 ABS2 =line.dx
+	~Sprite.y ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~Sprite.x LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~Sprite.y LTS2 #0002 MUL2 ADD2 =line.sy 
+	~line.dx ~line.dy ADD2 =line.e1
+	$loop
+		( paint ) ~line.x ~line.y ,add-pixel JSR2
+		,$end ~line.x ~Sprite.x EQU2 ~line.y ~Sprite.y EQU2 #0101 EQU2 JMP2?
+		~line.e1 #0002 MUL2 =line.e2
+		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
+			~line.e1 ~line.dy ADD2 =line.e1
+			~line.x ~line.sx ADD2 =line.x
+		$skipy
+		,$skipx ~line.e2 ~line.dx GTS2 JMP2?
+			~line.e1 ~line.dx ADD2 =line.e1
+			~line.y ~line.sy ADD2 =line.y
+		$skipx
+		,$loop JMP2
+
+	$end
+
+RTN
 
 @line-rect ( x1 y1 x2 y2 color )
 
