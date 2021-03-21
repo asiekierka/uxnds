@@ -18,8 +18,8 @@ WITH REGARD TO THIS SOFTWARE.
 /* clang-format off */
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
-Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u->ram.dat, 0xff00 + id * 0x10, b0, b1) : b1; }
-void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = a >= 0xff00 ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
+Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u->ram.dat, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
+void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = a >= PAGE_DEVICE ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
 void   mempoke16(Uxn *u, Uint16 a, Uint16 b) { mempoke8(u, a, b >> 8); mempoke8(u, a + 1, b); }
 Uint16 mempeek16(Uxn *u, Uint16 a) { return (mempeek8(u, a) << 8) + mempeek8(u, a + 1); }
@@ -212,9 +212,9 @@ loaduxn(Uxn *u, char *filepath)
 	if(!(f = fopen(filepath, "rb")))
 		return haltuxn(u, "Missing input rom.", 0);
 	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
-	u->vreset = mempeek16(u, 0xfff0);
-	u->vframe = mempeek16(u, 0xfff2);
-	u->verror = mempeek16(u, 0xfff4);
+	u->vreset = mempeek16(u, PAGE_DEVICE + 0x00f0);
+	u->vframe = mempeek16(u, PAGE_DEVICE + 0x00f2);
+	u->verror = mempeek16(u, PAGE_DEVICE + 0x00f4);
 	printf("Uxn loaded[%s] vrst:%04x vfrm:%04x verr:%04x.\n",
 		filepath,
 		u->vreset,
@@ -227,7 +227,7 @@ Device *
 portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1))
 {
 	Device *d = &u->dev[u->devices++];
-	d->addr = 0xff00 + (u->devices - 1) * 0x10;
+	d->addr = PAGE_DEVICE + (u->devices - 1) * 0x10;
 	d->poke = pofn;
 	printf("Device #%d: %s, at 0x%04x \n", u->devices - 1, name, d->addr);
 	return d;

@@ -409,7 +409,7 @@ file_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	loadtheme(&m[0xfff8]);
+	loadtheme(&m[PAGE_DEVICE + 0x00f8]);
 	(void)ptr;
 	(void)b0;
 	return b1;
@@ -431,7 +431,7 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, u->vreset);
-	loadtheme(u->ram.dat + 0xfff8);
+	loadtheme(u->ram.dat + PAGE_DEVICE + 0x00f8);
 	if(screen.reqdraw)
 		redraw(pixels, u);
 	while(1) {
