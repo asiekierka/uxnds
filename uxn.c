@@ -29,19 +29,21 @@ Uint8  peek8(Stack *s, Uint8 a) { return s->dat[s->ptr - a - 1]; }
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
-/* I/O */
+/* Core */
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_lit(Uxn *u) { u->literal += 1; }
 void op_nop(Uxn *u) { (void)u; }
-void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
-void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 void op_ldr(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }
 void op_str(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
 /* Logic */
-void op_and(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b & a); }
-void op_ora(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b | a); }
-void op_eor(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b ^ a); }
-void op_sft(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); Uint8 left = (a & 0xf0) >> 4; Uint8 right = (a & 0x0f); push8(u->src, b >> (right % 8) << (left % 8)); }
+void op_equ(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b == a); }
+void op_neq(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b != a); }
+void op_gth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b > a); }
+void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b < a); }
+void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
+void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
+void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
+void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 /* Stack */
 void op_pop(Uxn *u) { pop8(u->src); }
 void op_dup(Uxn *u) { push8(u->src, peek8(u->src, 0)); }
@@ -55,24 +57,24 @@ void op_add(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_sub(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b - a); }
 void op_mul(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b * a); }
 void op_div(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b / a); }
-void op_equ(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b == a); }
-void op_neq(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b != a); }
-void op_gth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b > a); }
-void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
-void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b < a); }
-void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
-/* --- */
+void op_and(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b & a); }
+void op_ora(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b | a); }
+void op_eor(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b ^ a); }
+void op_sft(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); Uint8 left = (a & 0xf0) >> 4; Uint8 right = (a & 0x0f); push8(u->src, b >> (right % 8) << (left % 8)); }
+/* Core */
 void op_lit16(Uxn *u) { u->literal += 2; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(u->src)); }
-void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
-void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->src, mempeek16(u, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(u->src); Uint16 b = pop16(u->src); mempoke16(u, a, b); }
-/* Logic */
-void op_and16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b & a); }
-void op_ora16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b | a); }
-void op_eor16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b ^ a); }
-void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); Uint8 left = (a & 0x00f0) >> 4; Uint8 right = (a & 0x000f); push16(u->src, b >> (right % 16) << (left % 16)); }
+/* Logic(16-bits) */
+void op_equ16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b == a); }
+void op_neq16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b != a); }
+void op_gth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b > a); }
+void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b < a); }
+void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
+void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
+void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
+void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 /* Stack(16-bits) */
 void op_pop16(Uxn *u) { pop16(u->src); }
 void op_dup16(Uxn *u) { push16(u->src, peek16(u->src, 0)); }
@@ -86,33 +88,31 @@ void op_add16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->s
 void op_sub16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b - a); }
 void op_mul16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b * a); }
 void op_div16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b / a); }
-void op_equ16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b == a); }
-void op_neq16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b != a); }
-void op_gth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b > a); }
-void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
-void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b < a); }
-void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
+void op_and16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b & a); }
+void op_ora16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b | a); }
+void op_eor16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b ^ a); }
+void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); Uint8 left = (a & 0x00f0) >> 4; Uint8 right = (a & 0x000f); push16(u->src, b >> (right % 16) << (left % 16)); }
 
 void (*ops[])(Uxn *u) = {
-	op_brk, op_nop, op_lit, op_ldr, op_str, op_nop, op_jmp, op_jsr, 
-	op_equ, op_neq, op_gth, op_lth, op_gts, op_lts, op_nop, op_nop, 
+	op_brk, op_nop, op_lit, op_ldr, op_str, op_nop, op_nop, op_nop, 
+	op_equ, op_neq, op_gth, op_lth, op_gts, op_lts, op_jmp, op_jsr, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_nop, op_cln, op_sth, 
 	op_add, op_sub, op_mul, op_div, op_and, op_ora, op_eor, op_sft,
 	/* 16-bit */
-	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_nop,   op_jmp16, op_jsr16, 
-	op_equ16, op_neq16, op_gth16, op_lth16, op_gts16, op_lts16, op_nop,   op_nop, 
+	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_nop,   op_nop,   op_nop, 
+	op_equ16, op_neq16, op_gth16, op_lth16, op_gts16, op_lts16, op_jmp16, op_jsr16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_nop,   op_cln16, op_sth16, 
 	op_add16, op_sub16, op_mul16, op_div16, op_and16, op_ora16, op_eor16, op_sft16
 };
 
 Uint8 opr[][4] = { /* wstack-/+ rstack-/+ */
-	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,1,0,0}, {3,0,0,0}, {1,0,0,0}, {1,0,0,0}, {1,0,0,2}, 
-	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {0,0,0,0}, {0,0,0,0},
+	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,1,0,0}, {3,0,0,0}, {1,0,0,0}, {0,0,0,0}, {0,0,0,0},
+	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {1,0,0,0}, {1,0,0,2}, 
 	{1,0,0,0}, {0,2,0,0}, {2,2,0,0}, {2,3,0,0}, {3,3,0,0}, {0,0,0,0}, {0,0,0,1}, {0,1,1,0},
 	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0},
 	/* 16-bit */
-	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,2,0,0}, {4,0,0,0}, {2,0,0,0}, {2,0,0,0}, {2,0,0,2},
-	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,1,0,0}, {4,1,0,0}, {0,0,0,0}, {0,0,0,0},
+	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,2,0,0}, {4,0,0,0}, {2,0,0,0}, {0,0,0,0}, {0,0,0,0},
+	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,1,0,0}, {4,1,0,0}, {2,0,0,0}, {2,0,0,2},
 	{0,2,0,0}, {0,2,0,0}, {1,1,0,0}, {4,6,0,0}, {6,6,0,0}, {0,0,0,0}, {0,0,0,2}, {0,2,2,0},
 	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0},
 };
