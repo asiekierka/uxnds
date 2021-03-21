@@ -349,8 +349,10 @@ pass1(FILE *f)
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']')
 				continue;
-			if(sihx(w))
-				addr += slen(w) == 4 ? 2 : 1;
+			if(slen(w) == 4 && sihx(w))
+				addr += 2;
+			else if(slen(w) == 2 && sihx(w))
+				addr += 1;
 			else
 				addr += slen(w);
 		} else if(w[0] == '%') {
