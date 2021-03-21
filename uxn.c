@@ -58,7 +58,9 @@ void op_div(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_equ(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b == a); }
 void op_neq(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b != a); }
 void op_gth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b > a); }
+void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
 void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b < a); }
+void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
 /* --- */
 void op_lit16(Uxn *u) { u->literal += 2; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(u->src)); }
@@ -87,18 +89,20 @@ void op_div16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->s
 void op_equ16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b == a); }
 void op_neq16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b != a); }
 void op_gth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b > a); }
+void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
 void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b < a); }
+void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_ldr, op_str, op_nop, op_jmp, op_jsr, 
 	op_equ, op_neq, op_gth, op_lth, op_and, op_ora, op_eor, op_sft, 
 	op_pop, op_dup, op_swp, op_ovr, op_rot, op_nop, op_cln, op_sth, 
-	op_add, op_sub, op_mul, op_div, op_nop, op_nop, op_nop, op_eor,
+	op_add, op_sub, op_mul, op_div, op_nop, op_nop, op_gts, op_lts,
 	/* 16-bit */
 	op_brk,   op_nop16, op_lit16, op_ldr16, op_str16, op_nop,   op_jmp16, op_jsr16, 
 	op_equ16, op_neq16, op_gth16, op_lth16, op_and16, op_ora16, op_eor16, op_sft16, 
 	op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16, op_nop,   op_cln16, op_sth16, 
-	op_add16, op_sub16, op_mul16, op_div16, op_nop,   op_nop,   op_nop,   op_nop
+	op_add16, op_sub16, op_mul16, op_div16, op_nop,   op_nop,   op_gts16,   op_lts16
 };
 
 Uint8 opr[][4] = { /* wstack-/+ rstack-/+ */

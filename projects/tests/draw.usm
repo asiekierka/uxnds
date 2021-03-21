@@ -2,74 +2,51 @@
 
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
+%ABS { DUP #07 SHR #ff SWP MUL? }
+%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
 
 ;cursor { x 2 y 2 }
 ;a { x 2 y 2 }
 ;b { x 2 y 2 }
 ;s { x 2 y 2 }
+;d { x 2 y 2 }
+;err { short 2 }
+;err2 { short 2 }
+;i { byte 1 }
+;color { byte 1 }
 
 |0100 @RESET 
 	
-	#0020 #0020 #0070 #0080 ,draw-line JSR2
-	#0020 #0080 #0070 #0030 ,draw-line JSR2
-	#00a0 #0020 #0050 #00b0 ,draw-line JSR2
-	#00b0 #0090 #0030 #0010 ,draw-line JSR2
+	#0020 #0020 #0070 #0080 #01 ,draw-line JSR2
+	#0020 #0080 #0070 #0030 #02 ,draw-line JSR2
+	#00a0 #0020 #0050 #00b0 #03 ,draw-line JSR2
+	#00b0 #0090 #0030 #0010 #01 ,draw-line JSR2
 
 BRK
 
 @draw-line ( x1 y1 x2 y2 )
-
-	=b.y =b.x ( target, b )
-	=a.y =a.x ( target, a )
-
-	~a.x =Screen.x ~a.y =Screen.y #02 =Screen.color
-	~b.x =Screen.x ~b.y =Screen.y #02 =Screen.color
-
-	( dx = abs[bx - ax] )
+	
+	=color
+	=b.y =b.x =a.y =a.x
 	~b.x ~a.x SUB2 ABS2 =d.x
-
-	( dy = -abs[by - ay] )
 	~b.y ~a.y SUB2 ABS2 #0000 SWP2 SUB2 =d.y
-
-	( sx = ax < bx ? 1 : -1; )
-	#ffff #00 ~a.x ~b.x LTH2 #0002 MUL2 ADD2 =s.x 
-
-	( sy = ay < by ? 1 : -1; )
-	#ffff #00 ~a.y ~b.y LTH2 #0002 MUL2 ADD2 =s.y 
-
-	( err = dx + dy )
+	#ffff #00 ~a.x ~b.x LTS2 #0002 MUL2 ADD2 =s.x 
+	#ffff #00 ~a.y ~b.y LTS2 #0002 MUL2 ADD2 =s.y 
 	~d.x ~d.y ADD2 =err
 
-	( loop )
 	$loop
 
-		( putchr[ax, ay, color]; )
-		~a.x =Screen.x ~a.y =Screen.y #01 =Screen.color
-
-		( if[ax == bx && ay == by] break; )
+		~a.x =Screen.x ~a.y =Screen.y ~color =Screen.color
 		,$end ~a.x ~b.x EQU2 ~a.y ~b.y EQU2 #0101 EQU2 JMP2?
-
-		( fallback, remove )
-		,$end ~i #90 GTH JMP2? ~i #01 ADD =i
-
-		( err2 = 2 * err; )
 		~err #0002 MUL2 =err2
 
-		~err2 =Console.short
-
-		( if[err2 >= dy] )
-		,$skipy ~err2 ~d.y LTH2 JMP2?
-			( err += dy; )
+		,$skipy ~err2 ~d.y LTS2 JMP2?
 			~err ~d.y ADD2 =err
-			( ax += sx; )
 			~a.x ~s.x ADD2 =a.x
 		$skipy
 
-		( if[err2 <= dx] )
-		,$skipx ~err2 ~d.x GTH2 JMP2?
-			( err += dx; )
+		,$skipx ~err2 ~d.x GTS2 JMP2?
 			~err ~d.x ADD2 =err
-			( ay += sy; )
 			~a.y ~s.y ADD2 =a.y
 		$skipx
 
@@ -83,6 +60,12 @@ RTN
 |d000 @ERROR 
 
 |FF00 ;Console { pad 8 char 1 byte 1 short 2 }
+|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|FF30 ;Controller { buttons 1 }
+|FF40 ;Keys { key 1 }
+|FF50 ;Mouse { x 2 y 2 state 1 chord 1 change 1 }
+|FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
 |FFF8 [ 13fd 1ef3 1bf2 ] ( palette )

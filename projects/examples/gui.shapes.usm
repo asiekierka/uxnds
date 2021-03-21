@@ -3,11 +3,19 @@
 %RTN { JMP2r }
 %++  { #0001 ADD2 }
 %8+  { #0008 ADD2 }
+%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
 
 ;label { x 2 y 2 color 1 addr 2 }
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
+( clean up )
+;a { x 2 y 2 }
+;b { x 2 y 2 }
+;s { x 2 y 2 }
+;d { x 2 y 2 }
+;err { short 2 }
+;err2 { short 2 }
 
 |0100 @RESET
 	
@@ -27,6 +35,11 @@
 	#0038 #0078 #02 ,text ,draw-label JSR2
 	#0048 #0088 #03 ,text ,draw-label JSR2
 	#0058 #0098 #04 ,text ,draw-label JSR2
+
+	#0020 #0020 #0070 #0080 #01 ,draw-line JSR2
+	#0020 #0080 #0070 #0030 #02 ,draw-line JSR2
+	#00a0 #0020 #0050 #00b0 #03 ,draw-line JSR2
+	#00b0 #0090 #0030 #0010 #01 ,draw-line JSR2
 	
 BRK
 
@@ -88,6 +101,38 @@ RTN
 
 RTN
 
+@draw-line ( x1 y1 x2 y2 )
+	
+	=color
+	=b.y =b.x =a.y =a.x
+	~b.x ~a.x SUB2 ABS2 =d.x
+	~b.y ~a.y SUB2 ABS2 #0000 SWP2 SUB2 =d.y
+	#ffff #00 ~a.x ~b.x LTS2 #0002 MUL2 ADD2 =s.x 
+	#ffff #00 ~a.y ~b.y LTS2 #0002 MUL2 ADD2 =s.y 
+	~d.x ~d.y ADD2 =err
+
+	$loop
+
+		~a.x =Screen.x ~a.y =Screen.y ~color =Screen.color
+		,$end ~a.x ~b.x EQU2 ~a.y ~b.y EQU2 #0101 EQU2 JMP2?
+		~err #0002 MUL2 =err2
+
+		,$skipy ~err2 ~d.y LTS2 JMP2?
+			~err ~d.y ADD2 =err
+			~a.x ~s.x ADD2 =a.x
+		$skipy
+
+		,$skipx ~err2 ~d.x GTS2 JMP2?
+			~err ~d.x ADD2 =err
+			~a.y ~s.y ADD2 =a.y
+		$skipx
+
+		,$loop JMP2
+
+	$end
+
+RTN
+
 @pict_small [
 
 	ff80 8080 8080 8088 ffff fffc f8f9 f1f4
@@ -145,4 +190,4 @@ RTN
 |FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 
 |FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 0f0f 0fff 0ff0 ] ( palette )
+|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
