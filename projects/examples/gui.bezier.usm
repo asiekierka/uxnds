@@ -1,0 +1,145 @@
+( draw bezier )
+
+%RTN { JMP2r }
+%2/ { #0002 DIV2 }
+%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
+%STEP8 { #0033 SFT2 }
+%STEP4 { #0022 SFT2 }
+
+;pt1 { x 2 y 2 }
+;pt2 { x 2 y 2 }
+;pt3 { x 2 y 2 }
+;pta { x 2 y 2 }
+;ptb { x 2 y 2 }
+;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
+;color { byte 1 }
+;pointer { x 2 y 2 }
+;i { byte 1 }
+;j { byte 1 }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+|0200 @RESET
+
+	#0020 #0020 =pt1.y =pt1.x
+	#0040 #0080 =pt2.y =pt2.x
+	#00f0 #00a0 =pt3.y =pt3.x
+
+	,redraw JSR2
+
+BRK
+
+@FRAME 
+
+	,draw-cursor JSR2
+
+	,$no-touch ~Mouse.state #00 EQU JMP2?
+
+		~Mouse.x STEP4 =pt2.x
+		~Mouse.y STEP4 =pt2.y
+		,redraw JSR2
+
+	$no-touch
+
+BRK 
+
+@redraw
+	
+	#0000 =Sprite.y 
+	$ver
+		#0000 =Sprite.x 
+		$hor
+			( draw ) #00 =Sprite.color
+			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+			( incr ) #0000 =Sprite.addr
+		,$hor ~Sprite.x ~Screen.width LTH2 JMP2?
+		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
+	,$ver ~Sprite.y ~Screen.height LTH2 JMP2?
+
+	~pt1.x ~pt1.y ~pt2.x ~pt2.y #03 ,draw-line JSR2
+	~pt2.x ~pt2.y ~pt3.x ~pt3.y #03 ,draw-line JSR2
+
+	~pt1.x ~pt1.y #0a ,draw-point JSR2
+	~pt2.x ~pt2.y #0a ,draw-point JSR2
+	~pt3.x ~pt3.y #0a ,draw-point JSR2
+
+	#00 =i
+
+	$loop
+		~pt1.x ~pt2.x ~pt1.x SUB2 #0008 DIV2 #00 ~i MUL2 ADD2 =pta.x
+		~pt1.y ~pt2.y ~pt1.y SUB2 #0008 DIV2 #00 ~i MUL2 ADD2 =pta.y
+		~pt2.x ~pt3.x ~pt2.x SUB2 #0008 DIV2 #00 ~i MUL2 ADD2 =ptb.x
+		~pt2.y ~pt3.y ~pt2.y SUB2 #0008 DIV2 #00 ~i MUL2 ADD2 =ptb.y
+		~pta.x ~pta.y ~ptb.x ~ptb.y #0a ,draw-line JSR2
+		( incr ) ~i #01 ADD =i
+		,$loop ~i #08 LTH JMP2?
+
+RTN
+
+@draw-point ( x y color )
+
+	=color
+	#0003 SUB2 =Sprite.y
+	#0003 SUB2 =Sprite.x
+	,handle =Sprite.addr
+	~color =Sprite.color
+
+RTN
+
+@draw-line ( x1 y1 x2 y2 color )
+	
+	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	~line.x0 ~line.x SUB2 ABS2 =line.dx
+	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
+	~line.dx ~line.dy ADD2 =line.e1
+	$loop
+		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
+		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
+		~line.e1 #0002 MUL2 =line.e2
+		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
+			~line.e1 ~line.dy ADD2 =line.e1
+			~line.x ~line.sx ADD2 =line.x
+		$skipy
+		,$skipx ~line.e2 ~line.dx GTS2 JMP2?
+			~line.e1 ~line.dx ADD2 =line.e1
+			~line.y ~line.sy ADD2 =line.y
+		$skipx
+		,$loop JMP2
+
+	$end
+
+RTN
+
+@draw-cursor
+
+	( clear last cursor )
+	,clear_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#10 =Sprite.color
+
+	( record pointer positions )
+	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+
+	( draw new cursor )
+	,cursor_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#11 =Sprite.color
+
+RTN
+
+@handle [ 0010 2844 2810 0000 ]
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@ERROR BRK 

@@ -8,7 +8,7 @@
 ;label { x 2 y 2 color 1 addr 2 }
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
-;line { x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
+;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;color { byte 1 }
 
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
@@ -44,15 +44,15 @@ BRK
 
 @draw-line ( x1 y1 x2 y2 color )
 	
-	( load ) =color =Sprite.y =Sprite.x =line.y =line.x
-	~Sprite.x ~line.x SUB2 ABS2 =line.dx
-	~Sprite.y ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~Sprite.x LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~Sprite.y LTS2 #0002 MUL2 ADD2 =line.sy 
+	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	~line.x0 ~line.x SUB2 ABS2 =line.dx
+	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
 	~line.dx ~line.dy ADD2 =line.e1
 	$loop
 		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
-		,$end ~line.x ~Sprite.x EQU2 ~line.y ~Sprite.y EQU2 #0101 EQU2 JMP2?
+		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
 		~line.e1 #0002 MUL2 =line.e2
 		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
 			~line.e1 ~line.dy ADD2 =line.e1

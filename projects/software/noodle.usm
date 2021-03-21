@@ -35,10 +35,10 @@
 
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 }
+;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
-;line { x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
+;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pt0 { x 2 y 2 }
@@ -143,9 +143,16 @@ BRK
 		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
 
+			( set cursor operation )
+			,add-pixel =cursor.oper
+			,$no-oper ~Mouse.state #01 EQU JMP2?
+				,remove-pixel =cursor.oper
+			$no-oper
+
+			( paint line )
 			~cursor.x0 ~canvas.x1 SUB2 ~cursor.y0 ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-line JSR2
 
-
+			( paint fill )
 			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
 
 			,$no-mirror-mode ~cursor.mirror #00 EQU JMP2?
@@ -246,8 +253,6 @@ RTN
 RTN
 
 @paint ( x y )
-	
-	,erase ~Mouse.state #10 EQU JMP2?
 
 	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
@@ -271,48 +276,13 @@ RTN
 			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
-				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,add-pixel JSR2
+				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ~cursor.oper JSR2
 			$no-pixel
 			( incr ) ~px.x #01 ADD =px.x
 			,$hor ~px.x #08 LTH JMP2?
 		( incr ) ~px.y #01 ADD =px.y
 		,$ver ~px.y #08 LTH JMP2?
 
-	,draw-canvas JSR2
-	,draw-toolbar JSR2
-
-RTN
-
-@erase ( x y )
-
-	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
-
-	( trim if zoomed )
-	,$no-zoom ~zoom.active #01 NEQ JMP2?
-		~pt0.x 8/ ~zoom.x ADD2 #0003 SUB2 =pt0.x
-		~pt0.y 8/ ~zoom.y ADD2 #0003 SUB2 =pt0.y
-	$no-zoom
-
-	( center zoom on paint )
-	,$no-follow ~zoom.active JMP2?
-		~pt0.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
-		~pt0.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
-	$no-follow
-
-	#00 =px.x #00 =px.y 
-	$ver
-		#00 =px.x
-		$hor
-			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
-			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND 
-			#00 EQU ,$no-pixel ROT JMP2?
-				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
-				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ,remove-pixel JSR2
-			$no-pixel
-			( incr ) ~px.x #01 ADD =px.x
-			,$hor ~px.x #08 LTH JMP2?
-		( incr ) ~px.y #01 ADD =px.y
-		,$ver ~px.y #08 LTH JMP2?
 	,draw-canvas JSR2
 	,draw-toolbar JSR2
 
@@ -579,15 +549,15 @@ RTN
 
 @paint-line ( x1 y1 x2 y2 color )
 	
-	( load ) =color =Sprite.y =Sprite.x =line.y =line.x
-	~Sprite.x ~line.x SUB2 ABS2 =line.dx
-	~Sprite.y ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~Sprite.x LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~Sprite.y LTS2 #0002 MUL2 ADD2 =line.sy 
+	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	~line.x0 ~line.x SUB2 ABS2 =line.dx
+	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
 	~line.dx ~line.dy ADD2 =line.e1
 	$loop
-		( paint ) ~line.x ~line.y ,add-pixel JSR2
-		,$end ~line.x ~Sprite.x EQU2 ~line.y ~Sprite.y EQU2 #0101 EQU2 JMP2?
+		( paint ) ~line.x ~line.y ~cursor.oper JSR2
+		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
 		~line.e1 #0002 MUL2 =line.e2
 		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
 			~line.e1 ~line.dy ADD2 =line.e1
@@ -698,4 +668,5 @@ RTN
 @ERROR BRK 
 
 ;canvas { w 2 h 2 x1 2 y1 2 x2 2 y2 2 }
+
 @data [ ]
