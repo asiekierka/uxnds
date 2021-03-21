@@ -695,7 +695,7 @@ RTN
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]
 
-|2000 ;canvas { w 2 h 2 x1 2 y1 2 x2 2 y2 2 }
-|3000 @data [ ]
+@ERROR BRK 
 
-|F000 @ERROR BRK 
+;canvas { w 2 h 2 x1 2 y1 2 x2 2 y2 2 }
+@data [ ]

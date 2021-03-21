@@ -31,7 +31,15 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 %RTN { JMP2r }
 
-@RESET 
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+( program )
+
+|0200 @RESET 
 	
 	,text1 ,print-label JSR2
 	,text2 ,print-label JSR2
@@ -55,11 +63,6 @@ RTN
 
 |c000 @FRAME
 |d000 @ERROR 
-
-|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ 13fd 1ef3 1bf2 ] ( palette )
 ```
 
 ## TODOs
@@ -73,7 +76,6 @@ RTN
 - Includes
 - Defines
 - Jump helpers
-- Don't brk when return stack is not zeroed
 - LDRS should load from the zeropage?
 - A fast way(2 bytes) to read from the zero page #aa LDR.
 
