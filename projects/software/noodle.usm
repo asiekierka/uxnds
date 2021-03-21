@@ -31,6 +31,8 @@
 %MOD8 { #0007 AND2  }
 %SFL { #40 SFT SFT }
 
+( variables )
+
 ;center { x 2 y 2 }
 ;toolbar { x1 2 y1 2 x2 2 y2 2 }
 ;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 }
@@ -43,7 +45,21 @@
 ;pt1 { x 2 y 2 }
 ;px { x 1 y 1 }
 
-|0100 @RESET 
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { buttons 1 }
+|0140 ;Keys { key 1 }
+|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
+|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ f07c f0e2 f0c2 ]   ( palette )
+
+( program )
+
+|0200 @RESET 
 	
 	( default canvas )
 	#002a =canvas.w #001a =canvas.h
@@ -683,14 +699,3 @@ RTN
 |3000 @data [ ]
 
 |F000 @ERROR BRK 
-
-|FF00 ;Console { pad 8 char 1 byte 1 short 2 }
-|FF10 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|FF20 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|FF30 ;Controller { buttons 1 }
-|FF40 ;Keys { key 1 }
-|FF50 ;Mouse { x 2 y 2 state 1 chord 1 }
-|FF60 ;File { pad 8 name 2 length 2 load 2 save 2 }
-
-|FFF0 .RESET .FRAME .ERROR ( vectors )
-|FFF8 [ f07c f0e2 f0c2 ]   ( palette )

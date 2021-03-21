@@ -19,7 +19,7 @@ WITH REGARD TO THIS SOFTWARE.
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
 Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u->ram.dat, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
-void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = a >= PAGE_DEVICE ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
+void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = (a & 0xff00) == PAGE_DEVICE ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
 void   mempoke16(Uxn *u, Uint16 a, Uint16 b) { mempoke8(u, a, b >> 8); mempoke8(u, a + 1, b); }
 Uint16 mempeek16(Uxn *u, Uint16 a) { return (mempeek8(u, a) << 8) + mempeek8(u, a + 1); }
