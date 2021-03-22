@@ -1,0 +1,90 @@
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { buttons 1 }
+|0140 ;Keys { key 1 }
+|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
+|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ f07c f0e2 f0c2 ]   ( palette )
+
+%TEST { BRK2?r LITr EOR2? DUP? }
+
+%PASS { #01 ,result JSR2 }
+%FAIL { #00 ,result JSR2 }
+%PASS? {    ,result JSR2 }
+
+|0200
+
+@tests
+	TEST ADD FAIL [ add-needs-two ]
+	TEST #01 ADD FAIL [ add-needs-two ]
+	TEST #01 #02 ADD #03 EQU PASS? [ add-result ]
+	TEST #01 #02 ADD #ff EQU PASS? [ this-test-fails ]
+
+	( infinite loop: change to HCF when implemented )
+	TEST #fd JMP
+
+@RESET
+	,tests #0001 SUB2 =current-test
+	BRK
+	
+@ERROR BRK
+
+@FRAME
+	~current-test
+
+	$search
+	#0001 ADD2
+	DUP2            LDR LIT BRK2?r NEQ ,$search ROT JMP2?
+	DUP2 #0001 ADD2 LDR LIT LITr   NEQ ,$search ROT JMP2?
+	DUP2 #0002 ADD2 LDR LIT EOR2?  NEQ ,$search ROT JMP2?
+	DUP2 #0003 ADD2 LDR LIT DUP?   NEQ ,$search ROT JMP2?
+	#0004 ADD2 DUP2 =current-test
+	JMP2
+
+@result
+	,strings-test ^print-string JSR
+	#00 SWP ,strings-pass ,strings-fail SUB2 MUL2 ,strings-fail ADD2 ^print-string JSR
+	STH2r DUP2 ^print-short JSR
+	,strings-colon ^print-string JSR
+	^print-string JSR
+	#0a =Console.char
+	BRK
+
+@print-string ( string₂ -- )
+	DUP2 LDR DUP
+	,$not-end ROT JMP2?
+
+	$end
+	POP POP2 JMP2r
+
+	$not-end
+	DUP LIT BRK2?r EQU ,$end ROT JMP2?
+	=Console.char
+	#0001 ADD2 ^print-string JMP
+
+@print-short ( short₂ -- )
+	#30 =Console.char
+	#78 =Console.char
+	DUP2 #000c SFT2 ^$digit JSR
+	DUP2 #0008 SFT2 ^$digit JSR
+	DUP2 #0004 SFT2 ^$digit JSR
+	                ^$digit JSR
+	JMP2r
+
+	$digit
+	#0f AND DUP #0a LTH #03 SWP JMP?
+		#27 ADD
+	#30 ADD =Console.char
+	POP
+	JMP2r
+
+@strings
+	$test [ Test 20 00 ]
+	$fail [ FAIL 20 at 20 00 ]
+	$pass [ pass 20 at 20 00 ]
+	$colon [ : 20 00 ]
+
+;current-test { short 2 }
+
