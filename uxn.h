@@ -32,12 +32,14 @@ typedef struct {
 	Uint8 dat[65536];
 } Memory;
 
+struct Uxn;
+
 typedef struct Device {
 	Uint16 addr;
-	Uint8 (*poke)(Uint8 *, Uint16, Uint8, Uint8);
+	Uint8 (*poke)(struct Uxn *, Uint16, Uint8, Uint8);
 } Device;
 
-typedef struct {
+typedef struct Uxn {
 	Uint8 literal, status, devices;
 	Uint16 counter, vreset, vframe, verror;
 	Stack wst, rst, *src, *dst;
@@ -50,4 +52,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-Device *portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uint8 *, Uint16, Uint8, Uint8));
+Device *portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));

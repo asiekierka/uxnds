@@ -18,7 +18,7 @@ WITH REGARD TO THIS SOFTWARE.
 /* clang-format off */
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
-Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u->ram.dat, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
+Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
 void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = (a & 0xff00) == PAGE_DEVICE ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
 void   mempoke16(Uxn *u, Uint16 a, Uint16 b) { mempoke8(u, a, b >> 8); mempoke8(u, a + 1, b); }
@@ -224,7 +224,7 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1))
+portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1))
 {
 	Device *d = &u->dev[u->devices++];
 	d->addr = PAGE_DEVICE + (u->devices - 1) * 0x10;

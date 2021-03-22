@@ -339,8 +339,9 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 #pragma mark - Devices
 
 Uint8
-console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
+	Uint8 *m = u->ram.dat;
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
 	case 0x09: printf("0x%02x\n", b1); break;
@@ -354,8 +355,9 @@ console_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-screen_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
+	Uint8 *m = u->ram.dat;
 	ptr += 8;
 	if(b0 == 0x0c) {
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
@@ -367,8 +369,9 @@ screen_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
+	Uint8 *m = u->ram.dat;
 	ptr += 8;
 	if(b0 == 0x0e) {
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
@@ -386,8 +389,9 @@ sprite_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-file_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
+	Uint8 *m = u->ram.dat;
 	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
 	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
 	if(b0 == 0x0d) {
@@ -409,8 +413,9 @@ file_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
+	Uint8 *m = u->ram.dat;
 	loadtheme(&m[PAGE_DEVICE + 0x00f8]);
 	(void)ptr;
 	(void)b0;
@@ -418,9 +423,9 @@ system_poke(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-ppnil(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
+ppnil(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	(void)m;
+	(void)u;
 	(void)ptr;
 	(void)b0;
 	return b1;
