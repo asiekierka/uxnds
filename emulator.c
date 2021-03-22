@@ -238,6 +238,7 @@ quit(void)
 int
 init(void)
 {
+#ifndef NO_SDL
 	if(SDL_Init(SDL_INIT_VIDEO) < 0)
 		return error("Init", SDL_GetError());
 	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * ZOOM, HEIGHT * ZOOM, SDL_WINDOW_SHOWN);
@@ -254,6 +255,7 @@ init(void)
 	clear(pixels);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
+#endif
 	screen.bounds.x1 = PAD * 8;
 	screen.bounds.x2 = WIDTH - PAD * 8 - 1;
 	screen.bounds.y1 = PAD * 8;
@@ -429,12 +431,17 @@ ppnil(Uint8 *m, Uint16 ptr, Uint8 b0, Uint8 b1)
 int
 start(Uxn *u)
 {
+#ifndef NO_SDL
 	int ticknext = 0;
+#endif
 	evaluxn(u, u->vreset);
 	loadtheme(u->ram.dat + PAGE_DEVICE + 0x00f8);
+#ifndef NO_SDL
 	if(screen.reqdraw)
 		redraw(pixels, u);
+#endif
 	while(1) {
+#ifndef NO_SDL
 		int tick = SDL_GetTicks();
 		SDL_Event event;
 		if(tick < ticknext)
@@ -455,9 +462,12 @@ start(Uxn *u)
 				break;
 			}
 		}
+#endif
 		evaluxn(u, u->vframe);
+#ifndef NO_SDL
 		if(screen.reqdraw)
 			redraw(pixels, u);
+#endif
 	}
 }
 
