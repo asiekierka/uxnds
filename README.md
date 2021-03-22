@@ -61,8 +61,8 @@ RTN
 @text1 [ Welcome 20 to 20 UxnVM 0a00 ]
 @text2 [ Hello 20 World 0a00 ] 
 
-|c000 @FRAME
-|d000 @ERROR 
+@FRAME BRK
+@ERROR BRK 
 ```
 
 ## TODOs
