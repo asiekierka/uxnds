@@ -21,5 +21,8 @@ cc -std=c89 -DNO_SDL -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wex
 # cc uxn.c emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
 
 # run
+if [ "${#}" -gt 0 ]; then
+	exec ./run.sh "${@}"
+fi
 ./bin/assembler projects/software/noodle.usm bin/boot.rom
 ./bin/emulator bin/boot.rom

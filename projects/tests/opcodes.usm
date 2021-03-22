@@ -5,6 +5,7 @@
 |0140 ;Keys { key 1 }
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|01E0 ;Debug { pad 8 stack 1 snapshot 1 exit 1 pad 4 test_mode 1 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
 |01F8 [ f07c f0e2 f0c2 ]   ( palette )
 
@@ -22,10 +23,10 @@
 	TEST #01 #02 ADD #03 EQU PASS? [ add-result ]
 	TEST #01 #02 ADD #ff EQU PASS? [ this-test-fails ]
 
-	( infinite loop: change to HCF when implemented )
-	TEST #fd JMP
+	TEST #00 =Debug.exit
 
 @RESET
+	#01 =Debug.test_mode
 	,tests #0001 SUB2 =current-test
 	BRK
 	
