@@ -17,12 +17,12 @@ clang-format -i uxn.c
 clang-format -i emulator.c
 rm -f ./bin/emulator
 cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c emulator.c -L/usr/local/lib -lSDL2 -o bin/emulator
-cc -std=c89 -DNO_SDL -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c emulator.c -L/usr/local/lib -lSDL2 -o bin/emulator-nosdl
 # cc uxn.c emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
 
+# Emulator(CLI)
+clang-format -i emulator-cli.c
+rm -f ./bin/emulator-cli
+
 # run
-if [ "${#}" -gt 0 ]; then
-	exec ./run.sh "${@}"
-fi
-./bin/assembler projects/software/noodle.usm bin/boot.rom
+./bin/assembler projects/software/nasu.usm bin/boot.rom
 ./bin/emulator bin/boot.rom

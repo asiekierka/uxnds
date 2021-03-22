@@ -40,12 +40,11 @@ typedef struct Device {
 } Device;
 
 typedef struct Uxn {
-	Uint8 literal, status, devices, test_mode;
+	Uint8 literal, status, devices;
 	Uint16 counter, vreset, vframe, verror;
 	Stack wst, rst, *src, *dst;
 	Memory ram;
 	Device dev[16];
-	struct Uxn *snapshot;
 } Uxn;
 
 void setflag(Uint8 *status, char flag, int b);
