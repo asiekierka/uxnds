@@ -14,22 +14,23 @@
 		- Only draw-canvas target tile
 		- Resize buttons
 		- Limit size
-		- Draw point inbetween
 		- Pixel cleanup brush
 		- Drag canvas content
-	BUGS
-		- If canvas is higher than 0, mouse picking fails
+		- [tool] fill rect
+		- [tool] spray
+		- [tool] pen
 )
 
 %RTN   { JMP2r }
 %RTN?  { JMP2r? }
 %ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
+%STEP8 { #0033 SFT2 }
+%MOD8 { #0007 AND2  }
+%SFL { #40 SFT SFT }
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8+ { #0008 ADD2 }
-%MOD8 { #0007 AND2  }
-%SFL { #40 SFT SFT }
 
 ( variables )
 
@@ -140,8 +141,8 @@ BRK
 		$no-touch-toolbar
 
 		( in canvas )
-		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
-		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 JMP2?
+		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 JMP2?
 
 			( set cursor operation )
 			,add-pixel =cursor.oper
@@ -158,30 +159,34 @@ BRK
 			,$no-mirror-mode ~cursor.mirror #00 EQU JMP2?
 				~Mouse.x ~canvas.x1 SUB2 ~canvas.w 8* SWP2 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
 			$no-mirror-mode
+			,$touch-end JMP2
 
 		$no-touch-canvas
 
 		( background interface )
-		~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
-		DUP2 
-		#0000 NEQ2 ,$no-toggle-zoom ROT JMP2?
-			~zoom.active #00 EQU =zoom.active
-			( release ) #00 =Mouse.state
-			,redraw JSR2
-		$no-toggle-zoom
-		DUP2 
-		#0001 NEQ2 ,$no-load-button ROT JMP2?
-			,filepath ,load-file JSR2
-			,draw-canvas JSR2
-			( release ) #00 =Mouse.state
-		$no-load-button
-		DUP2 
-		#0002 NEQ2 ,$no-save-button ROT JMP2?
-			,filepath ,save-file JSR2
-			( release ) #00 =Mouse.state
-		$no-save-button
-		POP2
+		,$no-touch-background ~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 JMP2?
+			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
+			DUP2 
+			#0000 NEQ2 ,$no-toggle-zoom ROT JMP2?
+				~zoom.active #00 EQU =zoom.active
+				( release ) #00 =Mouse.state
+				,redraw JSR2
+			$no-toggle-zoom
+			DUP2 
+			#0001 NEQ2 ,$no-load-button ROT JMP2?
+				,filepath ,load-file JSR2
+				,draw-canvas JSR2
+				( release ) #00 =Mouse.state
+			$no-load-button
+			DUP2 
+			#0002 NEQ2 ,$no-save-button ROT JMP2?
+				,filepath ,save-file JSR2
+				( release ) #00 =Mouse.state
+			$no-save-button
+			POP2
+		$no-touch-background
 
+		( jump label )
 		$touch-end
 
 	$no-touch

@@ -76,8 +76,10 @@ RTN
 - Includes
 - Defines
 - Jump helpers
-- LDRS should load from the zeropage?
-- A fast way(2 bytes) to read from the zero page #aa LDR.
+- Implement Peek/Pook to helpers
+- Create a theme designer application
+- DateTime device
+- Document controller.player2
 
 ## Notes
 
