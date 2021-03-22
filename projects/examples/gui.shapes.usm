@@ -2,6 +2,7 @@
 
 %RTN { JMP2r }
 %++  { #0001 ADD2 }
+%--  { #0001 SUB2 }
 %8+  { #0008 ADD2 }
 %ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
 
@@ -10,6 +11,8 @@
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;color { byte 1 }
+
+;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
@@ -39,6 +42,10 @@
 	#0020 #0080 #0070 #0030 #02 ,draw-line JSR2
 	#00a0 #0020 #0050 #00b0 #03 ,draw-line JSR2
 	#00b0 #0090 #0030 #0010 #01 ,draw-line JSR2
+
+	#0040 #0040 #0030 #01 ,draw-circle JSR2
+	#0070 #0030 #0040 #02 ,draw-circle JSR2
+	#0050 #0080 #0050 #03 ,draw-circle JSR2
 	
 BRK
 
@@ -123,6 +130,36 @@ RTN
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
 	POP2
+
+RTN
+
+@draw-circle ( xc yc r color )
+
+	( load ) =color =circle.r =circle.yc =circle.xc
+	#0000 =circle.x ~circle.r =circle.y
+	~circle.r #0002 MUL2 #0003 SUB2 =circle.d
+	( draw ) ,$seg JSR2
+	$loop
+		( incr ) ~circle.x ++ =circle.x
+		,$else ~circle.d #0000 #0001 ADD2 LTS2 JMP2?
+			( decr ) ~circle.y -- =circle.y
+			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 #000a ADD2 =circle.d
+			,$end JMP2
+		$else
+			~circle.x #0004 MUL2 ~circle.d ADD2 #0006 ADD2 =circle.d
+		$end
+		( draw ) ,$seg JSR2
+		,$loop ~circle.y ~circle.x #0001 SUB2 GTS2 JMP2?
+	RTN
+	$seg
+		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.x SUB2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y SUB2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.x SUB2 =Screen.x ~circle.yc ~circle.y SUB2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.y ADD2 =Screen.x ~circle.yc ~circle.x ADD2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.y SUB2 =Screen.x ~circle.yc ~circle.x ADD2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.y ADD2 =Screen.x ~circle.yc ~circle.x SUB2 =Screen.y ~color =Screen.color
+		~circle.xc ~circle.y SUB2 =Screen.x ~circle.yc ~circle.x SUB2 =Screen.y ~color =Screen.color
 
 RTN
 
