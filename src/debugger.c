@@ -22,6 +22,19 @@ error(char *msg, const char *err)
 	return 0;
 }
 
+void
+printstack(Stack *s)
+{
+	Uint8 x, y;
+	for(y = 0; y < 0x08; ++y) {
+		for(x = 0; x < 0x08; ++x) {
+			Uint8 p = y * 0x08 + x;
+			printf(p == s->ptr ? "[%02x]" : " %02x ", s->dat[p]);
+		}
+		printf("\n");
+	}
+}
+
 #pragma mark - Devices
 
 Uint8
@@ -81,9 +94,11 @@ start(Uxn *u)
 	printf("RESET --------\n");
 	if(!evaluxn(u, u->vreset))
 		return error("Reset", "Failed");
+	printstack(&u->wst);
 	printf("FRAME --------\n");
 	if(!evaluxn(u, u->vframe))
 		return error("Frame", "Failed");
+	printstack(&u->wst);
 	return 1;
 }
 
