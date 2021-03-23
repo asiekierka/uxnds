@@ -467,6 +467,7 @@ main(int argc, char **argv)
 	portuxn(&u, "empty", ppnil);
 	portuxn(&u, "empty", ppnil);
 	portuxn(&u, "empty", ppnil);
+	portuxn(&u, "empty", ppnil);
 	portuxn(&u, "system", system_poke);
 
 	/* Write screen size to dev/screen */
