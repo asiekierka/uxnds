@@ -365,17 +365,18 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
 	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
+	Uint16 offset = (m[ptr + 0] << 8) + m[ptr + 1];
 	if(b0 == 0x0d) {
 		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
 		FILE *f = fopen(name, "r");
-		if(f && fread(&m[addr], length, 1, f)) {
+		if(f && fseek(f, offset, SEEK_SET) != -1 && fread(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Loaded %d bytes, at %04x from %s\n", length, addr, name);
 		}
 	} else if(b0 == 0x0f) {
 		Uint16 addr = (m[ptr + 8 + 6] << 8) + b1;
-		FILE *f = fopen(name, "w");
-		if(fwrite(&m[addr], length, 1, f)) {
+		FILE *f = fopen(name, (m[ptr + 2] & 0x1) ? "a" : "w");
+		if(f && fseek(f, offset, SEEK_SET) != -1 && fwrite(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Saved %d bytes, at %04x from %s\n", length, addr, name);
 		}
