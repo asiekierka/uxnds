@@ -1,25 +1,15 @@
 # Uxn
 
-A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C.
+A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C. 
 
-## Setup
+## Build
 
-If you wish to build your own emulator, you can create a new instance of Uxn like:
+To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
 
-```
-#include "uxn.h"
-
-Uxn u;
-
-if(!bootuxn(&u))
-	return error("Boot", "Failed");
-if(!loaduxn(&u, argv[1]))
-	return error("Load", "Failed");
-if(!init())
-	return error("Init", "Failed");
-
-evaluxn(u, u->vreset); /* Once on start */
-evaluxn(u, u->vframe); /* Each frame
+```sh
+./build.sh 
+	--debug # Add debug flags to compiler
+	--cli # Run rom without graphics
 ```
 
 ## Uxambly

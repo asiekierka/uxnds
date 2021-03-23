@@ -1,28 +1,42 @@
 #!/bin/bash
 
-# Create bin folder
-mkdir -p bin
+echo "Formatting.."
+clang-format -i src/assembler.c
+clang-format -i src/uxn.h
+clang-format -i src/uxn.c
+clang-format -i src/emulator.c
+clang-format -i src/debugger.c
 
-# Assembler
-clang-format -i assembler.c
+echo "Cleaning.."
 rm -f ./bin/assembler
-rm -f ./bin/boot.rom
-cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined assembler.c -o bin/assembler
-
-# Core
-clang-format -i uxn.h
-clang-format -i uxn.c
-
-# Emulator
-clang-format -i emulator.c
 rm -f ./bin/emulator
-cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined uxn.c emulator.c -L/usr/local/lib -lSDL2 -o bin/emulator
-# cc uxn.c emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
+rm -f ./bin/debugger
+rm -f ./bin/boot.rom
 
-# Emulator(CLI)
-clang-format -i emulator-cli.c
-rm -f ./bin/emulator-cli
+echo "Building.."
+mkdir -p bin
+if [ "${1}" = '--debug' ]; 
+then
+	echo "[debug]"
+    cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/assembler.c -o bin/assembler
+	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/emulator.c -L/usr/local/lib -lSDL2 -o bin/emulator
+    cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/debugger.c -o bin/debugger
+else
+	cc src/assembler.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/assembler
+	cc src/uxn.c src/debugger.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/debugger
+	cc src/uxn.c src/emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
+fi
 
-# run
-./bin/assembler projects/software/nasu.usm bin/boot.rom
-./bin/emulator bin/boot.rom
+echo "Assembling.."
+./bin/assembler projects/examples/dev.console.usm bin/boot.rom
+
+echo "Running.."
+if [ "${2}" = '--cli' ]; 
+then
+	echo "[cli]"
+	./bin/debugger bin/boot.rom
+else
+	./bin/emulator bin/boot.rom
+fi
+
+echo "Done."

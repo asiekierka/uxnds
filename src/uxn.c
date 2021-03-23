@@ -201,7 +201,6 @@ bootuxn(Uxn *u)
 	char *cptr = (char *)u;
 	for(i = 0; i < sizeof(*u); i++)
 		cptr[i] = 0;
-
 	return 1;
 }
 
