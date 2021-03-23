@@ -1,0 +1,67 @@
+( hello world )
+
+%RTN { JMP2r }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0160 ;File { offset 2 append 1 pad 5 name 2 length 2 load 2 save 2 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+( program )
+
+|0200 @RESET
+	
+	#11
+	$loop
+		,text1 ,print-label JSR2
+		,scramble JSR2
+		#01 SUB DUP ,$loop ROT JMP2?
+
+BRK
+
+@print-label ( text )
+	
+	$loop NOP
+		( send ) DUP2 LDR =Console.char
+		( incr ) #0001 ADD2
+		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMP 
+	POP2
+
+RTN
+
+@scramble
+	
+	,filename =File.name
+	
+	#00 =File.append
+	#0000 =File.offset
+	#0003 =File.length
+	,text1 #000d ADD2 =File.save
+	
+	#01 =File.append
+	#0003 =File.offset
+	#000d =File.length
+	,text1 =File.save
+	
+	#0000 =File.offset
+	#0004 =File.length
+	,text1 =File.load
+	
+	#0004 =File.offset
+	#0008 =File.length
+	,text1 #0008 ADD2 =File.load
+	
+	#000c =File.offset
+	#0004 =File.length
+	,text1 #0004 ADD2 =File.load
+
+RTN
+
+
+@text1 [ Welcome 20 to 20 UxnVM 0a00 ]
+@filename [ textio.bit ]
+
+@FRAME BRK
+@ERROR BRK
