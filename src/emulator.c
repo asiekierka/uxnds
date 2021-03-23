@@ -20,27 +20,17 @@ WITH REGARD TO THIS SOFTWARE.
 #define RES (HOR * VER * 16)
 
 typedef struct {
+	Uint8 reqdraw, bg[RES], fg[RES];
 	Uint16 x1, y1, x2, y2;
-} Rect2d;
-
-typedef struct {
-	Uint8 reqdraw;
-	Uint8 bg[RES], fg[RES];
-	Rect2d bounds;
 } Screen;
 
 int WIDTH = 8 * HOR + 8 * PAD * 2;
 int HEIGHT = 8 * VER + 8 * PAD * 2;
 int FPS = 30, GUIDES = 0, ZOOM = 2;
 
-Uint32 theme[] = {
-	0x000000,
-	0xFFFFFF,
-	0x72DEC2,
-	0x666666,
-	0x222222};
+Uint32 *pixels, theme[4];
 
-Uint8 icons[][8] = {
+Uint8 font[][8] = {
 	{0x00, 0x3c, 0x46, 0x4a, 0x52, 0x62, 0x3c, 0x00},
 	{0x00, 0x18, 0x28, 0x08, 0x08, 0x08, 0x3e, 0x00},
 	{0x00, 0x3c, 0x42, 0x02, 0x3c, 0x40, 0x7e, 0x00},
@@ -61,8 +51,6 @@ Uint8 icons[][8] = {
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
-static Uint32 *pixels;
-
 static Screen screen;
 static Device *devscreen, *devmouse, *devkey, *devctrl;
 
@@ -93,18 +81,6 @@ paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-paintchr(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite)
-{
-	Uint16 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-			Uint8 ch2 = (((sprite[v + 8] >> (7 - h)) & 0x1) << 1);
-			paintpixel(dst, x + h, y + v, ch1 + ch2);
-		}
-}
-
-void
 painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 blend)
 {
 	Uint16 v, h;
@@ -131,7 +107,7 @@ clear(Uint32 *dst)
 void
 drawpixel(Uint32 *dst, Uint16 x, Uint16 y, Uint8 color)
 {
-	if(x >= screen.bounds.x1 && x <= screen.bounds.x2 && y >= screen.bounds.x1 && y <= screen.bounds.y2)
+	if(x >= screen.x1 && x <= screen.x2 && y >= screen.x1 && y <= screen.y2)
 		dst[y * WIDTH + x] = theme[color];
 }
 
@@ -188,9 +164,9 @@ drawdebugger(Uint32 *dst, Uxn *u)
 {
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x10; ++i) { /* memory */
-		x = ((i % 8) * 3 + 3) * 8, y = screen.bounds.x1 + 8 + i / 8 * 8, b = u->wst.dat[i];
-		drawicn(dst, x, y, icons[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
-		drawicn(dst, x + 8, y, icons[b & 0xf], 1 + (u->wst.ptr == i), 0);
+		x = ((i % 8) * 3 + 3) * 8, y = screen.x1 + 8 + i / 8 * 8, b = u->wst.dat[i];
+		drawicn(dst, x, y, font[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
+		drawicn(dst, x + 8, y, font[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
 	for(x = 0; x < 32; ++x) {
 		drawpixel(dst, x, HEIGHT / 2, 2);
@@ -254,10 +230,10 @@ init(void)
 	clear(pixels);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
-	screen.bounds.x1 = PAD * 8;
-	screen.bounds.x2 = WIDTH - PAD * 8 - 1;
-	screen.bounds.y1 = PAD * 8;
-	screen.bounds.y2 = HEIGHT - PAD * 8 - 1;
+	screen.x1 = PAD * 8;
+	screen.x2 = WIDTH - PAD * 8 - 1;
+	screen.y1 = PAD * 8;
+	screen.y2 = HEIGHT - PAD * 8 - 1;
 	return 1;
 }
 
@@ -377,10 +353,7 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		Uint16 a = (m[ptr + 4] << 8) + m[ptr + 5];
 		Uint8 source = (b1 >> 4) & 0xf;
 		Uint8 *layer = source % 2 ? screen.fg : screen.bg;
-		if(source / 2)
-			paintchr(layer, x, y, &m[a]);
-		else
-			painticn(layer, x, y, &m[a], b1 & 0xf);
+		painticn(layer, x, y, &m[a], b1 & 0xf);
 		screen.reqdraw = 1;
 	}
 	return b1;
