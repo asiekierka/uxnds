@@ -1,60 +1,106 @@
+(
+	tests/opcodes : automated testing of opcodes
+
+	This file generates a lot of stack underflows on purpose:
+	it's handy to supress all the warning by piping through grep
+
+	| grep -vF 'Halted: Working-stack underflow'
+)
+
+;test { code 2 label 2 status 1 }
+;counts { failed 2 passed 2 unknown 2 }
+;number { started 1 }
+
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0130 ;Controller { buttons 1 }
-|0140 ;Keys { key 1 }
-|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
-|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|01E0 ;Debug { pad 8 stack 1 snapshot 1 exit 1 pad 4 test_mode 1 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ f07c f0e2 f0c2 ]   ( palette )
 
-%TEST { BRK2?r LITr EOR2? DUP? }
-
-%PASS { #01 ,result JSR2 }
-%FAIL { #00 ,result JSR2 }
-%PASS? {    ,result JSR2 }
+%PASS? { ,result JMP2 BRK2?r LITr EOR2? DUP? }
+%PASS { #01 PASS? }
+%FAIL { #00 PASS? }
 
 |0200
 
 @tests
-	TEST ADD FAIL [ add-needs-two ]
-	TEST #01 ADD FAIL [ add-needs-two ]
-	TEST #01 #02 ADD #03 EQU PASS? [ add-result ]
-	TEST #01 #02 ADD #ff EQU PASS? [ this-test-fails ]
+	ADD FAIL [ add-needs-two 00 ]
+	#01 ADD FAIL [ add-needs-two 00 ]
+	#01 #02 ADD #03 EQU PASS? [ add-result 00 ]
+	#01 #02 ADD #ff EQU PASS? [ this-test-fails 00 ]
 
-	TEST #00 =Debug.exit
+	,finish JMP2
 
 @RESET
-	#01 =Debug.test_mode
-	,tests #0001 SUB2 =current-test
+	,tests =test.code
+	,strings-start ,print-string JSR2
 	BRK
 	
 @ERROR BRK
 
 @FRAME
-	~current-test
-
-	$search
-	#0001 ADD2
-	DUP2            LDR LIT BRK2?r NEQ ,$search ROT JMP2?
-	DUP2 #0001 ADD2 LDR LIT LITr   NEQ ,$search ROT JMP2?
-	DUP2 #0002 ADD2 LDR LIT EOR2?  NEQ ,$search ROT JMP2?
-	DUP2 #0003 ADD2 LDR LIT DUP?   NEQ ,$search ROT JMP2?
-	#0004 ADD2 DUP2 =current-test
+	,recover ~test.status JMP2?
+	#01 =test.status
+	~test.code
+	DUP2 ,find-label JSR2
+		DUP2 =test.label
+		,find-code JSR2 =test.code
 	JMP2
 
+@find-label ( ptr₂ -- following-label-ptr₂ )
+	DUP2            PEK2 LIT BRK2?r NEQ ^$next-minus-1 SWP JMP?
+	DUP2 #0001 ADD2 PEK2 LIT LITr   NEQ ^$next-minus-1 SWP JMP?
+	DUP2 #0002 ADD2 PEK2 LIT EOR2?  NEQ ^$next-minus-1 SWP JMP?
+	DUP2 #0003 ADD2 PEK2 LIT DUP?   NEQ ^$next-minus-1 SWP JMP?
+	#0004 ADD2 $next-minus-1 JMP2r
+
+	( next )
+	#0001 ADD2 ^find-label JMP
+
+@find-code ( label-ptr₂ -- following-code-ptr₂ )
+	DUP2 PEK2
+	,$not-end ROT JMP2?
+
+	$end
+	#0001 ADD2
+	JMP2r
+
+	$not-end
+	#0001 ADD2 ^find-code JMP
+
+@recover
+	( would it have been a PASS or FAIL? )
+	,$clear ~test.label #000a SUB2 PEK2 LIT LIT EQU JMP2?
+	#02 ^result JMP
+
+	$clear
+	( I would have executed a PASS or FAIL, so invert the result )
+	~test.label #0009 SUB2 PEK2 #00 EQU ^result JMP
+
 @result
+	DUP #02 MUL #00 SWP ,counts ADD2
+		DUP2 LDR2 #0001 ADD2 SWP2 STR2
+	#00 =test.status
 	,strings-test ^print-string JSR
 	#00 SWP ,strings-pass ,strings-fail SUB2 MUL2 ,strings-fail ADD2 ^print-string JSR
-	STH2r DUP2 ^print-short JSR
 	,strings-colon ^print-string JSR
-	^print-string JSR
+	~test.label ^print-string JSR
 	#0a =Console.char
+	POP #fc JMP
+	BRK
+
+@finish
+	,strings-finish ^print-string JSR
+	~counts.passed ^print-decimal JSR
+	,strings-passed ^print-string JSR
+	~counts.failed ^print-decimal JSR
+	,strings-failed ^print-string JSR
+	~counts.unknown ^print-decimal JSR
+	,strings-unknown ^print-string JSR
+	
+	( stop executing tests )
+	LIT BRK ,FRAME POK2
 	BRK
 
 @print-string ( string₂ -- )
-	DUP2 LDR DUP
+	DUP2 PEK2 DUP
 	,$not-end ROT JMP2?
 
 	$end
@@ -64,6 +110,25 @@
 	DUP LIT BRK2?r EQU ,$end ROT JMP2?
 	=Console.char
 	#0001 ADD2 ^print-string JMP
+
+@print-decimal ( short₂ -- )
+	#00 =number.started
+	DUP2 #2710 DIV2 DUP2 ^$digit JSR #2710 MUL2 SUB2
+	DUP2 #03e8 DIV2 DUP2 ^$digit JSR #03e8 MUL2 SUB2
+	DUP2 #0064 DIV2 DUP2 ^$digit JSR #0064 MUL2 SUB2
+	DUP2 #000a DIV2 DUP2 ^$digit JSR #000a MUL2 SUB2
+	^$digit JSR
+	~number.started JMP2r?
+	#30 =Console.char
+	JMP2r
+
+	$digit
+	SWP POP
+	#02 OVR ~number.started ORA JMP?
+	POP JMP2r
+	#30 ADD =Console.char
+	#01 =number.started
+	JMP2r
 
 @print-short ( short₂ -- )
 	#30 =Console.char
@@ -82,10 +147,15 @@
 	JMP2r
 
 @strings
+	$start [ 0a Testing 20 started. 0a 0a 00 ]
 	$test [ Test 20 00 ]
-	$fail [ FAIL 20 at 20 00 ]
-	$pass [ pass 20 at 20 00 ]
+	$fail [ FAIL 00 ]
+	$pass [ pass 00 ]
+	      [ UNKNOWN 00 ]
+	$at [ at 20 00 ]
 	$colon [ : 20 00 ]
-
-;current-test { short 2 }
+	$finish [ 0a Testing 20 complete. 0a 00 ]
+	$passed [ 20 passed, 20 00 ]
+	$failed [ 20 failed, 20 00 ]
+	$unknown [ 20 were 20 unknown. 0a 00 ]
 
