@@ -50,8 +50,8 @@ void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram
 /* Memory */
 void op_pek(Uxn *u) { Uint16 a = pop8(u->src); push8(u->src, mempeek8(u, a)); }
 void op_pok(Uxn *u) { Uint16 a = pop8(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
-void op_ldr(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }
-void op_str(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
+void op_ldr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->src, mempeek16(u, a)); }
+void op_str(Uxn *u) { Uint8 a = pop8(u->src); Uint16 b = pop16(u->src); mempoke16(u, a, b); }
 void op_cln(Uxn *u) { push8(u->src, peek8(u->dst, 0)); }
 void op_sth(Uxn *u) { Uint8 a = pop8(u->src); push8(u->dst, a); }
 /* Arithmetic */
@@ -112,7 +112,7 @@ void (*ops[])(Uxn *u) = {
 Uint8 opr[][4] = { /* wstack-/+ rstack-/+ */
 	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,0,0,0}, {1,2,0,0}, {2,2,0,0}, {2,3,0,0}, {3,3,0,0},
 	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {1,0,0,0}, {1,0,0,2},
-	{1,1,0,0}, {2,0,0,0}, {2,1,0,0}, {3,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,1,1,1}, {1,0,0,1},
+	{1,1,0,0}, {2,0,0,0}, {1,2,0,0}, {3,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,1,1,1}, {1,0,0,1},
 	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0},
 	/* 16-bit */
 	{0,0,0,0}, {2,0,0,0}, {0,0,0,0}, {2,0,0,0}, {2,4,0,0}, {4,4,0,0}, {4,6,0,0}, {6,6,0,0},

@@ -296,14 +296,14 @@ parsetoken(char *w)
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
 			return error("Invalid store helper", w);
 		pushshort(findlabeladdr(w + 1), 1);
-		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "STR"), 0);
+		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "POK2"), 0);
 		l->refs++;
 		return 1;
 	} else if(w[0] == '~' && (l = findlabel(w + 1))) {
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
 			return error("Invalid load helper", w);
 		pushshort(findlabeladdr(w + 1), 1);
-		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "LDR"), 0);
+		pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "PEK2"), 0);
 		l->refs++;
 		return 1;
 	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
