@@ -402,6 +402,14 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
+audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	(void)u;
+	printf("%04x - %02x,%02x\n", ptr, b0, b1);
+	return b1;
+}
+
+Uint8
 system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
@@ -478,7 +486,7 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, "key", ppnil);
 	devmouse = portuxn(&u, "mouse", ppnil);
 	portuxn(&u, "file", file_poke);
-	portuxn(&u, "empty", ppnil);
+	portuxn(&u, "audio", audio_poke);
 	portuxn(&u, "empty", ppnil);
 	portuxn(&u, "empty", ppnil);
 	portuxn(&u, "empty", ppnil);

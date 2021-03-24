@@ -19,6 +19,7 @@
 		- [tool] fill rect
 		- [tool] spray
 		- [tool] pen
+		- [tool] line
 )
 
 %RTN   { JMP2r }
