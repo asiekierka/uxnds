@@ -36,8 +36,10 @@
 ( variables )
 
 ;center { x 2 y 2 }
-;toolbar { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 size 1 patt 1 drag 1 mirror 1 oper 2 }
+;toolpane { x1 2 y1 2 x2 2 y2 2 }
+;pattpane { x1 2 y1 2 x2 2 y2 2 }
+;sizepane { x1 2 y1 2 x2 2 y2 2 }
+;cursor { x 2 y 2 x0 2 y0 2 tool 1 size 1 patt 1 drag 1 mirror 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
@@ -68,6 +70,8 @@
 
 	( default brush )
 	#04 =cursor.size
+	#00 =cursor.patt
+	#00 =cursor.tool
 
 	( load file )
 	,filepath ,load-file JSR2
@@ -75,7 +79,6 @@
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
 	~Screen.height #0002 DIV2 =center.y
-	#0010 =toolbar.x1 #0010 =toolbar.y1
 
 	( center canvas )
 	~center.x ~canvas.w 8* 2/ SUB2 =canvas.x1 
@@ -84,10 +87,22 @@
 	,draw-background JSR2
 	,fit-canvas JSR2
 
-	( fit toolbar )
-	~toolbar.x1 #0010 ADD2 =toolbar.x2
-	~toolbar.y1 #0040 ADD2 =toolbar.y2
-	,draw-toolbar JSR2
+	( setup panes )
+	#0010 =toolpane.x1 #0010 =toolpane.y1
+	#0010 =pattpane.x1 ~Screen.height #0018 SUB2 =pattpane.y1
+	~Screen.width #0050 SUB2 =sizepane.x1 #0010 =sizepane.y1
+
+	~toolpane.x1 #0020 ADD2 =toolpane.x2
+	~toolpane.y1 #0008 ADD2 =toolpane.y2
+	,draw-toolpane JSR2
+
+	~pattpane.x1 #0040 ADD2 =pattpane.x2
+	~pattpane.y1 #0008 ADD2 =pattpane.y2
+	,draw-pattpane JSR2
+
+	~sizepane.x1 #0040 ADD2 =sizepane.x2
+	~sizepane.y1 #0008 ADD2 =sizepane.y2
+	,draw-sizepane JSR2
 
 BRK
 
@@ -101,7 +116,9 @@ BRK
 		~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
 		,draw-background JSR2
 		,fit-canvas JSR2
-		,draw-toolbar JSR2
+		,draw-toolpane JSR2
+		,draw-pattpane JSR2
+		,draw-sizepane JSR2
 		#00 =cursor.drag
 	$no-release
 
@@ -125,43 +142,55 @@ BRK
 			,$touch-end JMP2
 		$no-drag
 
-		( in toolbar )
-		,$no-touch-toolbar ~Mouse.x CLN2r ~toolbar.x1 GTH2 STH2r ~toolbar.x2 LTH2 #0101 NEQ2 JMP2?
-		,$no-touch-toolbar ~Mouse.y CLN2r ~toolbar.y1 GTH2 STH2r ~toolbar.y2 LTH2 #0101 NEQ2 JMP2?
+		( in sizepane )
+		,$no-touch-sizepane ~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-sizepane ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 NEQ2 JMP2?
 			( release ) #00 =Mouse.state
-			,$no-touch-size ~Mouse.x ~toolbar.x1 SUB2 8/ #0000 NEQ2 JMP2?
-				~Mouse.y ~toolbar.y1 SUB2 8/ SWP POP =cursor.size
-				( draw ) ,draw-toolbar JSR2
-				,$touch-end JMP2
-			$no-touch-size
-			,$no-touch-brush ~Mouse.x ~toolbar.x1 SUB2 8/ #0001 NEQ2 JMP2?
-				~Mouse.y ~toolbar.y1 SUB2 8/ SWP POP =cursor.patt
-				( draw ) ,draw-toolbar JSR2
-				,$touch-end JMP2
-			$no-touch-brush
-		$no-touch-toolbar
+			#01 =cursor.tool
+			~Mouse.x ~sizepane.x1 SUB2 8/ SWP POP =cursor.size
+			( draw ) ,draw-sizepane JSR2
+			( draw ) ,draw-toolpane JSR2
+			,$touch-end JMP2
+		$no-touch-sizepane
+
+		( in pattpane )
+		,$no-touch-pattpane ~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-pattpane ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 NEQ2 JMP2?
+			( release ) #00 =Mouse.state
+			~Mouse.x ~pattpane.x1 SUB2 8/ SWP POP =cursor.patt
+			( draw ) ,draw-pattpane JSR2
+			,$touch-end JMP2
+		$no-touch-pattpane
+
+		( in toolpane )
+		,$no-touch-toolpane ~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 NEQ2 JMP2?
+		,$no-touch-toolpane ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 NEQ2 JMP2?
+			( release ) #00 =Mouse.state
+			~Mouse.x ~toolpane.x1 SUB2 8/ SWP POP =cursor.tool
+			( draw ) ,draw-toolpane JSR2
+			,$touch-end JMP2
+		$no-touch-toolpane
 
 		( in canvas )
 		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 JMP2?
 		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 JMP2?
 
 			( set cursor operation )
-			,add-pixel =cursor.oper
-			,$no-oper ~Mouse.state #01 EQU JMP2?
-				,remove-pixel =cursor.oper
-			$no-oper
+			,add-pixel ,$no-oper ~Mouse.state #01 EQU JMP2? POP2 ,remove-pixel $no-oper =cursor.oper
 
-			( paint line )
-			~cursor.x0 ~canvas.x1 SUB2 ~cursor.y0 ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-line JSR2
+			,$no-touch-pen ~cursor.tool #00 NEQ JMP2?
+				~cursor.x0 ~canvas.x1 SUB2 ~cursor.y0 ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-line JSR2
+				,$touch-end JMP2
+			$no-touch-pen
 
-			( paint fill )
-			~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+			,$no-touch-brush ~cursor.tool #01 NEQ JMP2?
+				~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+				,$touch-end JMP2
+			$no-touch-brush
 
-			,$no-mirror-mode ~cursor.mirror #00 EQU JMP2?
-				~Mouse.x ~canvas.x1 SUB2 ~canvas.w 8* SWP2 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
-			$no-mirror-mode
-			,$touch-end JMP2
-
+			( unknown tool )
+			#aa =Console.byte
+			
 		$no-touch-canvas
 
 		( background interface )
@@ -213,7 +242,7 @@ BRK
 			( mirror ) ~cursor.mirror #00 EQU =cursor.mirror $no-mkey
 		DUP 
 			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,$no-numkey ROT JMP2?
-			( size ) ~Keys #31 SUB =cursor.size ,draw-toolbar JSR2 $no-numkey
+			( size ) ~Keys #31 SUB =cursor.size ,draw-sizepane JSR2 $no-numkey
 		POP
 		
 		( release ) #00 =Keys
@@ -258,6 +287,37 @@ RTN
 
 RTN
 
+@paint-line ( x1 y1 x2 y2 color )
+	
+	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	~line.x0 ~line.x SUB2 ABS2 =line.dx
+	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
+	~line.dx ~line.dy ADD2 =line.e1
+	$loop
+		( paint ) ~line.x ~line.y ~cursor.oper JSR2
+		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
+		~line.e1 #0002 MUL2 =line.e2
+		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
+			~line.e1 ~line.dy ADD2 =line.e1
+			~line.x ~line.sx ADD2 =line.x
+		$skipy
+		,$skipx ~line.e2 ~line.dx GTS2 JMP2?
+			~line.e1 ~line.dx ADD2 =line.e1
+			~line.y ~line.sy ADD2 =line.y
+		$skipx
+		,$loop JMP2
+
+	$end
+
+	,draw-canvas JSR2
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
+
+RTN
+
 @paint ( x y )
 
 	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
@@ -290,7 +350,9 @@ RTN
 		,$ver ~px.y #08 LTH JMP2?
 
 	,draw-canvas JSR2
-	,draw-toolbar JSR2
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
 
 RTN
 
@@ -379,7 +441,9 @@ RTN
 	
 	,draw-background JSR2
 	,draw-canvas JSR2
-	,draw-toolbar JSR2
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
 		
 RTN
 
@@ -446,13 +510,14 @@ RTN
 	~Mouse.x =cursor.x 
 	~Mouse.y =cursor.y
 
-	( draw new cursor )
+	( draw size cursor )
+	,$outside-canvas ~cursor.tool #01 NEQ JMP2?
 	,$outside-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JMP2?
 	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JMP2?	
-		( do not draw size in toolbar )
+		( do not draw size in toolpane )
 		,$outside-canvas
-		~Mouse.x CLN2r ~toolbar.x1 GTH2 STH2r ~toolbar.x2 LTH2 #0101 EQU2 
-		~Mouse.y CLN2r ~toolbar.y1 GTH2 STH2r ~toolbar.y2 LTH2 #0101 EQU2 
+		~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 
+		~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 
 		#0101 EQU2 JMP2?
 		( do not draw size when holding alt )
 		,$outside-canvas ~Controller #02 EQU JMP2?
@@ -471,34 +536,54 @@ RTN
 
 RTN
 
-@draw-toolbar
+@draw-toolpane
 	
-	~toolbar.x1 -- ~toolbar.y1 -- ~toolbar.x2 ~toolbar.y2 #00 ,line-rect JSR2
-	~toolbar.x1 #0002 SUB2 ~toolbar.y1 #0002 SUB2 ~toolbar.x2 ~toolbar.y2 #01 ,line-rect JSR2
+	~toolpane.x1 -- ~toolpane.y1 -- ~toolpane.x2 ~toolpane.y2 #00 ,line-rect JSR2
+	~toolpane.x1 #0002 SUB2 ~toolpane.y1 #0002 SUB2 ~toolpane.x2 ~toolpane.y2 #01 ,line-rect JSR2
 
-	~toolbar.x1 =Sprite.x
-	~toolbar.y1 =Sprite.y
-	,size_icn =Sprite.addr
+	~toolpane.x1 =Sprite.x
+	~toolpane.y1 =Sprite.y
+	,tool_icn =Sprite.addr
 
-	( draw brush sizes )
-
-	$sizes
-		( draw ) #01 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
-		( incr ) ~Sprite.y 8+ =Sprite.y
+	$tools
+		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~cursor.tool EQU #02 MUL ADD =Sprite.color
+		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$sizes ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
+		,$tools ~Sprite.x ~toolpane.x2 LTH2 JMP2?
 
-	( draw brush patterns )
+RTN
 
-	~toolbar.x1 8+ =Sprite.x
-	~toolbar.y1 =Sprite.y
-	,pattern_icn =Sprite.addr
+@draw-pattpane
+	
+	~pattpane.x1 -- ~pattpane.y1 -- ~pattpane.x2 ~pattpane.y2 #00 ,line-rect JSR2
+	~pattpane.x1 #0002 SUB2 ~pattpane.y1 #0002 SUB2 ~pattpane.x2 ~pattpane.y2 #01 ,line-rect JSR2
+
+	~pattpane.x1 =Sprite.x
+	~pattpane.y1 =Sprite.y
+	,patt_icn =Sprite.addr
 
 	$patterns
-		( draw ) #01 ~Sprite.y ~toolbar.y1 SUB2 8/ SWP POP ~cursor.patt EQU #02 MUL ADD =Sprite.color
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~cursor.patt EQU #02 MUL ADD =Sprite.color
+		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$patterns ~Sprite.y ~toolbar.y1 #0040 ADD2 LTH2 JMP2?
+		,$patterns ~Sprite.x ~pattpane.x2 LTH2 JMP2?
+
+RTN
+
+@draw-sizepane
+
+	~sizepane.x1 -- ~sizepane.y1 -- ~sizepane.x2 ~sizepane.y2 #00 ,line-rect JSR2
+	~sizepane.x1 #0002 SUB2 ~sizepane.y1 #0002 SUB2 ~sizepane.x2 ~sizepane.y2 #01 ,line-rect JSR2
+
+	~sizepane.x1 =Sprite.x
+	~sizepane.y1 =Sprite.y
+	,size_icn =Sprite.addr
+
+	$patterns
+		( draw ) #01 ~Sprite.x ~sizepane.x1 SUB2 8/ SWP POP ~cursor.size EQU #02 MUL ADD =Sprite.color
+		( incr ) ~Sprite.x 8+ =Sprite.x
+		( incr ) ~Sprite.addr 8+ =Sprite.addr
+		,$patterns ~Sprite.x ~sizepane.x2 LTH2 JMP2?
 
 RTN
 
@@ -553,32 +638,6 @@ RTN
 
 ( Generics )
 
-@paint-line ( x1 y1 x2 y2 color )
-	
-	( load ) =color =line.y0 =line.x0 =line.y =line.x
-	~line.x0 ~line.x SUB2 ABS2 =line.dx
-	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
-	~line.dx ~line.dy ADD2 =line.e1
-	$loop
-		( paint ) ~line.x ~line.y ~cursor.oper JSR2
-		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
-		~line.e1 #0002 MUL2 =line.e2
-		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
-			~line.e1 ~line.dy ADD2 =line.e1
-			~line.x ~line.sx ADD2 =line.x
-		$skipy
-		,$skipx ~line.e2 ~line.dx GTS2 JMP2?
-			~line.e1 ~line.dx ADD2 =line.e1
-			~line.y ~line.sy ADD2 =line.y
-		$skipx
-		,$loop JMP2
-
-	$end
-
-RTN
-
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
@@ -620,8 +679,8 @@ RTN
 	[ 387c fefe fe7c 3800 ]
 	[ 7cfe fefe fefe 7c00 ]
 
-@pattern_icn 
-	[ fe82 baba ba82 fe00 ]
+@patt_icn 
+	[ fefe fefe fefe fe00 ]
 	[ fed6 aad6 aad6 fe00 ]
 	[ fe92 82d6 8292 fe00 ]
 	[ fe82 92aa 9282 fe00 ]
@@ -629,6 +688,17 @@ RTN
 	[ feca a692 caa6 fe00 ]
 	[ feaa aaaa aaaa fe00 ]	
 	[ fe82 fe82 fe82 fe00 ]
+
+@tool_icn 
+	[ c0e0 5028 140a 0400 ]
+	[ e0d0 a844 2212 0c00 ]
+	[ c0b8 4848 7804 0200 ]
+	[ 44ba 4444 44ba 4400 ]
+	[ 3844 8282 8244 3800 ]
+	[ fe82 8282 8282 fe00 ]
+	[ 80c0 e0f0 f8e0 1000 ]
+	[ 0202 0438 4080 8000 ]
+	[ 0204 0810 2040 8000 ]
 
 @brush_view 
 	[ 0000 0010 0000 0000 ]
