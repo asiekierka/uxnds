@@ -12,6 +12,11 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
 	--cli # Run rom without graphics
 ```
 
+## Emulator Controls
+
+- `ctrl+h` toggle debugger
+- `alt+h` toggle zoom
+
 ## Uxambly
 
 Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).

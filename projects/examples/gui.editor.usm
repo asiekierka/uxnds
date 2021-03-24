@@ -52,10 +52,10 @@ BRK
 
 	,no-click ~Mouse.state #00 EQU JMP2?
 
-		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 LDR
+		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 PEK2
 		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB #40 SFT SFT 
 		ORA
-		( save ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 STR
+		( save ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 POK2
 
 		,draw-window JSR2
 		,draw-editor JSR2
@@ -88,7 +88,7 @@ RTN
 		$hor
 			( get bit )
 			,cell0_icn #00
-			~editor.addr #00 ~pixel.y ADD2 LDR #07 ~pixel.x SUB SFT #01 AND ( get bit )
+			~editor.addr #00 ~pixel.y ADD2 PEK2 #07 ~pixel.x SUB SFT #01 AND ( get bit )
 			#0008 MUL2 ADD2 =Sprite.addr ( add *8 )
 			( draw ) #08 =Sprite.color
 			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
@@ -109,10 +109,10 @@ RTN
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop NOP
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ^$loop MUL JMP
+		DUP2 PEK2 #00 NEQ ^$loop MUL JMP
 	POP2
 
 RTN

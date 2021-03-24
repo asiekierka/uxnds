@@ -199,16 +199,16 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ~addr LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ~addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #04 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ~addr PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #04 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr ++ LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ~addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #04 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr ++ LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ~addr ++ PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #04 =Sprite.color
 
 RTN
@@ -275,10 +275,10 @@ RTN
 	
 	( load ) =label.addr =color =Sprite.y =Sprite.x ~label.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~color =Sprite.color
 		( incr ) ++
 		( incr ) ~Sprite.x 8+ =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN

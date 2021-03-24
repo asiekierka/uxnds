@@ -150,7 +150,7 @@ BRK
 
 		( insert )
 		~selection.to ~selection.from SUB2 ,shift-right JSR2
-		~Keys ~selection.from STR
+		~Keys ~selection.from POK2
 		~selection.from ++ =selection.from
 
 		$keys-end
@@ -254,7 +254,7 @@ RTN
 	,document.body =document.eof
 	$loop NOP
 		( incr ) ~document.eof ++ =document.eof
-	~document.eof LDR #00 NEQ ^$loop MUL JMP
+	~document.eof PEK2 #00 NEQ ^$loop MUL JMP
 
 RTN
 
@@ -279,7 +279,7 @@ RTN
 	=i
 	~selection.from -- =j ( start -> end )
 	$loop NOP
-		( move ) ~j ~i ADD2 LDR ~j STR
+		( move ) ~j ~i ADD2 PEK2 ~j POK2
 		( incr ) ~j ++ =j
 		~j ~document.eof LTH2 ^$loop MUL JMP
 	~document.eof ~i SUB2 =document.eof
@@ -291,7 +291,7 @@ RTN
 	=i
 	~document.eof =j ( end -> start )
 	$loop NOP
-		( move ) ~j ~i SUB2 LDR ~j STR
+		( move ) ~j ~i SUB2 PEK2 ~j POK2
 		( decr ) ~j -- =j
 		~j ~selection.from GTH2 ^$loop MUL JMP
 	~document.eof ~i ADD2 =document.eof
@@ -319,10 +319,10 @@ RTN
 @goto-linestart
 
 	$loop NOP
-		~selection.from -- LDR #0a EQU RTN?
-		~selection.from -- LDR #0d EQU RTN?
+		~selection.from -- PEK2 #0a EQU RTN?
+		~selection.from -- PEK2 #0d EQU RTN?
 		( decr ) ~selection.from DUP2 =selection.to -- =selection.from
-	~selection.from LDR #00 NEQ ^$loop MUL JMP
+	~selection.from PEK2 #00 NEQ ^$loop MUL JMP
 	( clamp at document body )
 	~selection.from ,document.body GTH2 RTN?
 	,document.body DUP2 =selection.from ++ =selection.to
@@ -332,10 +332,10 @@ RTN
 @goto-lineend
 	
 	$loop NOP
-		~selection.from LDR #0a EQU RTN?
-		~selection.from LDR #0d EQU RTN?
+		~selection.from PEK2 #0a EQU RTN?
+		~selection.from PEK2 #0d EQU RTN?
 		( incr ) ~selection.from ++ DUP2 ++ =selection.to =selection.from
-		~selection.from LDR #00 NEQ ^$loop MUL JMP
+		~selection.from PEK2 #00 NEQ ^$loop MUL JMP
 	( clamp at document body )
 	~selection.from ,document.eof LTH2 RTN?
 	,document.eof -- DUP2 =selection.from ++ =selection.to
@@ -347,9 +347,9 @@ RTN
 	~selection.to =j
 	$loop NOP
 		( decr ) ~j -- =j
-		,$end ~j LDR #20 EQU JMP2?
-		,$end ~j LDR #0a EQU JMP2?
-		,$end ~j LDR #0d EQU JMP2?
+		,$end ~j PEK2 #20 EQU JMP2?
+		,$end ~j PEK2 #0a EQU JMP2?
+		,$end ~j PEK2 #0d EQU JMP2?
 		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j --
@@ -361,9 +361,9 @@ RTN
 	~selection.to =j
 	$loop NOP
 		( incr ) ~j ++ =j
-		,$end ~j LDR #20 EQU JMP2?
-		,$end ~j LDR #0a EQU JMP2?
-		,$end ~j LDR #0d EQU JMP2?
+		,$end ~j PEK2 #20 EQU JMP2?
+		,$end ~j PEK2 #0a EQU JMP2?
+		,$end ~j PEK2 #0d EQU JMP2?
 		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j ++
@@ -375,8 +375,8 @@ RTN
 	#0000 =j
 	$loop NOP
 		( incr ) ~j ++ =j
-		,$end ~selection.from ~j SUB2 LDR #0a EQU JMP2?
-		,$end ~selection.from ~j SUB2 LDR #0d EQU JMP2?
+		,$end ~selection.from ~j SUB2 PEK2 #0a EQU JMP2?
+		,$end ~selection.from ~j SUB2 PEK2 #0d EQU JMP2?
 		~selection.from ~j SUB2 ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j
@@ -388,11 +388,11 @@ RTN
 	,document.body =j #0000 =pt.y
 	$loop NOP
 		,$end ~pt.y ~position.y -- GTH2 JMP2?
-		,$no-space ~j LDR #0a NEQ ~j LDR #0d NEQ #0101 EQU2 JMP2?
+		,$no-space ~j PEK2 #0a NEQ ~j PEK2 #0d NEQ #0101 EQU2 JMP2?
 			( incr ) ~pt.y ++ =pt.y
 		$no-space
 		( incr ) ~j ++ =j
-	~j LDR #00 NEQ ^$loop MUL JMP
+	~j PEK2 #00 NEQ ^$loop MUL JMP
 	$end
 	( return ) ~j
 
@@ -403,8 +403,8 @@ RTN
 	,find-line JSR2 ( find line )
 	#0000 =pt.x
 	$loop NOP
-		,$end ~j ~pt.x ADD2 LDR #0a EQU JMP2?
-		,$end ~j ~pt.x ADD2 LDR #0d EQU JMP2?
+		,$end ~j ~pt.x ADD2 PEK2 #0a EQU JMP2?
+		,$end ~j ~pt.x ADD2 PEK2 #0d EQU JMP2?
 		( incr ) ~pt.x ++ =pt.x
 		~pt.x ~position.x -- LTH2 ^$loop MUL JMP
 	$end
@@ -426,7 +426,7 @@ RTN
 	~selection.to ~selection.from SUB2 =j ( end )
 	~j =clip.len
 	$loop NOP
-		~selection.from ~i ADD2 LDR ,clip.body ~i ADD2 STR
+		~selection.from ~i ADD2 PEK2 ,clip.body ~i ADD2 POK2
 		( incr ) ~i ++ =i
 		~i ~j LTH2 ^$loop MUL JMP
 
@@ -438,7 +438,7 @@ RTN
 	#0000 =i ( start )
 	~clip.len =j ( end )
 	$loop NOP
-		,clip.body ~i ADD2 LDR ~selection.from ~i ADD2 STR
+		,clip.body ~i ADD2 PEK2 ~selection.from ~i ADD2 POK2
 		( incr ) ~i ++ =i
 		~i ~j LTH2 ^$loop MUL JMP
 
@@ -448,7 +448,7 @@ RTN
 	
 	,document.body =selection.from #0000 =pt.x #0000 =pt.y
 	$loop
-		,$no-space ~selection.from LDR #0a NEQ ~selection.from LDR #0d NEQ #0101 EQU2 JMP2?
+		,$no-space ~selection.from PEK2 #0a NEQ ~selection.from PEK2 #0d NEQ #0101 EQU2 JMP2?
 			( incr ) ~pt.y ++ =pt.y
 			#0000 =pt.x
 		$no-space
@@ -458,7 +458,7 @@ RTN
 		$no-reached
 		( incr ) ~pt.x ++ =pt.x
 		( incr ) ~selection.from ++ =selection.from
-	,$loop ~selection.from LDR #00 NEQ JMP2?
+	,$loop ~selection.from PEK2 #00 NEQ JMP2?
 
 RTN
 
@@ -484,16 +484,16 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr ++ PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #0e =Sprite.color
 
 RTN
@@ -531,11 +531,11 @@ RTN
 	#0000 =j ( j is linebreaks )
 	$find-offset NOP
 		,$find-offset-end ~scroll.y ~j EQU2 JMP2?
-		,$no-break ~textarea.addr LDR #0a NEQ ~textarea.addr LDR #0d NEQ #0101 EQU2 JMP2?
+		,$no-break ~textarea.addr PEK2 #0a NEQ ~textarea.addr PEK2 #0d NEQ #0101 EQU2 JMP2?
 			( incr ) ~j ++ =j
 		$no-break
 		( incr ) ~textarea.addr ++ =textarea.addr
-	~textarea.addr LDR #00 NEQ ^$find-offset MUL JMP
+	~textarea.addr PEK2 #00 NEQ ^$find-offset MUL JMP
 	$find-offset-end
 
 	#0018 =Sprite.x #0000 =Sprite.y
@@ -546,14 +546,14 @@ RTN
 		,$end ~Sprite.y ~Screen.height #0010 SUB2 GTH2 JMP2?
 
 		( get character )
-		,font #00 ~i LDR #20 SUB 8* ADD2 =Sprite.addr
+		,font #00 ~i PEK2 #20 SUB 8* ADD2 =Sprite.addr
 
 		( draw ) #01 
 		~i ~selection.from -- GTH2 
 		~i ~selection.to LTH2 #0101 EQU2
 		#05 MUL ADD ~i ~selection.from EQU2 ADD =Sprite.color
 
-		,$no-linebreak ~i LDR #0a NEQ ~i LDR #0d NEQ #0101 EQU2 JMP2?
+		,$no-linebreak ~i PEK2 #0a NEQ ~i PEK2 #0d NEQ #0101 EQU2 JMP2?
 			( draw linebreak )
 			,linebreak_icn =Sprite.addr
 			( draw ) #02
@@ -585,7 +585,7 @@ RTN
 		( incr ) ~i ++ =i
 		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
 
-	,$loop ~i LDR #00 NEQ JMP2?
+	,$loop ~i PEK2 #00 NEQ JMP2?
 
 	$end
 
@@ -623,10 +623,10 @@ RTN
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop NOP
-		( draw ) DUP2 LDR #00 SWP #20 SUB 8* ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #20 SUB 8* ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) ++
 		( incr ) ~Sprite.x 8+ =Sprite.x
-		DUP2 LDR #00 NEQ ^$loop MUL JMP
+		DUP2 PEK2 #00 NEQ ^$loop MUL JMP
 	POP2
 	( selection )
 	~selection.from ,document.body SUB2 ,draw-short JSR2

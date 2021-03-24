@@ -228,7 +228,7 @@ BRK
 	( from ) ,data
 	( to ) ~canvas.w ~canvas.h MUL2 #0008 MUL2 ,data ADD2
 	$loop NOP
-		OVR2 #00 ROT ROT STR
+		OVR2 #00 ROT ROT POK2
 		( incr ) SWP2 #0001 ADD2 SWP2
 		OVR2 OVR2 LTH2 ^$loop SWP JMP?
 	POP2 POP2
@@ -278,7 +278,7 @@ RTN
 		#00 =px.x
 		$hor
 			( addr ) ,size_icn #00 ~cursor.size 8* ADD2
-			( byte ) #00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND 
+			( byte ) #00 ~px.y ADD2 PEK2 #07 ~px.x SUB SFT #01 AND 
 			#00 EQU ,$no-pixel ROT JMP2?
 				,$no-pixel ,patternize JSR2 #00 EQU JMP2?
 				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ~cursor.oper JSR2
@@ -348,7 +348,7 @@ RTN
 	SWP POP #07 AND =px.x
 	( get tile ) ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8*
 	( add addr ) ,data ADD2
-	#00 ~px.y ADD2 LDR #07 ~px.x SUB SFT #01 AND
+	#00 ~px.y ADD2 PEK2 #07 ~px.x SUB SFT #01 AND
 
 RTN
 
@@ -356,9 +356,9 @@ RTN
 
 	=pt1.y =pt1.x
 	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
-	( load ) DUP2 LDR
+	( load ) DUP2 PEK2
 	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SFL ORA
-	( save ) ROT ROT STR
+	( save ) ROT ROT POK2
 
 RTN
 
@@ -366,9 +366,9 @@ RTN
 
 	=pt1.y =pt1.x
 	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
-	( load ) DUP2 LDR
+	( load ) DUP2 PEK2
 	( mask ) #01 #07 ~pt1.x MOD8 SWP POP SUB SFL #ff EOR AND
-	( save ) ROT ROT STR
+	( save ) ROT ROT POK2
 
 RTN
 

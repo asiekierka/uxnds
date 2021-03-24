@@ -198,6 +198,21 @@ redraw(Uint32 *dst, Uxn *u)
 }
 
 void
+toggledebug(Uxn *u)
+{
+	GUIDES = !GUIDES;
+	redraw(pixels, u);
+}
+
+void
+togglezoom(Uxn *u)
+{
+	ZOOM = ZOOM == 3 ? 1 : ZOOM + 1;
+	SDL_SetWindowSize(gWindow, WIDTH * ZOOM, HEIGHT * ZOOM);
+	redraw(pixels, u);
+}
+
+void
 quit(void)
 {
 	free(pixels);
@@ -287,9 +302,11 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devctrl->addr;
-	if(z && event->key.keysym.sym == SDLK_h && SDL_GetModState() & KMOD_LCTRL) {
-		GUIDES = !GUIDES;
-		redraw(pixels, u);
+	if(z && event->key.keysym.sym == SDLK_h) {
+		if(SDL_GetModState() & KMOD_LCTRL)
+			toggledebug(u);
+		if(SDL_GetModState() & KMOD_LALT)
+			togglezoom(u);
 	}
 	switch(event->key.keysym.sym) {
 	case SDLK_LCTRL: flag = 0x01; break;

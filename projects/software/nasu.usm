@@ -130,11 +130,11 @@ BRK
 			,not-copy-mode ~bankview.mode #01 NEQ JMP2?
 				#00 =i
 				@copy-loop NOP
-					( load ) ~tileview.addr ~i ADD LDR 
+					( load ) ~tileview.addr ~i ADD PEK2 
 					( get touch addr )
 					~Mouse.x ~bankview.x SUB2 STEP8 
 					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-					~bankview.addr ADD2 #00 ~i ADD2 STR
+					~bankview.addr ADD2 #00 ~i ADD2 POK2
 					( incr ) ~i #01 ADD =i
 					~i #08 LTH ^copy-loop MUL JMP
 				,redraw JSR2 ,click-end JMP2
@@ -147,7 +147,7 @@ BRK
 					( get touch addr )
 					~Mouse.x ~bankview.x SUB2 STEP8 
 					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-					~bankview.addr ADD2 #00 ~i ADD2 STR
+					~bankview.addr ADD2 #00 ~i ADD2 POK2
 					( incr ) ~i #01 ADD =i
 					~i #08 LTH ^erase-loop MUL JMP
 				,redraw JSR2 ,click-end JMP2
@@ -173,16 +173,16 @@ BRK
 			~Mouse.x ~tileview.x SUB2 ~Mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~Mouse.y ~tileview.y SUB2 ~Mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
 			,no-erase-mode ~Mouse.state #10 NEQ JMP2?
-				( load ) ~addr ~pos.y 8/ ADD2 LDR
+				( load ) ~addr ~pos.y 8/ ADD2 PEK2
 				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 				#ff EOR AND
-				( save ) ~addr ~pos.y 8/ ADD2 STR
+				( save ) ~addr ~pos.y 8/ ADD2 POK2
 				,redraw JSR2 ,click-end JMP2
 			@no-erase-mode
-			( load ) ~addr ~pos.y 8/ ADD2 LDR
+			( load ) ~addr ~pos.y 8/ ADD2 PEK2
 			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 			ORA
-			( save ) ~addr ~pos.y 8/ ADD2 STR
+			( save ) ~addr ~pos.y 8/ ADD2 POK2
 			,redraw JSR2 ,click-end JMP2
 
 		@no-tile-click
@@ -219,29 +219,29 @@ RTN
 
 @op_shiftup
 	
-	~tileview.addr LDR
-	~tileview.addr #0001 ADD2 LDR ~tileview.addr STR
-	~tileview.addr #0002 ADD2 LDR ~tileview.addr #0001 ADD2 STR
-	~tileview.addr #0003 ADD2 LDR ~tileview.addr #0002 ADD2 STR
-	~tileview.addr #0004 ADD2 LDR ~tileview.addr #0003 ADD2 STR
-	~tileview.addr #0005 ADD2 LDR ~tileview.addr #0004 ADD2 STR
-	~tileview.addr #0006 ADD2 LDR ~tileview.addr #0005 ADD2 STR
-	~tileview.addr #0007 ADD2 LDR ~tileview.addr #0006 ADD2 STR
-	~tileview.addr #0007 ADD2 STR
+	~tileview.addr PEK2
+	~tileview.addr #0001 ADD2 PEK2 ~tileview.addr POK2
+	~tileview.addr #0002 ADD2 PEK2 ~tileview.addr #0001 ADD2 POK2
+	~tileview.addr #0003 ADD2 PEK2 ~tileview.addr #0002 ADD2 POK2
+	~tileview.addr #0004 ADD2 PEK2 ~tileview.addr #0003 ADD2 POK2
+	~tileview.addr #0005 ADD2 PEK2 ~tileview.addr #0004 ADD2 POK2
+	~tileview.addr #0006 ADD2 PEK2 ~tileview.addr #0005 ADD2 POK2
+	~tileview.addr #0007 ADD2 PEK2 ~tileview.addr #0006 ADD2 POK2
+	~tileview.addr #0007 ADD2 POK2
 
 RTN
 
 @op_shiftdown
 	
-	~tileview.addr #0007 ADD2 LDR
-	~tileview.addr #0006 ADD2 LDR ~tileview.addr #0007 ADD2 STR
-	~tileview.addr #0005 ADD2 LDR ~tileview.addr #0006 ADD2 STR
-	~tileview.addr #0004 ADD2 LDR ~tileview.addr #0005 ADD2 STR
-	~tileview.addr #0003 ADD2 LDR ~tileview.addr #0004 ADD2 STR
-	~tileview.addr #0002 ADD2 LDR ~tileview.addr #0003 ADD2 STR
-	~tileview.addr #0001 ADD2 LDR ~tileview.addr #0002 ADD2 STR
-	~tileview.addr LDR ~tileview.addr #0001 ADD2 STR
-	~tileview.addr STR
+	~tileview.addr #0007 ADD2 PEK2
+	~tileview.addr #0006 ADD2 PEK2 ~tileview.addr #0007 ADD2 POK2
+	~tileview.addr #0005 ADD2 PEK2 ~tileview.addr #0006 ADD2 POK2
+	~tileview.addr #0004 ADD2 PEK2 ~tileview.addr #0005 ADD2 POK2
+	~tileview.addr #0003 ADD2 PEK2 ~tileview.addr #0004 ADD2 POK2
+	~tileview.addr #0002 ADD2 PEK2 ~tileview.addr #0003 ADD2 POK2
+	~tileview.addr #0001 ADD2 PEK2 ~tileview.addr #0002 ADD2 POK2
+	~tileview.addr PEK2 ~tileview.addr #0001 ADD2 POK2
+	~tileview.addr POK2
 
 RTN
 
@@ -307,11 +307,10 @@ RTN
 		#00 =pt.x
 		~bankview.x =Sprite.x
 		$hor
-			( draw ) #01 =Sprite.color
-			,$no-highlight ~Sprite.addr ~tileview.addr LTH2 JMP2?
-			,$no-highlight ~Sprite.addr ~tileview.addr #0018 ADD2 GTH2 JMP2?
-				( draw ) #0c =Sprite.color
-			$no-highlight
+			( draw ) #01
+				~Sprite.addr ~tileview.addr LTH2 
+				~Sprite.addr ~tileview.addr #0018 ADD2 GTH2 
+				#0000 EQU2 #06 MUL ADD =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
 			( incr ) ~pt.x #01 ADD =pt.x
@@ -383,10 +382,10 @@ RTN
 	#00 =i
 	$bytes
 		~tileview.x #0088 ADD2 =Sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 		( draw ) #02 =Sprite.color
 		~Sprite.x 8+ =Sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 LDR #0f AND #08 MUL ADD2 =Sprite.addr
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 		( draw ) #02 =Sprite.color
 		( incr ) ~i #01 ADD =i
 		( incr ) ~Sprite.y 8+ =Sprite.y
@@ -428,7 +427,7 @@ RTN
 		$hor
 			( get bit )
 			,blank_icn #00
-			~tileview.addr #00 ~pt.y ADD2 LDR #07 ~pt.x SUB SFT #01 AND ( get bit )
+			~tileview.addr #00 ~pt.y ADD2 PEK2 #07 ~pt.x SUB SFT #01 AND ( get bit )
 			8* ADD2 =Sprite.addr ( add *8 )
 			( draw ) #01 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
@@ -469,16 +468,16 @@ RTN
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ LDR #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ LDR #0f AND #08 MUL ADD2 =Sprite.addr
+	,font_hex #00 ,addr ++ PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 
 RTN
@@ -527,4 +526,4 @@ RTN
 
 @ERROR BRK 
 
-@bank [ ]	
+|2000 @bank [ ]	

@@ -38,10 +38,10 @@ BRK
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN
@@ -52,10 +52,10 @@ RTN
 	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 =Sprite.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN
@@ -66,10 +66,10 @@ RTN
 	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 =Sprite.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 LDR #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 LDR #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
 	POP2
 
 RTN
@@ -79,7 +79,7 @@ RTN
 	#0000 ( counter )
 	$loop
 		( incr ) #0001 ADD2 OVR2 OVR2 ADD2 
-		LDR #00 NEQ ,$loop ROT JMP2?
+		PEK2 #00 NEQ ,$loop ROT JMP2?
 	SWP2 POP2
 
 RTN
