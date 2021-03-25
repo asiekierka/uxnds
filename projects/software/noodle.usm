@@ -39,7 +39,7 @@
 ;toolpane { x1 2 y1 2 x2 2 y2 2 }
 ;pattpane { x1 2 y1 2 x2 2 y2 2 }
 ;sizepane { x1 2 y1 2 x2 2 y2 2 }
-;cursor { x 2 y 2 x0 2 y0 2 tool 1 size 1 patt 1 drag 1 mirror 1 oper 2 }
+;cursor { x 2 y 2 x0 2 y0 2 dx 2 dy 2 tool 1 size 1 patt 1 drag 1 last 1 mirror 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
@@ -122,6 +122,28 @@ BRK
 		#00 =cursor.drag
 	$no-release
 
+	( operations on release line/rect )
+	,$no-touch-change ~Mouse.state ~cursor.last EQU JMP2?
+		,$no-touch-change ~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 JMP2?
+		,$no-touch-change ~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 JMP2?
+		,$no-touch-ondown ~Mouse.state #00 EQU JMP2?
+			( on down )
+			~Mouse.x =cursor.dx
+			~Mouse.y =cursor.dy
+		$no-touch-ondown
+		,$no-touch-onup ~Mouse.state #00 NEQ JMP2?
+			( on up )
+			,$no-touch-line ~cursor.tool #02 NEQ JMP2?
+				~cursor.dx ~canvas.x1 SUB2 ~cursor.dy ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-line JSR2
+				,$touch-end JMP2
+			$no-touch-line
+			,$no-touch-rect ~cursor.tool #03 NEQ JMP2?
+				~cursor.dx ~canvas.x1 SUB2 ~cursor.dy ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 #01 ,paint-rect JSR2
+				,$touch-end JMP2
+			$no-touch-rect
+		$no-touch-onup
+	$no-touch-change
+
 	,$no-touch ~Mouse.state #00 EQU JMP2?
 
 		( drag )
@@ -184,13 +206,10 @@ BRK
 			$no-touch-pen
 
 			,$no-touch-brush ~cursor.tool #01 NEQ JMP2?
-				~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint JSR2
+				~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint-brush JSR2
 				,$touch-end JMP2
 			$no-touch-brush
 
-			( unknown tool )
-			#aa =Console.byte
-			
 		$no-touch-canvas
 
 		( background interface )
@@ -250,6 +269,7 @@ BRK
 
 	~Mouse.x =cursor.x0
 	~Mouse.y =cursor.y0
+	~Mouse.state =cursor.last
 
 BRK
 
@@ -318,7 +338,31 @@ RTN
 
 RTN
 
-@paint ( x y )
+;rpt { x 2 y 2 }
+
+@paint-rect ( x1 y1 x2 y2 color )
+
+	( load ) =color =rect.y2 =rect.x2 DUP2 =rpt.y =rect.y1 DUP2 =rpt.x =rect.x1
+	$ver
+		~rect.x1 =rpt.x
+		$hor
+			~rpt.x SWP POP =px.x ~rpt.y SWP POP =px.y
+			,$no-pixel ,patternize JSR2 #00 EQU JMP2?
+				( draw ) ~rpt.x ~rpt.y ~cursor.oper JSR2
+			$no-pixel
+			( incr ) ~rpt.x ++ =rpt.x
+			,$hor ~rpt.x ~rect.x2 LTH2 JMP2?
+		~rpt.y ++ =rpt.y
+		,$ver ~rpt.y ~rect.y2 LTH2 JMP2?
+
+	,draw-canvas JSR2
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
+	
+RTN
+
+@paint-brush ( x y )
 
 	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
