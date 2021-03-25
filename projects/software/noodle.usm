@@ -41,7 +41,7 @@
 ;canvas { x1 2 y1 2 x2 2 y2 2 w 2 h 2 }
 
 ;rect { x1 2 y1 2 x2 2 y2 2 }
-;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
+;line { x1 2 y1 2 x2 2 y2 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
 ;color { byte 1 }
 ;pt0 { x 2 y 2 }
@@ -66,7 +66,7 @@
 |0200 @RESET 
 	
 	( default canvas )
-	#002a =canvas.w #001a =canvas.h
+	#0020 =canvas.w #0010 =canvas.h
 
 	( default brush )
 	#04 =brush.size
@@ -92,7 +92,7 @@
 	#0010 =pattpane.x1 ~Screen.height #0018 SUB2 =pattpane.y1
 	~Screen.width #0050 SUB2 =sizepane.x1 #0010 =sizepane.y1
 
-	~toolpane.x1 #0020 ADD2 =toolpane.x2
+	~toolpane.x1 #0028 ADD2 =toolpane.x2
 	~toolpane.y1 #0008 ADD2 =toolpane.y2
 	,draw-toolpane JSR2
 
@@ -210,16 +210,20 @@ BRK
 				,$touch-end JMP2
 			$no-touch-brush
 
+			,$no-touch-zoom ~brush.tool #04 NEQ JMP2?
+				~zoom.active #00 EQU =zoom.active
+				( release ) #00 =Mouse.state
+				~Mouse.x ~canvas.x1 SUB2 ~canvas.w 2/ SUB2 =zoom.x
+				~Mouse.y ~canvas.y1 SUB2 ~canvas.h 2/ SUB2 =zoom.y
+				,redraw JSR2
+				,$touch-end JMP2
+			$no-touch-zoom
+
 		$no-touch-canvas
 
 		( background interface )
 		,$no-touch-background ~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 JMP2?
 			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
-			DUP2 #0000 NEQ2 ,$no-toggle-zoom ROT JMP2?
-				~zoom.active #00 EQU =zoom.active
-				( release ) #00 =Mouse.state
-				,redraw JSR2
-			$no-toggle-zoom
 			DUP2 #0001 NEQ2 ,$no-load-button ROT JMP2?
 				,filepath ,load-file JSR2
 				,draw-canvas JSR2
@@ -262,6 +266,8 @@ BRK
 			( tool0 ) #02 =brush.tool ,draw-toolpane JSR2 $no-ekey
 		DUP #72 NEQ ,$no-rkey ROT JMP2?
 			( tool0 ) #03 =brush.tool ,draw-toolpane JSR2 $no-rkey
+		DUP #74 NEQ ,$no-tkey ROT JMP2?
+			( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
 		DUP 
 			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,$no-numkey ROT JMP2?
 			( size ) ~Keys #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
@@ -311,23 +317,32 @@ RTN
 
 @paint-line ( x1 y1 x2 y2 )
 	
-	( load ) =line.y0 =line.x0 =line.y =line.x
-	~line.x0 ~line.x SUB2 ABS2 =line.dx
-	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
+	( load ) =line.y1 =line.x1 =line.y2 =line.x2
+
+	( trim if zoomed )
+	,$no-zoom ~zoom.active #01 NEQ JMP2?
+		~line.x1 8/ ~zoom.x ADD2 =line.x1
+		~line.y1 8/ ~zoom.y ADD2 =line.y1
+		~line.x2 8/ ~zoom.x ADD2 =line.x2
+		~line.y2 8/ ~zoom.y ADD2 =line.y2
+	$no-zoom
+
+	~line.x1 ~line.x2 SUB2 ABS2 =line.dx
+	~line.y1 ~line.y2 SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x2 ~line.x1 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y2 ~line.y1 LTS2 #0002 MUL2 ADD2 =line.sy 
 	~line.dx ~line.dy ADD2 =line.e1
 	$loop
-		( paint ) ~line.x ~line.y ~brush.oper JSR2
-		,$end ~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 JMP2?
+		( paint ) ~line.x2 ~line.y2 ~brush.oper JSR2
+		,$end ~line.x2 ~line.x1 EQU2 ~line.y2 ~line.y1 EQU2 #0101 EQU2 JMP2?
 		~line.e1 #0002 MUL2 =line.e2
 		,$skipy ~line.e2 ~line.dy LTS2 JMP2?
 			~line.e1 ~line.dy ADD2 =line.e1
-			~line.x ~line.sx ADD2 =line.x
+			~line.x2 ~line.sx ADD2 =line.x2
 		$skipy
 		,$skipx ~line.e2 ~line.dx GTS2 JMP2?
 			~line.e1 ~line.dx ADD2 =line.e1
-			~line.y ~line.sy ADD2 =line.y
+			~line.y2 ~line.sy ADD2 =line.y2
 		$skipx
 		,$loop JMP2
 
@@ -342,7 +357,19 @@ RTN
 
 @paint-rect ( x1 y1 x2 y2  )
 
-	( load ) =rect.y2 =rect.x2 DUP2 =pt2.y =rect.y1 DUP2 =pt2.x =rect.x1
+	( load ) =rect.y2 =rect.x2 =rect.y1 =rect.x1
+
+	( trim if zoomed )
+	,$no-zoom ~zoom.active #01 NEQ JMP2?
+		~rect.x1 8/ ~zoom.x ADD2 =rect.x1
+		~rect.y1 8/ ~zoom.y ADD2 =rect.y1
+		~rect.x2 8/ ~zoom.x ADD2 #0001 ADD2 =rect.x2
+		~rect.y2 8/ ~zoom.y ADD2 #0001 ADD2 =rect.y2
+	$no-zoom
+
+	~rect.x1 =pt2.x
+	~rect.y1 =pt2.y
+
 	$ver
 		~rect.x1 =pt2.x
 		$hor
@@ -351,9 +378,9 @@ RTN
 				( draw ) ~pt2.x ~pt2.y ~brush.oper JSR2
 			$no-pixel
 			( incr ) ~pt2.x ++ =pt2.x
-			,$hor ~pt2.x ~rect.x2 LTH2 JMP2?
+			,$hor ~pt2.x ~rect.x2 LTS2 JMP2?
 		~pt2.y ++ =pt2.y
-		,$ver ~pt2.y ~rect.y2 LTH2 JMP2?
+		,$ver ~pt2.y ~rect.y2 LTS2 JMP2?
 
 	,draw-canvas JSR2
 	,draw-toolpane JSR2
@@ -371,12 +398,6 @@ RTN
 		~pt0.x 8/ ~zoom.x ADD2 #0003 SUB2 =pt0.x
 		~pt0.y 8/ ~zoom.y ADD2 #0003 SUB2 =pt0.y
 	$no-zoom
-
-	( center zoom on paint )
-	,$no-follow ~zoom.active JMP2?
-		~pt0.x ~canvas.w 2/ SUB2 #0003 ADD2 =zoom.x
-		~pt0.y ~canvas.h 2/ SUB2 #0003 ADD2 =zoom.y
-	$no-follow
 
 	#00 =px.x #00 =px.y 
 	$ver
@@ -592,6 +613,12 @@ RTN
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
 		,$tools ~Sprite.x ~toolpane.x2 LTH2 JMP2?
 
+	,$no-zoom ~zoom.active #01 NEQ JMP2?
+		~Sprite.x #0008 SUB2 =Sprite.x
+		,tool_icn #0028 ADD2 =Sprite.addr
+		#01 #04 ~brush.tool EQU #02 MUL ADD =Sprite.color
+	$no-zoom
+
 RTN
 
 @draw-pattpane
@@ -657,11 +684,9 @@ RTN
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
 	~Screen.width #0020 SUB2 =Sprite.x
-	,zoom_icn #00 ~zoom.active 8* ADD2 =Sprite.addr
-	#01 =Sprite.color
 
 	( draw width )
-	~Screen.width #0048 SUB2 =Sprite.x
+	~Screen.width #0040 SUB2 =Sprite.x
 	,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	( draw ) #02 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
@@ -735,11 +760,8 @@ RTN
 	[ e0d0 a844 2212 0c00 ]
 	[ c0b8 4848 7804 0200 ]
 	[ 44ba 4444 44ba 4400 ]
-	[ 3844 8282 8244 3800 ]
-	[ fe82 8282 8282 fe00 ]
-	[ 80c0 e0f0 f8e0 1000 ]
-	[ 0202 0438 4080 8000 ]
-	[ 0204 0810 2040 8000 ]
+	[ 3048 8484 4834 0200 ] ( zoom )
+	[ 3245 8284 4834 0200 ] ( zoom out )
 
 @brush_view 
 	[ 0000 0010 0000 0000 ]
@@ -751,10 +773,6 @@ RTN
 	[ 3844 8282 8244 3800 ]
 	[ 7c82 8282 8282 7c00 ]
 	[ 7cfe fefe fefe 7c00 ]
-
-@zoom_icn
-	[ 3048 8484 4834 0200 ]
-	[ 3245 8284 4834 0200 ]
 
 @bigpixel_icn 
 	[ 5580 0080 0080 0080 ]
@@ -768,7 +786,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/pictures/tima2a1a.bit 00 ]
+@filepath       [ projects/pictures/akane2010.bit 00 ]
 
 @font_hex ( 0-F ) 
 [
