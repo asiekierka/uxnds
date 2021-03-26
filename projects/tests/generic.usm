@@ -1,9 +1,0 @@
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-
-@RESET 
-
-BRK
-
-@FRAME BRK
-@ERROR BRK
