@@ -17,7 +17,7 @@
 	$loop
 		,text1 ,print-label JSR2
 		,scramble JSR2
-		#01 SUB DUP ,$loop ROT JMP2?
+		#01 SUB DUP ,$loop ROT JNZ2
 
 BRK
 

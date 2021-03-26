@@ -17,7 +17,7 @@
 	
 	~Keys #00 EQU BRK?
 
-	,$no-return ~Keys #0d NEQ JMP2?
+	,$no-return ~Keys #0d NEQ JNZ2
 		#0000 =Sprite.x
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( release ) #00 =Keys

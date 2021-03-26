@@ -1,6 +1,7 @@
 ( draw routines )
 
 %RTN { JMP2r }
+%RTN? { #00 EQU #02 SWP JNZ STH2r JMP2 }
 
 ;color { byte 1 }
 ;pointer { x 2 y 2 sprite 2 } 
@@ -26,33 +27,28 @@ BRK
 
 @FRAME 
 
-	~pointer.x ~Mouse.x NEQU2
-	~pointer.y ~Mouse.y NEQU2
-
-	#0000 EQU2 BRK? ( Return if unchanged )
-
 	,pointer_icn =pointer.sprite
 
 	#01 =color
 	( matrix comparison )
 	~Mouse.x ~r1.x1 GTH2 ~Mouse.x ~r1.x2 LTH2 #0101 EQU2
 	~Mouse.y ~r1.y1 GTH2 ~Mouse.y ~r1.y2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,$draw1 ROT JMP2? #02 =color ,hand_icn =pointer.sprite 
+	#0101 NEQ2 ,$draw1 ROT JNZ2 #02 =color ,hand_icn =pointer.sprite 
 	$draw1 ~r1.x1 ~r1.y1 ~r1.x2 ~r1.y2 ~color ,line-rect JSR2
 	
 	#01 =color
 	( 2-step comparison )
-	,$draw2 ~Mouse.x ~r2.x1 GTH2 ~Mouse.x ~r2.x2 LTH2 #0101 NEQ2 JMP2?
-		,$draw2 ~Mouse.y ~r2.y1 GTH2 ~Mouse.y ~r2.y2 LTH2 #0101 NEQ2 JMP2?
+	,$draw2 ~Mouse.x ~r2.x1 GTH2 ~Mouse.x ~r2.x2 LTH2 #0101 NEQ2 JNZ2
+		,$draw2 ~Mouse.y ~r2.y1 GTH2 ~Mouse.y ~r2.y2 LTH2 #0101 NEQ2 JNZ2
 			#03 =color ,hand_icn =pointer.sprite 
 	$draw2 ~r2.x1 ~r2.y1 ~r2.x2 ~r2.y2 ~color ,line-rect JSR2
 	
 	#01 =color
 	( 4-step comparison )
-	,$draw3 ~Mouse.x ~r3.x1 LTH2 JMP2?
-		,$draw3 ~Mouse.x ~r3.x2 GTH2 JMP2?
-			,$draw3 ~Mouse.y ~r3.y1 LTH2 JMP2?
-				,$draw3 ~Mouse.y ~r3.y2 GTH2 JMP2?
+	,$draw3 ~Mouse.x ~r3.x1 LTH2 JNZ2
+		,$draw3 ~Mouse.x ~r3.x2 GTH2 JNZ2
+			,$draw3 ~Mouse.y ~r3.y1 LTH2 JNZ2
+				,$draw3 ~Mouse.y ~r3.y2 GTH2 JNZ2
 					#02 =color ,hand_icn =pointer.sprite
 	$draw3 ~r3.x1 ~r3.y1 ~r3.x2 ~r3.y2 ~color ,line-rect JSR2
 
@@ -86,13 +82,13 @@ RTN
 		( incr ) ~Screen.x #0001 ADD2 =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+		,$hor ~Screen.x ~rect.x2 LTH2 JNZ2
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y #0001 ADD2 =Screen.y
-		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JMP2?
+		,$ver ~Screen.y ~rect.y2 #0001 ADD2 LTH2 JNZ2
 
 RTN
 

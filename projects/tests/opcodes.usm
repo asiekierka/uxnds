@@ -36,7 +36,7 @@
 @ERROR BRK
 
 @FRAME
-	,recover ~test.status JMP2?
+	,recover ~test.status JNZ2
 	#01 =test.status
 	~test.code
 	DUP2 ,find-label JSR2
@@ -56,7 +56,7 @@
 
 @find-code ( label-ptr₂ -- following-code-ptr₂ )
 	DUP2 PEK2
-	,$not-end ROT JMP2?
+	,$not-end ROT JNZ2
 
 	$end
 	#0001 ADD2
@@ -67,7 +67,7 @@
 
 @recover
 	( would it have been a PASS or FAIL? )
-	,$clear ~test.label #000a SUB2 PEK2 LIT LIT EQU JMP2?
+	,$clear ~test.label #000a SUB2 PEK2 LIT LIT EQU JNZ2
 	#02 ^result JMP
 
 	$clear
@@ -101,13 +101,13 @@
 
 @print-string ( string₂ -- )
 	DUP2 PEK2 DUP
-	,$not-end ROT JMP2?
+	,$not-end ROT JNZ2
 
 	$end
 	POP POP2 JMP2r
 
 	$not-end
-	DUP LIT BRK2?r EQU ,$end ROT JMP2?
+	DUP LIT BRK2?r EQU ,$end ROT JNZ2
 	=Console.char
 	#0001 ADD2 ^print-string JMP
 

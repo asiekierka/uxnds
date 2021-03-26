@@ -25,7 +25,7 @@ RTN
 	
 	$loop
 		~b #01 ADD =b
-		,$loop ~b #d0 LTH JMP2?
+		,$loop ~b #d0 LTH JNZ2
 	~b =Console.byte 
 
 RTN

@@ -53,7 +53,7 @@
 	$draw-hor NOP
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor SWP JMP?
+		OVR2 OVR2 LTH2 ^$draw-hor SWP JNZ
 	POP2 POP2
 
 	( draw ver line )
@@ -62,7 +62,7 @@
 	$draw-ver NOP
 		( draw ) #02 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver SWP JMP?
+		OVR2 OVR2 LTH2 ^$draw-ver SWP JNZ
 	POP2 POP2
 
 	( draw blending modes )
@@ -72,7 +72,7 @@
 		( move ) OVR #00 SWP #0008 MUL2 #0020 ADD2 =Sprite.x
 		( draw ) OVR =Sprite.color
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-blends SWP JMP?
+		DUP2 LTH ^$draw-blends SWP JNZ
 	POP POP
 
 	,update-theme JSR2
@@ -82,28 +82,28 @@ BRK
 
 @FRAME 
 	
-	,$no-touch ~Mouse.state #00 EQU JMP2?
+	,$no-touch ~Mouse.state #00 EQU JNZ2
 
 		~Mouse.y ~window.y1 SUB2 STEP8 
 
-		DUP2 #0010 NEQ2 ,$no-touch-red ROT JMP2?
-			,$no-touch-red ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JMP2?
-			,$no-touch-red ~Mouse.x ~window.x1 #008c ADD2 GTH2 JMP2?
+		DUP2 #0010 NEQ2 ,$no-touch-red ROT JNZ2
+			,$no-touch-red ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JNZ2
+			,$no-touch-red ~Mouse.x ~window.x1 #008c ADD2 GTH2 JNZ2
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.r1 #00 ~selection ADD2 POK2
 		$no-touch-red
-		DUP2 #0020 NEQ2 ,$no-touch-green ROT JMP2?
-			,$no-touch-green ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JMP2?
-			,$no-touch-green ~Mouse.x ~window.x1 #008c ADD2 GTH2 JMP2?
+		DUP2 #0020 NEQ2 ,$no-touch-green ROT JNZ2
+			,$no-touch-green ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JNZ2
+			,$no-touch-green ~Mouse.x ~window.x1 #008c ADD2 GTH2 JNZ2
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.g1 #00 ~selection ADD2 POK2
 		$no-touch-green
-		DUP2 #0030 NEQ2 ,$no-touch-blue ROT JMP2?
-			,$no-touch-blue ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JMP2?
-			,$no-touch-blue ~Mouse.x ~window.x1 #008c ADD2 GTH2 JMP2?
+		DUP2 #0030 NEQ2 ,$no-touch-blue ROT JNZ2
+			,$no-touch-blue ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JNZ2
+			,$no-touch-blue ~Mouse.x ~window.x1 #008c ADD2 GTH2 JNZ2
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.b1 #00 ~selection ADD2 POK2
 		$no-touch-blue
-		DUP2 #0040 NEQ2 ,$no-touch-radio ROT JMP2?
-			,$no-touch-radio ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JMP2?
-			,$no-touch-radio ~Mouse.x ~window.x1 #008c ADD2 GTH2 JMP2?
+		DUP2 #0040 NEQ2 ,$no-touch-radio ROT JNZ2
+			,$no-touch-radio ~Mouse.x ~window.x1 #0050 ADD2 LTH2 JNZ2
+			,$no-touch-radio ~Mouse.x ~window.x1 #008c ADD2 GTH2 JNZ2
 			~Mouse.x ~window.x1 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B =selection
 		$no-touch-radio
 
@@ -228,7 +228,7 @@ RTN
 	$loop
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( draw ) #05 =Sprite.color
-		,$loop ~Sprite.x ~slider.x2 #0008 ADD2 LTH2 JMP2?
+		,$loop ~Sprite.x ~slider.x2 #0008 ADD2 LTH2 JNZ2
 
 	( incr ) ~Sprite.x #0004 ADD2 =Sprite.x
 	,sliderc_icn =Sprite.addr
@@ -248,9 +248,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x ++ =Screen.x
-			,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+			,$hor ~Screen.x ~rect.x2 LTH2 JNZ2
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 LTH2 JMP2?
+		,$ver ~Screen.y ~rect.y2 LTH2 JNZ2
 
 RTN
 
@@ -261,13 +261,13 @@ RTN
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 LTH2 JMP2?
+		,$hor ~Screen.x ~rect.x2 LTH2 JNZ2
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 ++ LTH2 JMP2?
+		,$ver ~Screen.y ~rect.y2 ++ LTH2 JNZ2
 
 RTN
 
@@ -278,7 +278,7 @@ RTN
 		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~color =Sprite.color
 		( incr ) ++
 		( incr ) ~Sprite.x 8+ =Sprite.x
-		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JNZ2
 	POP2
 
 RTN

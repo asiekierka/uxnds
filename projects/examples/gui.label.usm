@@ -23,7 +23,7 @@
 	$draw-ver
 		( draw ) #02 =Screen.color
 		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-		,$draw-ver ~Screen.y ~Screen.height LTH2 JMP2?
+		,$draw-ver ~Screen.y ~Screen.height LTH2 JNZ2
 
 	~center.x ~center.y #0010 SUB2 #0c ,text1 ,draw-label-left JSR2
 	~center.x ~center.y #0c ,text2 ,draw-label-middle JSR2
@@ -41,7 +41,7 @@ BRK
 		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JNZ2
 	POP2
 
 RTN
@@ -55,7 +55,7 @@ RTN
 		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JNZ2
 	POP2
 
 RTN
@@ -69,7 +69,7 @@ RTN
 		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
 		( incr ) #0001 ADD2
 		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-		DUP2 PEK2 #00 NEQ ,$loop ROT JMP2?
+		DUP2 PEK2 #00 NEQ ,$loop ROT JNZ2
 	POP2
 
 RTN
@@ -79,7 +79,7 @@ RTN
 	#0000 ( counter )
 	$loop
 		( incr ) #0001 ADD2 OVR2 OVR2 ADD2 
-		PEK2 #00 NEQ ,$loop ROT JMP2?
+		PEK2 #00 NEQ ,$loop ROT JNZ2
 	SWP2 POP2
 
 RTN
