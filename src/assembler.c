@@ -155,8 +155,8 @@ findopcode(char *s)
 			continue;
 		while(s[3 + m]) {
 			if(s[3 + m] == '2') i |= (1 << 5); /* mode: short */
-			if(s[3 + m] == 'r') i |= (1 << 6); /* mode: return */
-			if(s[3 + m] == '?') return 0;      /* forget that conditionals exist */
+			else if(s[3 + m] == 'r') i |= (1 << 6); /* mode: return */
+			else return 0; /* failed to match */
 			m++;
 		}
 		return i;
