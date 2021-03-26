@@ -42,21 +42,21 @@ BRK
 	( hold ctrl key to change slime color )
 
 	~Controller.p1 #0f AND
-		DUP #01 NEQ ,$no-ctrl JNZ2 #05 =slime $no-ctrl
-		DUP #02 NEQ ,$no-alt JNZ2 #0f =slime $no-alt
+		DUP #01 NEQ ^$no-ctrl JNZ #05 =slime $no-ctrl
+		DUP #02 NEQ ^$no-alt JNZ #0f =slime $no-alt
 	POP
 
 	( clear ) #10 =Sprite.color
 
 	( detect movement )
 	~Controller.p1 #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ,$no-up JNZ2 
+		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
 			( move ) ~Sprite.y -- =Sprite.y ,up_icn =Sprite.addr $no-up
-		DUP #05 SFT #01 AND #01 NEQ ,$no-down JNZ2 
+		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
 			( move ) ~Sprite.y ++ =Sprite.y ,down_icn =Sprite.addr $no-down
-		DUP #06 SFT #01 AND #01 NEQ ,$no-left JNZ2 
+		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
 			( move ) ~Sprite.x -- =Sprite.x ,left_icn =Sprite.addr $no-left
-		DUP #07 SFT #01 AND #01 NEQ ,$no-right JNZ2 
+		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
 			( move ) ~Sprite.x ++ =Sprite.x ,right_icn =Sprite.addr $no-right
 	POP
 

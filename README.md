@@ -45,10 +45,10 @@ BRK
 
 @print-label ( text )
 	
-	$loop NOP
-		( send ) DUP2 LDR =Console.char
+	$loop
+		( send ) DUP2 PEK2 =Console.char
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDR #00 NEQ ^$loop MUL JMP 
+		( loop ) DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 
 RTN    

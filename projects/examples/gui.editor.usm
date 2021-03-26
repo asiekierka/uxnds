@@ -34,23 +34,23 @@ BRK
 
 @FRAME 
 
-	~Controller.buttons #00 EQU ,no-ctrl JNZ2
+	~Controller.buttons #00 EQU ^$no-ctrl JNZ
 
-		~Controller.buttons #10 EQU ,no-ctrl-up JNZ2
+		~Controller.buttons #10 EQU ^$no-ctrl-up JNZ
 			~editor.addr #0001 ADD2 =editor.addr
 			,draw-window JSR2
 			,draw-editor JSR2
-		@no-ctrl-up
+		$no-ctrl-up
 
-		~Controller.buttons #20 EQU ,no-ctrl-down JNZ2
+		~Controller.buttons #20 EQU ^$no-ctrl-down JNZ
 			~editor.addr #0001 SUB2 =editor.addr
 			,draw-window JSR2
 			,draw-editor JSR2
-		@no-ctrl-down
+		$no-ctrl-down
 
-	@no-ctrl
+	$no-ctrl
 
-	~Mouse.state #00 EQU ,no-click JNZ2
+	~Mouse.state #00 EQU ^$no-click JNZ
 
 		( load ) ~editor.addr ~Mouse.y ~editor.y1 SUB2 #0008 DIV2 ADD2 PEK2
 		( mask ) #01 #07 ~Mouse.x ~editor.x1 SUB2 #0008 DIV2 SWP POP SUB #40 SFT SFT 
@@ -60,7 +60,7 @@ BRK
 		,draw-window JSR2
 		,draw-editor JSR2
 
-	@no-click
+	$no-click
 
 	,draw-cursor JSR2
 

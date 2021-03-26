@@ -15,10 +15,10 @@
 
 @FRAME
 	
-	~Keys #00 EQU ,$end JNZ2
+	~Keys #00 EQU ^$end JNZ
 
 	( enter key )
-	~Keys #0d NEQ ,$no-return JNZ2
+	~Keys #0d NEQ ^$no-return JNZ
 		#0000 =Sprite.x
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( release ) #00 =Keys

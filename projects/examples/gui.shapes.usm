@@ -53,13 +53,13 @@ BRK
 	~line.dx ~line.dy ADD2 =line.e1
 	$loop
 		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
-		~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 ,$end JNZ2
+		~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 ^$end JNZ
 		~line.e1 #0002 MUL2 =line.e2
-		~line.e2 ~line.dy LTS2 ,$skipy JNZ2
+		~line.e2 ~line.dy LTS2 ^$skipy JNZ
 			~line.e1 ~line.dy ADD2 =line.e1
 			~line.x ~line.sx ADD2 =line.x
 		$skipy
-		~line.e2 ~line.dx GTS2 ,$skipx JNZ2
+		~line.e2 ~line.dx GTS2 ^$skipx JNZ
 			~line.e1 ~line.dx ADD2 =line.e1
 			~line.y ~line.sy ADD2 =line.y
 		$skipx
@@ -76,13 +76,13 @@ RTN
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ,$hor JNZ2
+		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ,$ver JNZ2
+		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
 
 RTN
 
@@ -94,9 +94,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x ++ =Screen.x
-			~Screen.x ~rect.x2 LTH2 ,$hor JNZ2
+			~Screen.x ~rect.x2 LTH2 ^$hor JNZ
 		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 LTH2 ,$ver JNZ2
+		~Screen.y ~rect.y2 LTH2 ^$ver JNZ
 
 RTN
 
@@ -109,9 +109,9 @@ RTN
 			( draw ) ~pict.color =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~pict.width ~pict.x ADD2 LTH2 ,$hor JNZ2
+		~Sprite.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
 		( incr ) ~Sprite.y 8+ =Sprite.y
-	~Sprite.y ~pict.height ~pict.y ADD2 LTH2 ,$ver JNZ2
+	~Sprite.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
 
 RTN
 
@@ -123,7 +123,7 @@ RTN
 	( draw ) ,$seg JSR2
 	$loop
 		( incr ) ~circle.x ++ =circle.x
-		~circle.d #0000 #0001 ADD2 LTS2 ,$else JNZ2
+		~circle.d #0000 #0001 ADD2 LTS2 ^$else JNZ
 			( decr ) ~circle.y -- =circle.y
 			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 #000a ADD2 =circle.d
 			,$end JMP2
@@ -131,7 +131,7 @@ RTN
 			~circle.x #0004 MUL2 ~circle.d ADD2 #0006 ADD2 =circle.d
 		$end
 		( draw ) ,$seg JSR2
-		~circle.y ~circle.x #0001 SUB2 GTS2 ,$loop JNZ2
+		~circle.y ~circle.x #0001 SUB2 GTS2 ^$loop JNZ
 	RTN
 	$seg
 		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color

@@ -86,24 +86,24 @@ BRK
 
 		~Mouse.y ~window.y1 SUB2 STEP8 
 
-		DUP2 #0010 NEQ2 ,$no-touch-red JNZ2
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ,$no-touch-red JNZ2
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ,$no-touch-red JNZ2
+		DUP2 #0010 NEQ2 ^$no-touch-red JNZ
+			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-red JNZ
+			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-red JNZ
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.r1 #00 ~selection ADD2 POK2
 		$no-touch-red
-		DUP2 #0020 NEQ2 ,$no-touch-green JNZ2
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ,$no-touch-green JNZ2
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ,$no-touch-green JNZ2
+		DUP2 #0020 NEQ2 ^$no-touch-green JNZ
+			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-green JNZ
+			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-green JNZ
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.g1 #00 ~selection ADD2 POK2
 		$no-touch-green
-		DUP2 #0030 NEQ2 ,$no-touch-blue JNZ2
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ,$no-touch-blue JNZ2
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ,$no-touch-blue JNZ2
+		DUP2 #0030 NEQ2 ^$no-touch-blue JNZ
+			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-blue JNZ
+			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-blue JNZ
 			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.b1 #00 ~selection ADD2 POK2
 		$no-touch-blue
-		DUP2 #0040 NEQ2 ,$no-touch-radio JNZ2
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ,$no-touch-radio JNZ2
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ,$no-touch-radio JNZ2
+		DUP2 #0040 NEQ2 ^$no-touch-radio JNZ
+			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-radio JNZ
+			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-radio JNZ
 			~Mouse.x ~window.x1 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B =selection
 		$no-touch-radio
 
@@ -228,7 +228,7 @@ RTN
 	$loop
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( draw ) #05 =Sprite.color
-		~Sprite.x ~slider.x2 #0008 ADD2 LTH2 ,$loop JNZ2
+		~Sprite.x ~slider.x2 #0008 ADD2 LTH2 ^$loop JNZ
 
 	( incr ) ~Sprite.x #0004 ADD2 =Sprite.x
 	,sliderc_icn =Sprite.addr
@@ -248,9 +248,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x ++ =Screen.x
-			~Screen.x ~rect.x2 LTH2 ,$hor JNZ2
+			~Screen.x ~rect.x2 LTH2 ^$hor JNZ
 		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 LTH2 ,$ver JNZ2
+		~Screen.y ~rect.y2 LTH2 ^$ver JNZ
 
 RTN
 
@@ -261,13 +261,13 @@ RTN
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ,$hor JNZ2
+		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ,$ver JNZ2
+		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
 
 RTN
 
@@ -278,7 +278,7 @@ RTN
 		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~color =Sprite.color
 		( incr ) ++
 		( incr ) ~Sprite.x 8+ =Sprite.x
-		DUP2 PEK2 #00 NEQ ,$loop JNZ2
+		DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 
 RTN
