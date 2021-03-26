@@ -17,7 +17,6 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 #define FLAG_HALT 0x01
-#define FLAG_SHORT 0x02
 #define FLAG_RETURN 0x04
 #define PAGE_DEVICE 0x0100
 
