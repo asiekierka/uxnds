@@ -1,0 +1,20 @@
+;current { second 1 }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+( program )
+
+|0200 @RESET BRK
+
+@FRAME
+	#00 =Time.get
+	~Time.second ~current.second NEQ #01 JNZ BRK
+	~Time.second DUP =current.second =Console.byte
+
+@ERROR BRK
+

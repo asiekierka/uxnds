@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <time.h>
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -418,6 +419,26 @@ midi_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
+time_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	Uint8 *m = u->ram.dat;
+	time_t seconds = time(NULL);
+	struct tm *t = localtime(&seconds);
+	m[ptr +  0] = (t->tm_year & 0xff00) >> 8;
+	m[ptr +  1] = t->tm_year & 0xff;
+	m[ptr +  2] = t->tm_mon;
+	m[ptr +  3] = t->tm_mday;
+	m[ptr +  4] = t->tm_hour;
+	m[ptr +  5] = t->tm_min;
+	m[ptr +  6] = t->tm_sec;
+	m[ptr +  7] = t->tm_wday;
+	m[ptr +  8] = (t->tm_yday & 0x100) >> 8;
+	m[ptr +  9] = t->tm_yday && 0xff;
+	m[ptr + 10] = t->tm_isdst;
+	return b1;
+}
+
+Uint8
 system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
@@ -496,7 +517,7 @@ main(int argc, char **argv)
 	portuxn(&u, "file", file_poke);
 	portuxn(&u, "audio", audio_poke);
 	portuxn(&u, "midi", ppnil);
-	portuxn(&u, "---", ppnil);
+	portuxn(&u, "time", time_poke);
 	portuxn(&u, "---", ppnil);
 	portuxn(&u, "---", ppnil);
 	portuxn(&u, "---", ppnil);
