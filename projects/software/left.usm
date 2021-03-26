@@ -16,7 +16,7 @@
 )  
 
 %RTN { JMP2r }
-%RTN? { #00 EQU #02 SWP JNZ STH2r JMP2 }
+%RTN? { #00 EQU #02 JNZ STH2r JMP2 }
 
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
@@ -69,62 +69,62 @@ BRK
 
 	( ctrl )
 
-	,ctrl-end ~Controller #00 EQU ~lock #00 NEQ #0000 NEQ2 JNZ2
+	~Controller #00 EQU ~lock #00 NEQ #0000 NEQ2 ,ctrl-end JNZ2
 		( lock ) #04 =lock
-		,no-ctrl-up ~Controller #10 NEQ JNZ2
-			( clamp ) ,no-ctrl-up ~position.y #0000 EQU2 JNZ2
+		~Controller #10 NEQ ,no-ctrl-up JNZ2
+			( clamp ) ~position.y #0000 EQU2 ,no-ctrl-up JNZ2
 			,find-lineoffset JSR2 =position.x 
 			~position.y -- =position.y 
 			,find-selection JSR2 DUP2 =selection.from ++ =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-up
-		,no-ctrl-down ~Controller #20 NEQ JNZ2
+		~Controller #20 NEQ ,no-ctrl-down JNZ2
 			,find-lineoffset JSR2 =position.x ~position.y ++ =position.y 
 			,find-selection JSR2 DUP2 =selection.from ++ =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-down
-		,no-ctrl-left ~Controller #40 NEQ JNZ2
-			( clamp ) ,no-ctrl-left ~selection.from ,document.body EQU2 JNZ2
+		~Controller #40 NEQ ,no-ctrl-left JNZ2
+			( clamp ) ~selection.from ,document.body EQU2 ,no-ctrl-left JNZ2
 			~selection.from -- DUP2 =selection.from ++ =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-left
-		,no-ctrl-right ~Controller #80 NEQ JNZ2
+		~Controller #80 NEQ ,no-ctrl-right JNZ2
 			~selection.from ++ DUP2 =selection.from ++ =selection.to
 			,clamp-selection JSR2 ,follow-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 		@no-ctrl-right
 		( alt )
-		,no-alt ~Controller #0f AND #02 NEQ JNZ2
-			,no-aup ~Controller #04 SFT #01 NEQ JNZ2
+		~Controller #0f AND #02 NEQ ,no-alt JNZ2
+			~Controller #04 SFT #01 NEQ ,no-aup JNZ2
 				,find-wordstart JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aup
-			,no-adown ~Controller #04 SFT #02 NEQ JNZ2
+			~Controller #04 SFT #02 NEQ ,no-adown JNZ2
 				,find-wordend JSR2 =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-adown
-			,no-aleft ~Controller #04 SFT #04 NEQ JNZ2
+			~Controller #04 SFT #04 NEQ ,no-aleft JNZ2
 				~selection.to -- =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aleft
-			,no-aright ~Controller #04 SFT #08 NEQ JNZ2
+			~Controller #04 SFT #08 NEQ ,no-aright JNZ2
 				~selection.to ++ =selection.to
 				,clamp-selection JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-aright
 		@no-alt
 		( ctrl )
-		,no-ctrl ~Controller #0f AND #01 NEQ JNZ2
-			,no-cup ~Controller #04 SFT #01 NEQ JNZ2
+		~Controller #0f AND #01 NEQ ,no-ctrl JNZ2
+			~Controller #04 SFT #01 NEQ ,no-cup JNZ2
 				#0004 ,scroll-up JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cup
-			,no-cdown ~Controller #04 SFT #02 NEQ JNZ2
+			~Controller #04 SFT #02 NEQ ,no-cdown JNZ2
 				#0004 ,scroll-down JSR2
 				,redraw JSR2 ,ctrl-end JMP2
 			@no-cdown
-			,no-cleft ~Controller #04 SFT #04 NEQ JNZ2
+			~Controller #04 SFT #04 NEQ ,no-cleft JNZ2
 				,goto-linestart JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cleft
-			,no-cright ~Controller #04 SFT #08 NEQ JNZ2
+			~Controller #04 SFT #08 NEQ ,no-cright JNZ2
 				,goto-lineend JSR2 ,redraw JSR2 ,ctrl-end JMP2
 			@no-cright
 		@no-ctrl
@@ -133,11 +133,11 @@ BRK
 
 	( keys )
 
-	,no-keys ~Keys #00 EQU JNZ2
+	~Keys #00 EQU ,no-keys JNZ2
 
-		,$no-backspace ~Keys #08 NEQ JNZ2
+		~Keys #08 NEQ ,$no-backspace JNZ2
 			( erase )
-			,$erase-multiple ~selection.to ~selection.from SUB2 #0001 NEQ2 JNZ2
+			~selection.to ~selection.from SUB2 #0001 NEQ2 ,$erase-multiple JNZ2
 				~selection.to ~selection.from SUB2 ,shift-left JSR2
 				,$erase-end JMP2
 			$erase-multiple
@@ -162,28 +162,28 @@ BRK
 
 	( mouse )
 
-	,no-change ~Mouse.state ~touch.state EQU JNZ2
+	~Mouse.state ~touch.state EQU ,no-change JNZ2
 	
 		#0000 =Sprite.x ~Screen.height 8- =Sprite.y
 		,mouse00icn =Sprite.addr
-		,nobutton1 ~Mouse.state #01 NEQ JNZ2 ,mouse01icn =Sprite.addr @nobutton1
-		,nobutton2 ~Mouse.state #10 NEQ JNZ2 ,mouse10icn =Sprite.addr @nobutton2
-		,nobutton3 ~Mouse.state #11 NEQ JNZ2 ,mouse11icn =Sprite.addr @nobutton3
+		~Mouse.state #01 NEQ ,nobutton1 JNZ2 ,mouse01icn =Sprite.addr @nobutton1
+		~Mouse.state #10 NEQ ,nobutton2 JNZ2 ,mouse10icn =Sprite.addr @nobutton2
+		~Mouse.state #11 NEQ ,nobutton3 JNZ2 ,mouse11icn =Sprite.addr @nobutton3
 		#01 =Sprite.color
 
 	@no-change
 
-	,touch-end ~Mouse.state #00 EQU JNZ2
+	~Mouse.state #00 EQU ,touch-end JNZ2
 
-		,touch-linebar ~Mouse.x #0010 LTH2 JNZ2
-		,touch-body ~Mouse.x ~Screen.width 8- LTH2 JNZ2
+		~Mouse.x #0010 LTH2 ,touch-linebar JNZ2
+		~Mouse.x ~Screen.width 8- LTH2 ,touch-body JNZ2
 		,touch-scrollbar JMP2
 
 	@touch-end
 
 	~Mouse.state =touch.state
 
-	( unlock ) ,skip-unlock ~lock #00 EQU JNZ2 ~lock #01 SUB =lock @skip-unlock
+	( unlock ) ~lock #00 EQU ,skip-unlock JNZ2 ~lock #01 SUB =lock @skip-unlock
 
 	,draw-cursor JSR2
 
@@ -191,11 +191,11 @@ BRK
 
 @touch-scrollbar
 
-	,$no-up ~Mouse.y #0008 GTH2 JNZ2
+	~Mouse.y #0008 GTH2 ,$no-up JNZ2
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
 		^$end JMP
 	$no-up 
-	,$no-down ~Mouse.y ~Screen.height 8- LTH2 JNZ2
+	~Mouse.y ~Screen.height 8- LTH2 ,$no-down JNZ2
 		( incr ) ~scroll.y ++ =scroll.y
 		^$end JMP
 	$no-down 
@@ -220,20 +220,20 @@ RTN
 	~Mouse.y 8/ ~scroll.y ADD2 =position.y
 	~Mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
 
-	,$no-chord-cut ~Mouse.chord #01 NEQ JNZ2
+	~Mouse.chord #01 NEQ ,$no-chord-cut JNZ2
 		,cut JSR2
 		( release ) #00 DUP =Mouse.state =Mouse.chord
 		^$end JMP
 	$no-chord-cut
-	,$no-chord-paste ~Mouse.chord #10 NEQ JNZ2
+	~Mouse.chord #10 NEQ ,$no-chord-paste JNZ2
 		,paste JSR2
 		( release ) #00 DUP =Mouse.state =Mouse.chord
 		^$end JMP
 	$no-chord-paste
 
-	,$end ~Mouse.state #11 EQU JNZ2
+	~Mouse.state #11 EQU ,$end JNZ2
 
-	,$no-drag ~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 JNZ2
+	~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 ,$no-drag JNZ2
 		( on drag )
 		,find-selection JSR2 ++ =selection.to
 		,clamp-selection JSR2
@@ -260,7 +260,7 @@ RTN
 
 @scroll-up ( length )
 	
-	DUP2 ~scroll.y LTH2 ,$clamp ROT JNZ2
+	DUP2 ~scroll.y LTH2 ,$clamp JNZ2
 		#0000 =scroll.y POP2 RTN
 	$clamp
 	~scroll.y SWP2 SUB2 =scroll.y
@@ -300,10 +300,10 @@ RTN
 
 @follow-selection
 
-	,$no-up ~position.y ~scroll.y GTH2 JNZ2
+	~position.y ~scroll.y GTH2 ,$no-up JNZ2
 		~position.y =scroll.y RTN
 	$no-up
-	,$no-down ~position.y ~Screen.height #0010 SUB2 8/ ~scroll.y ADD2 LTH2 JNZ2
+	~position.y ~Screen.height #0010 SUB2 8/ ~scroll.y ADD2 LTH2 ,$no-down JNZ2
 		~position.y ~Screen.height #0010 SUB2 8/ SUB2 =scroll.y RTN
 	$no-down
 
@@ -347,9 +347,9 @@ RTN
 	~selection.to =j
 	$loop NOP
 		( decr ) ~j -- =j
-		,$end ~j PEK2 #20 EQU JNZ2
-		,$end ~j PEK2 #0a EQU JNZ2
-		,$end ~j PEK2 #0d EQU JNZ2
+		~j PEK2 #20 EQU ,$end JNZ2
+		~j PEK2 #0a EQU ,$end JNZ2
+		~j PEK2 #0d EQU ,$end JNZ2
 		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j --
@@ -361,9 +361,9 @@ RTN
 	~selection.to =j
 	$loop NOP
 		( incr ) ~j ++ =j
-		,$end ~j PEK2 #20 EQU JNZ2
-		,$end ~j PEK2 #0a EQU JNZ2
-		,$end ~j PEK2 #0d EQU JNZ2
+		~j PEK2 #20 EQU ,$end JNZ2
+		~j PEK2 #0a EQU ,$end JNZ2
+		~j PEK2 #0d EQU ,$end JNZ2
 		~j ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j ++
@@ -375,8 +375,8 @@ RTN
 	#0000 =j
 	$loop NOP
 		( incr ) ~j ++ =j
-		,$end ~selection.from ~j SUB2 PEK2 #0a EQU JNZ2
-		,$end ~selection.from ~j SUB2 PEK2 #0d EQU JNZ2
+		~selection.from ~j SUB2 PEK2 #0a EQU ,$end JNZ2
+		~selection.from ~j SUB2 PEK2 #0d EQU ,$end JNZ2
 		~selection.from ~j SUB2 ,document.body GTH2 ^$loop MUL JMP
 	$end 
 	( return ) ~j
@@ -387,8 +387,8 @@ RTN
 
 	,document.body =j #0000 =pt.y
 	$loop NOP
-		,$end ~pt.y ~position.y -- GTH2 JNZ2
-		,$no-space ~j PEK2 #0a NEQ ~j PEK2 #0d NEQ #0101 EQU2 JNZ2
+		~pt.y ~position.y -- GTH2 ,$end JNZ2
+		~j PEK2 #0a NEQ ~j PEK2 #0d NEQ #0101 EQU2 ,$no-space JNZ2
 			( incr ) ~pt.y ++ =pt.y
 		$no-space
 		( incr ) ~j ++ =j
@@ -403,8 +403,8 @@ RTN
 	,find-line JSR2 ( find line )
 	#0000 =pt.x
 	$loop NOP
-		,$end ~j ~pt.x ADD2 PEK2 #0a EQU JNZ2
-		,$end ~j ~pt.x ADD2 PEK2 #0d EQU JNZ2
+		~j ~pt.x ADD2 PEK2 #0a EQU ,$end JNZ2
+		~j ~pt.x ADD2 PEK2 #0d EQU ,$end JNZ2
 		( incr ) ~pt.x ++ =pt.x
 		~pt.x ~position.x -- LTH2 ^$loop MUL JMP
 	$end
@@ -448,17 +448,17 @@ RTN
 	
 	,document.body =selection.from #0000 =pt.x #0000 =pt.y
 	$loop
-		,$no-space ~selection.from PEK2 #0a NEQ ~selection.from PEK2 #0d NEQ #0101 EQU2 JNZ2
+		~selection.from PEK2 #0a NEQ ~selection.from PEK2 #0d NEQ #0101 EQU2 ,$no-space JNZ2
 			( incr ) ~pt.y ++ =pt.y
 			#0000 =pt.x
 		$no-space
-		,$no-reached ~pt.y ~position.y -- GTH2 ~pt.x ~position.x -- GTH2 #0101 NEQ2 JNZ2
+		~pt.y ~position.y -- GTH2 ~pt.x ~position.x -- GTH2 #0101 NEQ2 ,$no-reached JNZ2
 			~selection.from ++ =selection.to
 			RTN
 		$no-reached
 		( incr ) ~pt.x ++ =pt.x
 		( incr ) ~selection.from ++ =selection.from
-	,$loop ~selection.from PEK2 #00 NEQ JNZ2
+	~selection.from PEK2 #00 NEQ ,$loop JNZ2
 
 RTN
 
@@ -530,8 +530,8 @@ RTN
 	( scroll to position )
 	#0000 =j ( j is linebreaks )
 	$find-offset NOP
-		,$find-offset-end ~scroll.y ~j EQU2 JNZ2
-		,$no-break ~textarea.addr PEK2 #0a NEQ ~textarea.addr PEK2 #0d NEQ #0101 EQU2 JNZ2
+		~scroll.y ~j EQU2 ,$find-offset-end JNZ2
+		~textarea.addr PEK2 #0a NEQ ~textarea.addr PEK2 #0d NEQ #0101 EQU2 ,$no-break JNZ2
 			( incr ) ~j ++ =j
 		$no-break
 		( incr ) ~textarea.addr ++ =textarea.addr
@@ -543,7 +543,7 @@ RTN
 
 	$loop
 
-		,$end ~Sprite.y ~Screen.height #0010 SUB2 GTH2 JNZ2
+		~Sprite.y ~Screen.height #0010 SUB2 GTH2 ,$end JNZ2
 
 		( get character )
 		,font #00 ~i PEK2 #20 SUB 8* ADD2 =Sprite.addr
@@ -553,7 +553,7 @@ RTN
 		~i ~selection.to LTH2 #0101 EQU2
 		#05 MUL ADD ~i ~selection.from EQU2 ADD =Sprite.color
 
-		,$no-linebreak ~i PEK2 #0a NEQ ~i PEK2 #0d NEQ #0101 EQU2 JNZ2
+		~i PEK2 #0a NEQ ~i PEK2 #0d NEQ #0101 EQU2 ,$no-linebreak JNZ2
 			( draw linebreak )
 			,linebreak_icn =Sprite.addr
 			( draw ) #02
@@ -565,7 +565,7 @@ RTN
 				( incr ) ~Sprite.x 8+ =Sprite.x
 				,font =Sprite.addr
 				#01 =Sprite.color
-				,$fill-clear ~Sprite.x ~Screen.width 8- LTH2 JNZ2
+				~Sprite.x ~Screen.width 8- LTH2 ,$fill-clear JNZ2
 
 			( draw line number )
 
@@ -585,7 +585,7 @@ RTN
 		( incr ) ~i ++ =i
 		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
 
-	,$loop ~i PEK2 #00 NEQ JNZ2
+	~i PEK2 #00 NEQ ,$loop JNZ2
 
 	$end
 

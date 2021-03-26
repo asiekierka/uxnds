@@ -18,8 +18,8 @@
 )
 
 %RTN   { JMP2r }
-%RTN? { #00 EQU #02 SWP JNZ STH2r JMP2 }
-%ABS2 { DUP2 #000f SFT2 EQU #04 SWP JNZ #ffff MUL2 }
+%RTN? { #00 EQU #02 JNZ STH2r JMP2 }
+%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 %STEP8 { #0033 SFT2 }
 %MOD8 { #0007 AND2  }
 %SFL { #40 SFT SFT }
@@ -111,7 +111,7 @@ BRK
 	,draw-cursor JSR2
 
 	( release drag )
-	,$no-release ~Mouse.state #00 EQU ~brush.drag #01 EQU #0101 NEQ2 JNZ2
+	~Mouse.state #00 EQU ~brush.drag #01 EQU #0101 NEQ2 ,$no-release JNZ2
 		~origin.x1 #0002 SUB2 ~origin.y1 #0002 SUB2 ~origin.x2 #0002 ADD2 ~origin.y2 #0002 ADD2 #00 ,fill-rect JSR2
 		~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
 		,draw-background JSR2
@@ -123,32 +123,32 @@ BRK
 	$no-release
 
 	( operations on release line/rect )
-	,$no-touch-change ~Mouse.state ~brush.last EQU JNZ2
-	,$no-touch-change ~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 JNZ2
-	,$no-touch-change ~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 JNZ2
-		,$no-touch-ondown ~Mouse.state #00 EQU JNZ2
+	~Mouse.state ~brush.last EQU ,$no-touch-change JNZ2
+	~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 ,$no-touch-change JNZ2
+	~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 ,$no-touch-change JNZ2
+		~Mouse.state #00 EQU ,$no-touch-ondown JNZ2
 			( on down )
 			~Mouse.x =cursor.dx
 			~Mouse.y =cursor.dy
 		$no-touch-ondown
-		,$no-touch-onup ~Mouse.state #00 NEQ JNZ2
+		~Mouse.state #00 NEQ ,$no-touch-onup JNZ2
 			( on up )
-			,$no-touch-line ~brush.tool #02 NEQ JNZ2
+			~brush.tool #02 NEQ ,$no-touch-line JNZ2
 				~cursor.dx ~canvas.x1 SUB2 ~cursor.dy ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint-line JSR2
 				,$touch-end JMP2
 			$no-touch-line
-			,$no-touch-rect ~brush.tool #03 NEQ JNZ2
+			~brush.tool #03 NEQ ,$no-touch-rect JNZ2
 				~cursor.dx ~canvas.x1 SUB2 ~cursor.dy ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint-rect JSR2
 				,$touch-end JMP2
 			$no-touch-rect
 		$no-touch-onup
 	$no-touch-change
 
-	,$no-touch ~Mouse.state #00 EQU JNZ2
+	~Mouse.state #00 EQU ,$no-touch JNZ2
 
 		( drag )
-		,$no-drag ~Controller #02 NEQ JNZ2
-			,$no-drag-start ~brush.drag #00 NEQ JNZ2
+		~Controller #02 NEQ ,$no-drag JNZ2
+			~brush.drag #00 NEQ ,$no-drag-start JNZ2
 				~canvas.x1 =origin.x1
 				~canvas.y1 =origin.y1
 				~canvas.x2 =origin.x2
@@ -165,8 +165,8 @@ BRK
 		$no-drag
 
 		( in sizepane )
-		,$no-touch-sizepane ~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 NEQ2 JNZ2
-		,$no-touch-sizepane ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 NEQ2 JNZ2
+		~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 NEQ2 ,$no-touch-sizepane JNZ2
+		~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 NEQ2 ,$no-touch-sizepane JNZ2
 			( release ) #00 =Mouse.state
 			#01 =brush.tool
 			~Mouse.x ~sizepane.x1 SUB2 8/ SWP POP =brush.size
@@ -176,8 +176,8 @@ BRK
 		$no-touch-sizepane
 
 		( in pattpane )
-		,$no-touch-pattpane ~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 NEQ2 JNZ2
-		,$no-touch-pattpane ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 NEQ2 JNZ2
+		~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 NEQ2 ,$no-touch-pattpane JNZ2
+		~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 NEQ2 ,$no-touch-pattpane JNZ2
 			( release ) #00 =Mouse.state
 			~Mouse.x ~pattpane.x1 SUB2 8/ SWP POP =brush.patt
 			( draw ) ,draw-pattpane JSR2
@@ -185,8 +185,8 @@ BRK
 		$no-touch-pattpane
 
 		( in toolpane )
-		,$no-touch-toolpane ~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 NEQ2 JNZ2
-		,$no-touch-toolpane ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 NEQ2 JNZ2
+		~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 NEQ2 ,$no-touch-toolpane JNZ2
+		~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 NEQ2 ,$no-touch-toolpane JNZ2
 			( release ) #00 =Mouse.state
 			~Mouse.x ~toolpane.x1 SUB2 8/ SWP POP =brush.tool
 			( draw ) ,draw-toolpane JSR2
@@ -194,23 +194,23 @@ BRK
 		$no-touch-toolpane
 
 		( in canvas )
-		,$no-touch-canvas ~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 JNZ2
-		,$no-touch-canvas ~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 JNZ2
+		~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 ,$no-touch-canvas JNZ2
+		~Mouse.y CLN2r ~canvas.y1 GTS2 STH2r ~canvas.y2 LTS2 #0101 NEQ2 ,$no-touch-canvas JNZ2
 
 			( set cursor operation )
-			,add-pixel ,$no-oper ~Mouse.state #01 EQU JNZ2 POP2 ,remove-pixel $no-oper =brush.oper
+			,add-pixel ~Mouse.state #01 EQU ,$no-oper JNZ2 POP2 ,remove-pixel $no-oper =brush.oper
 
-			,$no-touch-pen ~brush.tool #00 NEQ JNZ2
+			~brush.tool #00 NEQ ,$no-touch-pen JNZ2
 				~cursor.x0 ~canvas.x1 SUB2 ~cursor.y0 ~canvas.y1 SUB2 ~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint-line JSR2
 				,$touch-end JMP2
 			$no-touch-pen
 
-			,$no-touch-brush ~brush.tool #01 NEQ JNZ2
+			~brush.tool #01 NEQ ,$no-touch-brush JNZ2
 				~Mouse.x ~canvas.x1 SUB2 ~Mouse.y ~canvas.y1 SUB2 ,paint-brush JSR2
 				,$touch-end JMP2
 			$no-touch-brush
 
-			,$no-touch-zoom ~brush.tool #04 NEQ JNZ2
+			~brush.tool #04 NEQ ,$no-touch-zoom JNZ2
 				~zoom.active #00 EQU =zoom.active
 				( release ) #00 =Mouse.state
 				~Mouse.x ~canvas.x1 SUB2 ~canvas.w 2/ SUB2 =zoom.x
@@ -222,14 +222,14 @@ BRK
 		$no-touch-canvas
 
 		( background interface )
-		,$no-touch-background ~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 JNZ2
+		~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 ,$no-touch-background JNZ2
 			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
-			DUP2 #0001 NEQ2 ,$no-load-button ROT JNZ2
+			DUP2 #0001 NEQ2 ,$no-load-button JNZ2
 				,filepath ,load-file JSR2
 				,draw-canvas JSR2
 				( release ) #00 =Mouse.state
 			$no-load-button
-			DUP2 #0002 NEQ2 ,$no-save-button ROT JNZ2
+			DUP2 #0002 NEQ2 ,$no-save-button JNZ2
 				,filepath ,save-file JSR2
 				( release ) #00 =Mouse.state
 			$no-save-button
@@ -242,34 +242,34 @@ BRK
 	$no-touch
 
 	~Controller.buttons #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ,$no-up ROT JNZ2
+		DUP #04 SFT #01 AND #01 NEQ ,$no-up JNZ2
 			( move ) ~zoom.y -- =zoom.y $no-up
-		DUP #05 SFT #01 AND #01 NEQ ,$no-down ROT JNZ2
+		DUP #05 SFT #01 AND #01 NEQ ,$no-down JNZ2
 			( move ) ~zoom.y ++ =zoom.y $no-down
-		DUP #06 SFT #01 AND #01 NEQ ,$no-left ROT JNZ2
+		DUP #06 SFT #01 AND #01 NEQ ,$no-left JNZ2
 			( move ) ~zoom.x -- =zoom.x $no-left
-		DUP #07 SFT #01 AND #01 NEQ ,$no-right ROT JNZ2
+		DUP #07 SFT #01 AND #01 NEQ ,$no-right JNZ2
 			( move ) ~zoom.x ++ =zoom.x $no-right
-	#00 EQU #04 SWP JNZ ,draw-canvas JSR2
+	#00 EQU #04 JNZ ,draw-canvas JSR2
 	
-	,$no-keys ~Keys #00 EQU JNZ2
+	~Keys #00 EQU ,$no-keys JNZ2
 		~Keys 
-		DUP #20 NEQ ,$no-space ROT JNZ2
+		DUP #20 NEQ ,$no-space JNZ2
 			( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
-		DUP #08 NEQ ,$no-backspace ROT JNZ2
+		DUP #08 NEQ ,$no-backspace JNZ2
 			( erase ) ,clear JSR2 $no-backspace
-		DUP #71 NEQ ,$no-qkey ROT JNZ2
+		DUP #71 NEQ ,$no-qkey JNZ2
 			( tool0 ) #00 =brush.tool ,draw-toolpane JSR2 $no-qkey
-		DUP #77 NEQ ,$no-wkey ROT JNZ2
+		DUP #77 NEQ ,$no-wkey JNZ2
 			( tool0 ) #01 =brush.tool ,draw-toolpane JSR2 $no-wkey
-		DUP #65 NEQ ,$no-ekey ROT JNZ2
+		DUP #65 NEQ ,$no-ekey JNZ2
 			( tool0 ) #02 =brush.tool ,draw-toolpane JSR2 $no-ekey
-		DUP #72 NEQ ,$no-rkey ROT JNZ2
+		DUP #72 NEQ ,$no-rkey JNZ2
 			( tool0 ) #03 =brush.tool ,draw-toolpane JSR2 $no-rkey
-		DUP #74 NEQ ,$no-tkey ROT JNZ2
+		DUP #74 NEQ ,$no-tkey JNZ2
 			( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
 		DUP 
-			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,$no-numkey ROT JNZ2
+			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,$no-numkey JNZ2
 			( size ) ~Keys #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
 		POP
 		( release ) #00 =Keys
@@ -288,7 +288,7 @@ BRK
 	$loop NOP
 		OVR2 #00 ROT ROT POK2
 		( incr ) SWP2 #0001 ADD2 SWP2
-		OVR2 OVR2 LTH2 ^$loop SWP JNZ
+		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2 POP2
 	,redraw JSR2
 
@@ -320,7 +320,7 @@ RTN
 	( load ) =line.y1 =line.x1 =line.y2 =line.x2
 
 	( trim if zoomed )
-	,$no-zoom ~zoom.active #01 NEQ JNZ2
+	~zoom.active #01 NEQ ,$no-zoom JNZ2
 		~line.x1 8/ ~zoom.x ADD2 =line.x1
 		~line.y1 8/ ~zoom.y ADD2 =line.y1
 		~line.x2 8/ ~zoom.x ADD2 =line.x2
@@ -334,13 +334,13 @@ RTN
 	~line.dx ~line.dy ADD2 =line.e1
 	$loop
 		( paint ) ~line.x2 ~line.y2 ~brush.oper JSR2
-		,$end ~line.x2 ~line.x1 EQU2 ~line.y2 ~line.y1 EQU2 #0101 EQU2 JNZ2
+		~line.x2 ~line.x1 EQU2 ~line.y2 ~line.y1 EQU2 #0101 EQU2 ,$end JNZ2
 		~line.e1 #0002 MUL2 =line.e2
-		,$skipy ~line.e2 ~line.dy LTS2 JNZ2
+		~line.e2 ~line.dy LTS2 ,$skipy JNZ2
 			~line.e1 ~line.dy ADD2 =line.e1
 			~line.x2 ~line.sx ADD2 =line.x2
 		$skipy
-		,$skipx ~line.e2 ~line.dx GTS2 JNZ2
+		~line.e2 ~line.dx GTS2 ,$skipx JNZ2
 			~line.e1 ~line.dx ADD2 =line.e1
 			~line.y2 ~line.sy ADD2 =line.y2
 		$skipx
@@ -360,7 +360,7 @@ RTN
 	( load ) =rect.y2 =rect.x2 =rect.y1 =rect.x1
 
 	( trim if zoomed )
-	,$no-zoom ~zoom.active #01 NEQ JNZ2
+	~zoom.active #01 NEQ ,$no-zoom JNZ2
 		~rect.x1 8/ ~zoom.x ADD2 =rect.x1
 		~rect.y1 8/ ~zoom.y ADD2 =rect.y1
 		~rect.x2 8/ ~zoom.x ADD2 #0001 ADD2 =rect.x2
@@ -374,13 +374,13 @@ RTN
 		~rect.x1 =pt2.x
 		$hor
 			~pt2.x SWP POP =px.x ~pt2.y SWP POP =px.y
-			,$no-pixel ,patternize JSR2 #00 EQU JNZ2
+			,patternize JSR2 #00 EQU ,$no-pixel JNZ2
 				( draw ) ~pt2.x ~pt2.y ~brush.oper JSR2
 			$no-pixel
 			( incr ) ~pt2.x ++ =pt2.x
-			,$hor ~pt2.x ~rect.x2 LTS2 JNZ2
+			~pt2.x ~rect.x2 LTS2 ,$hor JNZ2
 		~pt2.y ++ =pt2.y
-		,$ver ~pt2.y ~rect.y2 LTS2 JNZ2
+		~pt2.y ~rect.y2 LTS2 ,$ver JNZ2
 
 	,draw-canvas JSR2
 	,draw-toolpane JSR2
@@ -394,7 +394,7 @@ RTN
 	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
 	( trim if zoomed )
-	,$no-zoom ~zoom.active #01 NEQ JNZ2
+	~zoom.active #01 NEQ ,$no-zoom JNZ2
 		~pt0.x 8/ ~zoom.x ADD2 #0003 SUB2 =pt0.x
 		~pt0.y 8/ ~zoom.y ADD2 #0003 SUB2 =pt0.y
 	$no-zoom
@@ -405,14 +405,14 @@ RTN
 		$hor
 			( addr ) ,size_icn #00 ~brush.size 8* ADD2
 			( byte ) #00 ~px.y ADD2 PEK2 #07 ~px.x SUB SFT #01 AND 
-			#00 EQU ,$no-pixel ROT JNZ2
-				,$no-pixel ,patternize JSR2 #00 EQU JNZ2
+			#00 EQU ,$no-pixel JNZ2
+				,patternize JSR2 #00 EQU ,$no-pixel JNZ2
 				~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ~brush.oper JSR2
 			$no-pixel
 			( incr ) ~px.x #01 ADD =px.x
-			,$hor ~px.x #08 LTH JNZ2
+			~px.x #08 LTH ,$hor JNZ2
 		( incr ) ~px.y #01 ADD =px.y
-		,$ver ~px.y #08 LTH JNZ2
+		~px.y #08 LTH ,$ver JNZ2
 
 	,draw-canvas JSR2
 	,draw-toolpane JSR2
@@ -423,44 +423,44 @@ RTN
 
 @patternize
 
-	,$noplain ~brush.patt #00 NEQ JNZ2
+	~brush.patt #00 NEQ ,$noplain JNZ2
 		#01 RTN
 	$noplain
 
-	,$notone1 ~brush.patt #01 NEQ JNZ2
+	~brush.patt #01 NEQ ,$notone1 JNZ2
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0001 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0001 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone1
 
-	,$notone2 ~brush.patt #02 NEQ JNZ2
+	~brush.patt #02 NEQ ,$notone2 JNZ2
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone2
 
-	,$notone3 ~brush.patt #03 NEQ JNZ2
+	~brush.patt #03 NEQ ,$notone3 JNZ2
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0005 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0005 AND2 #0000 EQU2 
 		#0101 EQU2
 		RTN
 	$notone3
 
-	,$notone4 ~brush.patt #04 NEQ JNZ2
+	~brush.patt #04 NEQ ,$notone4 JNZ2
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2  RTN
 	$notone4
 
-	,$notone5 ~brush.patt #05 NEQ JNZ2
+	~brush.patt #05 NEQ ,$notone5 JNZ2
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2  RTN
 	$notone5
 
-	,$notone6 ~brush.patt #06 NEQ JNZ2
+	~brush.patt #06 NEQ ,$notone6 JNZ2
 		~pt0.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN
 	$notone6
 
-	,$notone7 ~brush.patt #07 NEQ JNZ2
+	~brush.patt #07 NEQ ,$notone7 JNZ2
 		~pt0.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN
 	$notone7
 
@@ -512,7 +512,7 @@ RTN
 
 @draw-canvas
 	
-	,draw-canvas-zoom ~zoom.active #01 EQU JNZ2
+	~zoom.active #01 EQU ,draw-canvas-zoom JNZ2
 
 	~canvas.y1 =Sprite.y
 	,data =Sprite.addr
@@ -522,9 +522,9 @@ RTN
 			( draw ) #09 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$hor ~Sprite.x ~canvas.x2 NEQ2 JNZ2
+		~Sprite.x ~canvas.x2 NEQ2 ,$hor JNZ2
 		( incr ) ~Sprite.y 8+ =Sprite.y
-	,$ver ~Sprite.y ~canvas.y2 NEQ2 JNZ2
+	~Sprite.y ~canvas.y2 NEQ2 ,$ver JNZ2
 
 RTN
 
@@ -541,10 +541,10 @@ RTN
 			( draw ) #09 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~pt1.x ++ =pt1.x
-		,$hor ~Sprite.x ~canvas.x2 NEQ2 JNZ2
+		~Sprite.x ~canvas.x2 NEQ2 ,$hor JNZ2
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~pt1.y ++ =pt1.y
-	,$ver ~Sprite.y ~canvas.y2 NEQ2 JNZ2
+	~Sprite.y ~canvas.y2 NEQ2 ,$ver JNZ2
 
 RTN
 
@@ -574,20 +574,20 @@ RTN
 	~Mouse.y =cursor.y
 
 	( draw size cursor )
-	,$outside-canvas ~brush.tool #01 NEQ JNZ2
-	,$outside-canvas ~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 JNZ2
-	,$outside-canvas ~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 JNZ2	
+	~brush.tool #01 NEQ ,$outside-canvas JNZ2
+	~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2
+	~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2	
 		( do not draw size in toolpane )
-		,$outside-canvas ~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 #0101 EQU2 JNZ2
-		,$outside-canvas ~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 EQU2 #0101 EQU2 JNZ2
-		,$outside-canvas ~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 EQU2 #0101 EQU2 JNZ2
+		~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
+		~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
+		~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
 		( do not draw size when holding alt )
-		,$outside-canvas ~Controller #02 EQU JNZ2
+		~Controller #02 EQU ,$outside-canvas JNZ2
 		~cursor.x #0003 SUB2 =Sprite.x
 		~cursor.y #0003 SUB2 =Sprite.y
 		,brush_view #00 ~brush.size 8* ADD2 =Sprite.addr
 		#11 ~Mouse.state #02 MUL ADD =Sprite.color
-		,$outside-canvas ~Mouse.state #00 EQU JNZ2
+		~Mouse.state #00 EQU ,$outside-canvas JNZ2
 			RTN
 	$outside-canvas
 
@@ -611,9 +611,9 @@ RTN
 		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.tool EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$tools ~Sprite.x ~toolpane.x2 LTH2 JNZ2
+		~Sprite.x ~toolpane.x2 LTH2 ,$tools JNZ2
 
-	,$no-zoom ~zoom.active #01 NEQ JNZ2
+	~zoom.active #01 NEQ ,$no-zoom JNZ2
 		~Sprite.x #0008 SUB2 =Sprite.x
 		,tool_icn #0028 ADD2 =Sprite.addr
 		#01 #04 ~brush.tool EQU #02 MUL ADD =Sprite.color
@@ -634,7 +634,7 @@ RTN
 		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.patt EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$patterns ~Sprite.x ~pattpane.x2 LTH2 JNZ2
+		~Sprite.x ~pattpane.x2 LTH2 ,$patterns JNZ2
 
 RTN
 
@@ -651,7 +651,7 @@ RTN
 		( draw ) #01 ~Sprite.x ~sizepane.x1 SUB2 8/ SWP POP ~brush.size EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		,$patterns ~Sprite.x ~sizepane.x2 LTH2 JNZ2
+		~Sprite.x ~sizepane.x2 LTH2 ,$patterns JNZ2
 
 RTN
 
@@ -663,7 +663,7 @@ RTN
 	$draw-hor NOP
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor SWP JNZ
+		OVR2 OVR2 LTH2 ^$draw-hor JNZ
 	POP2 POP2
 
 	( draw ver line )
@@ -672,7 +672,7 @@ RTN
 	$draw-ver NOP
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver SWP JNZ
+		OVR2 OVR2 LTH2 ^$draw-ver JNZ
 	POP2 POP2
 
 	( draw save/load/guides icons )
@@ -711,13 +711,13 @@ RTN
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		,$hor ~Screen.x ~rect.x2 NEQ2 JNZ2
+		~Screen.x ~rect.x2 NEQ2 ,$hor JNZ2
 	~rect.y1 =Screen.y
 	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 ++ NEQ2 JNZ2
+		~Screen.y ~rect.y2 ++ NEQ2 ,$ver JNZ2
 
 RTN
 
@@ -729,9 +729,9 @@ RTN
 		$hor
 			( draw ) ~color =Screen.color
 			( incr ) ~Screen.x ++ =Screen.x
-			,$hor ~Screen.x ~rect.x2 NEQ2 JNZ2
+			~Screen.x ~rect.x2 NEQ2 ,$hor JNZ2
 		( incr ) ~Screen.y ++ =Screen.y
-		,$ver ~Screen.y ~rect.y2 NEQ2 JNZ2
+		~Screen.y ~rect.y2 NEQ2 ,$ver JNZ2
 
 RTN
 

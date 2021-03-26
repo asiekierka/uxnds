@@ -8,7 +8,7 @@
 )
 
 %RTN   { JMP2r }
-%RTN?  { #00 EQU #02 SWP JNZ STH2r JMP2 }
+%RTN?  { #00 EQU #02 JNZ STH2r JMP2 }
 %STEP8 { #0033 SFT2 }
 
 %++ { #0001 ADD2 }
@@ -62,28 +62,28 @@ BRK
 
 	( keyboard controls )
 
-	,no-key ~Keys #00 EQU JNZ2
+	~Keys #00 EQU ,no-key JNZ2
 
-		,no-key ~Keys #31 LTH JNZ2
-		,no-key ~Keys #33 GTH JNZ2
+		~Keys #31 LTH ,no-key JNZ2
+		~Keys #33 GTH ,no-key JNZ2
 		( select ) ~Keys #31 SUB =bankview.mode
 		( release ) #00 =Keys
 		,redraw JSR2 
 
 	@no-key
 
-	,no-ctrl ~Controller.buttons #00 EQU JNZ2
+	~Controller.buttons #00 EQU ,no-ctrl JNZ2
 
-		,no-ctrl-up ~Controller.buttons #10 EQU JNZ2
+		~Controller.buttons #10 EQU ,no-ctrl-up JNZ2
 			~tileview.addr #0080 ADD2 =tileview.addr
 		@no-ctrl-up
-		,no-ctrl-down ~Controller.buttons #20 EQU JNZ2
+		~Controller.buttons #20 EQU ,no-ctrl-down JNZ2
 			~tileview.addr #0080 SUB2 =tileview.addr
 		@no-ctrl-down
-		,no-ctrl-left ~Controller.buttons #40 EQU JNZ2
+		~Controller.buttons #40 EQU ,no-ctrl-left JNZ2
 			~tileview.addr 8+ =tileview.addr
 		@no-ctrl-left
-		,no-ctrl-right ~Controller.buttons #80 EQU JNZ2
+		~Controller.buttons #80 EQU ,no-ctrl-right JNZ2
 			~tileview.addr 8- =tileview.addr
 		@no-ctrl-right
 		~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
@@ -93,27 +93,27 @@ BRK
 
 	( mouse controls )
 
-	,click-end ~Mouse.state #00 EQU JNZ2
+	~Mouse.state #00 EQU ,click-end JNZ2
 
 		( toolbar )
 
-		,no-toolbar-click ~Mouse.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 JNZ2
+		~Mouse.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 ,no-toolbar-click JNZ2
 
 			( brush )
-			,no-brush-click ~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 JNZ2
-			,no-brush-click ~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 JNZ2
+			~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 ,no-brush-click JNZ2
+			~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 ,no-brush-click JNZ2
 				( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,click-end JMP2
 			@no-brush-click
 
-			,no-load-click ~Mouse.x ~tileview.x SUB2 8/ #000e NEQU2 JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #000e NEQU2 ,no-load-click JNZ2
 				( load ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.load
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,click-end JMP2
 			@no-load-click
 
-			,no-save-click ~Mouse.x ~tileview.x SUB2 8/ #000f NEQU2 JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #000f NEQU2 ,no-save-click JNZ2
 				( save ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.save
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,click-end JMP2
@@ -125,9 +125,9 @@ BRK
 
 		~Mouse.x ~bankview.x GTH2 ~Mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
 		~Mouse.y ~bankview.y GTH2 ~Mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,no-bank-click ROT JNZ2
+		#0101 NEQ2 ,no-bank-click JNZ2
 
-			,not-copy-mode ~bankview.mode #01 NEQ JNZ2
+			~bankview.mode #01 NEQ ,not-copy-mode JNZ2
 				#00 =i
 				@copy-loop NOP
 					( load ) ~tileview.addr ~i ADD PEK2 
@@ -140,7 +140,7 @@ BRK
 				,redraw JSR2 ,click-end JMP2
 			@not-copy-mode
 
-			,not-erase-mode ~bankview.mode #02 NEQ JNZ2
+			~bankview.mode #02 NEQ ,not-erase-mode JNZ2
 				#00 =i
 				@erase-loop NOP
 					#00 
@@ -164,7 +164,7 @@ BRK
 
 		~Mouse.x ~tileview.x GTH2 ~Mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
 		~Mouse.y ~tileview.y GTH2 ~Mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,no-tile-click ROT JNZ2
+		#0101 NEQ2 ,no-tile-click JNZ2
 
 			~Mouse.x ~tileview.x SUB2 STEP8 #0040 DIV2 
 			~Mouse.y ~tileview.y SUB2 STEP8 #0040 DIV2 2* ADD2 
@@ -172,7 +172,7 @@ BRK
 			~tileview.addr ADD2 =addr ( addr offset )
 			~Mouse.x ~tileview.x SUB2 ~Mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~Mouse.y ~tileview.y SUB2 ~Mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
-			,no-erase-mode ~Mouse.state #10 NEQ JNZ2
+			~Mouse.state #10 NEQ ,no-erase-mode JNZ2
 				( load ) ~addr ~pos.y 8/ ADD2 PEK2
 				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 				#ff EOR AND
@@ -189,15 +189,15 @@ BRK
 
 		( operations )
 
-		,no-operations ~Mouse.y ~tileview.y SUB2 8/ #000c NEQ2 JNZ2
+		~Mouse.y ~tileview.y SUB2 8/ #000c NEQ2 ,no-operations JNZ2
 
-			,no-move-up ~Mouse.x ~tileview.x SUB2 8/ #0011 NEQ2 JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #0011 NEQ2 ,no-move-up JNZ2
 				,op_shiftup JSR2 
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,click-end JMP2
 			@no-move-up
 
-			,no-move-down ~Mouse.x ~tileview.x SUB2 8/ #0012 NEQ2 JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #0012 NEQ2 ,no-move-down JNZ2
 				,op_shiftdown JSR2 
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,click-end JMP2
@@ -297,7 +297,7 @@ RTN
 		( draw ) #02 =Sprite.color
 		~Sprite.addr 8+ =Sprite.addr
 		( incr ) ~i #01 ADD =i
-		,$guides ~i #10 LTH JNZ2
+		~i #10 LTH ,$guides JNZ2
 
 	( body )
 
@@ -314,10 +314,10 @@ RTN
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
 			( incr ) ~pt.x #01 ADD =pt.x
-			,$hor ~pt.x #10 LTH JNZ2
+			~pt.x #10 LTH ,$hor JNZ2
 		( incr ) ~pt.y #01 ADD =pt.y
 		( incr ) ~Sprite.y 8+ =Sprite.y
-		,$ver ~pt.y #10 LTH JNZ2
+		~pt.y #10 LTH ,$ver JNZ2
 
 RTN
 
@@ -364,7 +364,7 @@ RTN
 	$line-hor
 		( draw ) #03 =Screen.color
 		( incr ) ~Screen.x #0002 ADD2 =Screen.x
-	~Screen.x ~tileview.x #0082 ADD2 LTH2 ,$line-hor ROT JNZ2
+	~Screen.x ~tileview.x #0082 ADD2 LTH2 ,$line-hor JNZ2
 
 	( line ver )
 	~tileview.y =Screen.y
@@ -372,7 +372,7 @@ RTN
 	$line-ver
 		( draw ) #03 =Screen.color
 		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-	~Screen.y ~tileview.y #0081 ADD2 LTH2 ,$line-ver ROT JNZ2
+	~Screen.y ~tileview.y #0081 ADD2 LTH2 ,$line-ver JNZ2
 
 	( rewind ) ~tileview.addr #0018 SUB2 =tileview.addr
 
@@ -389,7 +389,7 @@ RTN
 		( draw ) #02 =Sprite.color
 		( incr ) ~i #01 ADD =i
 		( incr ) ~Sprite.y 8+ =Sprite.y
-	,$bytes ~i #08 LTH JNZ2
+	~i #08 LTH ,$bytes JNZ2
 
 	( operations )
 
@@ -412,10 +412,10 @@ RTN
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~Sprite.addr 8+ =Sprite.addr
 			( incr ) ~pt.x #01 ADD =pt.x
-			,$tiles-hor ~pt.x #02 LTH JNZ2
+			~pt.x #02 LTH ,$tiles-hor JNZ2
 		( incr ) ~pt.y #01 ADD =pt.y
 		( incr ) ~Sprite.y 8+ =Sprite.y
-		,$tiles-ver ~pt.y #02 LTH JNZ2
+		~pt.y #02 LTH ,$tiles-ver JNZ2
 
 RTN
 
@@ -432,11 +432,11 @@ RTN
 			( draw ) #01 =Sprite.color
 			( incr ) ~Sprite.x 8+ =Sprite.x
 			( incr ) ~pt.x #01 ADD =pt.x
-			,$hor ~pt.x #08 LTH JNZ2
+			~pt.x #08 LTH ,$hor JNZ2
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( incr ) ~pt.y #01 ADD =pt.y
 		~Sprite.x #0040 SUB2 =Sprite.x
-		,$ver ~pt.y #08 LTH JNZ2
+		~pt.y #08 LTH ,$ver JNZ2
 
 RTN
 

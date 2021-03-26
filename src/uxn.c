@@ -46,7 +46,7 @@ void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
 void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
 void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
-void op_jnz(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); if (a) u->ram.ptr += (Sint8)b; }
+void op_jnz(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); if (b) u->ram.ptr += (Sint8)a; }
 void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 /* Memory */
 void op_pek(Uxn *u) { Uint8 a = pop8(u->src); push8(u->src, mempeek8(u, a)); }
@@ -80,7 +80,7 @@ void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->sr
 void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
 void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
 void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
-void op_jnz16(Uxn *u) { Uint8 a = pop8(&u->wst); Uint16 b = pop16(u->src); if (a) u->ram.ptr = b; }
+void op_jnz16(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); if (b) u->ram.ptr = a; }
 void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 /* Memory(16-bits) */
 void op_pek16(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }

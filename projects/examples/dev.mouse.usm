@@ -27,11 +27,10 @@ BRK
 
 	,draw-cursor JSR2
 
-	,$no-touch ~Mouse.state #00 EQU JNZ2
+	~Mouse.state #00 EQU ,$no-touch JNZ2
 		~Mouse.x =circle.xc
 		~Mouse.y =circle.yc
 		#0000 =circle.r
-
 	$no-touch
 
  	( draw )
@@ -66,7 +65,7 @@ RTN
 	( draw ) ,$seg JSR2
 	$loop
 		( incr ) ~circle.x ++ =circle.x
-		,$else ~circle.d #0000 #0001 ADD2 LTS2 JNZ2
+		~circle.d #0000 #0001 ADD2 LTS2 ,$else JNZ2
 			( decr ) ~circle.y -- =circle.y
 			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 #000a ADD2 =circle.d
 			,$end JMP2
@@ -74,7 +73,7 @@ RTN
 			~circle.x #0004 MUL2 ~circle.d ADD2 #0006 ADD2 =circle.d
 		$end
 		( draw ) ,$seg JSR2
-		,$loop ~circle.y ~circle.x #0001 SUB2 GTS2 JNZ2
+		~circle.y ~circle.x #0001 SUB2 GTS2 ,$loop JNZ2
 	RTN
 	$seg
 		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color

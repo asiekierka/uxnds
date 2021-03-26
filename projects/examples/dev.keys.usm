@@ -15,9 +15,10 @@
 
 @FRAME
 	
-	~Keys #00 EQU BRK?
+	~Keys #00 EQU ,$end JNZ2
 
-	,$no-return ~Keys #0d NEQ JNZ2
+	( enter key )
+	~Keys #0d NEQ ,$no-return JNZ2
 		#0000 =Sprite.x
 		( incr ) ~Sprite.y 8+ =Sprite.y
 		( release ) #00 =Keys
@@ -28,6 +29,8 @@
 	( draw ) #01 =Sprite.color
 	( incr ) ~Sprite.x 8+ =Sprite.x
 	( release ) #00 =Keys
+
+	$end
 
 BRK
 
