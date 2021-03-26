@@ -47,7 +47,7 @@ Program p;
 char ops[][4] = {
 	"BRK", "NOP", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
 	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "JMP", "JSR",
-	"PEK", "POK", "LDR", "STR", "---", "---", "CLN", "STH",
+	"PEK", "POK", "LDR", "STR", "JNZ", "---", "CLN", "STH",
 	"ADD", "SUB", "MUL", "DIV", "AND", "ORA", "EOR", "SFT"
 };
 
@@ -156,7 +156,7 @@ findopcode(char *s)
 		while(s[3 + m]) {
 			if(s[3 + m] == '2') i |= (1 << 5); /* mode: short */
 			if(s[3 + m] == 'r') i |= (1 << 6); /* mode: return */
-			if(s[3 + m] == '?') i |= (1 << 7); /* mode: conditional */
+			if(s[3 + m] == '?') return 0;      /* forget that conditionals exist */
 			m++;
 		}
 		return i;

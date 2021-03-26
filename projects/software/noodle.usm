@@ -17,9 +17,10 @@
 		- Zoom drawing with other tools
 )
 
+%JMP? { JNZ }
+%JMP2? { JNZ2 }
 %RTN   { JMP2r }
-%RTN?  { JMP2r? }
-%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
+%ABS2 { DUP2 #000f SFT2 EQU #04 SWP JNZ #ffff MUL2 }
 %STEP8 { #0033 SFT2 }
 %MOD8 { #0007 AND2  }
 %SFL { #40 SFT SFT }
@@ -250,7 +251,7 @@ BRK
 			( move ) ~zoom.x -- =zoom.x $no-left
 		DUP #07 SFT #01 AND #01 NEQ ,$no-right ROT JMP2?
 			( move ) ~zoom.x ++ =zoom.x $no-right
-	#00 NEQ ,draw-canvas ROT JSR2?
+	#00 EQU #04 SWP JMP? ,draw-canvas JSR2
 	
 	,$no-keys ~Keys #00 EQU JMP2?
 		~Keys 
@@ -555,7 +556,7 @@ RTN
 	#0000 EQU2 
 	~Mouse.state 
 	#00 NEQ 
-	#0101 EQU2 RTN? ( Return if unchanged )
+	#0101 EQU2 JNZ2r ( Return if unchanged )
 
 	,blank_icn =Sprite.addr
 

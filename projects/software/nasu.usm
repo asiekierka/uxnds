@@ -8,7 +8,8 @@
 )
 
 %RTN   { JMP2r }
-%RTN?  { JMP2r? }
+%RTN?  { JNZ2r }
+%JMP2? { JNZ2 }
 %STEP8 { #0033 SFT2 }
 
 %++ { #0001 ADD2 }

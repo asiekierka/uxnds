@@ -23,9 +23,9 @@ void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = (a & 0xff00) == PAG
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
 void   mempoke16(Uxn *u, Uint16 a, Uint16 b) { mempoke8(u, a, b >> 8); mempoke8(u, a + 1, b); }
 Uint16 mempeek16(Uxn *u, Uint16 a) { return (mempeek8(u, a) << 8) + mempeek8(u, a + 1); }
-void   push8(Stack *s, Uint8 a) { s->dat[s->ptr++] = a; }
-Uint8  pop8(Stack *s) { return s->dat[--s->ptr]; }
-Uint8  peek8(Stack *s, Uint8 a) { return s->dat[s->ptr - a - 1]; }
+void   push8(Stack *s, Uint8 a) { if (s->ptr == 0xff) { s->error = 2; return; } s->dat[s->ptr++] = a; }
+Uint8  pop8(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->dat[--s->ptr]; }
+Uint8  peek8(Stack *s, Uint8 a) { if (s->ptr < a + 1) s->error = 1; return s->dat[s->ptr - a - 1]; }
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
@@ -46,6 +46,7 @@ void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
 void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
 void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
+void op_jnz(Uxn *u) { Uint8 a = pop8(&u->wst), b; if (getflag(&u->status, FLAG_RETURN) && !a) return; b = pop8(u->src); if (a) u->ram.ptr += (Sint8)b; }
 void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 /* Memory */
 void op_pek(Uxn *u) { Uint8 a = pop8(u->src); push8(u->src, mempeek8(u, a)); }
@@ -79,6 +80,7 @@ void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->sr
 void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
 void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
 void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
+void op_jnz16(Uxn *u) { Uint8 a = pop8(&u->wst); if (getflag(&u->status, FLAG_RETURN) && !a) return; Uint16 b = pop16(u->src); if (a) u->ram.ptr = b; }
 void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 /* Memory(16-bits) */
 void op_pek16(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }
@@ -100,25 +102,13 @@ void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); Uint8 left 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_pop, op_dup, op_swp, op_ovr, op_rot,
 	op_equ, op_neq, op_gth, op_lth, op_gts, op_lts, op_jmp, op_jsr, 
-	op_pek, op_pok, op_ldr, op_str, op_nop, op_nop, op_cln, op_sth, 
+	op_pek, op_pok, op_ldr, op_str, op_jnz, op_nop, op_cln, op_sth, 
 	op_add, op_sub, op_mul, op_div, op_and, op_ora, op_eor, op_sft,
 	/* 16-bit */
 	op_brk,   op_nop16, op_lit16, op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16,
 	op_equ16, op_neq16, op_gth16, op_lth16, op_gts16, op_lts16, op_jmp16, op_jsr16, 
-	op_pek16, op_pok16, op_ldr16, op_str16, op_nop,   op_nop,   op_cln16, op_sth16, 
+	op_pek16, op_pok16, op_ldr16, op_str16, op_jnz16, op_nop,   op_cln16, op_sth16, 
 	op_add16, op_sub16, op_mul16, op_div16, op_and16, op_ora16, op_eor16, op_sft16
-};
-
-Uint8 opr[][4] = { /* wstack-/+ rstack-/+ */
-	{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,0,0,0}, {1,2,0,0}, {2,2,0,0}, {2,3,0,0}, {3,3,0,0},
-	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {1,0,0,0}, {1,0,0,2},
-	{1,1,0,0}, {2,0,0,0}, {1,2,0,0}, {3,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,1,1,1}, {1,0,0,1},
-	{2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0}, {2,1,0,0},
-	/* 16-bit */
-	{0,0,0,0}, {2,0,0,0}, {0,0,0,0}, {2,0,0,0}, {2,4,0,0}, {4,4,0,0}, {4,6,0,0}, {6,6,0,0},
-	{4,1,0,0}, {4,1,0,0}, {4,1,0,0}, {4,1,0,0}, {4,1,0,0}, {4,1,0,0}, {2,0,0,0}, {2,0,0,2},
-	{2,1,0,0}, {3,0,0,0}, {2,2,0,0}, {4,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,2,2,2}, {2,0,0,2},
-	{4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}, {4,2,0,0}
 };
 
 /* clang-format on */
@@ -132,51 +122,39 @@ haltuxn(Uxn *u, char *name, int id)
 	return 0;
 }
 
-int
+void
 lituxn(Uxn *u, Uint8 instr)
 {
-	if(u->wst.ptr >= 255)
-		return haltuxn(u, "Stack overflow", instr);
 	push8(&u->wst, instr);
 	u->literal--;
-	return 1;
 }
 
-int
+void
 opcuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 op = instr & 0x1f, fcond, freturn;
+	Uint8 op = instr & 0x1f, freturn;
 	setflag(&u->status, FLAG_SHORT, (instr >> 5) & 1);
 	setflag(&u->status, FLAG_RETURN, (instr >> 6) & 1);
-	setflag(&u->status, FLAG_COND, (instr >> 7) & 1);
-	fcond = getflag(&u->status, FLAG_COND);
 	freturn = getflag(&u->status, FLAG_RETURN);
 	u->src = freturn ? &u->rst : &u->wst;
 	u->dst = freturn ? &u->wst : &u->rst;
 	if(getflag(&u->status, FLAG_SHORT))
 		op += 32;
-	if(u->src->ptr < opr[op][0] || (fcond && u->src->ptr < 1))
-		return haltuxn(u, "Working-stack underflow", op);
-	if(u->src->ptr + opr[op][1] - opr[op][0] >= 255)
-		return haltuxn(u, "Working-stack overflow", instr);
-	if(u->dst->ptr < opr[op][2])
-		return haltuxn(u, "Return-stack underflow", op);
-	if(u->dst->ptr + opr[op][3] - opr[op][2] >= 255)
-		return haltuxn(u, "Return-stack overflow", instr);
-	if(!fcond || (fcond && pop8(&u->wst)))
-		(*ops[op])(u);
-	else
-		u->src->ptr -= opr[op][freturn ? 2 : 0] - opr[op][freturn ? 3 : 1];
-	return 1;
+	(*ops[op])(u);
 }
 
 int
 stepuxn(Uxn *u, Uint8 instr)
 {
 	if(u->literal > 0)
-		return lituxn(u, instr);
+		lituxn(u, instr);
 	else
-		return opcuxn(u, instr);
+		opcuxn(u, instr);
+	if(u->wst.error)
+		return haltuxn(u, u->wst.error == 1 ? "Working-stack underflow" : "Working-stack overflow", instr);
+	if(u->rst.error)
+		return haltuxn(u, u->rst.error == 1 ? "Return-stack underflow" : "Return-stack overflow", instr);
+	return 1;
 }
 
 int
@@ -184,6 +162,8 @@ evaluxn(Uxn *u, Uint16 vec)
 {
 	u->literal = 0;
 	u->ram.ptr = vec;
+	u->wst.error = 0;
+	u->rst.error = 0;
 	setflag(&u->status, FLAG_HALT, 0);
 	while(!(u->status & FLAG_HALT)) {
 		Uint8 instr = u->ram.dat[u->ram.ptr++];
