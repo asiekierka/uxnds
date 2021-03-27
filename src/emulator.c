@@ -424,6 +424,7 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
+	t->tm_year += 1900;
 	m[ptr + 0] = (t->tm_year & 0xff00) >> 8;
 	m[ptr + 1] = t->tm_year & 0xff;
 	m[ptr + 2] = t->tm_mon;
@@ -432,8 +433,8 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	m[ptr + 5] = t->tm_min;
 	m[ptr + 6] = t->tm_sec;
 	m[ptr + 7] = t->tm_wday;
-	m[ptr + 8] = (t->tm_yday & 0x100) >> 8;
-	m[ptr + 9] = t->tm_yday && 0xff;
+	m[ptr + 8] = (t->tm_yday & 0xff00) >> 8;
+	m[ptr + 9] = t->tm_yday & 0xff;
 	m[ptr + 10] = t->tm_isdst;
 	return b1;
 }
