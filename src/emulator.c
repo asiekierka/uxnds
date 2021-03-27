@@ -419,7 +419,7 @@ midi_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-time_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	time_t seconds = time(NULL);
@@ -517,7 +517,7 @@ main(int argc, char **argv)
 	portuxn(&u, "file", file_poke);
 	portuxn(&u, "audio", audio_poke);
 	portuxn(&u, "midi", ppnil);
-	portuxn(&u, "time", time_poke);
+	portuxn(&u, "datetime", datetime_poke);
 	portuxn(&u, "---", ppnil);
 	portuxn(&u, "---", ppnil);
 	portuxn(&u, "---", ppnil);

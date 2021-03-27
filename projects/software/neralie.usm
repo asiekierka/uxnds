@@ -20,7 +20,7 @@
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
+|0190 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
 |01F8 [ 13fd 1ef3 1bf2 ] ( palette )
 
@@ -40,22 +40,22 @@
 
 @neralie-calc
 	( add up fractions of a pulse )
-	#0120 #00 ~Time.hour MUL2
-	#00c0 #00 ~Time.minute MUL2 ADD2
-	#00f8 #00 ~Time.second MUL2 ADD2
+	#0120 #00 ~DateTime.hour MUL2
+	#00c0 #00 ~DateTime.minute MUL2 ADD2
+	#00f8 #00 ~DateTime.second MUL2 ADD2
 	#0271 #00 ~fps.next MUL2 #00 ~fps.current DIV2 #0008 MUL2 ADD2
 	#01b0 DIV2
 
 	( add up units and tens of pulses )
-	#0042 #00 ~Time.hour MUL2 ADD2
-	#005e #00 ~Time.minute MUL2 ADD2
-	#000b #00 ~Time.second MUL2 ADD2
+	#0042 #00 ~DateTime.hour MUL2 ADD2
+	#005e #00 ~DateTime.minute MUL2 ADD2
+	#000b #00 ~DateTime.second MUL2 ADD2
 	DUP2 #0064 DIV2 DUP2 STH2 #0064 MUL2 SUB2 =neralie.n21 POP
 
 	( add up hundreds of pulses + 10 x beats )
 	STH2r
-	#01a0 #00 ~Time.hour MUL2 ADD2
-	#0006 #00 ~Time.minute MUL2 ADD2 =neralie.n6543
+	#01a0 #00 ~DateTime.hour MUL2 ADD2
+	#0006 #00 ~DateTime.minute MUL2 ADD2 =neralie.n6543
 
 	~neralie.n6543 ,print-short-decimal JSR2
 	#20 =Console.char
@@ -89,10 +89,10 @@
 	JMP2r
 
 @update-fps
-	#00 =Time.get
+	#00 =DateTime.get
 	~fps.next #01 ADD =fps.next
-	~Time.second ~fps.second NEQ JMP JMP2r
-	~Time.second =fps.second
+	~DateTime.second ~fps.second NEQ JMP JMP2r
+	~DateTime.second =fps.second
 	~fps.next =fps.current
 
 	~fps.next ^print-byte-decimal JSR
