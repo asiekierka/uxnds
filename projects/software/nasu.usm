@@ -62,109 +62,104 @@ BRK
 
 	( keyboard controls )
 
-	~Keys #00 EQU ,no-key JNZ2
+	~Keys #00 EQU ^$no-key JNZ
 
-		~Keys #31 LTH ,no-key JNZ2
-		~Keys #33 GTH ,no-key JNZ2
+		~Keys #31 LTH ^$no-key JNZ
+		~Keys #33 GTH ^$no-key JNZ
 		( select ) ~Keys #31 SUB =bankview.mode
 		( release ) #00 =Keys
 		,redraw JSR2 
 
-	@no-key
+	$no-key
 
-	~Controller.buttons #00 EQU ,no-ctrl JNZ2
+	~Controller.buttons #00 EQU ^$no-ctrl JNZ
 
-		~Controller.buttons #10 EQU ,no-ctrl-up JNZ2
-			~tileview.addr #0080 ADD2 =tileview.addr
-		@no-ctrl-up
-		~Controller.buttons #20 EQU ,no-ctrl-down JNZ2
-			~tileview.addr #0080 SUB2 =tileview.addr
-		@no-ctrl-down
-		~Controller.buttons #40 EQU ,no-ctrl-left JNZ2
-			~tileview.addr 8+ =tileview.addr
-		@no-ctrl-left
-		~Controller.buttons #80 EQU ,no-ctrl-right JNZ2
-			~tileview.addr 8- =tileview.addr
-		@no-ctrl-right
+		~Controller.buttons
+		DUP #10 EQU ^$no-ctrl-up JNZ
+			~tileview.addr #0080 ADD2 =tileview.addr $no-ctrl-up
+		DUP #20 EQU ^$no-ctrl-down JNZ
+			~tileview.addr #0080 SUB2 =tileview.addr $no-ctrl-down
+		DUP #40 EQU ^$no-ctrl-left JNZ
+			~tileview.addr 8+ =tileview.addr $no-ctrl-left
+		DUP #80 EQU ^$no-ctrl-right JNZ
+			~tileview.addr 8- =tileview.addr $no-ctrl-right
+		POP
+
 		~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
 		,redraw JSR2
 
-	@no-ctrl
+	$no-ctrl
 
 	( mouse controls )
 
-	~Mouse.state #00 EQU ,click-end JNZ2
+	~Mouse.state #00 EQU ,$click-end JNZ2
 
 		( toolbar )
 
-		~Mouse.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 ,no-toolbar-click JNZ2
-
+		~Mouse.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 ,$no-toolbar-click JNZ2
 			( brush )
-			~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 ,no-brush-click JNZ2
-			~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 ,no-brush-click JNZ2
+			~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 ^$no-brush-click JNZ
+			~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 ^$no-brush-click JNZ
 				( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
 				( release ) #00 =Mouse.state
-				,redraw JSR2 ,click-end JMP2
-			@no-brush-click
-
-			~Mouse.x ~tileview.x SUB2 8/ #000e NEQU2 ,no-load-click JNZ2
+				,redraw JSR2 ,$click-end JMP2
+			$no-brush-click
+			~Mouse.x ~tileview.x SUB2 8/ #000e NEQU2 ^$no-load-click JNZ
 				( load ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.load
 				( release ) #00 =Mouse.state
-				,redraw JSR2 ,click-end JMP2
-			@no-load-click
-
-			~Mouse.x ~tileview.x SUB2 8/ #000f NEQU2 ,no-save-click JNZ2
+				,redraw JSR2 ,$click-end JMP2
+			$no-load-click
+			~Mouse.x ~tileview.x SUB2 8/ #000f NEQU2 ^$no-save-click JNZ
 				( save ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.save
 				( release ) #00 =Mouse.state
-				,redraw JSR2 ,click-end JMP2
-			@no-save-click
-
-		@no-toolbar-click
+				,redraw JSR2 ,$click-end JMP2
+			$no-save-click
+		$no-toolbar-click
 
 		( bankview )
 
 		~Mouse.x ~bankview.x GTH2 ~Mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
 		~Mouse.y ~bankview.y GTH2 ~Mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,no-bank-click JNZ2
+		#0101 NEQ2 ,$no-bank-click JNZ2
 
-			~bankview.mode #01 NEQ ,not-copy-mode JNZ2
+			~bankview.mode #01 NEQ ^$not-copy-mode JNZ
 				#00 =i
-				@copy-loop NOP
+				$copy-loop
 					( load ) ~tileview.addr ~i ADD PEK2 
 					( get touch addr )
 					~Mouse.x ~bankview.x SUB2 STEP8 
 					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 POK2
 					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^copy-loop MUL JMP
-				,redraw JSR2 ,click-end JMP2
-			@not-copy-mode
+					~i #08 LTH ^$copy-loop JNZ
+				,redraw JSR2 ,$click-end JMP2
+			$not-copy-mode
 
-			~bankview.mode #02 NEQ ,not-erase-mode JNZ2
+			~bankview.mode #02 NEQ ^$not-erase-mode JNZ
 				#00 =i
-				@erase-loop NOP
+				$erase-loop
 					#00 
 					( get touch addr )
 					~Mouse.x ~bankview.x SUB2 STEP8 
 					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 					~bankview.addr ADD2 #00 ~i ADD2 POK2
 					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^erase-loop MUL JMP
-				,redraw JSR2 ,click-end JMP2
-			@not-erase-mode
+					~i #08 LTH ^$erase-loop JNZ
+				,redraw JSR2 ,$click-end JMP2
+			$not-erase-mode
 
 			~Mouse.x ~bankview.x SUB2 STEP8 
 			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
 			~bankview.addr ADD2 =tileview.addr
-			,redraw JSR2 ,click-end JMP2
+			,redraw JSR2 ,$click-end JMP2
 
-		@no-bank-click
+		$no-bank-click
 
 		( tileview )
 
 		~Mouse.x ~tileview.x GTH2 ~Mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
 		~Mouse.y ~tileview.y GTH2 ~Mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,no-tile-click JNZ2
+		#0101 NEQ2 ,$no-tile-click JNZ2
 
 			~Mouse.x ~tileview.x SUB2 STEP8 #0040 DIV2 
 			~Mouse.y ~tileview.y SUB2 STEP8 #0040 DIV2 2* ADD2 
@@ -172,40 +167,40 @@ BRK
 			~tileview.addr ADD2 =addr ( addr offset )
 			~Mouse.x ~tileview.x SUB2 ~Mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
 			~Mouse.y ~tileview.y SUB2 ~Mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
-			~Mouse.state #10 NEQ ,no-erase-mode JNZ2
+			~Mouse.state #10 NEQ ^$no-erase-mode JNZ
 				( load ) ~addr ~pos.y 8/ ADD2 PEK2
 				( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 				#ff EOR AND
 				( save ) ~addr ~pos.y 8/ ADD2 POK2
-				,redraw JSR2 ,click-end JMP2
-			@no-erase-mode
+				,redraw JSR2 ,$click-end JMP2
+			$no-erase-mode
 			( load ) ~addr ~pos.y 8/ ADD2 PEK2
 			( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
 			ORA
 			( save ) ~addr ~pos.y 8/ ADD2 POK2
-			,redraw JSR2 ,click-end JMP2
+			,redraw JSR2 ,$click-end JMP2
 
-		@no-tile-click
+		$no-tile-click
 
 		( operations )
 
-		~Mouse.y ~tileview.y SUB2 8/ #000c NEQ2 ,no-operations JNZ2
+		~Mouse.y ~tileview.y SUB2 8/ #000c NEQ2 ,$no-operations JNZ2
 
-			~Mouse.x ~tileview.x SUB2 8/ #0011 NEQ2 ,no-move-up JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #0011 NEQ2 ^$no-move-up JNZ
 				,op_shiftup JSR2 
 				( release ) #00 =Mouse.state
-				,redraw JSR2 ,click-end JMP2
-			@no-move-up
+				,redraw JSR2 ,$click-end JMP2
+			$no-move-up
 
-			~Mouse.x ~tileview.x SUB2 8/ #0012 NEQ2 ,no-move-down JNZ2
+			~Mouse.x ~tileview.x SUB2 8/ #0012 NEQ2 ^$no-move-down JNZ
 				,op_shiftdown JSR2 
 				( release ) #00 =Mouse.state
-				,redraw JSR2 ,click-end JMP2
-			@no-move-down
+				,redraw JSR2 ,$click-end JMP2
+			$no-move-down
 
-		@no-operations
+		$no-operations
 
-	@click-end
+	$click-end
 
 	,draw-cursor JSR2
 
@@ -297,7 +292,7 @@ RTN
 		( draw ) #02 =Sprite.color
 		~Sprite.addr 8+ =Sprite.addr
 		( incr ) ~i #01 ADD =i
-		~i #10 LTH ,$guides JNZ2
+		~i #10 LTH ^$guides JNZ
 
 	( body )
 
@@ -364,7 +359,7 @@ RTN
 	$line-hor
 		( draw ) #03 =Screen.color
 		( incr ) ~Screen.x #0002 ADD2 =Screen.x
-	~Screen.x ~tileview.x #0082 ADD2 LTH2 ,$line-hor JNZ2
+	~Screen.x ~tileview.x #0082 ADD2 LTH2 ^$line-hor JNZ
 
 	( line ver )
 	~tileview.y =Screen.y
@@ -372,7 +367,7 @@ RTN
 	$line-ver
 		( draw ) #03 =Screen.color
 		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-	~Screen.y ~tileview.y #0081 ADD2 LTH2 ,$line-ver JNZ2
+	~Screen.y ~tileview.y #0081 ADD2 LTH2 ^$line-ver JNZ
 
 	( rewind ) ~tileview.addr #0018 SUB2 =tileview.addr
 
@@ -487,17 +482,17 @@ RTN
 @line-rect ( x1 y1 x2 y2 color )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor NOP
+	$hor
 		( incr ) ~Screen.x ++ =Screen.x
 		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
 		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor MUL JMP
+		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
 	~rect.y1 =Screen.y
-	$ver NOP
+	$ver
 		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
 		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
 		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ^$ver MUL JMP
+		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
 
 RTN
 
