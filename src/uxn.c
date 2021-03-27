@@ -45,15 +45,14 @@ void op_gth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_lth(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b < a); }
 void op_gts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b > (Sint8)a); }
 void op_lts(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, (Sint8)b < (Sint8)a); }
-void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
-void op_jnz(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); if (b) u->ram.ptr += (Sint8)a; }
-void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 /* Memory */
 void op_pek(Uxn *u) { Uint8 a = pop8(u->src); push8(u->src, mempeek8(u, a)); }
 void op_pok(Uxn *u) { Uint8 a = pop8(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
 void op_ldr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->src, mempeek16(u, a)); }
 void op_str(Uxn *u) { Uint8 a = pop8(u->src); Uint16 b = pop16(u->src); mempoke16(u, a, b); }
-void op_cln(Uxn *u) { push8(u->src, peek8(u->dst, 0)); }
+void op_jmp(Uxn *u) { Uint8 a = pop8(u->src); u->ram.ptr += (Sint8)a; }
+void op_jnz(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); if (b) u->ram.ptr += (Sint8)a; }
+void op_jsr(Uxn *u) { Uint8 a = pop8(u->src); push16(u->dst, u->ram.ptr); u->ram.ptr += (Sint8)a; }
 void op_sth(Uxn *u) { Uint8 a = pop8(u->src); push8(u->dst, a); }
 /* Arithmetic */
 void op_add(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b + a); }
@@ -79,15 +78,14 @@ void op_gth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->sr
 void op_lth16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b < a); }
 void op_gts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b > (Sint16)a); }
 void op_lts16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, (Sint16)b < (Sint16)a); }
-void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
-void op_jnz16(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); if (b) u->ram.ptr = a; }
-void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 /* Memory(16-bits) */
 void op_pek16(Uxn *u) { Uint16 a = pop16(u->src); push8(u->src, mempeek8(u, a)); }
 void op_pok16(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); mempoke8(u, a, b); }
 void op_ldr16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->src, mempeek16(u, a)); }
 void op_str16(Uxn *u) { Uint16 a = pop16(u->src); Uint16 b = pop16(u->src); mempoke16(u, a, b); }
-void op_cln16(Uxn *u) { push16(u->src, peek16(u->dst, 0)); }
+void op_jmp16(Uxn *u) { u->ram.ptr = pop16(u->src); }
+void op_jnz16(Uxn *u) { Uint16 a = pop16(u->src); Uint8 b = pop8(u->src); if (b) u->ram.ptr = a; }
+void op_jsr16(Uxn *u) { push16(u->dst, u->ram.ptr); u->ram.ptr = pop16(u->src); }
 void op_sth16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->dst, a); }
 /* Arithmetic(16-bits) */
 void op_add16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b + a); }
@@ -101,13 +99,13 @@ void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); Uint8 left 
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_nop, op_lit, op_pop, op_dup, op_swp, op_ovr, op_rot,
-	op_equ, op_neq, op_gth, op_lth, op_gts, op_lts, op_jmp, op_jsr, 
-	op_pek, op_pok, op_ldr, op_str, op_jnz, op_nop, op_cln, op_sth, 
+	op_equ, op_neq, op_gth, op_lth, op_gts, op_lts, op_nop, op_nop,
+	op_pek, op_pok, op_ldr, op_str, op_jmp, op_jnz, op_jsr, op_sth, 
 	op_add, op_sub, op_mul, op_div, op_and, op_ora, op_eor, op_sft,
 	/* 16-bit */
 	op_brk,   op_nop16, op_lit16, op_pop16, op_dup16, op_swp16, op_ovr16, op_rot16,
-	op_equ16, op_neq16, op_gth16, op_lth16, op_gts16, op_lts16, op_jmp16, op_jsr16, 
-	op_pek16, op_pok16, op_ldr16, op_str16, op_jnz16, op_nop,   op_cln16, op_sth16, 
+	op_equ16, op_neq16, op_gth16, op_lth16, op_gts16, op_lts16, op_nop,   op_nop, 
+	op_pek16, op_pok16, op_ldr16, op_str16, op_jmp16, op_jnz16, op_jsr16, op_sth16, 
 	op_add16, op_sub16, op_mul16, op_div16, op_and16, op_ora16, op_eor16, op_sft16
 };
 
