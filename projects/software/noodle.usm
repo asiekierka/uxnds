@@ -657,7 +657,7 @@ RTN
 	( draw hor line )
 	#0000 =Screen.x ~center.y =Screen.y
 	#0000 ~Screen.width ( from/to )
-	$draw-hor NOP
+	$draw-hor
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
 		OVR2 OVR2 LTH2 ^$draw-hor JNZ
@@ -666,7 +666,7 @@ RTN
 	( draw ver line )
 	~center.x =Screen.x #0000 =Screen.y
 	#0000 ~Screen.height ( from/to )
-	$draw-ver NOP
+	$draw-ver
 		( draw ) #01 =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
 		OVR2 OVR2 LTH2 ^$draw-ver JNZ
