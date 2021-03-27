@@ -104,12 +104,12 @@ BRK
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
 			$no-brush-click
-			~Mouse.x ~tileview.x SUB2 8/ #000e NEQU2 ^$no-load-click JNZ
+			~Mouse.x ~tileview.x SUB2 8/ #000e NEQ2 ^$no-load-click JNZ
 				( load ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.load
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
 			$no-load-click
-			~Mouse.x ~tileview.x SUB2 8/ #000f NEQU2 ^$no-save-click JNZ
+			~Mouse.x ~tileview.x SUB2 8/ #000f NEQ2 ^$no-save-click JNZ
 				( save ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.save
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
@@ -437,8 +437,8 @@ RTN
 
 @draw-cursor
 
-	~mouse.x ~Mouse.x NEQU2
-	~mouse.y ~Mouse.y NEQU2
+	~mouse.x ~Mouse.x NEQ2
+	~mouse.y ~Mouse.y NEQ2
 
 	#0000 EQU2 RTN? ( Return if unchanged )
 

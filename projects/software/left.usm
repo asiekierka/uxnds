@@ -495,8 +495,8 @@ RTN
 
 @draw-cursor
 
-	~mouse.x ~Mouse.x NEQU2
-	~mouse.y ~Mouse.y NEQU2
+	~mouse.x ~Mouse.x NEQ2
+	~mouse.y ~Mouse.y NEQ2
 
 	#0000 EQU2 RTN? ( Return if unchanged )
 

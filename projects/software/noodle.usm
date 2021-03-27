@@ -548,8 +548,8 @@ RTN
 
 @draw-cursor
 
-	~cursor.x ~Mouse.x NEQU2
-	~cursor.y ~Mouse.y NEQU2
+	~cursor.x ~Mouse.x NEQ2
+	~cursor.y ~Mouse.y NEQ2
 	#0000 EQU2 
 	~Mouse.state 
 	#00 NEQ 
