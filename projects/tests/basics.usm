@@ -1,0 +1,46 @@
+( hello world )
+
+%RTN { JMP2r }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|01F0 .RESET .FRAME .ERROR ( vectors )
+|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+
+( program )
+
+|0400 @RESET 
+	
+	( for loop )
+	#00 #0d
+	$loop
+		( body ) 
+		SWP #01 ADD SWP
+		DUP2 LTH ^$loop JNZ
+	POP2
+
+	( while )
+	#00 #0d
+	$while
+		( body )
+		DUP2 EQU ^$end JNZ
+		SWP #01 ADD SWP
+	^$while JMP $end
+	POP2
+
+	( switch )
+	#02 
+	DUP #01 NEQ ^$b JNZ
+		( a ) 
+	$b DUP #02 NEQ ^$c JNZ
+		( b ) 
+	$c DUP #03 NEQ ^$default JNZ
+		( c ) 
+	$default
+	POP
+
+BRK
+
+@FRAME BRK
+@ERROR BRK 

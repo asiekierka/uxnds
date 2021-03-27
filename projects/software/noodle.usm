@@ -60,14 +60,14 @@
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ c0ef c07f c05f ]   ( palette )
+|01F8 [ e0fd 30fd 30fd ]   ( palette )
 
 ( program )
 
 |0200 @RESET 
 	
 	( default canvas )
-	#0020 =canvas.w #0010 =canvas.h
+	#002a =canvas.w #001a =canvas.h
 
 	( default brush )
 	#04 =brush.size
@@ -784,7 +784,7 @@ RTN
 @save_icn       [ fe82 8282 848a f400 ]
 
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/pictures/akane2010.bit 00 ]
+@filepath       [ projects/pictures/tima2a1a.bit 00 ]
 
 @font_hex ( 0-F ) 
 [

@@ -154,9 +154,12 @@ findopcode(char *s)
 		if(o[0] != s[0] || o[1] != s[1] || o[2] != s[2])
 			continue;
 		while(s[3 + m]) {
-			if(s[3 + m] == '2') i |= (1 << 5); /* mode: short */
-			else if(s[3 + m] == 'r') i |= (1 << 6); /* mode: return */
-			else return 0; /* failed to match */
+			if(s[3 + m] == '2')
+				i |= (1 << 5); /* mode: short */
+			else if(s[3 + m] == 'r')
+				i |= (1 << 6); /* mode: return */
+			else
+				return 0; /* failed to match */
 			m++;
 		}
 		return i;
