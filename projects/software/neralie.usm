@@ -101,11 +101,11 @@
 	                 ^digit JSR
 	JMP2r
 
-@letter ( index₂ -- )
+@letter ( index* -- )
 	#0008 MUL2 ,font-letters ADD2 =Sprite.addr
 	^digit-middle JMP
 
-@digit ( index₂ -- )
+@digit ( index* -- )
 	#0008 MUL2 ,font-numbers ADD2 =Sprite.addr
 	$middle
 	#02 =Sprite.color
@@ -113,16 +113,16 @@
 	JMP2r
 
 
-@h ( x1₂ x2₂ y₂ -- )
+@h ( x1* x2* y* -- )
 	=Screen.y
 	,Screen.x =lines.addr
 	^draw-line JMP
 
-@v ( y1₂ y2₂ x₂ -- )
+@v ( y1* y2* x* -- )
 	=Screen.x
 	,Screen.y =lines.addr
 
-@draw-line ( v1₂ v2₂ -- )
+@draw-line ( v1* v2* -- )
 	OVR2 OVR2 LTH2 #01 JNZ SWP2
 	STH2
 
@@ -150,7 +150,7 @@
 	#00 =fps.next
 	JMP2r
 
-@print-string ( string₂ -- )
+@print-string ( string* -- )
 	DUP2 PEK2 DUP ^$not-end JNZ
 
 	$end
@@ -160,12 +160,12 @@
 	=Console.char
 	#0001 ADD2 ^print-string JMP
 
-@print-byte-decimal ( byte₁ -- )
+@print-byte-decimal ( byte -- )
 	#00 =number.started
 	#00 SWP
 	^print-short-decimal-byte-start JMP
 
-@print-short-decimal ( short₂ -- )
+@print-short-decimal ( short* -- )
 	#00 =number.started
 	#2710 ^modf JSR ^$digit JSR
 	#03e8 ^modf JSR ^$digit JSR
@@ -185,7 +185,7 @@
 	#01 =number.started
 	JMP2r
 
-@modf ( dividend₂ divisor₂ -- remainder₂ quotient₂ )
+@modf ( dividend* divisor* -- remainder* quotient* )
 	OVR2 OVR2 DIV2 DUP2 STH2 MUL2 SUB2 STH2r JMP2r
 
 @strings
