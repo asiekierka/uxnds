@@ -9,10 +9,7 @@
 	1-8 - select brush size
 
 	TODO
-		- Resize buttons
-		- Limit size
 		- Pixel cleanup brush
-		- Display filename
 		- Rename filename
 )
 
@@ -38,6 +35,7 @@
 ;toolpane { x1 2 y1 2 x2 2 y2 2 }
 ;pattpane { x1 2 y1 2 x2 2 y2 2 }
 ;sizepane { x1 2 y1 2 x2 2 y2 2 }
+;viewpane { x1 2 y1 2 x2 2 y2 2 }
 ;canvas { x1 2 y1 2 x2 2 y2 2 w 2 h 2 }
 
 ;rect { x1 2 y1 2 x2 2 y2 2 }
@@ -91,6 +89,7 @@
 	#0010 =toolpane.x1 #0010 =toolpane.y1
 	~Screen.width #0050 SUB2 =pattpane.x1 #0010 =pattpane.y1
 	#0040 =sizepane.x1 #0010 =sizepane.y1
+	~Screen.width #0078 SUB2 =viewpane.x1 #0010 =viewpane.y1
 
 	~toolpane.x1 #0028 ADD2 =toolpane.x2
 	~toolpane.y1 #0008 ADD2 =toolpane.y2
@@ -103,6 +102,10 @@
 	~sizepane.x1 #0040 ADD2 =sizepane.x2
 	~sizepane.y1 #0008 ADD2 =sizepane.y2
 	,draw-sizepane JSR2
+
+	~viewpane.x1 #0020 ADD2 =viewpane.x2
+	~viewpane.y1 #0008 ADD2 =viewpane.y2
+	,draw-viewpane JSR2
 
 BRK
 
@@ -119,6 +122,7 @@ BRK
 		,draw-toolpane JSR2
 		,draw-pattpane JSR2
 		,draw-sizepane JSR2
+		,draw-viewpane JSR2
 		#00 =brush.drag
 	$no-release
 
@@ -192,6 +196,31 @@ BRK
 			( draw ) ,draw-toolpane JSR2
 			,$touch-end JMP2
 		$no-touch-toolpane
+
+		( in viewpane )
+		~Mouse.x CLN2r ~viewpane.x1 GTH2 STH2r ~viewpane.x2 LTH2 #0101 NEQ2 ,$no-touch-viewpane JNZ2
+		~Mouse.y CLN2r ~viewpane.y1 GTH2 STH2r ~viewpane.y2 LTH2 #0101 NEQ2 ,$no-touch-viewpane JNZ2
+			( release ) #00 =Mouse.state
+			~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
+			,draw-background JSR2
+			~Mouse.x ~viewpane.x1 SUB2 8/ SWP POP
+			DUP #00 NEQ ^$no-incwidth JNZ
+				~canvas.w ++ =canvas.w
+			$no-incwidth
+			DUP #01 NEQ ^$no-decwidth JNZ
+				~canvas.w -- =canvas.w
+			$no-decwidth
+			DUP #02 NEQ ^$no-incheight JNZ
+				~canvas.h ++ =canvas.h
+			$no-incheight
+			DUP #03 NEQ ^$no-decheight JNZ
+				~canvas.h -- =canvas.h
+			$no-decheight
+			POP
+			,fit-canvas JSR2
+			,redraw JSR2
+			,$touch-end JMP2
+		$no-touch-viewpane
 
 		( in canvas )
 		~Mouse.x CLN2r ~canvas.x1 GTS2 STH2r ~canvas.x2 LTS2 #0101 NEQ2 ,$no-touch-canvas JNZ2
@@ -351,6 +380,7 @@ RTN
 	,draw-toolpane JSR2
 	,draw-pattpane JSR2
 	,draw-sizepane JSR2
+	,draw-viewpane JSR2
 
 RTN
 
@@ -384,6 +414,7 @@ RTN
 	,draw-toolpane JSR2
 	,draw-pattpane JSR2
 	,draw-sizepane JSR2
+	,draw-viewpane JSR2
 	
 RTN
 
@@ -401,7 +432,7 @@ RTN
 	$ver
 		#00 =px.x
 		$hor
-			( addr ) ,size_icn #00 ~brush.size 8* ADD2
+			( addr ) ,size_icns #00 ~brush.size 8* ADD2
 			( byte ) #00 ~px.y ADD2 PEK2 #07 ~px.x SUB SFT #01 AND 
 			#00 EQU ^$no-pixel JNZ
 			,patternize JSR2 #00 EQU ^$no-pixel JNZ
@@ -415,6 +446,7 @@ RTN
 	,draw-toolpane JSR2
 	,draw-pattpane JSR2
 	,draw-sizepane JSR2
+	,draw-viewpane JSR2
 
 RTN
 
@@ -504,6 +536,7 @@ RTN
 	,draw-toolpane JSR2
 	,draw-pattpane JSR2
 	,draw-sizepane JSR2
+	,draw-viewpane JSR2
 		
 RTN
 
@@ -582,7 +615,7 @@ RTN
 		~Controller #02 EQU ^$outside-canvas JNZ
 		~cursor.x #0003 SUB2 =Sprite.x
 		~cursor.y #0003 SUB2 =Sprite.y
-		,brush_view #00 ~brush.size 8* ADD2 =Sprite.addr
+		,brush_icns #00 ~brush.size 8* ADD2 =Sprite.addr
 		#11 ~Mouse.state #02 MUL ADD =Sprite.color
 		~Mouse.state #00 EQU ^$outside-canvas JNZ
 			RTN
@@ -602,17 +635,17 @@ RTN
 
 	~toolpane.x1 =Sprite.x
 	~toolpane.y1 =Sprite.y
-	,tool_icn =Sprite.addr
+	,tool_icns =Sprite.addr
 
-	$tools
+	$loop
 		( draw ) #01 ~Sprite.x ~toolpane.x1 SUB2 8/ SWP POP ~brush.tool EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~toolpane.x2 LTH2 ^$tools JNZ
+		~Sprite.x ~toolpane.x2 LTH2 ^$loop JNZ
 
 	~zoom.active #01 NEQ ^$no-zoom JNZ
 		~Sprite.x #0008 SUB2 =Sprite.x
-		,tool_icn #0028 ADD2 =Sprite.addr
+		,tool_icns #0028 ADD2 =Sprite.addr
 		#01 #04 ~brush.tool EQU #02 MUL ADD =Sprite.color
 	$no-zoom
 
@@ -625,13 +658,13 @@ RTN
 
 	~pattpane.x1 =Sprite.x
 	~pattpane.y1 =Sprite.y
-	,patt_icn =Sprite.addr
+	,patt_icns =Sprite.addr
 
-	$patterns
+	$loop
 		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.patt EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~pattpane.x2 LTH2 ^$patterns JNZ
+		~Sprite.x ~pattpane.x2 LTH2 ^$loop JNZ
 
 RTN
 
@@ -642,13 +675,30 @@ RTN
 
 	~sizepane.x1 =Sprite.x
 	~sizepane.y1 =Sprite.y
-	,size_icn =Sprite.addr
+	,size_icns =Sprite.addr
 
-	$patterns
+	$loop
 		( draw ) #01 ~Sprite.x ~sizepane.x1 SUB2 8/ SWP POP ~brush.size EQU #02 MUL ADD =Sprite.color
 		( incr ) ~Sprite.x 8+ =Sprite.x
 		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~sizepane.x2 LTH2 ^$patterns JNZ
+		~Sprite.x ~sizepane.x2 LTH2 ^$loop JNZ
+
+RTN
+
+@draw-viewpane
+
+	~viewpane.x1 -- ~viewpane.y1 -- ~viewpane.x2 ~viewpane.y2 #00 ,line-rect JSR2
+	~viewpane.x1 #0002 SUB2 ~viewpane.y1 #0002 SUB2 ~viewpane.x2 ~viewpane.y2 #01 ,line-rect JSR2
+
+	~viewpane.x1 =Sprite.x
+	~viewpane.y1 =Sprite.y
+	,view_icns =Sprite.addr
+
+	$loop
+		( draw ) #01 =Sprite.color
+		( incr ) ~Sprite.x 8+ =Sprite.x
+		( incr ) ~Sprite.addr 8+ =Sprite.addr
+		~Sprite.x ~viewpane.x2 LTH2 ^$loop JNZ
 
 RTN
 
@@ -749,7 +799,7 @@ RTN
 
 RTN
 
-@size_icn    
+@size_icns    
 	[ 0000 0010 0000 0000 ]
 	[ 0000 1038 1000 0000 ]
 	[ 0000 3838 3800 0000 ]
@@ -759,7 +809,7 @@ RTN
 	[ 387c fefe fe7c 3800 ]
 	[ 7cfe fefe fefe 7c00 ]
 
-@patt_icn 
+@patt_icns 
 	[ fefe fefe fefe fe00 ]
 	[ fed6 aad6 aad6 fe00 ]
 	[ fe92 82d6 8292 fe00 ]
@@ -769,7 +819,7 @@ RTN
 	[ feaa aaaa aaaa fe00 ]	
 	[ fe82 fe82 fe82 fe00 ]
 
-@tool_icn 
+@tool_icns 
 	[ c0e0 5028 140a 0400 ]
 	[ e0d0 a844 2212 0c00 ]
 	[ c0b8 4848 7804 0200 ]
@@ -777,7 +827,13 @@ RTN
 	[ 3048 8484 4834 0200 ] ( zoom )
 	[ 3245 8284 4834 0200 ] ( zoom out )
 
-@brush_view 
+@view_icns 
+	[ ee92 8a84 8a92 ee00 ]
+	[ f68a 92a2 928a f600 ]
+	[ fe82 8244 aa92 ee00 ]
+	[ fe82 92aa 4482 fe00 ]
+
+@brush_icns 
 	[ 0000 0010 0000 0000 ]
 	[ 0000 1028 1000 0000 ]
 	[ 0000 3828 3800 0000 ]
@@ -798,7 +854,6 @@ RTN
 
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
-
 @blank_icn      [ 0000 0000 0000 0000 ]
 @filepath       [ projects/pictures/tima2a1a.bit 00 ]
 
