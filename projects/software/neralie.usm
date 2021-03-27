@@ -12,9 +12,11 @@
   faketime '23:59:42' bin/emulator bin/boot.rom
 )
 
+%HCF { #0000 DIV }
+
 ;fps { current 1 next 1 second 1 }
 ;number { started 1 count 1 }
-;linee { var 2 }
+;lines { x1 2 x2 2 y1 2 y2 2 addr 2 }
 ;neralie { n6543 2 n21 1 }
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
@@ -26,19 +28,32 @@
 
 |0200 @RESET
 	#3c =fps.current
+
+	#000a
+	DUP2 =lines.x1
+	DUP2 =lines.y1
+	DUP2 ~Screen.width SWP2 SUB2 =lines.x2
+	     ~Screen.height SWP2 SUB2 =lines.y2
+
+	~lines.x1 ~lines.x2 ~lines.y1 ,h JSR2
+	~lines.x1 ~lines.x2 ~lines.y2 ,h JSR2
+	~lines.y1 ~lines.y2 ~lines.x1 ,v JSR2
+	~lines.y1 ~lines.y2 ~lines.x2 ,v JSR2
+
 	@ERROR BRK
 
 @FRAME
 	,update-fps JSR2
 	,neralie-calc JSR2
+	,arvelie-text JSR2
+	,neralie-text JSR2
 	BRK
 
-	,font #00 ~number.count #08 MUL ADD2 =Sprite.addr
 	#02 =Sprite.color
 	#0000 #00 ~number.count DUP2 ,h JSR2
 	~number.count #01 ADD =number.count
 
-@neralie-calc
+@neralie-calc ( -- )
 	( add up fractions of a pulse )
 	#0120 #00 ~DateTime.hour MUL2
 	#00c0 #00 ~DateTime.minute MUL2 ADD2
@@ -57,38 +72,70 @@
 	#01a0 #00 ~DateTime.hour MUL2 ADD2
 	#0006 #00 ~DateTime.minute MUL2 ADD2 =neralie.n6543
 
-	~neralie.n6543 ,print-short-decimal JSR2
-	#20 =Console.char
-	~neralie.n21 ,print-byte-decimal JSR2
-	#0a =Console.char
 	JMP2r
+
+@arvelie-text ( -- )
+	~Screen.width #0002 DIV2 #0034 SUB2 =Sprite.x
+	~Screen.height #0008 SUB2 =Sprite.y
+	~DateTime.year #07d6 SUB2
+	#000a ,modf JSR2 ,digit JSR2
+	                 ,digit JSR2
+	~DateTime.doy
+	#000e ,modf JSR2 ^letter JSR
+	#000a ,modf JSR2 ^digit JSR
+	                 ^digit JSR
+	JMP2r
+
+@neralie-text ( -- )
+	~Screen.width #0002 DIV2 #0004 SUB2 =Sprite.x
+	~neralie.n6543
+	#03e8 ,modf JSR2 ^digit JSR
+	#0064 ,modf JSR2 ^digit JSR
+	#000a ,modf JSR2 ^digit JSR
+	           #000a ^digit JSR ( the colon )
+	                 ^digit JSR
+	#00 ~neralie.n21
+	#000a ,modf JSR2 ^digit JSR
+	                 ^digit JSR
+	JMP2r
+
+@letter ( index₂ -- )
+	#0008 MUL2 ,font-letters ADD2 =Sprite.addr
+	^digit-middle JMP
+
+@digit ( index₂ -- )
+	#0008 MUL2 ,font-numbers ADD2 =Sprite.addr
+	$middle
+	#02 =Sprite.color
+	~Sprite.x #0008 ADD2 =Sprite.x
+	JMP2r
+
 
 @h ( x1₂ x2₂ y₂ -- )
 	=Screen.y
-	,Screen.x =linee.var
-	^line JMP
+	,Screen.x =lines.addr
+	^draw-line JMP
 
 @v ( y1₂ y2₂ x₂ -- )
 	=Screen.x
-	,Screen.y =linee.var
-	( ^line JMP is redundant )
+	,Screen.y =lines.addr
 
-@line ( v1₂ v2₂ -- )
+@draw-line ( v1₂ v2₂ -- )
 	OVR2 OVR2 LTH2 #01 JNZ SWP2
 	STH2
 
 	$loop
-	DUP2 DUP2r STH2r GTH2 ^$end JNZ
-	DUP2 ~linee.var STR2
-	#03 =Screen.color
 	#0001 ADD2
-	^$loop JMP
-
-	$end
+	DUP2 DUP2r STH2r LTH2 ^$keep-going JNZ
 	POP2 POP2r
 	JMP2r
 
-@update-fps
+	$keep-going
+	DUP2 ~lines.addr STR2
+	#02 =Screen.color
+	^$loop JMP
+
+@update-fps ( -- )
 	#00 =DateTime.get
 	~fps.next #01 ADD =fps.next
 	~DateTime.second ~fps.second NEQ JMP JMP2r
@@ -101,22 +148,6 @@
 	#00 =fps.next
 	JMP2r
 
-@print-byte-decimal ( byte₁ -- )
-	#00 =number.started
-	DUP #64 DIV DUP ^$digit JSR #64 MUL SUB
-	DUP #0a DIV DUP ^$digit JSR #0a MUL SUB
-	^$digit JSR
-	~number.started ^$end JNZ
-	#30 =Console.char
-	$end JMP2r
-
-	$digit
-	OVR ~number.started ORA #02 JNZ
-	POP JMP2r
-	#30 ADD =Console.char
-	#01 =number.started
-	JMP2r
-
 @print-string ( string₂ -- )
 	DUP2 PEK2 DUP ^$not-end JNZ
 
@@ -127,34 +158,55 @@
 	=Console.char
 	#0001 ADD2 ^print-string JMP
 
+@print-byte-decimal ( byte₁ -- )
+	#00 =number.started
+	#00 SWP
+	^print-short-decimal-byte-start JMP
+
 @print-short-decimal ( short₂ -- )
 	#00 =number.started
-	DUP2 #2710 DIV2 DUP2 ^$digit JSR #2710 MUL2 SUB2
-	DUP2 #03e8 DIV2 DUP2 ^$digit JSR #03e8 MUL2 SUB2
-	DUP2 #0064 DIV2 DUP2 ^$digit JSR #0064 MUL2 SUB2
-	DUP2 #000a DIV2 DUP2 ^$digit JSR #000a MUL2 SUB2
-	^$digit JSR
+	#2710 ^modf JSR ^$digit JSR
+	#03e8 ^modf JSR ^$digit JSR
+	$byte-start
+	#0064 ^modf JSR ^$digit JSR
+	#000a ^modf JSR ^$digit JSR
+	                ^$digit JSR
 	~number.started ^$end JNZ
 	#30 =Console.char
 	$end JMP2r
 
 	$digit
 	SWP POP
-	OVR ~number.started ORA #02 JNZ
+	DUP ~number.started ORA #02 JNZ
 	POP JMP2r
 	#30 ADD =Console.char
 	#01 =number.started
 	JMP2r
 
+@modf ( dividend₂ divisor₂ -- remainder₂ quotient₂ )
+	OVR2 OVR2 DIV2 DUP2 STH2 MUL2 SUB2 STH2r JMP2r
+
 @strings
 	$fps [ 20 fps 0a 00 ]
 
-@font
+@font-numbers
 [
-	003c 464a 5262 3c00 0018 0808 0808 1c00
-	003c 4202 3c40 7e00 003c 421c 0242 3c00
-	000c 1424 447e 0400 007e 407c 0242 3c00
-	003c 407c 4242 3c00 007e 0204 0810 1000
-	003c 423c 4242 3c00 003c 4242 3e02 3c00
+	7cc6 ced6 e6c6 7c00 1838 1818 1818 7e00 3c66 063c 6066 7e00
+	3c66 061c 0666 3c00 1c3c 6ccc fe0c 1e00 7e62 607c 0666 3c00
+	3c66 607c 6666 3c00 7e66 060c 1818 1800 3c66 663c 6666 3c00
+	3c66 663e 0666 3c00 0018 1800 1818 0000
+]
+
+@font-letters
+[
+	183c 6666 7e66 6600 fc66 667c 6666 fc00 3c66 c0c0 c066 3c00
+	f86c 6666 666c f800 fe62 6878 6862 fe00 fe62 6878 6860 f000
+	3c66 c0c0 ce66 3e00 6666 667e 6666 6600 7e18 1818 1818 7e00
+	1e0c 0c0c cccc 7800 e666 6c78 6c66 e600 f060 6060 6266 fe00
+	c6ee fefe d6c6 c600 c6e6 f6de cec6 c600 386c c6c6 c66c 3800
+	fc66 667c 6060 f000 386c c6c6 dacc 7600 fc66 667c 6c66 e600
+	3c66 603c 0666 3c00 7e5a 1818 1818 3c00 6666 6666 6666 3c00
+	6666 6666 663c 1800 c6c6 c6d6 feee c600 c66c 3838 6cc6 c600
+	6666 663c 1818 3c00 fec6 8c18 3266 fe00 0018 187e 1818 0000
 ]
 
