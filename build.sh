@@ -28,7 +28,7 @@ else
 fi
 
 echo "Assembling.."
-./bin/assembler projects/software/left.usm bin/boot.rom
+./bin/assembler projects/software/neralie.usm bin/boot.rom
 
 echo "Running.."
 if [ "${2}" = '--cli' ]; 

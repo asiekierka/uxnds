@@ -15,13 +15,14 @@
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0190 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
-|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
 
 |0200 ,RESET JMP2
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 
 @RESET
+	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
 	#01 =fps.current
 
 	#000c
