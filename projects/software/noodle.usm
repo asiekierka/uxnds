@@ -30,7 +30,7 @@
 ;cursor { x 2 y 2 x0 2 y0 2 dx 2 dy 2 }
 ;brush { tool 1 size 1 patt 1 drag 1 last 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
-;center { x 2 y 2 }
+;document { state 1 edit 1 }
 ( interface )
 ;toolpane { x1 2 y1 2 x2 2 y2 2 }
 ;pattpane { x1 2 y1 2 x2 2 y2 2 }
@@ -74,38 +74,19 @@
 	( load file )
 	,filepath ,load-file JSR2
 
-	( find screen center )
-	~Screen.width #0002 DIV2 =center.x
-	~Screen.height #0002 DIV2 =center.y
-
-	( center canvas )
-	~center.x ~canvas.w 8* 2/ SUB2 =canvas.x1 
-	~center.y ~canvas.h 8* 2/ SUB2 =canvas.y1
-
-	,draw-background JSR2
-	,fit-canvas JSR2
-
 	( setup panes )
 	#0010 =toolpane.x1 #0010 =toolpane.y1
 	~Screen.width #0050 SUB2 =pattpane.x1 #0010 =pattpane.y1
 	#0040 =sizepane.x1 #0010 =sizepane.y1
 	~Screen.width #0078 SUB2 =viewpane.x1 #0010 =viewpane.y1
 
-	~toolpane.x1 #0028 ADD2 =toolpane.x2
-	~toolpane.y1 #0008 ADD2 =toolpane.y2
-	,draw-toolpane JSR2
+	~toolpane.x1 #0028 ADD2 =toolpane.x2 ~toolpane.y1 #0008 ADD2 =toolpane.y2
+	~pattpane.x1 #0040 ADD2 =pattpane.x2 ~pattpane.y1 #0008 ADD2 =pattpane.y2
+	~sizepane.x1 #0040 ADD2 =sizepane.x2 ~sizepane.y1 #0008 ADD2 =sizepane.y2
+	~viewpane.x1 #0020 ADD2 =viewpane.x2 ~viewpane.y1 #0008 ADD2 =viewpane.y2
 
-	~pattpane.x1 #0040 ADD2 =pattpane.x2
-	~pattpane.y1 #0008 ADD2 =pattpane.y2
-	,draw-pattpane JSR2
-
-	~sizepane.x1 #0040 ADD2 =sizepane.x2
-	~sizepane.y1 #0008 ADD2 =sizepane.y2
-	,draw-sizepane JSR2
-
-	~viewpane.x1 #0020 ADD2 =viewpane.x2
-	~viewpane.y1 #0008 ADD2 =viewpane.y2
-	,draw-viewpane JSR2
+	( center canvas )
+	,center JSR2
 
 BRK
 
@@ -201,7 +182,7 @@ BRK
 		~Mouse.x CLN2r ~viewpane.x1 GTH2 STH2r ~viewpane.x2 LTH2 #0101 NEQ2 ,$no-touch-viewpane JNZ2
 		~Mouse.y CLN2r ~viewpane.y1 GTH2 STH2r ~viewpane.y2 LTH2 #0101 NEQ2 ,$no-touch-viewpane JNZ2
 			( release ) #00 =Mouse.state
-			~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
+			( clear ) ~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
 			,draw-background JSR2
 			~Mouse.x ~viewpane.x1 SUB2 8/ SWP POP
 			DUP #00 NEQ ^$no-incwidth JNZ
@@ -253,6 +234,11 @@ BRK
 		( background interface )
 		~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 ^$no-touch-background JNZ
 			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
+			DUP2 #0000 NEQ2 ^$no-clear-button JNZ
+				,center JSR2
+				,clear JSR2
+				( release ) #00 =Mouse.state
+			$no-clear-button
 			DUP2 #0001 NEQ2 ^$no-load-button JNZ
 				,filepath ,load-file JSR2
 				,draw-canvas JSR2
@@ -310,8 +296,44 @@ BRK
 
 BRK
 
-@clear
+@center
 	
+	( clear ) ~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
+
+	,draw-background JSR2
+
+	~Screen.width #0002 DIV2 ~canvas.w 8* 2/ SUB2 =canvas.x1 
+	~Screen.height #0002 DIV2 ~canvas.h 8* 2/ SUB2 =canvas.y1
+
+	,fit-canvas JSR2
+
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
+	,draw-viewpane JSR2
+
+RTN
+
+@clear
+		
+	,untitled_txt ,filepath 
+	$rename
+		( copy src->dst ) OVR2 OVR2 SWP2 PEK2 ROT ROT POK2
+		( incr dst ) ++
+		( incr src ) SWP2 ++ SWP2
+		OVR2 PEK2 #00 NEQ ^$rename JNZ
+	#00 ROT ROT POK2 POP2
+
+	( erase old label )
+	~Screen.height #0010 SUB2 =Sprite.y
+	#0000 =Sprite.x
+	$erase
+		( draw ) #00 =Sprite.color
+		( incr ) ~Sprite.x ++ =Sprite.x
+		~Sprite.x ~Screen.width LTH2 ^$erase JNZ
+
+	,draw-background JSR2
+
 	( from ) ,data
 	( to ) ~canvas.w ~canvas.h MUL2 #0008 MUL2 ,data ADD2
 	$loop
@@ -705,7 +727,7 @@ RTN
 @draw-background
 	
 	( draw hor line )
-	#0000 =Screen.x ~center.y =Screen.y
+	#0000 =Screen.x ~Screen.height #0002 DIV2 =Screen.y
 	#0000 ~Screen.width ( from/to )
 	$draw-hor
 		( draw ) #01 =Screen.color
@@ -714,7 +736,7 @@ RTN
 	POP2 POP2
 
 	( draw ver line )
-	~center.x =Screen.x #0000 =Screen.y
+	~Screen.width #0002 DIV2 =Screen.x #0000 =Screen.y
 	#0000 ~Screen.height ( from/to )
 	$draw-ver
 		( draw ) #01 =Screen.color
@@ -722,32 +744,36 @@ RTN
 		OVR2 OVR2 LTH2 ^$draw-ver JNZ
 	POP2 POP2
 
+	( draw size )
+	#0010 =Sprite.y
+	( draw width )
+	~Screen.width #00a0 SUB2 =Sprite.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	( draw ) #03 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #03 =Sprite.color
+	( draw height )
+	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	( draw ) #03 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
+	( draw ) #03 =Sprite.color
+
 	( draw save/load/guides icons )
-	~Screen.width #0018 SUB2 =Sprite.x
 	~Screen.height #0010 SUB2 =Sprite.y
+
+	~Screen.width #0020 SUB2 =Sprite.x
+	,filestate_icn =Sprite.addr
+	#01 =Sprite.color
+
+	~Sprite.x 8+ =Sprite.x
 	,load_icn =Sprite.addr
 	#01 =Sprite.color
-	~Screen.width #0010 SUB2 =Sprite.x
+
+	~Sprite.x 8+ =Sprite.x
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
-	~Screen.width #0020 SUB2 =Sprite.x
-
-	( draw width )
-	~Screen.width #0040 SUB2 =Sprite.x
-	,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	( draw height )
-	,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
 
 	( draw filename )
+
 	#0008 =Sprite.x
 	,filepath #01 ,draw-label JSR2
 
@@ -855,18 +881,19 @@ RTN
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filepath       [ projects/pictures/tima2a1a.bit 00 ]
+@filestate_icn  [ 1054 28c6 2854 1000 ] ( TODO, add to background! )
+@untitled_txt   [ untitled.bit 00 ]
 
-@font_hex ( 0-F ) 
+@font_hex ( 0-F TODO: should pull from @font instead.. ) 
 [
-	007c 8282 8282 827c 0030 1010 1010 1010
-	007c 8202 7c80 80fe 007c 8202 1c02 827c
-	000c 1424 4484 fe04 00fe 8080 7c02 827c
-	007c 8280 fc82 827c 007c 8202 1e02 0202
-	007c 8282 7c82 827c 007c 8282 7e02 827c
-	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
-	007c 8280 8080 827c 00fc 8282 8282 82fc 
-	007c 8280 f080 827c 007c 8280 f080 8080
+	003c 464a 5262 3c00 0018 0808 0808 1c00
+	003c 4202 3c40 7e00 003c 421c 0242 3c00
+	000c 1424 447e 0400 007e 407c 0242 3c00
+	003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00
+	003c 4242 7e42 4200 007c 427c 4242 7c00 
+	003c 4240 4042 3c00 007c 4242 4242 7c00 
+	007e 4078 4040 7e00 007e 4078 4040 4000
 ]
 
 @font ( spectrum-zx font ) 
@@ -907,4 +934,6 @@ RTN
 
 @ERROR BRK 
 
-@data [ ]
+|2000 @filepath       [ projects/pictures/tima2a1a.bit 00 ]
+
+|2100 @data
