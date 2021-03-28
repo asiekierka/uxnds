@@ -424,6 +424,7 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
+	(void)b0;
 	t->tm_year += 1900;
 	m[ptr + 0] = (t->tm_year & 0xff00) >> 8;
 	m[ptr + 1] = t->tm_year & 0xff;
