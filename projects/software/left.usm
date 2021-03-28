@@ -713,7 +713,7 @@ RTN
 @filepath1     [ projects/examples/gui.hover.usm 00 ]
 @filepath      [ projects/software/noodle.usm 00 ]
 
-|3000 ;document { eof 2 body 8000 }
-|c000 ;clip { len 2 body 256 }
+@ERROR BRK 
 
-|d000 @ERROR BRK 
+;clip { len 2 body 256 }
+;document { eof 2 body 2 }

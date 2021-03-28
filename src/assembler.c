@@ -11,6 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
+#define OFFSET 0x0200
+
 typedef unsigned char Uint8;
 typedef signed char Sint8;
 typedef unsigned short Uint16;
@@ -462,7 +464,7 @@ main(int argc, char *argv[])
 		error("Assembly", "Failed");
 		return 1;
 	}
-	fwrite(p.data, p.ptr, 1, fopen(argv[2], "wb"));
+	fwrite(p.data + OFFSET, p.ptr - OFFSET, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
 	return 0;

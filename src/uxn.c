@@ -187,7 +187,7 @@ loaduxn(Uxn *u, char *filepath)
 	FILE *f;
 	if(!(f = fopen(filepath, "rb")))
 		return haltuxn(u, "Missing input rom.", 0);
-	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
+	fread(u->ram.dat + PAGE_VECTORS, sizeof(u->ram.dat) - PAGE_VECTORS, 1, f);
 	printf("Uxn loaded[%s].\n", filepath);
 	return 1;
 }
