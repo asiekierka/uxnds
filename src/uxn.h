@@ -19,6 +19,7 @@ typedef signed short Sint16;
 #define FLAG_HALT 0x01
 #define FLAG_RETURN 0x04
 #define PAGE_DEVICE 0x0100
+#define PAGE_VECTORS 0x0200
 
 typedef struct {
 	Uint8 ptr, error;
@@ -39,7 +40,7 @@ typedef struct Device {
 
 typedef struct Uxn {
 	Uint8 literal, status, devices;
-	Uint16 counter, vreset, vframe, verror;
+	Uint16 counter;
 	Stack wst, rst, *src, *dst;
 	Memory ram;
 	Device dev[16];

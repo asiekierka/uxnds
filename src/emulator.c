@@ -464,7 +464,7 @@ int
 start(Uxn *u)
 {
 	int ticknext = 0;
-	evaluxn(u, u->vreset);
+	evaluxn(u, PAGE_VECTORS);
 	loadtheme(u->ram.dat + PAGE_DEVICE + 0x00f8);
 	if(screen.reqdraw)
 		redraw(pixels, u);
@@ -489,7 +489,7 @@ start(Uxn *u)
 				break;
 			}
 		}
-		evaluxn(u, u->vframe);
+		evaluxn(u, PAGE_VECTORS + 0x08);
 		if(screen.reqdraw)
 			redraw(pixels, u);
 	}
