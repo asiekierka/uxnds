@@ -239,7 +239,7 @@ makevariable(char *name, Uint16 *addr, FILE *f)
 		if(word[0] == '{') continue;
 		if(word[0] == '}') break;
 		scpy(word, l->map[l->maps].name, 64);
-		fscanf(f, "%u", &l->map[l->maps].size);
+		fscanf(f, "%02x", &l->map[l->maps].size);
 		*addr += l->map[l->maps].size;
 		l->len += l->map[l->maps++].size;
 	}

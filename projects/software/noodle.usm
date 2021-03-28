@@ -44,7 +44,7 @@
 ;pt1 { x 2 y 2 }
 ;pt2 { x 2 y 2 } ( paint-rect )
 ;px { x 1 y 1 }
-;document { state 1 edit 1 namelength 1 name 48 }
+;document { state 1 edit 1 namelength 1 name 20 }
 ;timer { byte 1 }
 
 ( devices )
@@ -308,26 +308,23 @@ BRK
 @on-document-edit
 
 	~Keys #00 EQU ,$no-keys JNZ2
-
 		~Keys #0d NEQ ,$no-enter JNZ2	
 			#00 =document.edit
 			,redraw JSR2
 			BRK
 		$no-enter
-
 		~Keys #08 NEQ ,$no-backspace JNZ2
+			~document.namelength #00 EQU ,$end JNZ2
 			( incr ) ~document.namelength #01 SUB =document.namelength
 			,$end JSR2
 			BRK
 		$no-backspace
-
+		~document.namelength #1f EQU ,$end JNZ2
 		( store key ) ~Keys ,document.name #00 ~document.namelength ADD2 POK2
 		( incr ) ~document.namelength #01 ADD =document.namelength
-		
 		$end
 		( store end ) #00 ,document.name #00 ~document.namelength ADD2 POK2
 		( release ) #00 =Keys.key
-		
 	$no-keys
 
 	( move ) #0008 =Sprite.x ~Screen.height #0010 SUB2 =Sprite.y
