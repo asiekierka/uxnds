@@ -132,9 +132,7 @@ lituxn(Uxn *u, Uint8 instr)
 void
 opcuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 op = instr & 0x3f, freturn;
-	setflag(&u->status, FLAG_RETURN, (instr >> 6) & 1);
-	freturn = getflag(&u->status, FLAG_RETURN);
+	Uint8 op = instr & 0x3f, freturn = instr & 0x40;
 	u->src = freturn ? &u->rst : &u->wst;
 	u->dst = freturn ? &u->wst : &u->rst;
 	(*ops[op])(u);
