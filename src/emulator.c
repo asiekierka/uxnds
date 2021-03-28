@@ -148,15 +148,14 @@ error(char *msg, const char *err)
 void
 loadtheme(Uint8 *addr)
 {
-	Uint8 r, g, b;
-	r = *(addr + 0) >> 4 & 0xf, g = *(addr + 2) >> 4 & 0xf, b = *(addr + 4) >> 4 & 0xf;
-	theme[0] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
-	r = *(addr + 0) & 0xf, g = *(addr + 2) & 0xf, b = *(addr + 4) & 0xf;
-	theme[1] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
-	r = *(addr + 1) >> 4 & 0xf, g = *(addr + 3) >> 4 & 0xf, b = *(addr + 5) >> 4 & 0xf;
-	theme[2] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
-	r = *(addr + 1) & 0xf, g = *(addr + 3) & 0xf, b = *(addr + 5) & 0xf;
-	theme[3] = ((r + (r << 4)) << 16) + ((g + (g << 4)) << 8) + (b + (b << 4));
+	int i;
+	for(i = 0; i < 4; ++i) {
+		Uint8
+			r = (*(addr + i / 2) >> (!(i % 2) * 4)) & 0x0f,
+			g = (*(addr + 2 + i / 2) >> (!(i % 2) * 4)) & 0x0f,
+			b = (*(addr + 4 + i / 2) >> (!(i % 2) * 4)) & 0x0f;
+		theme[i] = ((r << 4) << 16) + ((g << 4) << 8) + (b << 4);
+	}
 	screen.reqdraw = 1;
 }
 
