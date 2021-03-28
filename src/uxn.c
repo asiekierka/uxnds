@@ -188,14 +188,7 @@ loaduxn(Uxn *u, char *filepath)
 	if(!(f = fopen(filepath, "rb")))
 		return haltuxn(u, "Missing input rom.", 0);
 	fread(u->ram.dat, sizeof(u->ram.dat), 1, f);
-	u->vreset = mempeek16(u, PAGE_DEVICE + 0x00f0);
-	u->vframe = mempeek16(u, PAGE_DEVICE + 0x00f2);
-	u->verror = mempeek16(u, PAGE_DEVICE + 0x00f4);
-	printf("Uxn loaded[%s] vrst:%04x vfrm:%04x verr:%04x.\n",
-		filepath,
-		u->vreset,
-		u->vframe,
-		u->verror);
+	printf("Uxn loaded[%s].\n", filepath);
 	return 1;
 }
 

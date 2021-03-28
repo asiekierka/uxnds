@@ -15,10 +15,13 @@
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0190 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
 |01F8 [ 13fd 1ef3 1bf2 ] ( palette )
 
-|0200 @RESET
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
+
+@RESET
 	#01 =fps.current
 
 	#000c

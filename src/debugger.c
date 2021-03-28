@@ -93,11 +93,11 @@ int
 start(Uxn *u)
 {
 	printf("RESET --------\n");
-	if(!evaluxn(u, u->vreset))
+	if(!evaluxn(u, PAGE_VECTORS))
 		return error("Reset", "Failed");
 	printstack(&u->wst);
 	printf("FRAME --------\n");
-	if(!evaluxn(u, u->vframe))
+	if(!evaluxn(u, PAGE_VECTORS + 0x08))
 		return error("Frame", "Failed");
 	printstack(&u->wst);
 	return 1;
