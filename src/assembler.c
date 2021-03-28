@@ -439,7 +439,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, p.ptr / 1000.0, p.llen, p.mlen);
+	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, (p.ptr - OFFSET) / 1000.0, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);

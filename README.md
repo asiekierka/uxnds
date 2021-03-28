@@ -29,12 +29,13 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
 
 ( program )
 
-|0200 @RESET 
+@RESET 
 	
 	,text1 ,print-label JSR2
 	,text2 ,print-label JSR2
