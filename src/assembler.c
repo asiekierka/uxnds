@@ -263,11 +263,11 @@ walktoken(char *w)
 	if(findopcode(w) || scmp(w, "BRK", 4))
 		return 1;
 	switch(w[0]) {
-	case '=': return 4 - (findlabeladdr(w + 1) < 0x0100); /* POK/STR helper (lit addr(1/2) str) */
-	case '~': return 4 - (findlabeladdr(w + 1) < 0x0100); /* PEK/LDR helper (lit addr(1/2) ldr) */
-	case ',': return 3;                                   /* lit2 addr-hb addr-lb */
-	case '.': return 2;                                   /* addr-hb addr-lb */
-	case '^': return 2;                                   /* Relative jump: lit addr-offset */
+	case '=': return 4 - (findlabel(w + 1) && findlabeladdr(w + 1) < 0x0100); /* POK/STR helper (lit addr(1/2) str) */
+	case '~': return 4 - (findlabel(w + 1) && findlabeladdr(w + 1) < 0x0100); /* PEK/LDR helper (lit addr(1/2) ldr) */
+	case ',': return 3;                                                       /* lit2 addr-hb addr-lb */
+	case '.': return 2;                                                       /* addr-hb addr-lb */
+	case '^': return 2;                                                       /* Relative jump: lit addr-offset */
 	case '#': return (slen(w + 1) == 2 ? 2 : 3);
 	}
 	if((m = findmacro(w))) {

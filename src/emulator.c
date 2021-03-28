@@ -436,6 +436,7 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	m[ptr + 8] = (t->tm_yday & 0xff00) >> 8;
 	m[ptr + 9] = t->tm_yday & 0xff;
 	m[ptr + 10] = t->tm_isdst;
+	(void)b0;
 	return b1;
 }
 
