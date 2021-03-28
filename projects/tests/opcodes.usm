@@ -14,7 +14,7 @@
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
 
-%PASS? { ,result JMP2 BRK2?r LITr EOR2? DUP? }
+%PASS? { ,result JMP2 BRK2r LITr EOR2 DUP }
 %PASS { #01 PASS? }
 %FAIL { #00 PASS? }
 
@@ -36,7 +36,7 @@
 @ERROR BRK
 
 @FRAME
-	,recover ~test.status JNZ2
+	~test.status ,recover JNZ2
 	#01 =test.status
 	~test.code
 	DUP2 ,find-label JSR2
@@ -45,18 +45,18 @@
 	JMP2
 
 @find-label ( ptr₂ -- following-label-ptr₂ )
-	DUP2            PEK2 LIT BRK2?r NEQ ^$next-minus-1 SWP JMP?
-	DUP2 #0001 ADD2 PEK2 LIT LITr   NEQ ^$next-minus-1 SWP JMP?
-	DUP2 #0002 ADD2 PEK2 LIT EOR2?  NEQ ^$next-minus-1 SWP JMP?
-	DUP2 #0003 ADD2 PEK2 LIT DUP?   NEQ ^$next-minus-1 SWP JMP?
-	#0004 ADD2 $next-minus-1 JMP2r
+	DUP2            PEK2 LIT BRK2r NEQ ^$next JNZ
+	DUP2 #0001 ADD2 PEK2 LIT LITr  NEQ ^$next JNZ
+	DUP2 #0002 ADD2 PEK2 LIT EOR2  NEQ ^$next JNZ
+	DUP2 #0003 ADD2 PEK2 LIT DUP   NEQ ^$next JNZ
+	#0004 ADD2 JMP2r
 
-	( next )
+	$next
 	#0001 ADD2 ^find-label JMP
 
 @find-code ( label-ptr₂ -- following-code-ptr₂ )
 	DUP2 PEK2
-	,$not-end ROT JNZ2
+	,$not-end JNZ2
 
 	$end
 	#0001 ADD2
@@ -67,7 +67,7 @@
 
 @recover
 	( would it have been a PASS or FAIL? )
-	,$clear ~test.label #000a SUB2 PEK2 LIT LIT EQU JNZ2
+	~test.label #000a SUB2 PEK2 LIT LIT EQU ,$clear JNZ2
 	#02 ^result JMP
 
 	$clear
@@ -101,13 +101,13 @@
 
 @print-string ( string₂ -- )
 	DUP2 PEK2 DUP
-	,$not-end ROT JNZ2
+	,$not-end JNZ2
 
 	$end
 	POP POP2 JMP2r
 
 	$not-end
-	DUP LIT BRK2?r EQU ,$end ROT JNZ2
+	DUP LIT BRK2r EQU ,$end JNZ2
 	=Console.char
 	#0001 ADD2 ^print-string JMP
 
@@ -118,13 +118,13 @@
 	DUP2 #0064 DIV2 DUP2 ^$digit JSR #0064 MUL2 SUB2
 	DUP2 #000a DIV2 DUP2 ^$digit JSR #000a MUL2 SUB2
 	^$digit JSR
-	~number.started JMP2r?
+	~number.started #00 EQU JMP JMP2r
 	#30 =Console.char
 	JMP2r
 
 	$digit
 	SWP POP
-	#02 OVR ~number.started ORA JMP?
+	DUP ~number.started ORA #02 JNZ
 	POP JMP2r
 	#30 ADD =Console.char
 	#01 =number.started
@@ -140,7 +140,7 @@
 	JMP2r
 
 	$digit
-	#0f AND DUP #0a LTH #03 SWP JMP?
+	#0f AND DUP #0a LTH #03 JNZ
 		#27 ADD
 	#30 ADD =Console.char
 	POP
