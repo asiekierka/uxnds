@@ -48,7 +48,7 @@
 |0140 ;Keys { key 1 }
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|01F8 [ ed0f 3d0f 3d0f ]   ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
 
 |0200 ,RESET JMP2
 |0204 ,ERROR JMP2
@@ -58,6 +58,8 @@
 
 @RESET
 	
+	( theme ) #ed0f =System.r #3d0f =System.g #3d0f =System.b
+
 	( load file )
 	,filepath ,load-file JSR2
 	( place textarea )
