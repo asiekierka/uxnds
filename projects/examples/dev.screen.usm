@@ -25,10 +25,14 @@
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 @Red [ 127f ] @Green [ 34e7 ] @Blue [ 56c4 ]   ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
 
-|0200 @RESET
+@RESET
+
+	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
 	
 	#00a0 =window.w
 	#0050 =window.h
@@ -151,9 +155,9 @@ RTN
 	~window.x1 #0050 ADD2 ~window.y1 #0020 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.g1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 	~window.x1 #0050 ADD2 ~window.y1 #0030 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.b1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 
-	~window.x1 #0008 ADD2 =Sprite.x ~window.y1 =Sprite.y ,Red ,draw-short JSR2
-	~window.x1 #0030 ADD2 =Sprite.x ~window.y1 =Sprite.y ,Green ,draw-short JSR2
-	~window.x1 #0058 ADD2 =Sprite.x ~window.y1 =Sprite.y ,Blue ,draw-short JSR2
+	~window.x1 #0008 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.r ,draw-short JSR2
+	~window.x1 #0030 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.g ,draw-short JSR2
+	~window.x1 #0058 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.b ,draw-short JSR2
 
 	~window.x1 #0050 ADD2 =Sprite.x
 	~window.y1 #0040 ADD2 =Sprite.y

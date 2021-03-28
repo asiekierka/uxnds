@@ -12,12 +12,20 @@
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0130 ;Controller { buttons 1 }
 |0140 ;Keys { key 1 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ 0daf 02ff 035f ] ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
 
-|0200 @RESET BRK
+@RESET 
+
+	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
+	
+BRK
 
 @FRAME
+
+	( theme ) #0daf =System.r #02ff =System.g #035f =System.b
 	
 	( update cursor )
 	#02 ~cursor.blink #01 EQU ADD =Sprite.color

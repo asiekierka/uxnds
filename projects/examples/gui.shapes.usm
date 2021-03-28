@@ -15,10 +15,14 @@
 
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
 
-|0200 @RESET
+@RESET
+	
+	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
 	
 	#0010 #0020 #0040 #0060 #01 ,fill-rect JSR2
 	#0020 #0030 #0050 #0070 #02 ,fill-rect JSR2

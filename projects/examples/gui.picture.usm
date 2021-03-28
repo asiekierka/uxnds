@@ -5,11 +5,15 @@
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ 0ffc 0f0b 0f03 ] ( palette )
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0200 ,RESET JMP2
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
 
-|0200 @RESET
+@RESET
 
+	( theme ) #0ffc =System.r #0f0b =System.g #0f03 =System.b
+	
 	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
 	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2
 	#0020 #0090 #0020 #0020 #0a ,pict_small ,draw-picture JSR2
