@@ -10,7 +10,6 @@
 
 	TODO
 		- Pixel cleanup brush
-		- Rename filename
 )
 
 %RTN   { JMP2r }
@@ -23,14 +22,13 @@
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
-%8+ { #0008 ADD2 }
+%8+ { #0008 ADD2 } %8- { #0008 SUB2 }
 
 ( variables )
 
 ;cursor { x 2 y 2 x0 2 y0 2 dx 2 dy 2 }
 ;brush { tool 1 size 1 patt 1 drag 1 last 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
-;document { state 1 edit 1 }
 ( interface )
 ;toolpane { x1 2 y1 2 x2 2 y2 2 }
 ;pattpane { x1 2 y1 2 x2 2 y2 2 }
@@ -46,10 +44,12 @@
 ;pt1 { x 2 y 2 }
 ;pt2 { x 2 y 2 } ( paint-rect )
 ;px { x 1 y 1 }
+;document { state 1 edit 1 namelength 1 name 48 }
+;timer { byte 1 }
 
 ( devices )
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0130 ;Controller { buttons 1 }
@@ -77,7 +77,7 @@
 	#00 =brush.tool
 
 	( load file )
-	,filepath ,load-file JSR2
+	,document.name ,load-file JSR2
 
 	( setup panes )
 	#0010 =toolpane.x1 #0010 =toolpane.y1
@@ -92,10 +92,13 @@
 
 	( center canvas )
 	,center JSR2
+	,clear JSR2
 
 BRK
 
 @FRAME 
+
+	~document.edit #01 EQU ,on-document-edit JNZ2
 
 	,draw-cursor JSR2
 
@@ -242,15 +245,16 @@ BRK
 			DUP2 #0000 NEQ2 ^$no-clear-button JNZ
 				,center JSR2
 				,clear JSR2
+				#01 =document.edit
 				( release ) #00 =Mouse.state
 			$no-clear-button
 			DUP2 #0001 NEQ2 ^$no-load-button JNZ
-				,filepath ,load-file JSR2
+				,document.name ,load-file JSR2
 				,draw-canvas JSR2
 				( release ) #00 =Mouse.state
 			$no-load-button
 			DUP2 #0002 NEQ2 ^$no-save-button JNZ
-				,filepath ,save-file JSR2
+				,document.name ,save-file JSR2
 				( release ) #00 =Mouse.state
 			$no-save-button
 			POP2
@@ -301,6 +305,44 @@ BRK
 
 BRK
 
+@on-document-edit
+
+	~Keys #00 EQU ,$no-keys JNZ2
+
+		~Keys #0d NEQ ,$no-enter JNZ2	
+			#00 =document.edit
+			,redraw JSR2
+			BRK
+		$no-enter
+
+		~Keys #08 NEQ ,$no-backspace JNZ2
+			( incr ) ~document.namelength #01 SUB =document.namelength
+			,$end JSR2
+			BRK
+		$no-backspace
+
+		( store key ) ~Keys ,document.name #00 ~document.namelength ADD2 POK2
+		( incr ) ~document.namelength #01 ADD =document.namelength
+		
+		$end
+		( store end ) #00 ,document.name #00 ~document.namelength ADD2 POK2
+		( release ) #00 =Keys.key
+		
+	$no-keys
+
+	( move ) #0008 =Sprite.x ~Screen.height #0010 SUB2 =Sprite.y
+	( draw ) ,document.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
+
+	~Sprite.x 8- =Sprite.x
+	$clear
+		~Sprite.x 8+ =Sprite.x
+		#00 =Sprite.color
+		~Sprite.x ~Screen.width LTH2 ^$clear JNZ
+
+	~timer #01 ADD =timer
+
+BRK
+
 @center
 	
 	( clear ) ~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
@@ -320,12 +362,15 @@ BRK
 RTN
 
 @clear
-		
-	,untitled_txt ,filepath 
+	
+	#00 =document.namelength
+
+	,untitled_txt ,document.name 
 	$rename
 		( copy src->dst ) OVR2 OVR2 SWP2 PEK2 ROT ROT POK2
 		( incr dst ) ++
 		( incr src ) SWP2 ++ SWP2
+		( incr len ) ~document.namelength #01 ADD =document.namelength
 		OVR2 PEK2 #00 NEQ ^$rename JNZ
 	#00 ROT ROT POK2 POP2
 
@@ -753,14 +798,14 @@ RTN
 	#0010 =Sprite.y
 	( draw width )
 	~Screen.width #00a0 SUB2 =Sprite.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #03 =Sprite.color
+	( draw ) #01 =Sprite.color
 	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #03 =Sprite.color
+	( draw ) #01 =Sprite.color
 	( draw height )
 	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #03 =Sprite.color
+	( draw ) #01 =Sprite.color
 	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #03 =Sprite.color
+	( draw ) #01 =Sprite.color
 
 	( draw save/load/guides icons )
 	~Screen.height #0010 SUB2 =Sprite.y
@@ -777,10 +822,10 @@ RTN
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
 
-	( draw filename )
+	( draw )
 
 	#0008 =Sprite.x
-	,filepath #01 ,draw-label JSR2
+	,document.name #01 ,draw-label JSR2
 
 RTN
 
@@ -938,7 +983,5 @@ RTN
 ]
 
 @ERROR BRK 
-
-|2000 @filepath       [ projects/pictures/tima2a1a.bit 00 ]
 
 |2100 @data

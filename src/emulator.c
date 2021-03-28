@@ -337,6 +337,7 @@ console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	case 0x08: printf("%c", b1); break;
 	case 0x09: printf("0x%02x\n", b1); break;
 	case 0x0b: printf("0x%04x\n", (m[ptr + 0x0a] << 8) + b1); break;
+	case 0x0d: printf("%s\n", &m[(m[ptr + 0x0c] << 8) + b1]); break;
 	}
 	fflush(stdout);
 	(void)m;
