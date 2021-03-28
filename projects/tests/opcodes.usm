@@ -24,6 +24,8 @@
 	ADD FAIL [ add-needs-two 00 ]
 	#01 ADD FAIL [ add-needs-two 00 ]
 	#01 #02 ADD #03 EQU PASS? [ add-result 00 ]
+	LITr [ fe ] STHr #fe EQU PASS? [ litr 00 ]
+	LIT2r [ fe dc ] STH2r #fedc EQU2 PASS? [ lit2r 00 ]
 	#01 #02 ADD #ff EQU PASS? [ this-test-fails 00 ]
 
 	,finish JMP2
