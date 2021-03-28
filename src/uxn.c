@@ -125,7 +125,7 @@ haltuxn(Uxn *u, char *name, int id)
 void
 lituxn(Uxn *u, Uint8 instr)
 {
-	push8(&u->wst, instr);
+	push8(u->src, instr);
 	u->literal--;
 }
 
