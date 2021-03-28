@@ -151,10 +151,10 @@ loadtheme(Uint8 *addr)
 	int i;
 	for(i = 0; i < 4; ++i) {
 		Uint8
-			r = (*(addr + i / 2) >> (!(i % 2) * 4)) & 0x0f,
-			g = (*(addr + 2 + i / 2) >> (!(i % 2) * 4)) & 0x0f,
-			b = (*(addr + 4 + i / 2) >> (!(i % 2) * 4)) & 0x0f;
-		theme[i] = ((r << 4) << 16) + ((g << 4) << 8) + (b << 4);
+			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
+			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
+			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
+		theme[i] = (r << 20) + (g << 12) + (b << 4);
 	}
 	screen.reqdraw = 1;
 }
