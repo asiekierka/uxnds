@@ -22,20 +22,19 @@
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
-%8+ { #0008 ADD2 } %8- { #0008 SUB2 }
+%8+ { #0008 ADD2 }
+%FILESIZE { ~canvas.w ~canvas.h MUL2 #0008 MUL2 }
 
 ( variables )
 
 ;cursor { x 2 y 2 x0 2 y0 2 dx 2 dy 2 }
 ;brush { tool 1 size 1 patt 1 drag 1 last 1 oper 2 }
 ;zoom { active 1 x 2 y 2 }
-( interface )
 ;toolpane { x1 2 y1 2 x2 2 y2 2 }
 ;pattpane { x1 2 y1 2 x2 2 y2 2 }
 ;sizepane { x1 2 y1 2 x2 2 y2 2 }
 ;viewpane { x1 2 y1 2 x2 2 y2 2 }
 ;canvas { x1 2 y1 2 x2 2 y2 2 w 2 h 2 }
-
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x1 2 y1 2 x2 2 y2 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;origin { x1 2 y1 2 x2 2 y2 2 }
@@ -44,7 +43,8 @@
 ;pt1 { x 2 y 2 }
 ;pt2 { x 2 y 2 } ( paint-rect )
 ;px { x 1 y 1 }
-;document { state 1 edit 1 namelength 1 name 20 }
+;document { state 1 edit 1 }
+;path { length 1 name 20 }
 ;timer { byte 1 }
 
 ( devices )
@@ -52,53 +52,46 @@
 |0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0130 ;Controller { buttons 1 }
+|0130 ;Controller { p1 1 }
 |0140 ;Keys { key 1 }
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-
 |0200 ,RESET JMP2
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 
 ( program )
 
-@RESET 
+@RESET ( -- )
 	
-	( theme ) #e0fd =System.r #30fd =System.g #30fd =System.b
+	( theme ) 
+	#e0fd =System.r #30fd =System.g #30fd =System.b
 
 	( default canvas )
 	#002a =canvas.w #001a =canvas.h
 
 	( default brush )
-	#04 =brush.size
-	#00 =brush.patt
-	#00 =brush.tool
+	#04 =brush.size #00 =brush.patt #00 =brush.tool
 
 	( load file )
-	,document.name ,load-file JSR2
+	,path.name ,load-file JSR2
 
 	( setup panes )
-	#0010 =toolpane.x1 #0010 =toolpane.y1
-	~Screen.width #0050 SUB2 =pattpane.x1 #0010 =pattpane.y1
-	#0040 =sizepane.x1 #0010 =sizepane.y1
-	~Screen.width #0078 SUB2 =viewpane.x1 #0010 =viewpane.y1
+	#0010 =toolpane.x1 #0010 =toolpane.y1 ~toolpane.x1 #0028 ADD2 =toolpane.x2 ~toolpane.y1 #0008 ADD2 =toolpane.y2
+	#0040 =sizepane.x1 #0010 =sizepane.y1 ~sizepane.x1 #0040 ADD2 =sizepane.x2 ~sizepane.y1 #0008 ADD2 =sizepane.y2
+	~Screen.width #0078 SUB2 =viewpane.x1 #0010 =viewpane.y1 ~viewpane.x1 #0020 ADD2 =viewpane.x2 ~viewpane.y1 #0008 ADD2 =viewpane.y2
+	~Screen.width #0050 SUB2 =pattpane.x1 #0010 =pattpane.y1 ~pattpane.x1 #0040 ADD2 =pattpane.x2 ~pattpane.y1 #0008 ADD2 =pattpane.y2
 
-	~toolpane.x1 #0028 ADD2 =toolpane.x2 ~toolpane.y1 #0008 ADD2 =toolpane.y2
-	~pattpane.x1 #0040 ADD2 =pattpane.x2 ~pattpane.y1 #0008 ADD2 =pattpane.y2
-	~sizepane.x1 #0040 ADD2 =sizepane.x2 ~sizepane.y1 #0008 ADD2 =sizepane.y2
-	~viewpane.x1 #0020 ADD2 =viewpane.x2 ~viewpane.y1 #0008 ADD2 =viewpane.y2
-
-	( center canvas )
+	( ready. )
 	,center JSR2
 	,clear JSR2
 
 BRK
 
-@FRAME 
+@FRAME ( -- )
 
-	~document.edit #01 EQU ,on-document-edit JNZ2
+	~document.edit #01 EQU ,on-rename JNZ2
 
 	,draw-cursor JSR2
 
@@ -108,10 +101,7 @@ BRK
 		~canvas.x1 -- ~canvas.y1 -- ~canvas.x2 ~canvas.y2 #10 ,line-rect JSR2
 		,draw-background JSR2
 		,fit-canvas JSR2
-		,draw-toolpane JSR2
-		,draw-pattpane JSR2
-		,draw-sizepane JSR2
-		,draw-viewpane JSR2
+		,draw-foreground JSR2
 		#00 =brush.drag
 	$no-release
 
@@ -243,18 +233,17 @@ BRK
 		~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 ^$no-touch-background JNZ
 			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
 			DUP2 #0000 NEQ2 ^$no-clear-button JNZ
-				,center JSR2
 				,clear JSR2
 				#01 =document.edit
 				( release ) #00 =Mouse.state
 			$no-clear-button
 			DUP2 #0001 NEQ2 ^$no-load-button JNZ
-				,document.name ,load-file JSR2
+				,path.name ,load-file JSR2
 				,draw-canvas JSR2
 				( release ) #00 =Mouse.state
 			$no-load-button
 			DUP2 #0002 NEQ2 ^$no-save-button JNZ
-				,document.name ,save-file JSR2
+				,path.name ,save-file JSR2
 				( release ) #00 =Mouse.state
 			$no-save-button
 			POP2
@@ -265,16 +254,18 @@ BRK
 
 	$no-touch
 
-	~Controller.buttons #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
-			( move ) ~zoom.y -- =zoom.y $no-up
-		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
-			( move ) ~zoom.y ++ =zoom.y $no-down
-		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
-			( move ) ~zoom.x -- =zoom.x $no-left
-		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
-			( move ) ~zoom.x ++ =zoom.x $no-right
-	#00 EQU #04 JNZ ,draw-canvas JSR2
+	~Controller.p1 #00 EQU ,$no-ctrl JNZ2
+		~Controller.p1 #f0 AND
+			DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
+				( move ) ~zoom.y -- =zoom.y $no-up
+			DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
+				( move ) ~zoom.y ++ =zoom.y $no-down
+			DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
+				( move ) ~zoom.x -- =zoom.x $no-left
+			DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
+				( move ) ~zoom.x ++ =zoom.x $no-right
+		#00 EQU #04 JNZ ,draw-canvas JSR2
+	$no-ctrl
 	
 	~Keys #00 EQU ,$no-keys JNZ2
 		~Keys 
@@ -305,44 +296,44 @@ BRK
 
 BRK
 
-@on-document-edit
+@on-rename ( -- )
 
 	~Keys #00 EQU ,$no-keys JNZ2
-		~Keys #0d NEQ ,$no-enter JNZ2	
+		( enter )
+		~Keys #0d NEQ ^$no-enter JNZ
 			#00 =document.edit
-			,redraw JSR2
-			BRK
-		$no-enter
-		~Keys #08 NEQ ,$no-backspace JNZ2
-			~document.namelength #00 EQU ,$end JNZ2
-			( incr ) ~document.namelength #01 SUB =document.namelength
-			,$end JSR2
-			BRK
-		$no-backspace
-		~document.namelength #1f EQU ,$end JNZ2
-		( store key ) ~Keys ,document.name #00 ~document.namelength ADD2 POK2
-		( incr ) ~document.namelength #01 ADD =document.namelength
-		$end
-		( store end ) #00 ,document.name #00 ~document.namelength ADD2 POK2
-		( release ) #00 =Keys.key
+			,redraw JSR2 BRK
+			$no-enter
+		( backspace )
+		~Keys #08 NEQ ^$no-backspace JNZ
+			~path.length #00 EQU ^$end JNZ
+			~path.length #01 SUB =path.length
+			^$end JMP
+			$no-backspace
+		( default )
+		~path.length #1f EQU ^$end JNZ
+			~Keys ,path.name #00 ~path.length ADD2 POK2
+			~path.length #01 ADD =path.length
+			$end
+		#00 ,path.name #00 ~path.length ADD2 POK2
+		#00 =Keys.key
 	$no-keys
-
-	( move ) #0008 =Sprite.x ~Screen.height #0010 SUB2 =Sprite.y
-	( draw ) ,document.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
-
-	~Sprite.x 8- =Sprite.x
+	( draw )
+	#0008 =Sprite.x ~Screen.height #0010 SUB2 =Sprite.y
+	,path.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
 	$clear
-		~Sprite.x 8+ =Sprite.x
 		#00 =Sprite.color
-		~Sprite.x ~Screen.width LTH2 ^$clear JNZ
-
+		~Sprite.x 8+ DUP2 =Sprite.x
+		~Screen.width LTH2 ^$clear JNZ
+	( blink timer )
 	~timer #01 ADD =timer
 
 BRK
 
-@center
+@center ( -- )
 	
-	( clear ) ~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
+	( clear old ) 
+	~canvas.x1 #0002 SUB2 ~canvas.y1 #0002 SUB2 ~canvas.x2 #0002 ADD2 ~canvas.y2 #0002 ADD2 #00 ,fill-rect JSR2
 
 	,draw-background JSR2
 
@@ -351,40 +342,19 @@ BRK
 
 	,fit-canvas JSR2
 
-	,draw-toolpane JSR2
-	,draw-pattpane JSR2
-	,draw-sizepane JSR2
-	,draw-viewpane JSR2
+	,draw-foreground JSR2
 
 RTN
 
-@clear
+@clear ( -- )
 	
-	#00 =document.namelength
-
-	,untitled_txt ,document.name 
-	$rename
-		( copy src->dst ) OVR2 OVR2 SWP2 PEK2 ROT ROT POK2
-		( incr dst ) ++
-		( incr src ) SWP2 ++ SWP2
-		( incr len ) ~document.namelength #01 ADD =document.namelength
-		OVR2 PEK2 #00 NEQ ^$rename JNZ
-	#00 ROT ROT POK2 POP2
-
-	( erase old label )
-	~Screen.height #0010 SUB2 =Sprite.y
-	#0000 =Sprite.x
-	$erase
-		( draw ) #00 =Sprite.color
-		( incr ) ~Sprite.x ++ =Sprite.x
-		~Sprite.x ~Screen.width LTH2 ^$erase JNZ
-
-	,draw-background JSR2
-
-	( from ) ,data
-	( to ) ~canvas.w ~canvas.h MUL2 #0008 MUL2 ,data ADD2
+	( new label )
+	,untitled_txt ,path.name ,strcpy JSR2
+	#00 =path.length
+	( erase data )
+	,data FILESIZE ,data ADD2
 	$loop
-		OVR2 #00 ROT ROT POK2
+		( write ) OVR2 #00 ROT ROT POK2
 		( incr ) SWP2 #0001 ADD2 SWP2
 		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2 POP2
@@ -392,15 +362,15 @@ RTN
 
 RTN
 
-@load-file ( path )
+@load-file ( path -- )
 
-	=File.name ~canvas.w ~canvas.h MUL2 #0008 MUL2 =File.length ,data =File.load
+	=File.name FILESIZE =File.length ,data =File.load
 
 RTN
 
-@save-file
+@save-file ( path -- )
 
-	=File.name ~canvas.w ~canvas.h MUL2 #0008 MUL2 =File.length ,data =File.save
+	=File.name FILESIZE =File.length ,data =File.save
 
 RTN
 
@@ -413,7 +383,7 @@ RTN
 
 RTN
 
-@paint-line ( x1 y1 x2 y2 )
+@paint-line ( x1 y1 x2 y2 -- )
 	
 	( load ) =line.y1 =line.x1 =line.y2 =line.x2
 
@@ -446,14 +416,11 @@ RTN
 	$end
 
 	,draw-canvas JSR2
-	,draw-toolpane JSR2
-	,draw-pattpane JSR2
-	,draw-sizepane JSR2
-	,draw-viewpane JSR2
+	,draw-foreground JSR2
 
 RTN
 
-@paint-rect ( x1 y1 x2 y2  )
+@paint-rect ( x1 y1 x2 y2 -- )
 
 	( load ) =rect.y2 =rect.x2 =rect.y1 =rect.x1
 
@@ -480,14 +447,11 @@ RTN
 		~pt2.y ~rect.y2 LTS2 ^$ver JNZ
 
 	,draw-canvas JSR2
-	,draw-toolpane JSR2
-	,draw-pattpane JSR2
-	,draw-sizepane JSR2
-	,draw-viewpane JSR2
+	,draw-foreground JSR2
 	
 RTN
 
-@paint-brush ( x y )
+@paint-brush ( x y -- )
 
 	#0003 SUB2 =pt0.y #0003 SUB2 =pt0.x ( cursor offset )
 
@@ -512,14 +476,11 @@ RTN
 		~px.y #08 LTH ^$ver JNZ
 
 	,draw-canvas JSR2
-	,draw-toolpane JSR2
-	,draw-pattpane JSR2
-	,draw-sizepane JSR2
-	,draw-viewpane JSR2
+	,draw-foreground JSR2
 
 RTN
 
-@patternize
+@patternize ( -- )
 
 	~brush.patt #00 NEQ ^$noplain JNZ
 		#01 RTN
@@ -576,7 +537,7 @@ RTN
 
 RTN
 
-@add-pixel ( x y  )
+@add-pixel ( x y -- )
 
 	=pt1.y =pt1.x
 	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
@@ -586,7 +547,7 @@ RTN
 
 RTN
 
-@remove-pixel ( x y )
+@remove-pixel ( x y -- )
 
 	=pt1.y =pt1.x
 	( get tile addr ) ,data ~pt1.x 8/ ~pt1.y 8/ ~canvas.w MUL2 ADD2 8* ~pt1.y MOD8 ADD2 ADD2 
@@ -598,18 +559,15 @@ RTN
 
 ( Drawing )
 
-@redraw
+@redraw ( -- )
 	
 	,draw-background JSR2
 	,draw-canvas JSR2
-	,draw-toolpane JSR2
-	,draw-pattpane JSR2
-	,draw-sizepane JSR2
-	,draw-viewpane JSR2
+	,draw-foreground JSR2
 		
 RTN
 
-@draw-canvas
+@draw-canvas ( -- )
 	
 	~zoom.active #01 EQU ,draw-canvas-zoom JNZ2
 
@@ -627,7 +585,7 @@ RTN
 
 RTN
 
-@draw-canvas-zoom
+@draw-canvas-zoom ( -- )
 	
 	~zoom.y =pt1.y
 	~canvas.y1 =Sprite.y
@@ -647,7 +605,7 @@ RTN
 
 RTN
 
-@draw-cursor
+@draw-cursor ( -- )
 
 	~cursor.x ~Mouse.x NEQ2
 	~cursor.y ~Mouse.y NEQ2
@@ -657,54 +615,41 @@ RTN
 	#0101 EQU2 RTN? ( Return if unchanged )
 
 	,blank_icn =Sprite.addr
-
 	( clear brush size )
-	~cursor.x #0003 SUB2 =Sprite.x
-	~cursor.y #0003 SUB2 =Sprite.y
-	#10 =Sprite.color
-
+	~cursor.x #0003 SUB2 =Sprite.x ~cursor.y #0003 SUB2 =Sprite.y #10 =Sprite.color
 	( clear last cursor )
-	~cursor.x =Sprite.x
-	~cursor.y =Sprite.y
-	#10 =Sprite.color
-
+	~cursor.x =Sprite.x ~cursor.y =Sprite.y #10 =Sprite.color
 	( record cursor positions )
-	~Mouse.x =cursor.x 
-	~Mouse.y =cursor.y
-
+	~Mouse.x =cursor.x ~Mouse.y =cursor.y
 	( draw size cursor )
 	~brush.tool #01 NEQ ,$outside-canvas JNZ2
+	( do not draw size when holding alt )
+	~Controller #02 EQU ,$outside-canvas JNZ2
 	~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2
 	~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2	
-		( do not draw size in toolpane )
-		~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
-		~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
-		~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
-		( do not draw size when holding alt )
-		~Controller #02 EQU ^$outside-canvas JNZ
-		~cursor.x #0003 SUB2 =Sprite.x
-		~cursor.y #0003 SUB2 =Sprite.y
+	( do not draw size in toolpane )
+	~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
+	~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
+	~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
+		~cursor.x #0003 SUB2 =Sprite.x ~cursor.y #0003 SUB2 =Sprite.y
 		,brush_icns #00 ~brush.size 8* ADD2 =Sprite.addr
 		#11 ~Mouse.state #02 MUL ADD =Sprite.color
-		~Mouse.state #00 EQU ^$outside-canvas JNZ
-			RTN
+		~Mouse.state #00 EQU ^$outside-canvas JNZ RTN
 	$outside-canvas
-
-	~cursor.x =Sprite.x
-	~cursor.y =Sprite.y
+	( draw new cursor )
+	~cursor.x =Sprite.x ~cursor.y =Sprite.y
 	,pointers_icn #00 ~Controller #02 EQU 8* ADD2 =Sprite.addr
 	#1f =Sprite.color
 
 RTN
 
-@draw-toolpane
+@draw-toolpane ( -- )
 	
+	( frame )	
 	~toolpane.x1 -- ~toolpane.y1 -- ~toolpane.x2 ~toolpane.y2 #00 ,line-rect JSR2
 	~toolpane.x1 #0002 SUB2 ~toolpane.y1 #0002 SUB2 ~toolpane.x2 ~toolpane.y2 #01 ,line-rect JSR2
 
-	~toolpane.x1 =Sprite.x
-	~toolpane.y1 =Sprite.y
-	,tool_icns =Sprite.addr
+	~toolpane.x1 =Sprite.x ~toolpane.y1 =Sprite.y ,tool_icns =Sprite.addr
 
 	$loop
 		( draw ) #01 ~Sprite.x ~toolpane.x1 SUB2 8/ SWP POP ~brush.tool EQU #02 MUL ADD =Sprite.color
@@ -716,18 +661,17 @@ RTN
 		~Sprite.x #0008 SUB2 =Sprite.x
 		,tool_icns #0028 ADD2 =Sprite.addr
 		#01 #04 ~brush.tool EQU #02 MUL ADD =Sprite.color
-	$no-zoom
+		$no-zoom
 
 RTN
 
-@draw-pattpane
+@draw-pattpane ( -- )
 	
+	( frame )	
 	~pattpane.x1 -- ~pattpane.y1 -- ~pattpane.x2 ~pattpane.y2 #00 ,line-rect JSR2
 	~pattpane.x1 #0002 SUB2 ~pattpane.y1 #0002 SUB2 ~pattpane.x2 ~pattpane.y2 #01 ,line-rect JSR2
 
-	~pattpane.x1 =Sprite.x
-	~pattpane.y1 =Sprite.y
-	,patt_icns =Sprite.addr
+	~pattpane.x1 =Sprite.x ~pattpane.y1 =Sprite.y ,patt_icns =Sprite.addr
 
 	$loop
 		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.patt EQU #02 MUL ADD =Sprite.color
@@ -737,14 +681,13 @@ RTN
 
 RTN
 
-@draw-sizepane
-
+@draw-sizepane ( -- )
+	
+	( frame )
 	~sizepane.x1 -- ~sizepane.y1 -- ~sizepane.x2 ~sizepane.y2 #00 ,line-rect JSR2
 	~sizepane.x1 #0002 SUB2 ~sizepane.y1 #0002 SUB2 ~sizepane.x2 ~sizepane.y2 #01 ,line-rect JSR2
 
-	~sizepane.x1 =Sprite.x
-	~sizepane.y1 =Sprite.y
-	,size_icns =Sprite.addr
+	~sizepane.x1 =Sprite.x ~sizepane.y1 =Sprite.y ,size_icns =Sprite.addr
 
 	$loop
 		( draw ) #01 ~Sprite.x ~sizepane.x1 SUB2 8/ SWP POP ~brush.size EQU #02 MUL ADD =Sprite.color
@@ -754,14 +697,13 @@ RTN
 
 RTN
 
-@draw-viewpane
-
+@draw-viewpane ( -- )
+	
+	( frame )
 	~viewpane.x1 -- ~viewpane.y1 -- ~viewpane.x2 ~viewpane.y2 #00 ,line-rect JSR2
 	~viewpane.x1 #0002 SUB2 ~viewpane.y1 #0002 SUB2 ~viewpane.x2 ~viewpane.y2 #01 ,line-rect JSR2
 
-	~viewpane.x1 =Sprite.x
-	~viewpane.y1 =Sprite.y
-	,view_icns =Sprite.addr
+	~viewpane.x1 =Sprite.x ~viewpane.y1 =Sprite.y ,view_icns =Sprite.addr
 
 	$loop
 		( draw ) #01 =Sprite.color
@@ -771,25 +713,21 @@ RTN
 
 RTN
 
+@draw-foreground
+	
+	,draw-toolpane JSR2
+	,draw-pattpane JSR2
+	,draw-sizepane JSR2
+	,draw-viewpane JSR2
+
+RTN
+
 @draw-background
 	
 	( draw hor line )
-	#0000 =Screen.x ~Screen.height #0002 DIV2 =Screen.y
-	#0000 ~Screen.width ( from/to )
-	$draw-hor
-		( draw ) #01 =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor JNZ
-	POP2 POP2
-
+	#0000 ~Screen.width ~Screen.height #0002 DIV2 ,line-horizontal-dotted JSR2
 	( draw ver line )
-	~Screen.width #0002 DIV2 =Screen.x #0000 =Screen.y
-	#0000 ~Screen.height ( from/to )
-	$draw-ver
-		( draw ) #01 =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver JNZ
-	POP2 POP2
+	~Screen.width #0002 DIV2 #0000 ~Screen.height ,line-vertical-dotted JSR2
 
 	( draw size )
 	#0010 =Sprite.y
@@ -803,32 +741,26 @@ RTN
 	( draw ) #01 =Sprite.color
 	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
 	( draw ) #01 =Sprite.color
-
 	( draw save/load/guides icons )
 	~Screen.height #0010 SUB2 =Sprite.y
-
 	~Screen.width #0020 SUB2 =Sprite.x
 	,filestate_icn =Sprite.addr
 	#01 =Sprite.color
-
 	~Sprite.x 8+ =Sprite.x
 	,load_icn =Sprite.addr
 	#01 =Sprite.color
-
 	~Sprite.x 8+ =Sprite.x
 	,save_icn =Sprite.addr
 	#01 =Sprite.color
-
-	( draw )
-
+	( filename )
 	#0008 =Sprite.x
-	,document.name #01 ,draw-label JSR2
+	,path.name #01 ,draw-label JSR2
 
 RTN
 
 ( Generics )
 
-@line-rect ( x1 y1 x2 y2 color )
+@line-rect ( x1 y1 x2 y2 color -- )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$hor
@@ -845,7 +777,7 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color )
+@fill-rect ( x1 y1 x2 y2 color -- )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$ver
@@ -859,7 +791,7 @@ RTN
 
 RTN
 
-@draw-label ( addr )
+@draw-label ( addr -- )
 	
 	=color 
 	$loop
@@ -870,6 +802,39 @@ RTN
 		( loop ) DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 
+RTN
+
+@line-horizontal-dotted ( x0 x1 y -- )
+	
+	=Screen.y OVR2 =Screen.x
+	$draw-hor
+		( draw ) #01 =Screen.color
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
+		OVR2 OVR2 LTH2 ^$draw-hor JNZ
+	POP2 POP2
+
+RTN
+
+@line-vertical-dotted ( x y0 y1 -- )
+	
+	STH2 SWP2 =Screen.x STH2r OVR2 =Screen.y
+	$draw-ver
+		( draw ) #01 =Screen.color
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
+		OVR2 OVR2 LTH2 ^$draw-ver JNZ
+	POP2 POP2
+
+RTN
+
+@strcpy ( src* dst* -- )
+
+	$loop
+		( copy src->dst ) OVR2 OVR2 SWP2 PEK2 ROT ROT POK2
+		( incr dst ) ++
+		( incr src ) SWP2 ++ SWP2
+		OVR2 PEK2 #00 NEQ ^$loop JNZ
+	#00 ROT ROT POK2 POP2
+	
 RTN
 
 @size_icns    
