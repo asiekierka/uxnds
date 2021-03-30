@@ -10,6 +10,8 @@
 
 	TODO
 		- Pixel cleanup brush
+		- Hide panes > presentation mode
+		- Don't zoom move beyond image width
 )
 
 %RTN   { JMP2r }
@@ -744,6 +746,11 @@ RTN
 	( draw save/load/guides icons )
 	~Screen.height #0010 SUB2 =Sprite.y
 	~Screen.width #0020 SUB2 =Sprite.x
+	( TODO: Presentation mode button
+	,guides_icn =Sprite.addr
+	#01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x
+	)
 	,filestate_icn =Sprite.addr
 	#01 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
@@ -889,6 +896,10 @@ RTN
 @pointers_icn
 	[ 80c0 e0f0 f8e0 1000 ]
 	[ 4040 4070 f8f8 f870 ]
+
+@eye
+	[ 0000 0082 4438 0000 ] ( open )
+	[ 0038 4492 2810 0000 ] ( closed )
 
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
