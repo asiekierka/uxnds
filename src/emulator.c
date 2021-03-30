@@ -154,7 +154,7 @@ loadtheme(Uint8 *addr)
 			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		theme[i] = (r << 20) + (g << 12) + (b << 4);
+		theme[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
 	}
 	screen.reqdraw = 1;
 }
@@ -444,6 +444,7 @@ Uint8
 system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
+	m[PAGE_DEVICE + 0x00f0 + b0] = b1;
 	loadtheme(&m[PAGE_DEVICE + 0x00f8]);
 	(void)ptr;
 	(void)b0;
@@ -466,7 +467,6 @@ start(Uxn *u)
 {
 	int ticknext = 0;
 	evaluxn(u, PAGE_VECTORS);
-	loadtheme(u->ram.dat + PAGE_DEVICE + 0x00f8);
 	if(screen.reqdraw)
 		redraw(pixels, u);
 	while(1) {

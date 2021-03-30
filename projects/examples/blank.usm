@@ -21,12 +21,12 @@
 
 @RESET
 
-RTN
+BRK
 
 @FRAME
 
-RTN
+BRK
 
 @ERROR
 
-RTN
+BRK

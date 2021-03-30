@@ -45,9 +45,10 @@
 ;pt1 { x 2 y 2 }
 ;pt2 { x 2 y 2 } ( paint-rect )
 ;px { x 1 y 1 }
-;document { state 1 edit 1 }
+;document { state 1 edit 1 presentation 1 }
 ;path { length 1 name 20 }
 ;timer { byte 1 }
+;theme { r0 2 g0 2 b0 2 r1 2 g1 2 b1 2 }
 
 ( devices )
 
@@ -68,7 +69,10 @@
 @RESET ( -- )
 	
 	( theme ) 
-	#e0fd =System.r #30fd =System.g #30fd =System.b
+	#e0cd =theme.r0 #30fd =theme.g0 #30fd =theme.b0 ( normal mode )
+	#00fe =theme.r1 #00f3 =theme.g1 #00f3 =theme.b1 ( presentation mode )
+
+	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
 
 	( default canvas )
 	#002a =canvas.w #001a =canvas.h
@@ -233,22 +237,26 @@ BRK
 
 		( background interface )
 		~Mouse.y STEP8 ~Screen.height #0010 SUB2 NEQ2 ^$no-touch-background JNZ
-			~Mouse.x ~Screen.width #0020 SUB2 SUB2 8/ 
-			DUP2 #0000 NEQ2 ^$no-clear-button JNZ
-				,clear JSR2
+			~Mouse.x ~Screen.width #0028 SUB2 SUB2 8/ SWP POP
+			DUP #00 NEQ ^$no-eye-button JNZ
+				,present JSR2
+				( release ) #00 =Mouse.state
+			$no-eye-button
+			DUP #01 NEQ ^$no-rename-button JNZ
+				,rename JSR2
 				#01 =document.edit
 				( release ) #00 =Mouse.state
-			$no-clear-button
-			DUP2 #0001 NEQ2 ^$no-load-button JNZ
+			$no-rename-button
+			DUP #02 NEQ ^$no-load-button JNZ
 				,path.name ,load-file JSR2
 				,draw-canvas JSR2
 				( release ) #00 =Mouse.state
 			$no-load-button
-			DUP2 #0002 NEQ2 ^$no-save-button JNZ
+			DUP #03 NEQ ^$no-save-button JNZ
 				,path.name ,save-file JSR2
 				( release ) #00 =Mouse.state
 			$no-save-button
-			POP2
+			POP
 		$no-touch-background
 
 		( jump label )
@@ -348,18 +356,44 @@ BRK
 
 RTN
 
-@clear ( -- )
+@rename
 	
-	( new label )
 	,untitled_txt ,path.name ,strcpy JSR2
 	#00 =path.length
-	( erase data )
+
+RTN
+
+@clear ( -- )
+	
 	,data FILESIZE ,data ADD2
 	$loop
 		( write ) OVR2 #00 ROT ROT POK2
 		( incr ) SWP2 #0001 ADD2 SWP2
 		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2 POP2
+	,redraw JSR2
+
+RTN
+
+@present
+
+	~document.presentation #00 EQU =document.presentation
+
+	~document.presentation 
+	DUP #00 NEQ ^$skip0 JNZ
+		~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b 
+	$skip0
+	DUP #01 NEQ ^$skip1 JNZ
+		~theme.r1 =System.r ~theme.g1 =System.g ~theme.b1 =System.b 
+	$skip1
+	POP
+
+	~toolpane.x1 #0002 SUB2 ~toolpane.y1 #0002 SUB2 ~toolpane.x2 ++ ~toolpane.y2 ++ #00 ,fill-rect JSR2
+	~pattpane.x1 #0002 SUB2 ~pattpane.y1 #0002 SUB2 ~pattpane.x2 ++ ~pattpane.y2 ++ #00 ,fill-rect JSR2
+	~sizepane.x1 #0002 SUB2 ~sizepane.y1 #0002 SUB2 ~sizepane.x2 ++ ~sizepane.y2 ++ #00 ,fill-rect JSR2
+	~viewpane.x1 #0002 SUB2 ~viewpane.y1 #0002 SUB2 ~viewpane.x2 ++ ~viewpane.y2 ++ #00 ,fill-rect JSR2
+
+	( clear panes )
 	,redraw JSR2
 
 RTN
@@ -646,7 +680,9 @@ RTN
 RTN
 
 @draw-toolpane ( -- )
-	
+
+	~document.presentation #00 EQU ^$skip JNZ RTN $skip
+
 	( frame )	
 	~toolpane.x1 -- ~toolpane.y1 -- ~toolpane.x2 ~toolpane.y2 #00 ,line-rect JSR2
 	~toolpane.x1 #0002 SUB2 ~toolpane.y1 #0002 SUB2 ~toolpane.x2 ~toolpane.y2 #01 ,line-rect JSR2
@@ -668,7 +704,9 @@ RTN
 RTN
 
 @draw-pattpane ( -- )
-	
+
+	~document.presentation #00 EQU ^$skip JNZ RTN $skip
+
 	( frame )	
 	~pattpane.x1 -- ~pattpane.y1 -- ~pattpane.x2 ~pattpane.y2 #00 ,line-rect JSR2
 	~pattpane.x1 #0002 SUB2 ~pattpane.y1 #0002 SUB2 ~pattpane.x2 ~pattpane.y2 #01 ,line-rect JSR2
@@ -684,7 +722,9 @@ RTN
 RTN
 
 @draw-sizepane ( -- )
-	
+
+	~document.presentation #00 EQU ^$skip JNZ RTN $skip
+
 	( frame )
 	~sizepane.x1 -- ~sizepane.y1 -- ~sizepane.x2 ~sizepane.y2 #00 ,line-rect JSR2
 	~sizepane.x1 #0002 SUB2 ~sizepane.y1 #0002 SUB2 ~sizepane.x2 ~sizepane.y2 #01 ,line-rect JSR2
@@ -701,6 +741,8 @@ RTN
 
 @draw-viewpane ( -- )
 	
+	~document.presentation #00 EQU ^$skip JNZ RTN $skip
+
 	( frame )
 	~viewpane.x1 -- ~viewpane.y1 -- ~viewpane.x2 ~viewpane.y2 #00 ,line-rect JSR2
 	~viewpane.x1 #0002 SUB2 ~viewpane.y1 #0002 SUB2 ~viewpane.x2 ~viewpane.y2 #01 ,line-rect JSR2
@@ -727,41 +769,44 @@ RTN
 @draw-background
 	
 	( draw hor line )
-	#0000 ~Screen.width ~Screen.height #0002 DIV2 ,line-horizontal-dotted JSR2
+	#0000 ~Screen.width ~Screen.height #0002 DIV2 ~document.presentation #00 EQU ,line-horizontal-dotted JSR2
 	( draw ver line )
-	~Screen.width #0002 DIV2 #0000 ~Screen.height ,line-vertical-dotted JSR2
+	~Screen.width #0002 DIV2 #0000 ~Screen.height ~document.presentation #00 EQU ,line-vertical-dotted JSR2
 
-	( draw size )
-	#0010 =Sprite.y
-	( draw width )
-	~Screen.width #00a0 SUB2 =Sprite.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #01 =Sprite.color
-	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #01 =Sprite.color
-	( draw height )
-	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #01 =Sprite.color
-	~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #01 =Sprite.color
+	~document.presentation #01 EQU ,$skip-size JNZ2
+		( draw size )
+		#0010 =Sprite.y
+		( draw width )
+		~Screen.width #00a0 SUB2 =Sprite.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+		( draw ) #01 =Sprite.color
+		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
+		( draw ) #01 =Sprite.color
+		( draw height )
+		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+		( draw ) #01 =Sprite.color
+		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
+		( draw ) #01 =Sprite.color
+	$skip-size
+
 	( draw save/load/guides icons )
 	~Screen.height #0010 SUB2 =Sprite.y
-	~Screen.width #0020 SUB2 =Sprite.x
-	( TODO: Presentation mode button
-	,guides_icn =Sprite.addr
-	#01 =Sprite.color
+	~Screen.width #0028 SUB2 =Sprite.x
+	,eye #00 ~document.presentation #08 MUL ADD2 =Sprite.addr
+	#03 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
-	)
 	,filestate_icn =Sprite.addr
-	#01 =Sprite.color
+	#03 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	,load_icn =Sprite.addr
-	#01 =Sprite.color
+	#03 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	,save_icn =Sprite.addr
-	#01 =Sprite.color
-	( filename )
-	#0008 =Sprite.x
-	,path.name #01 ,draw-label JSR2
+	#03 =Sprite.color
+	
+	~document.presentation #01 EQU ^$skip-path JNZ
+		#0008 =Sprite.x
+		,path.name #01 ,draw-label JSR2
+	$skip-path
 
 RTN
 
@@ -811,22 +856,22 @@ RTN
 
 RTN
 
-@line-horizontal-dotted ( x0 x1 y -- )
+@line-horizontal-dotted ( x0 x1 y color -- )
 	
-	=Screen.y OVR2 =Screen.x
+	=color =Screen.y OVR2 =Screen.x
 	$draw-hor
-		( draw ) #01 =Screen.color
+		( draw ) ~color =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
 		OVR2 OVR2 LTH2 ^$draw-hor JNZ
 	POP2 POP2
 
 RTN
 
-@line-vertical-dotted ( x y0 y1 -- )
+@line-vertical-dotted ( x y0 y1 color -- )
 	
-	STH2 SWP2 =Screen.x STH2r OVR2 =Screen.y
+	=color STH2 SWP2 =Screen.x STH2r OVR2 =Screen.y
 	$draw-ver
-		( draw ) #01 =Screen.color
+		( draw ) ~color =Screen.color
 		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
 		OVR2 OVR2 LTH2 ^$draw-ver JNZ
 	POP2 POP2
@@ -898,8 +943,8 @@ RTN
 	[ 4040 4070 f8f8 f870 ]
 
 @eye
-	[ 0000 0082 4438 0000 ] ( open )
-	[ 0038 4492 2810 0000 ] ( closed )
+	[ 0038 4492 2810 0000 ] ( open )
+	[ 0000 0082 4438 0000 ] ( closed )
 
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
