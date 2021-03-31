@@ -69,7 +69,7 @@
 @RESET ( -- )
 	
 	( theme ) 
-	#e0cd =theme.r0 #30fd =theme.g0 #30fd =theme.b0 ( normal mode )
+	#e0fa =theme.r0 #30fa =theme.g0 #30fa =theme.b0 ( normal mode )
 	#00fe =theme.r1 #00f3 =theme.g1 #00f3 =theme.b1 ( presentation mode )
 
 	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
@@ -81,6 +81,7 @@
 	#04 =brush.size #00 =brush.patt #00 =brush.tool
 
 	( load file )
+	,untitled_txt ,path.name ,strcpy JSR2
 	,path.name ,load-file JSR2
 
 	( setup panes )
@@ -401,6 +402,7 @@ RTN
 @load-file ( path -- )
 
 	=File.name FILESIZE =File.length ,data =File.load
+	~File.name ,path.name ,strcpy JSR2
 
 RTN
 
@@ -675,7 +677,7 @@ RTN
 	( draw new cursor )
 	~cursor.x =Sprite.x ~cursor.y =Sprite.y
 	,pointers_icn #00 ~Controller #02 EQU 8* ADD2 =Sprite.addr
-	#1f =Sprite.color
+	#1f ~Mouse.state #01 EQU #0a MUL SUB =Sprite.color
 
 RTN
 
@@ -803,10 +805,8 @@ RTN
 	,save_icn =Sprite.addr
 	#03 =Sprite.color
 	
-	~document.presentation #01 EQU ^$skip-path JNZ
-		#0008 =Sprite.x
-		,path.name #01 ,draw-label JSR2
-	$skip-path
+	#0008 =Sprite.x
+	,path.name #01 ,draw-label JSR2
 
 RTN
 
