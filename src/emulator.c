@@ -15,7 +15,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-#define HOR 48
+#define HOR 64
 #define VER 32
 #define PAD 2
 #define RES (HOR * VER * 16)
