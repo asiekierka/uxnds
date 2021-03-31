@@ -74,7 +74,7 @@
 	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
 
 	( default canvas )
-	#002a =canvas.w #001a =canvas.h
+	#002a =canvas.w #0018 =canvas.h
 
 	( default brush )
 	#04 =brush.size #00 =brush.patt #00 =brush.tool
@@ -792,7 +792,7 @@ RTN
 	( draw save/load/guides icons )
 	~Screen.height #0010 SUB2 =Sprite.y
 	~Screen.width #0028 SUB2 =Sprite.x
-	,eye #00 ~document.presentation #08 MUL ADD2 =Sprite.addr
+	,eye_icn #00 ~document.presentation #08 MUL ADD2 =Sprite.addr
 	#03 =Sprite.color
 	~Sprite.x 8+ =Sprite.x
 	,filestate_icn =Sprite.addr
@@ -941,14 +941,15 @@ RTN
 	[ 80c0 e0f0 f8e0 1000 ]
 	[ 4040 4070 f8f8 f870 ]
 
-@eye
+@eye_icn
 	[ 0038 4492 2810 0000 ] ( open )
 	[ 0000 0082 4438 0000 ] ( closed )
 
+@filestate_icn  [ 1054 28c6 2854 1000 ]
 @load_icn       [ feaa d6aa d4aa f400 ]
 @save_icn       [ fe82 8282 848a f400 ]
+
 @blank_icn      [ 0000 0000 0000 0000 ]
-@filestate_icn  [ 1054 28c6 2854 1000 ] ( TODO, add to background! )
 @untitled_txt   [ untitled.bit 00 ]
 
 @font_hex ( 0-F TODO: should pull from @font instead.. ) 

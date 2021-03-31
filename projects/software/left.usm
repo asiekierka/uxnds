@@ -59,7 +59,7 @@
 
 @RESET
 	
-	( theme ) #ed0f =System.r #3d0f =System.g #3d0f =System.b
+	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
 
 	( load file )
 	,filepath ,load-file JSR2
@@ -75,8 +75,7 @@ BRK
 @FRAME
 
 	( ctrl )
-
-	~Controller #00 EQU ~lock #00 NEQ #0000 NEQ2 ,ctrl-end JNZ2
+	~Controller #00 EQU ~lock #00 NEQ #0000 NEQ2 ,$ctrl-end JNZ2
 		( lock ) #04 =lock
 
 		( alt + arrow )
@@ -93,7 +92,7 @@ BRK
 			POP
 			,clamp-selection JSR2 
 			,redraw JSR2
-			,ctrl-end JMP2
+			,$ctrl-end JMP2
 		$no-alt
 
 		( ctrl + arrow )
@@ -109,7 +108,7 @@ BRK
 				( jump line ) ,goto-lineend JSR2 $no-cright
 			POP
 			,redraw JSR2
-			,ctrl-end JMP2
+			,$ctrl-end JMP2
 		$no-ctrl
 
 		( arrow )
@@ -136,11 +135,11 @@ BRK
 			,redraw JSR2 
 		$no-arrow
 
-	@ctrl-end
+	$ctrl-end
 
 	( keys )
 
-	~Keys #00 EQU ,no-keys JNZ2
+	~Keys #00 EQU ,$no-keys JNZ2
 
 		~Keys #08 NEQ ^$no-backspace JNZ
 			( erase )
@@ -152,7 +151,7 @@ BRK
 				~selection.to ~selection.from SUB2 ++ ,shift-left JSR2
 			$erase-end
 			~selection.from -- =selection.from
-			,$keys-end JMP2
+			^$keys-end JMP
 		$no-backspace
 
 		( insert )
@@ -161,19 +160,19 @@ BRK
 		~selection.from ++ =selection.from
 
 		$keys-end
-			~selection.from ++ =selection.to
-			( release ) #00 =Keys
-			,redraw JSR2
+		~selection.from ++ =selection.to
+		( release ) #00 =Keys
+		,redraw JSR2
 
-	@no-keys
+	$no-keys
 
 	( mouse )
 
-	~Mouse.state #00 EQU ,touch-end JNZ2
+	~Mouse.state #00 EQU ^$touch-end JNZ
 		~Mouse.x #0010 LTH2 ,touch-linebar JNZ2
 		~Mouse.x ~Screen.width 8- LTH2 ,touch-body JNZ2
 		,touch-scrollbar JMP2
-	@touch-end
+	$touch-end
 
 	~Mouse.state =touch.state
 
@@ -183,7 +182,49 @@ BRK
 
 BRK 
 
-@touch-scrollbar
+@touch-linebar ( -- )
+	
+	#0000 =position.x
+	~Mouse.y 8/ ~scroll.y ADD2 =position.y 
+	,find-selection JSR2 DUP2 =selection.from ++ =selection.to
+	,goto-linestart JSR2
+	,redraw JSR2 
+	,draw-cursor JSR2
+
+BRK
+
+@touch-body ( -- )
+	
+	~Mouse.y 8/ ~scroll.y ADD2 =position.y
+	~Mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
+	( chords )
+	~Mouse.chord #00 EQU ^$no-chords JNZ
+		~Mouse.chord
+		DUP #01 NEQ ^$no-chord-cut JNZ
+			,cut JSR2 ( release ) #00 DUP =Mouse.state =Mouse.chord $no-chord-cut
+		DUP #10 NEQ ^$no-chord-paste JNZ
+			,paste JSR2 ( release ) #00 DUP =Mouse.state =Mouse.chord $no-chord-paste
+		POP
+		,redraw JSR2
+		BRK
+	$no-chords
+	( drag )
+	~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 ^$no-drag JNZ
+		( on drag )
+		,find-selection JSR2 ++ =selection.to
+		,clamp-selection JSR2
+		^$end JMP
+	$no-drag
+	( on click )
+	,find-selection JSR2 DUP2 =selection.from ++ =selection.to 
+	$end
+	~Mouse.state =touch.state
+	,draw-cursor JSR2
+	,redraw JSR2
+
+BRK
+
+@touch-scrollbar ( -- )
 
 	~Mouse.y #0008 GTH2 ^$no-up JNZ
 		( decr ) ~scroll.y #00 ~scroll.y #0000 NEQ2 SUB2 =scroll.y
@@ -195,50 +236,11 @@ BRK
 	$no-down 
 	~Mouse.y 8- =scroll.y
 	$end
+	~Mouse.state =touch.state
+	,draw-cursor JSR2
 	,redraw JSR2 
-	,touch-end JMP2
 
-RTN
-
-@touch-linebar
-
-	~Mouse.y 8/ ~scroll.y ADD2 =position.y #0000 =position.x 
-	,find-selection JSR2 DUP2 =selection.from ++ =selection.to
-	,redraw JSR2 
-	,touch-end JMP2
-
-RTN
-
-@touch-body
-	
-	~Mouse.y 8/ ~scroll.y ADD2 =position.y
-	~Mouse.x ~textarea.x1 SUB2 #0007 ADD2 #0007 DIV2 =position.x
-
-	~Mouse.chord #01 NEQ ^$no-chord-cut JNZ
-		,cut JSR2
-		( release ) #00 DUP =Mouse.state =Mouse.chord
-		^$end JMP
-	$no-chord-cut
-	~Mouse.chord #10 NEQ ^$no-chord-paste JNZ
-		,paste JSR2
-		( release ) #00 DUP =Mouse.state =Mouse.chord
-		^$end JMP
-	$no-chord-paste
-
-	~Mouse.state #11 EQU ^$end JNZ
-	~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 ^$no-drag JNZ
-		( on drag )
-		,find-selection JSR2 ++ =selection.to
-		,clamp-selection JSR2
-		^$end JMP
-	$no-drag
-		( on click )
-		,find-selection JSR2 DUP2 =selection.from ++ =selection.to
-	$end
-	,redraw JSR2
-	,touch-end JMP2
-
-RTN
+BRK
 
 @load-file ( path )
 
@@ -267,7 +269,7 @@ RTN
 
 RTN
 
-@shift-left ( length )
+@shift-left ( length -- )
 
 	=i
 	~selection.from -- =j ( start -> end )
@@ -279,7 +281,7 @@ RTN
 
 RTN
 
-@shift-right ( length )
+@shift-right ( length -- )
 
 	=i
 	~document.eof =j ( end -> start )
@@ -291,7 +293,7 @@ RTN
 
 RTN
 
-@follow-selection
+@follow-selection ( -- )
 
 	~position.y ~scroll.y GTH2 ^$no-up JNZ
 		~position.y =scroll.y RTN
@@ -302,14 +304,14 @@ RTN
 
 RTN
 
-@clamp-selection
+@clamp-selection ( -- )
 
 	~selection.from ~selection.to LTH2 RTN?
 	~selection.from ++ =selection.to
 
 RTN
 
-@goto-linestart
+@goto-linestart ( -- )
 
 	$loop
 		~selection.from -- PEK2 #0a EQU RTN?
@@ -322,7 +324,7 @@ RTN
 
 RTN
 
-@goto-lineend
+@goto-lineend ( -- )
 	
 	$loop
 		~selection.from PEK2 #0a EQU RTN?
@@ -335,7 +337,7 @@ RTN
 
 RTN
 
-@find-wordstart
+@find-wordstart ( -- )
 
 	~selection.to =j
 	$loop
@@ -349,7 +351,7 @@ RTN
 
 RTN
 
-@find-wordend
+@find-wordend ( -- )
 	
 	~selection.to =j
 	$loop
@@ -405,7 +407,7 @@ RTN
 
 RTN
 
-@cut
+@cut ( -- )
 
 	,copy JSR2
 	~selection.to ~selection.from SUB2 ,shift-left JSR2
@@ -413,7 +415,7 @@ RTN
 
 RTN
 
-@copy ( selection )
+@copy ( -- )
 	
 	#0000 =i ( start )
 	~selection.to ~selection.from SUB2 =j ( end )
@@ -425,7 +427,7 @@ RTN
 
 RTN
 
-@paste
+@paste ( -- )
 	
 	~clip.len ,shift-right JSR2
 	#0000 =i ( start )
@@ -465,10 +467,20 @@ RTN
 
 	( save/load icons )
 	~Screen.height 8- =Sprite.y
-	~Screen.width #0018 SUB2 =Sprite.x
+
+	~Screen.width #0030 SUB2 =Sprite.x
+	,eye_icn =Sprite.addr
+	#02 =Sprite.color
+
+	~Screen.width #0028 SUB2 =Sprite.x
+	,name_icn =Sprite.addr
+	#02 =Sprite.color
+
+	~Screen.width #0020 SUB2 =Sprite.x
 	,load_icn =Sprite.addr
 	#02 =Sprite.color
-	~Screen.width #0010 SUB2 =Sprite.x
+
+	~Screen.width #0018 SUB2 =Sprite.x
 	,save_icn =Sprite.addr
 	#02 =Sprite.color
 
@@ -495,7 +507,6 @@ RTN
 
 	~mouse.x ~Mouse.x NEQ2
 	~mouse.y ~Mouse.y NEQ2
-
 	#0000 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
@@ -512,7 +523,7 @@ RTN
 	~mouse.x =Sprite.x
 	~mouse.y =Sprite.y
 	,cursor_icn =Sprite.addr
-	#13 =Sprite.color
+	#1f ~Mouse.state #01 EQU #0a MUL SUB =Sprite.color
 
 RTN
 
@@ -555,12 +566,12 @@ RTN
 			( draw line number )
 			#0000 =Sprite.x
 			~scroll.y ~Sprite.y 8/ ADD2 DUP2 SWP POP =k 
-			~position.y EQU2 #03 MUL =l
+			~position.y EQU2 #05 MUL =l
 			,font_hex #00 ~k #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-			#06 ~l ADD =Sprite.color
+			#04 ~l ADD =Sprite.color
 			#0008 =Sprite.x
 			,font_hex #00 ~k #0f AND #08 MUL ADD2 =Sprite.addr
-			#06 ~l ADD =Sprite.color
+			#04 ~l ADD =Sprite.color
 
 			#0010 =Sprite.x
 			( incr ) ~Sprite.y 8+ =Sprite.y
@@ -586,29 +597,32 @@ RTN
 
 RTN
 
-@draw-scrollbar
-		
-	~Screen.width 8- =Sprite.x
-	#0000 =Sprite.y
-	,scrollbar_bg =Sprite.addr
+@draw-scrollbar ( -- )
+	
+	,scrollbar_icn ( keeping a copy on stack )
 
+	~Screen.width 8- =Sprite.x 
+	#0008 =Sprite.y
+	DUP2 =Sprite.addr
+
+	#0008 ~Screen.height 8-
 	$loop
-	( draw ) #08 =Sprite.color
-	( incr ) ~Sprite.y 8+ =Sprite.y
-	~Sprite.y ~Screen.height LTH2 ^$loop JNZ
+		( draw ) #01 =Sprite.color
+		( incr ) SWP2 8+ DUP2 =Sprite.y SWP2
+		OVR2 OVR2 LTH2 ^$loop JNZ
+	POP2 POP2
+
+	~scroll.y 8+ =Sprite.y
+	DUP2 #0008 ADD2 =Sprite.addr
+	( draw ) #01 =Sprite.color
 
 	#0000 =Sprite.y
-	,arrowup_icn =Sprite.addr
-	( draw ) #08 =Sprite.color
-
-	( at )
-	~scroll.y 8+ =Sprite.y
-	,scrollbar_fg =Sprite.addr
-	( draw ) #08 =Sprite.color
+	DUP2 #0010 ADD2 =Sprite.addr
+	( draw ) #04 =Sprite.color
 
 	~Screen.height 8- =Sprite.y
-	,arrowdown_icn =Sprite.addr
-	( draw ) #08 =Sprite.color
+	#0018 ADD2 =Sprite.addr
+	( draw ) #04 =Sprite.color
 
 RTN
 
@@ -692,15 +706,26 @@ RTN
 	0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
+( interface )
+@eye_icn
+	[ 0038 4492 2810 0000 ] ( open )
+	[ 0000 0082 4438 0000 ] ( closed )
+
+@scrollbar_icn
+	[ aa55 aa55 aa55 aa55 ] ( bg )
+	[ ffff ffff ffff ffff ] ( fg )
+	[ 0010 387c fe10 1010 ] ( up )
+	[ 0010 1010 fe7c 3810 ] ( down )
+
+@name_icn       [ 1054 28c6 2854 1000 ]
+@load_icn       [ feaa d6aa d4aa f400 ]
+@save_icn       [ fe82 8282 848a f400 ]
+
 @linebreak_icn [ 003e 7474 3414 1400 ]
+
 @blank_icn     [ 0000 0000 0000 0000 ]
 @cursor_icn    [ 80c0 e0f0 f8e0 1000 ]
-@scrollbar_bg  [ aa55 aa55 aa55 aa55 ]
-@scrollbar_fg  [ ffff ffff ffff ffff ]
-@arrowup_icn   [ 0010 387c fe10 1010 ]
-@arrowdown_icn [ 0010 1010 fe7c 3810 ]
-@load_icn      [ feaa d6aa d4aa f400 ]
-@save_icn      [ fe82 8282 848a f400 ]
+
 @filepath1     [ projects/examples/gui.hover.usm 00 ]
 @filepath      [ projects/software/noodle.usm 00 ]
 
