@@ -2,6 +2,7 @@
 	app/left : text editor
 
 	TODO
+		- Rename icon in titlebar
 		- Save/Load
 		- Double-click select word
 		- Right-click find next instance of selection
@@ -544,13 +545,6 @@ RTN
 
 		~Sprite.y ~Screen.height #0010 SUB2 GTH2 ,$end JNZ2
 
-		( get character )
-		,font #00 ~i PEK2 #20 SUB 8* ADD2 =Sprite.addr
-
-		( draw ) #01 
-		~i ~selection.from -- GTH2 
-		~i ~selection.to LTH2 #0101 EQU2
-		#05 MUL ADD ~i ~selection.from EQU2 ADD =Sprite.color
 
 		~i PEK2 #0a NEQ ~i PEK2 #0d NEQ #0101 EQU2 ,$no-linebreak JNZ2
 			( draw linebreak )
@@ -567,19 +561,29 @@ RTN
 				~Sprite.x ~Screen.width 8- LTH2 ^$fill-clear JNZ
 
 			( draw line number )
-
 			#0000 =Sprite.x
 			~scroll.y ~Sprite.y 8/ ADD2 DUP2 SWP POP =k 
-			~position.y EQU2 #0c MUL =l
+			~position.y EQU2 #03 MUL =l
 			,font_hex #00 ~k #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-			#02 ~l ADD =Sprite.color
+			#06 ~l ADD =Sprite.color
 			#0008 =Sprite.x
 			,font_hex #00 ~k #0f AND #08 MUL ADD2 =Sprite.addr
-			#02 ~l ADD =Sprite.color
+			#06 ~l ADD =Sprite.color
 
 			#0010 =Sprite.x
 			( incr ) ~Sprite.y 8+ =Sprite.y
 		$no-linebreak
+
+
+		( get character )
+		,font #00 ~i PEK2 #20 SUB 8* ADD2 =Sprite.addr
+		( is a special character )
+		~i PEK2 #20 GTH ^$no-tab JNZ ,font =Sprite.addr $no-tab
+
+		( draw ) #01 
+		~i ~selection.from -- GTH2 
+		~i ~selection.to LTH2 #0101 EQU2
+		#05 MUL ADD =Sprite.color
 
 		( incr ) ~i ++ =i
 		( incr ) ~Sprite.x #0007 ADD2 =Sprite.x
