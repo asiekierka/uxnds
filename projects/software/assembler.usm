@@ -1,0 +1,465 @@
+;tree { search-key 2 max-key-len 1 }
+;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 }
+
+%HCF { #0000 DIV }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { p1 1 }
+|0140 ;Keys { key 1 }
+|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
+|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+
+( vectors )
+
+|0200 ,RESET JMP2
+|0204 BRK
+|0208 BRK
+
+@RESET
+	#b000 #c000 #0010 ,memcpy JSR2
+	HCF
+
+	,$token ,strlen JSR2
+	HCF
+
+	#00
+	$loop
+	DUP ,highest-bit JSR2
+	( )
+	POP
+	#01 ADD
+	DUP ^$loop JNZ
+	POP
+
+
+	,$token ^assemble-token JSR
+	,$token2 ^assemble-token JSR
+	,$token3 ^assemble-token JSR
+	~assembler.state
+	HCF
+
+	$token [ hello 00 ]
+	$token2 [ 00 ]
+	$token3 [ 00 ]
+
+@assemble-tokens ( string-ptr* -- )
+	DUP2 ^assemble-token JSR
+
+@assemble-token ( string-ptr* -- )
+	( get location of tree )
+	DUP2
+	,state-machine-pointers #00 ~assembler.state ,highest-bit JSR2 #0004 MUL2 ADD2
+	DUP2 STH2
+	( see if first char is recognised )
+	SWP2 #01 ,traverse-tree JSR2
+	^$not-found JNZ
+	( skip first character of token )
+	SWP2 #0001 ADD2 =assembler.token
+	( tail call handling function defined in tree )
+	POP2r JMP2
+
+	$not-found
+	( not interested in incoming-ptr )
+	POP2
+	=assembler.token
+	( tail call default handling function defined in state-machine-pointers )
+	LIT2r [ 0002 ] ADD2r LDR2r
+	JMP2r
+
+@parse-hex-length ( string-ptr* -- value 01 if one or two hex digits
+                                OR 00 otherwise )
+	DUP2 #0001 ADD2 PEK2 ^parse-hex-string-try-two JNZ
+	PEK2 ^parse-hex-digit JSR DUP #04 SFT ^parse-hex-string-fail1 JNZ
+	#01 JMP2r
+
+@parse-hex-string ( string-ptr* -- value* 02 if four hex digits
+                                OR value 01 if two hex digits
+                                OR 00 otherwise )
+	DUP2 #0004 ADD2 PEK2 #00 EQU ^$try-four JNZ
+	$try-two
+	DUP2 #0002 ADD2 PEK2 ^$fail2 JNZ
+	$known-two
+	DUP2 PEK2 ^parse-hex-digit JSR DUP #04 SFT ^$fail3 JNZ ROT ROT
+	#0001 ADD2 PEK2 ^parse-hex-digit JSR DUP #04 SFT ^$fail2 JNZ
+	SWP #40 SFT ORA #01 JMP2r
+
+	$fail3 POP
+	$fail2 POP
+	$fail1 POP #00 JMP2r
+
+	$try-four
+	DUP2 #0002 ADD2 ^$known-two JSR ^$maybe-four JNZ
+	^$try-two JMP
+
+	$maybe-four
+	ROT ROT ^$known-two JSR ^$four JNZ
+	^$fail1 JMP
+
+	$four
+	SWP #02 JMP2r
+
+@parse-hex-digit ( charcode -- 00-0f if valid hex
+                            -- 10-ff otherwise )
+	DUP #3a LTH ^$digit JNZ
+	DUP #60 GTH ^$lowercase JNZ
+	DUP #40 GTH ^$uppercase JNZ
+	JMP2r
+
+	$digit ( #30 is #00 )
+	#30 SUB JMP2r
+
+	$lowercase ( #61 is #0a )
+	#57 SUB JMP2r
+
+	$uppercase ( #41 is #0a )
+	#37 SUB JMP2r
+
+@find-opcode ( name* -- byte 00 if valid opcode name
+                     OR 01 if not found )
+	,opcodes-tree SWP2 #03 ^traverse-tree JSR
+	^$nomatch JNZ
+	,opcodes-asm SUB2 #0007 DIV2
+	SWP JMP2r
+
+	$nomatch
+	DUP2 EQU2 JMP2r
+
+@traverse-tree ( tree-ptr* search-key* max-key-len --
+		binary-ptr* 00 if key matched
+		OR incoming-ptr* 01 if key not found )
+	=tree.max-key-len =tree.search-key
+
+	$loop
+	DUP2 LDR2 #0000 NEQ2 ^$valid-node JNZ
+	#01 JMP2r
+
+	$valid-node
+	LDR2 DUP2 STH2 #0004 ADD2 ^strcmp-tree JSR
+	DUP ^$nomatch JNZ
+	POP2r JMP2r
+
+	$nomatch
+	#07 SFT #02 MUL #00 SWP
+	STH2r ADD2
+	^$loop JMP
+
+@strcmp-tree ( node-key* -- order if strings differ
+                         OR after-node-key* 00 if strings match )
+	~tree.search-key STH2
+	~tree.max-key-len
+
+	$loop ( node-key* key-len in wst, search-key* in rst )
+	DUP ^$keep-going JNZ
+
+	( exhausted key-len, match found )
+	POP2r
+	JMP2r
+
+	$keep-going
+	#01 OVR2 PEK2 DUP2r PEK2r STHr
+	DUP2 ORA ^$not-end JNZ
+
+	( end of C strings, match found )
+	POP2r POP ROT POP SWP ADD2 #00
+	JMP2r
+
+	$not-end
+	SUB DUP ^$nomatch JNZ
+	POP SUB
+	LIT2r [ 0001 ] ADD2r STH
+	LIT2  [ 0001 ] ADD2  STHr
+	^$loop JMP
+
+	$nomatch
+	STH POP2 POP2 STHr POP2r
+	JMP2r
+
+@memcpy ( src-ptr* dest-ptr* length* -- )
+	SWP2 STH2
+
+	$loop
+	DUP2 ORA ^$keep-going JNZ
+	POP2 POP2 POP2r
+	JMP2r
+
+	$keep-going
+	#0001 SUB2
+	SWP2 DUP2 PEK2 DUP2r STH2r POK2
+	#0001 ADD2 SWP2
+	LIT2r [ 0001 ] ADD2r
+	^$loop JMP
+
+@strlen ( string-ptr* -- length* )
+	DUP2 #0001 SUB2
+	$loop
+	#0001 ADD2
+	DUP2 PEK2 ^$loop JNZ
+	SWP2 SUB2
+	JMP2r
+
+
+
+
+@add-label ( string-ptr* label-flags -- )
+	( NYI )
+	POP POP2 JMP2r
+
+@highest-bit ( n -- 00 if n is 00
+                 OR 01 if n is 01
+                 OR 02 if n is 02..03
+                 OR 03 if n is 04..07
+                 OR 04 if n is 08..0f
+                 ..
+                 OR 08 if n is 80..ff )
+	DUP #00 NEQ JMP JMP2r
+	DUP #01 SFT ORA
+	DUP #02 SFT ORA
+	DUP #04 SFT ORA
+	#1d MUL #05 SFT #00 SWP ,$lookup ADD2 PEK2
+	JMP2r
+
+	$lookup
+	[ 01 06 02 07 05 04 03 08 ]
+
+@opcodes
+	(
+		The code for this section is automatically generated, and needs to be
+		regenerated when the opcode list in src/assembler.c is updated.
+
+		After editing src/assembler.c, run "lua etc/assembler-trees.lua"
+		and this file will be edited automatically.
+
+		This is the first example of a binary tree in this code, so let's
+		explore them in general. The format of a tree node in memory is:
+
+		left-node* right-node* node-key-cstring binary-data
+
+		and the general algorithm is to compare the key you're looking for
+		against node-key-cstring, and move to the node pointed to by left-node*
+		or right-node* if the keys don't match. If your key sorts earlier than
+		use left-node*, otherwise go to right-node*. When you find a node that
+		matches your key, traverse-bintree gives you a pointer to the
+		binary-data straight after the node-key-cstring. This data can contain
+		anything you want: fixed length fields, executable code... in this case
+		of this opcode tree, we store nothing. traverse-bintree is passed the
+		maximum length of node-key-cstring, not including the zero, so the zero
+		can be omitted if the string is at that maximum length.
+
+		If the key isn't present in the tree, you'll eventually get to a node
+		where the left-node* or right-node* pointer you'll need to follow is
+		null (0000). traverse-bintree will give you the location of that
+		pointer, so if you want to insert another node, you can write it to the
+		heap and overwrite the pointer with the new node's location. This
+		approach works even if the tree is completely empty and the pointer
+		you've provided to the root node is null, since that pointer gets
+		updated to point to the first node without needing any special logic.
+
+		The ordering of nodes in memory is totally arbitrary, so for pre-
+		prepared trees like this one we can have our own meaning for the order
+		of the nodes. By ordering the opcodes by their byte value, we can find
+		the byte by subtracting $asm from the binary-data pointer and dividing
+		by seven (the size of each node). By multiplying the byte value by seven
+		and adding to $disasm, we get the opcode name when disassembling too.
+	)
+	$tree   .$root
+	$op-brk .$op-add .$op-dup $disasm [ BRK ] $asm
+	$op-nop .$op-mul .$op-ovr         [ NOP ]
+	$op-lit [ 0000 ] [ 0000 ]         [ LIT ]
+	$op-pop [ 0000 ] [ 0000 ]         [ POP ]
+	$op-dup .$op-div .$op-eor         [ DUP ]
+	$op-swp [ 0000 ] [ 0000 ]         [ SWP ]
+	$op-ovr .$op-ora .$op-pek         [ OVR ]
+	$op-rot .$op-pop .$op-sft         [ ROT ]
+	$op-equ .$op-brk .$op-jnz         [ EQU ]
+	$op-neq [ 0000 ] [ 0000 ]         [ NEQ ]
+	$op-gth [ 0000 ] [ 0000 ]         [ GTH ]
+	$root   .$op-equ .$op-pok         [ LTH ]
+	$op-gts .$op-gth .$op-jmp         [ GTS ]
+	$op-lts [ 0000 ] [ 0000 ]         [ LTS ]
+	        [ 0000 ] [ 0000 ]         [ ??? ]
+	        [ 0000 ] [ 0000 ]         [ ??? ]
+	$op-pek [ 0000 ] [ 0000 ]         [ PEK ]
+	$op-pok .$op-nop .$op-sth         [ POK ]
+	$op-ldr .$op-jsr .$op-lit         [ LDR ]
+	$op-str [ 0000 ] [ 0000 ]         [ STR ]
+	$op-jmp [ 0000 ] [ 0000 ]         [ JMP ]
+	$op-jnz .$op-gts .$op-ldr         [ JNZ ]
+	$op-jsr [ 0000 ] [ 0000 ]         [ JSR ]
+	$op-sth .$op-rot .$op-sub         [ STH ]
+	$op-add [ 0000 ] .$op-and         [ ADD ]
+	$op-sub .$op-str .$op-swp         [ SUB ]
+	$op-mul .$op-lts .$op-neq         [ MUL ]
+	$op-div [ 0000 ] [ 0000 ]         [ DIV ]
+	$op-and [ 0000 ] [ 0000 ]         [ AND ]
+	$op-ora [ 0000 ] [ 0000 ]         [ ORA ]
+	$op-eor [ 0000 ] [ 0000 ]         [ EOR ]
+	$op-sft [ 0000 ] [ 0000 ]         [ SFT ]
+
+@state-machine-pointers
+( normal mode 00 )
+.first-char-root .nyi
+( FIXME 01 )
+.nyi .nyi
+( FIXME 02 )
+.nyi .nyi
+( FIXME 04 )
+.nyi .nyi
+( FIXME 08 )
+.nyi .nyi
+( FIXME 10 )
+.nyi .nyi
+( literal data 20 )
+[ 0000 ] .nyi
+( FIXME 40 )
+.nyi .nyi
+( comment 80 )
+.first-char-) .ignore
+
+(
+	Next up, we have the tree of code corresponding to each token's
+	first character. Here we do have a binary payload, which is
+	the code to run when the assembler considers the token.
+
+	Some special assembler modes have their own trees. Since comments
+	have a very simple tree that only understands the end of comments,
+	we reuse the terminal branch of the main tree as the root of
+	the comment tree.
+)
+
+(
+	Left and right parentheses start and end comment sections. They use the
+	highest bit in assembler state, so they receive highest priority: it
+	doesn't matter what other bits are set, a comment's a comment.
+)
+
+@first-char-(     [ 0000 ]      .first-char-)   [ 28 ]
+	~assembler.state #80 ORA =assembler.state
+JMP2r
+
+@first-char-)     [ 0000 ]        [ 0000 ]      [ 29 ]
+	~assembler.state #7f AND =assembler.state
+JMP2r
+
+(
+	Left and right square brackets start and end literal data sections.
+)
+
+@first-char-[   .first-char-@   .first-char-]   [ 5b ]
+	~assembler.state #20 ORA =assembler.state
+JMP2r
+
+@first-char-]     [ 0000 ]        [ 0000 ]      [ 5d ]
+	~assembler.state #df AND =assembler.state
+JMP2r
+
+(
+	Ampersands introduce global labels, and define the scope for any
+	local labels that follow.
+)
+
+@first-char-@     [ 0000 ]        [ 0000 ]      [ 40 ]
+	~assembler.pass ^$scope JNZ
+	DUP2 #00 ,add-label JSR2
+
+	$scope
+	DUP2 ,strlen JSR2
+	DUP2 =assembler.scope-len POP
+	,assembler.scope SWP2 JMP2
+
+@first-char-root
+@first-char-=   .first-char-$   .first-char-^   [ 3d ]
+@first-char-"   .first-char-nul .first-char-#   [ 22 ]
+@first-char-#     [ 0000 ]        [ 0000 ]      [ 23 ]
+@first-char-$   .first-char-"   .first-char-,   [ 24 ]
+@first-char-%     [ 0000 ]      .first-char-(   [ 25 ]
+@first-char-,   .first-char-%   .first-char-dot [ 2c ]
+@first-char-dot   [ 0000 ]      .first-char-;   [ 2e ]
+@first-char-;     [ 0000 ]        [ 0000 ]      [ 3b ]
+@first-char-^   .first-char-[   .first-char-|   [ 5e ]
+@first-char-{     [ 0000 ]        [ 0000 ]      [ 7b ]
+@first-char-|   .first-char-{   .first-char-}   [ 7c ]
+@first-char-}     [ 0000 ]      .first-char-~   [ 7d ]
+@first-char-~     [ 0000 ]        [ 0000 ]      [ 7e ]
+
+@first-char-nul   [ 0000 ]        [ 0000 ]      [ 00 ]
+@ignore
+JMP2r
+
+@nyi
+	,$string =Console.string
+	HCF
+
+	$string [ Not 20 implemented 0a 00 ]
+
+(
+	Here's the big set of trees relating to labels. Starting from l-root, all
+	the devices are stored here, perhaps some helper functions in the future,
+	too.
+
+	left-node* right-node* node-key-cstring binary-data
+
+	The node-keys are terminated with NUL since, unlike the opcodes and first
+	characters, the keys are variable length.
+
+	The binary-data is either three or five bytes long:
+		flags value* [ subtree-pointer* ]
+
+	The flags byte is divided up into bits:
+
+	bit 0: 01 means load or store helpers can be used,
+	bit 1: 02 means the helpers use STR/LDR, 00 means they use POK/PEK;
+	bits 2-6 are reserved; and
+	bit 7: 80 means there is a subtree.
+
+	If there is a subtree, it is searched when the reference contains a dot.
+)
+
+@l-Console         [ 0000 ]          [ 0000 ]         [ Console 00 ]    [ 80 ] .Console .l-Console-root
+@l-Console-byte    [ 0000 ]          [ 0000 ]         [ byte 00 ]       [ 01 ] .Console.byte
+@l-Console-root
+@l-Console-char   .l-Console-byte   .l-Console-short  [ char 00 ]       [ 01 ] .Console.char
+@l-Console-short   [ 0000 ]         .l-Console-string [ short 00 ]      [ 03 ] .Console.short
+@l-Console-string  [ 0000 ]          [ 0000 ]         [ string 00 ]     [ 03 ] .Console.string
+@l-Controller     .l-Console        .l-File           [ Controller 00 ] [ 80 ] .Controller .l-Controller-root
+@l-Controller-root
+@l-Controller-p1   [ 0000 ]          [ 0000 ]         [ p1 00 ]         [ 01 ] .Controller.p1
+@l-File            [ 0000 ]          [ 0000 ]         [ File 00 ]       [ 80 ] .File .l-File-root
+@l-File-length     [ 0000 ]          [ 0000 ]         [ length 00 ]     [ 03 ] .File.length
+@l-File-root
+@l-File-load      .l-File-length    .l-File-name      [ load 00 ]       [ 03 ] .File.load
+@l-File-name       [ 0000 ]         .l-File-save      [ name 00 ]       [ 03 ] .File.name
+@l-File-save       [ 0000 ]          [ 0000 ]         [ save 00 ]       [ 03 ] .File.save
+@l-root
+@l-Keys           .l-Controller     .l-Screen         [ Keys 00 ]       [ 80 ] .Keys .l-Keys-root
+@l-Keys-root
+@l-Keys-key        [ 0000 ]          [ 0000 ]         [ key 00 ]        [ 01 ] .Keys.key
+@l-Mouse           [ 0000 ]          [ 0000 ]         [ Mouse 00 ]      [ 80 ] .Mouse .l-Mouse-root
+@l-Mouse-chord     [ 0000 ]          [ 0000 ]         [ chord 00 ]      [ 01 ] .Mouse.chord
+@l-Mouse-root
+@l-Mouse-state    .l-Mouse-chord    .l-Mouse-x        [ state 00 ]      [ 01 ] .Mouse.state
+@l-Mouse-x         [ 0000 ]         .l-Mouse-y        [ x 00 ]          [ 03 ] .Mouse.x
+@l-Mouse-y         [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Mouse.y
+@l-Screen         .l-Mouse          .l-Sprite         [ Screen 00 ]     [ 80 ] .Screen .l-Screen-root
+@l-Screen-color    [ 0000 ]         .l-Screen-height  [ color 00 ]      [ 01 ] .Screen.color
+@l-Screen-height   [ 0000 ]          [ 0000 ]         [ height 00 ]     [ 03 ] .Screen.height
+@l-Screen-root
+@l-Screen-width   .l-Screen-color   .l-Screen-x       [ width 00 ]      [ 03 ] .Screen.width
+@l-Screen-x        [ 0000 ]         .l-Screen-y       [ x 00 ]          [ 03 ] .Screen.x
+@l-Screen-y        [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Screen.y
+@l-Sprite          [ 0000 ]         .l-System         [ Sprite 00 ]     [ 80 ] .Sprite .l-Sprite-root
+@l-Sprite-addr     [ 0000 ]          [ 0000 ]         [ addr 00 ]       [ 03 ] .Sprite.addr
+@l-Sprite-root
+@l-Sprite-color   .l-Sprite-addr    .l-Sprite-x       [ color 00 ]      [ 01 ] .Sprite.color
+@l-Sprite-x        [ 0000 ]         .l-Sprite-y       [ x 00 ]          [ 03 ] .Sprite.x
+@l-Sprite-y        [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Sprite.y
+@l-System          [ 0000 ]          [ 0000 ]         [ System 00 ]     [ 80 ] .System .l-System-root
+@l-System-b        [ 0000 ]          [ 0000 ]         [ b 00 ]          [ 03 ] .System.b
+@l-System-root
+@l-System-g       .l-System-b       .l-System-r       [ g 00 ]          [ 03 ] .System.g
+@l-System-r        [ 0000 ]          [ 0000 ]         [ r 00 ]          [ 03 ] .System.r
+
