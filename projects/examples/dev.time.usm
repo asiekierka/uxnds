@@ -1,8 +1,17 @@
+%RTN { JMP2r }
+%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
+%SCALE { #0002 DIV2 #0020 ADD2 }
+
 ;current { second 1 }
+;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
+;color { byte 1 }
+;needles { hx 2 hy 2 mx 2 my 2 sx 2 sy 2 }
 
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
 |0200 ,RESET JMP2
@@ -11,12 +20,139 @@
 
 ( program )
 
-@RESET BRK
+@RESET 
+	
+	( theme ) #0ff8 =System.r #0f08 =System.g #0f08 =System.b
+
+	,draw-circle JSR2
+
+BRK
 
 @FRAME
+	
 	#00 =Time.get
 	~Time.second ~current.second NEQ #01 JNZ BRK
-	~Time.second DUP =current.second =Console.byte
 
-@ERROR BRK
+	( clear )
+	#0080 SCALE #0080 SCALE ~needles.sx ~needles.sy #00 ,draw-line JSR2
+	#0080 SCALE #0080 SCALE ~needles.mx ~needles.my #00 ,draw-line JSR2
+	#0080 SCALE #0080 SCALE ~needles.hx ~needles.hy #00 ,draw-line JSR2
 
+	( place )
+	#00 ~Time.second #0002 MUL2 ,table ADD2 LDR2
+	#00 SWP SCALE =needles.sy #00 SWP SCALE =needles.sx
+
+	#00 ~Time.minute #0002 MUL2 ,table ADD2 LDR2
+	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.my 
+	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.mx
+
+	#00 ~Time.hour #0005 MUL2 #0002 MUL2 ,table ADD2 LDR2
+	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hy 
+	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hx
+
+	( draw )
+	#0080 SCALE #0080 SCALE ~needles.sx ~needles.sy #02 ,draw-line JSR2
+	#0080 SCALE #0080 SCALE ~needles.mx ~needles.my #01 ,draw-line JSR2
+	#0080 SCALE #0080 SCALE ~needles.hx ~needles.hy #03 ,draw-line JSR2
+
+	,draw-circle JSR2
+
+	( display )
+	#0000 =Sprite.x
+	,font_hex #00 ~Time.hour #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0008 =Sprite.x
+	,font_hex #00 ~Time.hour #0f AND #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+
+	#0018 =Sprite.x
+	,font_hex #00 ~Time.minute #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0020 =Sprite.x
+	,font_hex #00 ~Time.minute #0f AND #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+
+	#0030 =Sprite.x
+	,font_hex #00 ~Time.second #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0038 =Sprite.x
+	,font_hex #00 ~Time.second #0f AND #08 MUL ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+BRK
+
+@ERROR 
+
+BRK
+
+@draw-circle ( -- )
+	
+	#00 #3c 
+	$loop
+		( load ) OVR #00 SWP #0002 MUL2 ,table ADD2 LDR2 
+
+		#00 SWP SCALE =Screen.y
+		#00 SWP SCALE =Screen.x
+		#01 =Screen.color
+
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ^$loop JNZ
+	POP2
+
+	#00 ,table PEK2 SCALE =Screen.x
+	#00 ,table #0001 ADD2 PEK2 SCALE =Screen.y
+	#02 =Screen.color
+
+RTN
+
+@draw-line ( x1 y1 x2 y2 color -- )
+	
+	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	~line.x0 ~line.x SUB2 ABS2 =line.dx
+	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
+	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
+	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
+	~line.dx ~line.dy ADD2 =line.e1
+	$loop
+		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
+		~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 ^$end JNZ
+		~line.e1 #0002 MUL2 =line.e2
+		~line.e2 ~line.dy LTS2 ^$skipy JNZ
+			~line.e1 ~line.dy ADD2 =line.e1
+			~line.x ~line.sx ADD2 =line.x
+		$skipy
+		~line.e2 ~line.dx GTS2 ^$skipx JNZ
+			~line.e1 ~line.dx ADD2 =line.e1
+			~line.y ~line.sy ADD2 =line.y
+		$skipx
+		,$loop JMP2
+
+	$end
+
+RTN
+
+@table ( 60 positions on a circle in bytes )
+[
+	0180 018d 039a 07a7 0bb3 12bf 19ca 21d4 
+	2bde 35e6 40ed 4cf4 58f8 65fc 72fe 80ff 
+	8dfe 9afc a7f8 b3f4 bfed cae6 d4de ded4 
+	e6ca edbf f4b3 f8a7 fc9a fe8d ff80 fe72 
+	fc65 f858 f44c ed40 e635 de2b d421 ca19 
+	bf12 b30b a707 9a03 8d01 7f01 7201 6503 
+	5807 4c0b 4012 3519 2b21 212b 1935 1240 
+	0b4c 0758 0365 0172
+]
+
+@font_hex ( 0-F ) 
+[
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
+	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8280 f080 827c 007c 8280 f080 8080
+]
