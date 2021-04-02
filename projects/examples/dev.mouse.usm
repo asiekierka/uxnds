@@ -42,7 +42,7 @@ BRK
 
 BRK 
 
-@draw-cursor
+@draw-cursor ( -- )
 
 	( clear last cursor )
 	,clear_icn =Sprite.addr 

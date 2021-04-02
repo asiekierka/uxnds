@@ -51,19 +51,20 @@ Uint8 font[][8] = {
 
 #define SAMPLE_FREQUENCY 48000
 
-static Uint32 note_periods[12] = { /* middle C (C4) is note 60 */
-	(Uint32) 0xfa7e * SAMPLE_FREQUENCY, /* C-1 */
-	(Uint32) 0xec6f * SAMPLE_FREQUENCY,
-	(Uint32) 0xdf2a * SAMPLE_FREQUENCY, /* D-1 */
-	(Uint32) 0xd2a4 * SAMPLE_FREQUENCY,
-	(Uint32) 0xc6d1 * SAMPLE_FREQUENCY, /* E-1 */
-	(Uint32) 0xbba8 * SAMPLE_FREQUENCY, /* F-1 */
-	(Uint32) 0xb120 * SAMPLE_FREQUENCY,
-	(Uint32) 0xa72f * SAMPLE_FREQUENCY, /* G-1 */
-	(Uint32) 0x9dcd * SAMPLE_FREQUENCY,
-	(Uint32) 0x94f2 * SAMPLE_FREQUENCY, /* A-1 */
-	(Uint32) 0x8c95 * SAMPLE_FREQUENCY,
-	(Uint32) 0x84b2 * SAMPLE_FREQUENCY  /* B-1 */
+static Uint32 note_periods[12] = {
+	/* middle C (C4) is note 60 */
+	(Uint32)0xfa7e * SAMPLE_FREQUENCY, /* C-1 */
+	(Uint32)0xec6f * SAMPLE_FREQUENCY,
+	(Uint32)0xdf2a * SAMPLE_FREQUENCY, /* D-1 */
+	(Uint32)0xd2a4 * SAMPLE_FREQUENCY,
+	(Uint32)0xc6d1 * SAMPLE_FREQUENCY, /* E-1 */
+	(Uint32)0xbba8 * SAMPLE_FREQUENCY, /* F-1 */
+	(Uint32)0xb120 * SAMPLE_FREQUENCY,
+	(Uint32)0xa72f * SAMPLE_FREQUENCY, /* G-1 */
+	(Uint32)0x9dcd * SAMPLE_FREQUENCY,
+	(Uint32)0x94f2 * SAMPLE_FREQUENCY, /* A-1 */
+	(Uint32)0x8c95 * SAMPLE_FREQUENCY,
+	(Uint32)0x84b2 * SAMPLE_FREQUENCY /* B-1 */
 };
 
 static struct audio_channel {
@@ -237,25 +238,26 @@ togglezoom(Uxn *u)
 }
 
 void
-audio_callback(void* userdata, Uint8* stream, int len) {
-	Sint16 *samples = (Sint16 *) stream;
+audio_callback(void *userdata, Uint8 *stream, int len)
+{
+	Sint16 *samples = (Sint16 *)stream;
 	int i, j;
 	len >>= 1; /* use len for number of samples, not bytes */
-	for (j = 0; j < len; ++j) samples[j] = 0;
-	for (i = 0; i < 4; ++i) {
+	for(j = 0; j < len; ++j) samples[j] = 0;
+	for(i = 0; i < 4; ++i) {
 		struct audio_channel *c = &channels[i];
-		if (!c->volume) continue;
-		if (c->period < (1 << 20)) continue;
-		for (j = 0; j < len; ++j) {
+		if(!c->volume) continue;
+		if(c->period < (1 << 20)) continue;
+		for(j = 0; j < len; ++j) {
 			c->count += 1 << 20;
-			while (c->count > c->period) {
+			while(c->count > c->period) {
 				c->value = !c->value;
 				c->count -= c->period;
 			}
 			samples[j] += (c->value * 2 - 1) * c->volume;
 		}
 	}
-	(void) userdata;
+	(void)userdata;
 }
 
 void
@@ -462,7 +464,7 @@ Uint8
 audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
-	if (b0 & 1) {
+	if(b0 & 1) {
 		Uint16 channel_addr = ptr + (b0 & 0x6);
 		struct audio_channel *c = &channels[(b0 & 0x6) >> 1];
 		SDL_LockAudioDevice(audio_id);

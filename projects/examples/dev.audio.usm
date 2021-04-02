@@ -1,0 +1,191 @@
+( a blank file )
+
+%RTN { JMP2r }
+%8+ { #0008 ADD2 } %8- { #0008 SUB2 }
+%MOD { DUP2 DIV MUL SUB }
+
+( variables )
+
+;pointer { x 2 y 2 }
+;color { byte 1 }
+
+( devices )
+
+|0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
+|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0130 ;Controller { p1 1 }
+|0140 ;Keys { key 1 }
+|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
+|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|01F0 ;System { pad 8 r 2 g 2 b 2 }
+
+( vectors )
+
+|0200 ^RESET JMP
+|0204 ,ERROR JMP2
+|0208 ,FRAME JMP2
+
+@RESET
+
+	( theme ) #f0fd =System.r #f0f3 =System.g #f0f2 =System.b
+
+	,draw-timeline JSR2
+
+BRK
+
+@FRAME
+
+	,draw-cursor JSR2
+
+BRK
+
+@ERROR
+
+BRK
+
+@draw-bars ( -- )
+	
+
+	#0040 =Sprite.y
+	,font_hex =Sprite.addr
+	#0000 #0100 
+	$loop 
+		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ^$skip JNZ
+			OVR2 #0060 ADD2 =Sprite.x
+			#01 =Sprite.color
+			~Sprite.addr 8+ =Sprite.addr
+			OVR2 #0060 ADD2 #0051 #00c1 #01 ,line-vertical-dotted JSR2
+		$skip
+		OVR2 #0060 ADD2 #0050 #00c0 #01 ,line-vertical-dotted JSR2
+		SWP2 #0008 ADD2 SWP2
+		OVR2 OVR2 LTH2 ^$loop JNZ
+	POP2
+	POP2
+
+RTN
+
+@draw-octave ( x y -- )
+
+	=Sprite.y
+	=Sprite.x
+	,octave_icn =Sprite.addr
+
+	~Sprite.y ~Sprite.y #0038 ADD2
+	$loop
+		OVR2 =Sprite.y
+		#01 =Sprite.color
+		~Sprite.addr 8+ =Sprite.addr
+		~Sprite.x 8+ =Sprite.x
+		#01 =Sprite.color
+		~Sprite.addr 8+ =Sprite.addr
+		~Sprite.x 8- =Sprite.x
+		SWP2 #0008 ADD2 SWP2
+		OVR2 OVR2 LTH2 ^$loop JNZ
+	POP2
+	POP2
+
+
+RTN
+
+@draw-octaves ( -- )
+	
+	#0040 #0050 ,draw-octave JSR2
+	#0040 #0088 ,draw-octave JSR2
+
+	#0028 =Sprite.x
+	#0080 =Sprite.y
+	,font_hex #0060 ADD2 =Sprite.addr
+	#01 =Sprite.color 
+	#0030 =Sprite.x
+	,font_hex #0018 ADD2 =Sprite.addr
+	#01 =Sprite.color 
+
+	#0028 =Sprite.x
+	#00b8 =Sprite.y
+	,font_hex #0060 ADD2 =Sprite.addr
+	#01 =Sprite.color 
+	#0030 =Sprite.x
+	,font_hex #0010 ADD2 =Sprite.addr
+	#01 =Sprite.color 
+
+RTN
+
+@draw-timeline ( -- )
+
+	,draw-bars JSR2
+	,draw-octaves JSR2
+
+RTN
+
+@line-vertical-dotted ( x y0 y1 color -- )
+	
+	=color STH2 SWP2 =Screen.x STH2r OVR2 =Screen.y
+	$draw-ver
+		( draw ) ~color =Screen.color
+		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
+		OVR2 OVR2 LTH2 ^$draw-ver JNZ
+	POP2 POP2
+
+RTN
+
+@draw-cursor ( -- )
+
+	( clear last cursor )
+	,clear_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#10 =Sprite.color
+
+	( record pointer positions )
+	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+
+	( draw new cursor )
+	,cursor_icn =Sprite.addr 
+	~pointer.x =Sprite.x 
+	~pointer.y =Sprite.y 
+	#11 ~Mouse.state #00 NEQ ADD =Sprite.color
+
+RTN
+
+@clear_icn   [ 0000 0000 0000 0000 ]
+@cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@piano-white [ 
+	ffc0 8080 80c0 ff00
+	fc02 0202 0202 fc00
+]
+
+@piano-black [ 
+	ffff fefe feff ff00 
+	f008 0808 0808 f000
+]
+
+@octave_icn [
+	ff00 0000 fefe fffe 
+	ff01 0101 0102 fc00 
+	fffe fc00 fefe fffe 
+	ff01 0101 0102 fc00 
+	fffe fc00 fefe fffe 
+	ff01 0101 0102 fc00 
+	fffe fc00 0000 ff00 
+	ff01 0101 0102 fc00 
+	ff00 0000 fefe fffe 
+	ff01 0101 0102 fc00 
+	fffe fc00 fefe fffe 
+	ff01 0101 0102 fc00 
+	fffe fc00 0000 ff00 
+	ff01 0101 0102 fc00 
+]
+
+@font_hex ( 0-F ) 
+[
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
+	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8280 f080 827c 007c 8280 f080 8080
+]
