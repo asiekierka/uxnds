@@ -68,8 +68,8 @@ static Uint32 note_periods[12] = { /* middle C (C4) is note 60 */
 
 static struct audio_channel {
 	Uint32 period, count;
-	int value;
-	Sint16 volume;
+	Sint32 age, a, d, s, r;
+	Sint16 volume, value;
 } channels[4];
 
 static SDL_Window *gWindow;
@@ -247,12 +247,23 @@ audio_callback(void* userdata, Uint8* stream, int len) {
 		if (!c->volume) continue;
 		if (c->period < (1 << 20)) continue;
 		for (j = 0; j < len; ++j) {
+			c->age += 1;
 			c->count += 1 << 20;
 			while (c->count > c->period) {
-				c->value = !c->value;
+				int mul = c->value < 0 ? c->volume : -c->volume;
 				c->count -= c->period;
+				if (c->age < c->a)
+					c->value = mul * c->age / c->a;
+				else if (c->age < c->d)
+					c->value = mul * (2 * c->d - c->a - c->age) / 2 / (c->d - c->a);
+				else if (c->age < c->s)
+					c->value = mul / 2;
+				else if (c->age < c->r)
+					c->value = mul * (c->r - c->age) / 2 / (c->r - c->s);
+				else
+					c->volume = c->value = 0;
 			}
-			samples[j] += (c->value * 2 - 1) * c->volume;
+			samples[j] += c->value;
 		}
 	}
 	(void) userdata;
@@ -469,6 +480,11 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		c->period = note_periods[m[channel_addr + 8] % 12] >> (m[channel_addr + 8] / 12);
 		c->count %= c->period;
 		c->volume = m[channel_addr + 9] << 5;
+		c->age = 0;
+		c->a = ((m[channel_addr] >> 4) & 0xf) * (SAMPLE_FREQUENCY >> 4);
+		c->d = c->a + (m[channel_addr] & 0xf) * (SAMPLE_FREQUENCY >> 4);
+		c->s = c->d + ((m[channel_addr + 1] >> 4) & 0xf) * (SAMPLE_FREQUENCY >> 4);
+		c->r = c->s + (m[channel_addr + 1] & 0xf) * (SAMPLE_FREQUENCY >> 4);
 		SDL_UnlockAudioDevice(audio_id);
 	}
 	return b1;
