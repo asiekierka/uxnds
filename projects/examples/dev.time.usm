@@ -1,6 +1,7 @@
 %RTN { JMP2r }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 %SCALE { #0002 DIV2 #0020 ADD2 }
+%12HOURS { DUP #0c GTH #0c MUL SUB }
 
 ;current { second 1 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
@@ -32,6 +33,7 @@ BRK
 	
 	#00 =Time.get
 	~Time.second ~current.second NEQ #01 JNZ BRK
+	~Time.second =current.second
 
 	( clear )
 	#0080 SCALE #0080 SCALE ~needles.sx ~needles.sy #00 ,draw-line JSR2
@@ -41,12 +43,10 @@ BRK
 	( place )
 	#00 ~Time.second #0002 MUL2 ,table ADD2 LDR2
 	#00 SWP SCALE =needles.sy #00 SWP SCALE =needles.sx
-
 	#00 ~Time.minute #0002 MUL2 ,table ADD2 LDR2
 	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.my 
 	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.mx
-
-	#00 ~Time.hour #0005 MUL2 #0002 MUL2 ,table ADD2 LDR2
+	#00 ~Time.hour 12HOURS #05 MUL #0002 MUL2 ,table ADD2 LDR2
 	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hy 
 	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hx
 
@@ -64,16 +64,12 @@ BRK
 	#0008 =Sprite.x
 	,font_hex #00 ~Time.hour #0f AND #08 MUL ADD2 =Sprite.addr
 	#02 =Sprite.color
-
-
 	#0018 =Sprite.x
 	,font_hex #00 ~Time.minute #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	#02 =Sprite.color
 	#0020 =Sprite.x
 	,font_hex #00 ~Time.minute #0f AND #08 MUL ADD2 =Sprite.addr
 	#02 =Sprite.color
-
-
 	#0030 =Sprite.x
 	,font_hex #00 ~Time.second #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
 	#02 =Sprite.color
@@ -92,18 +88,12 @@ BRK
 	#00 #3c 
 	$loop
 		( load ) OVR #00 SWP #0002 MUL2 ,table ADD2 LDR2 
-
 		#00 SWP SCALE =Screen.y
 		#00 SWP SCALE =Screen.x
-		#01 =Screen.color
-
+		OVR #00 EQU #01 ADD =Screen.color
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$loop JNZ
 	POP2
-
-	#00 ,table PEK2 SCALE =Screen.x
-	#00 ,table #0001 ADD2 PEK2 SCALE =Screen.y
-	#02 =Screen.color
 
 RTN
 
