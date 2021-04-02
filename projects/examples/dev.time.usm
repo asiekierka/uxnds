@@ -43,11 +43,9 @@ BRK
 	~Time.second ~current.second NEQ #01 JNZ BRK
 	~Time.second =current.second
 
-	~Time.second #03 AND ^$no-sound JNZ
-	#ffff =Audio.ch1adsr
+	#1444 =Audio.ch1adsr
 	~Time.second #1d ADD =Audio.ch1pitch
-	#ff =Audio.ch1vol
-	$no-sound
+	~Time.second #03 AND #4b MUL #0f ADD =Audio.ch1vol
 
 	( clear )
 	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
