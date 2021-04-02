@@ -59,7 +59,7 @@
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ,RESET JMP2
+|0200 ^RESET JMP
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 

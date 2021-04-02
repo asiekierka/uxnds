@@ -10,7 +10,7 @@
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ,RESET JMP2
+|0200 ^RESET JMP
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 

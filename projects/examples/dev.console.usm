@@ -5,7 +5,7 @@
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0200 ,RESET JMP2
+|0200 ^RESET JMP
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 

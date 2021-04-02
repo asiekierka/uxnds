@@ -1,7 +1,9 @@
 %RTN { JMP2r }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
-%SCALE { #0002 DIV2 #0020 ADD2 }
+%SCALEX { #0002 DIV2 ~Screen.width #0002 DIV2 ADD2 #0040 SUB2 }
+%SCALEY { #0002 DIV2 ~Screen.height #0002 DIV2 ADD2 #0040 SUB2 }
 %12HOURS { DUP #0c GTH #0c MUL SUB }
+%MOD { DUP2 DIV MUL SUB }
 
 ;current { second 1 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
@@ -11,11 +13,11 @@
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
+|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ,RESET JMP2
+|0200 ^RESET JMP
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 
@@ -36,46 +38,37 @@ BRK
 	~Time.second =current.second
 
 	( clear )
-	#0080 SCALE #0080 SCALE ~needles.sx ~needles.sy #00 ,draw-line JSR2
-	#0080 SCALE #0080 SCALE ~needles.mx ~needles.my #00 ,draw-line JSR2
-	#0080 SCALE #0080 SCALE ~needles.hx ~needles.hy #00 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.mx ~needles.my #00 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.hx ~needles.hy #00 ,draw-line JSR2
 
 	( place )
 	#00 ~Time.second #0002 MUL2 ,table ADD2 LDR2
-	#00 SWP SCALE =needles.sy #00 SWP SCALE =needles.sx
+	#00 SWP SCALEY =needles.sy #00 SWP SCALEX =needles.sx
 	#00 ~Time.minute #0002 MUL2 ,table ADD2 LDR2
-	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.my 
-	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALE =needles.mx
+	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY =needles.my 
+	#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX =needles.mx
 	#00 ~Time.hour 12HOURS #05 MUL #0002 MUL2 ,table ADD2 LDR2
-	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hy 
-	#00 SWP #0002 DIV2 #0040 ADD2 SCALE =needles.hx
+	#00 SWP #0002 DIV2 #0040 ADD2 SCALEY =needles.hy 
+	#00 SWP #0002 DIV2 #0040 ADD2 SCALEX =needles.hx
 
 	( draw )
-	#0080 SCALE #0080 SCALE ~needles.sx ~needles.sy #02 ,draw-line JSR2
-	#0080 SCALE #0080 SCALE ~needles.mx ~needles.my #01 ,draw-line JSR2
-	#0080 SCALE #0080 SCALE ~needles.hx ~needles.hy #03 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #02 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.mx ~needles.my #01 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY ~needles.hx ~needles.hy #03 ,draw-line JSR2
 
 	,draw-circle JSR2
 
 	( display )
-	#0000 =Sprite.x
-	,font_hex #00 ~Time.hour #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0008 =Sprite.x
-	,font_hex #00 ~Time.hour #0f AND #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0018 =Sprite.x
-	,font_hex #00 ~Time.minute #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0020 =Sprite.x
-	,font_hex #00 ~Time.minute #0f AND #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0030 =Sprite.x
-	,font_hex #00 ~Time.second #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0038 =Sprite.x
-	,font_hex #00 ~Time.second #0f AND #08 MUL ADD2 =Sprite.addr
-	#02 =Sprite.color
+	~Screen.height #0002 DIV2 #0048 ADD2 =Sprite.y
+	~Screen.width #0002 DIV2
+	DUP2 #0020 SUB2 =Sprite.x ,font_hex #00 ~Time.hour #0a DIV #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	DUP2 #0018 SUB2 =Sprite.x ,font_hex #00 ~Time.hour #0a MOD #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	DUP2 #0008 SUB2 =Sprite.x ,font_hex #00 ~Time.minute #0a DIV #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	DUP2 =Sprite.x ,font_hex #00 ~Time.minute #0a MOD #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	DUP2 #0010 ADD2 =Sprite.x ,font_hex #00 ~Time.second #0a DIV #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	DUP2 #0018 ADD2 =Sprite.x ,font_hex #00 ~Time.second #0a MOD #08 MUL ADD2 =Sprite.addr #02 =Sprite.color
+	POP2
 
 BRK
 
@@ -88,9 +81,9 @@ BRK
 	#00 #3c 
 	$loop
 		( load ) OVR #00 SWP #0002 MUL2 ,table ADD2 LDR2 
-		#00 SWP SCALE =Screen.y
-		#00 SWP SCALE =Screen.x
-		OVR #00 EQU #01 ADD =Screen.color
+		#00 SWP SCALEY =Screen.y
+		#00 SWP SCALEX =Screen.x
+		OVR #0f MOD #00 EQU #01 ADD =Screen.color
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$loop JNZ
 	POP2
@@ -125,14 +118,14 @@ RTN
 
 @table ( 60 positions on a circle in bytes )
 [
-	0180 018d 039a 07a7 0bb3 12bf 19ca 21d4 
-	2bde 35e6 40ed 4cf4 58f8 65fc 72fe 80ff 
-	8dfe 9afc a7f8 b3f4 bfed cae6 d4de ded4 
-	e6ca edbf f4b3 f8a7 fc9a fe8d ff80 fe72 
-	fc65 f858 f44c ed40 e635 de2b d421 ca19 
-	bf12 b30b a707 9a03 8d01 7f01 7201 6503 
-	5807 4c0b 4012 3519 2b21 212b 1935 1240 
-	0b4c 0758 0365 0172
+	8000 8d00 9a02 a706 b40b c011 cb18 d520 
+	df2a e734 ee40 f44b f958 fd65 ff72 ff80 
+	ff8d fd9a f9a7 f4b4 eec0 e7cb dfd5 d5df 
+	cbe7 c0ee b4f4 a7f9 9afd 8dff 80ff 72ff 
+	65fd 58f9 4bf4 40ee 34e7 2adf 20d5 18cb 
+	11c0 0bb4 06a7 029a 008d 0080 0072 0265 
+	0658 0b4b 113f 1834 202a 2a20 3418 3f11 
+	4b0b 5806 6502 7200
 ]
 
 @font_hex ( 0-F ) 
