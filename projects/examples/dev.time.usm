@@ -11,12 +11,14 @@
 ;needles { hx 2 hy 2 mx 2 my 2 sx 2 sy 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;color { byte 1 }
+;ding { volume 1 }
 
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0170 ;Audio { ch1asdr 2 ch2asdr 2 ch3asdr 2 ch4asdr 2 ch1pitch 1 ch1vol 1 ch2pitch 1 ch2vol 1 ch3pitch 1 ch3vol 1 ch4pitch 1 ch4vol 1 }
 |0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
 
@@ -36,11 +38,20 @@ BRK
 
 @FRAME
 	
+	~ding.volume
+	DUP #00 EQU ^$keep JNZ
+	DUP #04 SUB =ding.volume
+	$keep
+	=Audio.ch1vol
+
 	#00 =Time.get
 
 	( only draw once per second )
 	~Time.second ~current.second NEQ #01 JNZ BRK
 	~Time.second =current.second
+
+	~Time.second #1d ADD =Audio.ch1pitch
+	#fc =ding.volume
 
 	( clear )
 	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
