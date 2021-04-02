@@ -49,11 +49,35 @@ Uint8 font[][8] = {
 	{0x00, 0x7e, 0x40, 0x7c, 0x40, 0x40, 0x7e, 0x00},
 	{0x00, 0x7e, 0x40, 0x40, 0x7c, 0x40, 0x40, 0x00}};
 
+#define SAMPLE_FREQUENCY 48000
+
+static Uint32 note_periods[12] = { /* middle C (C4) is note 60 */
+	(Uint32) 0xfa7e * SAMPLE_FREQUENCY, /* C-1 */
+	(Uint32) 0xec6f * SAMPLE_FREQUENCY,
+	(Uint32) 0xdf2a * SAMPLE_FREQUENCY, /* D-1 */
+	(Uint32) 0xd2a4 * SAMPLE_FREQUENCY,
+	(Uint32) 0xc6d1 * SAMPLE_FREQUENCY, /* E-1 */
+	(Uint32) 0xbba8 * SAMPLE_FREQUENCY, /* F-1 */
+	(Uint32) 0xb120 * SAMPLE_FREQUENCY,
+	(Uint32) 0xa72f * SAMPLE_FREQUENCY, /* G-1 */
+	(Uint32) 0x9dcd * SAMPLE_FREQUENCY,
+	(Uint32) 0x94f2 * SAMPLE_FREQUENCY, /* A-1 */
+	(Uint32) 0x8c95 * SAMPLE_FREQUENCY,
+	(Uint32) 0x84b2 * SAMPLE_FREQUENCY  /* B-1 */
+};
+
+static struct audio_channel {
+	Uint32 period, count;
+	int value;
+	Sint16 volume;
+} channels[4];
+
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
+static SDL_AudioDeviceID audio_id;
 static Screen screen;
-static Device *devscreen, *devmouse, *devkey, *devctrl;
+static Device *devscreen, *devmouse, *devkey, *devctrl, *devaudio;
 
 #pragma mark - Helpers
 
@@ -213,6 +237,28 @@ togglezoom(Uxn *u)
 }
 
 void
+audio_callback(void* userdata, Uint8* stream, int len) {
+	Sint16 *samples = (Sint16 *) stream;
+	int i, j;
+	len >>= 1; /* use len for number of samples, not bytes */
+	for (j = 0; j < len; ++j) samples[j] = 0;
+	for (i = 0; i < 4; ++i) {
+		struct audio_channel *c = &channels[i];
+		if (!c->volume) continue;
+		if (c->period < (1 << 20)) continue;
+		for (j = 0; j < len; ++j) {
+			c->count += 1 << 20;
+			while (c->count > c->period) {
+				c->value = !c->value;
+				c->count -= c->period;
+			}
+			samples[j] += (c->value * 2 - 1) * c->volume;
+		}
+	}
+	(void) userdata;
+}
+
+void
 quit(void)
 {
 	free(pixels);
@@ -229,7 +275,8 @@ quit(void)
 int
 init(void)
 {
-	if(SDL_Init(SDL_INIT_VIDEO) < 0)
+	SDL_AudioSpec as;
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
 	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * ZOOM, HEIGHT * ZOOM, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
@@ -245,6 +292,15 @@ init(void)
 	clear(pixels);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
+	as.freq = SAMPLE_FREQUENCY;
+	as.format = AUDIO_S16;
+	as.channels = 1;
+	as.callback = audio_callback;
+	as.samples = 2048;
+	audio_id = SDL_OpenAudioDevice(NULL, 0, &as, NULL, 0);
+	if(!audio_id)
+		return error("Audio", SDL_GetError());
+	SDL_PauseAudioDevice(audio_id, 0);
 	screen.x1 = PAD * 8;
 	screen.x2 = WIDTH - PAD * 8 - 1;
 	screen.y1 = PAD * 8;
@@ -405,8 +461,16 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	(void)u;
-	printf("%04x - %02x,%02x\n", ptr, b0, b1);
+	Uint8 *m = u->ram.dat;
+	if (b0 & 1) {
+		Uint16 channel_addr = ptr + (b0 & 0x6);
+		struct audio_channel *c = &channels[(b0 & 0x6) >> 1];
+		SDL_LockAudioDevice(audio_id);
+		c->period = note_periods[m[channel_addr + 8] % 12] >> (m[channel_addr + 8] / 12);
+		c->count %= c->period;
+		c->volume = m[channel_addr + 9] << 5;
+		SDL_UnlockAudioDevice(audio_id);
+	}
 	return b1;
 }
 
@@ -517,7 +581,7 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, "key", ppnil);
 	devmouse = portuxn(&u, "mouse", ppnil);
 	portuxn(&u, "file", file_poke);
-	portuxn(&u, "audio", audio_poke);
+	devaudio = portuxn(&u, "audio", audio_poke);
 	portuxn(&u, "midi", ppnil);
 	portuxn(&u, "datetime", datetime_poke);
 	portuxn(&u, "---", ppnil);
