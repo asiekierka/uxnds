@@ -1,4 +1,4 @@
-( draw routines )
+( Dev/Screen )
 
 %RTN { JMP2r }
 %++  { #0001 ADD2 }

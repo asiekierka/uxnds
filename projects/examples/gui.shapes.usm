@@ -1,4 +1,4 @@
-( draw routines )
+( GUI Shapes )
 
 %RTN { JMP2r }
 %++  { #0001 ADD2 }

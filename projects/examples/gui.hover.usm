@@ -1,4 +1,4 @@
-( draw routines )
+( GUI Hover )
 
 %RTN { JMP2r }
 %RTN? { #00 EQU #02 JNZ STH2r JMP2 }
