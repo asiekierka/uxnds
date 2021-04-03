@@ -120,20 +120,20 @@ BRK
 	~Mouse.x ~ctlframe.x1 SUB2 8- 8/ SWP POP #02 DIV
 	DUP #00 NEQ ^$no-a JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2
-		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-a
+		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD ,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-a
 
 	DUP #01 NEQ ^$no-d JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2
-		DUP #f0 AND STH #01 ADD #0f AND STHr ADD
+		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
 		,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-d
 
 	DUP #02 NEQ ^$no-s JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
-		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-s
+		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD ,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-s
 
 	DUP #03 NEQ ^$no-r JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
-		DUP #f0 AND STH #01 ADD #0f AND STHr ADD
+		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
 		,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-r
 	POP
 	( release ) #00 =Mouse.state
