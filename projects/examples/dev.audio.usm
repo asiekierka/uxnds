@@ -2,6 +2,7 @@
 
 %RTN { JMP2r }
 %8+ { #0008 ADD2 } %8- { #0008 SUB2 }
+%8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %++  { #0001 ADD2 }
 %MOD { DUP2 DIV MUL SUB }
 %TRACK { ,track.ch1 #00 ~track.active #0020 MUL2 ADD2 }
@@ -77,10 +78,10 @@ BRK
 		~Mouse.y ~trkframe.y1 GTH2 ~Mouse.y ~trkframe.y2 LTH2 #0101 EQU2
 		#0101 EQU2 ,touch-trk JNZ2
 		~Mouse.x ~chnframe.x1 GTH2 ~Mouse.x ~chnframe.x2 LTH2 #0101 EQU2
-		~Mouse.y ~chnframe.y1 #0008 ADD2 GTH2 ~Mouse.y ~chnframe.y2 #0008 SUB2 LTH2 #0101 EQU2
+		~Mouse.y ~chnframe.y1 8+ GTH2 ~Mouse.y ~chnframe.y2 8- LTH2 #0101 EQU2
 		#0101 EQU2 ,touch-chn JNZ2
 		~Mouse.x ~ctlframe.x1 GTH2 ~Mouse.x ~ctlframe.x2 LTH2 #0101 EQU2
-		~Mouse.y ~ctlframe.y1 #0008 ADD2 GTH2 ~Mouse.y ~ctlframe.y2 #0008 SUB2 LTH2 #0101 EQU2
+		~Mouse.y ~ctlframe.y1 8+ GTH2 ~Mouse.y ~ctlframe.y2 8- LTH2 #0101 EQU2
 		#0101 EQU2 ,touch-ctl JNZ2	
 	$click-end
 
@@ -116,7 +117,7 @@ BRK
 
 @touch-ctl ( -- )
 	
-	~Mouse.x ~ctlframe.x1 SUB2 #0008 SUB2 #0008 DIV2 SWP POP #02 DIV
+	~Mouse.x ~ctlframe.x1 SUB2 8- 8/ SWP POP #02 DIV
 	DUP #00 NEQ ^$no-a JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2
 		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-a
@@ -127,13 +128,13 @@ BRK
 		,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-d
 
 	DUP #02 NEQ ^$no-s JNZ
-		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2
-		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 POK2 $no-s
+		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
+		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-s
 
 	DUP #03 NEQ ^$no-r JNZ
-		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2
+		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
 		DUP #f0 AND STH #01 ADD #0f AND STHr ADD
-		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 POK2 $no-r
+		,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-r
 	POP
 	( release ) #00 =Mouse.state
 	,draw-controls JSR2
@@ -178,7 +179,7 @@ RTN
 @move-head ( -- )
 
 	( clear )
-	~trkframe.y1 #0008 SUB2 =Sprite.y
+	~trkframe.y1 8- =Sprite.y
 	~trkframe.x1 #00 ~head.pos ADD2 =Sprite.x
 	,head_icn =Sprite.addr
 	#00 =Sprite.color
@@ -194,8 +195,8 @@ RTN
 	#00 #20
 	$loop
 		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB #0008 MUL2 ~trkframe.y1 ADD2 =Sprite.y
-		OVR #00 SWP #0008 MUL2 ~trkframe.x1 ADD2 =Sprite.x
+		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Sprite.y
+		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Sprite.x
 		STHr #00 EQU ^$skip JNZ
 			#00 =Sprite.color
 		$skip
@@ -210,8 +211,8 @@ RTN
 	#00 #20
 	$notes-loop
 		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB #0008 MUL2 ~trkframe.y1 ADD2 =Sprite.y
-		OVR #00 SWP #0008 MUL2 ~trkframe.x1 ADD2 =Sprite.x
+		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Sprite.y
+		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Sprite.x
 		,note_icn =Sprite.addr
 		STHr #00 EQU ^$skip JNZ
 			#05 =Sprite.color
@@ -236,15 +237,15 @@ RTN
 			OVR2 ~trkframe.x1 ADD2 =Sprite.x
 			#02 =Sprite.color
 			~Sprite.addr 8+ =Sprite.addr
-			OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 #0001 ADD2 ~trkframe.y2 #01 ,line-vertical-dotted JSR2
+			OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ++ ~trkframe.y2 #01 ,line-vertical-dotted JSR2
 		$skip
 		OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ~trkframe.y2 #01 ,line-vertical-dotted JSR2
-		SWP2 #0008 ADD2 SWP2
+		SWP2 8+ SWP2
 		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2
 	POP2
 
-	~trkframe.x1 ~trkframe.x2 ~trkframe.y1 #0008 SUB2 #0040 ADD2 #01 ,line-horizontal-dotted JSR2
+	~trkframe.x1 ~trkframe.x2 ~trkframe.y1 8- #0040 ADD2 #01 ,line-horizontal-dotted JSR2
 
 RTN
 
@@ -262,7 +263,7 @@ RTN
 		#01 =Sprite.color
 		~Sprite.addr 8+ =Sprite.addr
 		~Sprite.x 8- =Sprite.x
-		SWP2 #0008 ADD2 SWP2
+		SWP2 8+ SWP2
 		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2
 	POP2
@@ -319,20 +320,20 @@ RTN
 @draw-controls ( -- )
 	
 	~ctlframe.x1 ~ctlframe.y1 ~ctlframe.x2 ~ctlframe.y2 #01 ,line-rect JSR2
-	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0008 ADD2 #02 ,env_txt ,draw-label JSR2
-	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0010 ADD2 
+	~ctlframe.x1 8+ ~ctlframe.y1 8+ #02 ,env_txt ,draw-label JSR2
+	~ctlframe.x1 8+ ~ctlframe.y1 #0010 ADD2 
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
 		,draw-knob JSR2
 	~ctlframe.x1 #0018 ADD2 ~ctlframe.y1 #0010 ADD2
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2 #0f AND
 		,draw-knob JSR2
 	~ctlframe.x1 #0028 ADD2 ~ctlframe.y1 #0010 ADD2
-		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2 #04 SFT
+		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2 #04 SFT
 		,draw-knob JSR2
 	~ctlframe.x1 #0038 ADD2 ~ctlframe.y1 #0010 ADD2 
-		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2 #0f AND
+		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2 #0f AND
 		,draw-knob JSR2
-	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0008 ADD2 #02 ,vol_txt ,draw-label JSR2
+	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 8+ #02 ,vol_txt ,draw-label JSR2
 	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0010 ADD2 #00 ,draw-knob JSR2
 	~ctlframe.x1 #0060 ADD2 ~ctlframe.y1 #0010 ADD2 #0f ,draw-knob JSR2
 
@@ -341,10 +342,10 @@ RTN
 @draw-channels
 	
 	~chnframe.x1 ~chnframe.y1 ~chnframe.x2 ~chnframe.y2 #01 ,line-rect JSR2
-	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0008 ADD2 #01 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
-	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0010 ADD2 #01 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
-	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0018 ADD2 #01 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
-	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0020 ADD2 #01 ~track.active #03 EQU #07 MUL ADD ,ch4_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 8+ #01 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0010 ADD2 #01 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0018 ADD2 #01 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0020 ADD2 #01 ~track.active #03 EQU #07 MUL ADD ,ch4_txt ,draw-label JSR2
 
 RTN
 
@@ -372,9 +373,9 @@ RTN
 	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~label.color =Sprite.color
-		( incr ) #0001 ADD2
-		( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
+		( draw ) DUP2 PEK2 #00 SWP 8* ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( incr ) ++
+		( incr ) ~Sprite.x 8+ =Sprite.x
 		DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 
