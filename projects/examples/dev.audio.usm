@@ -36,7 +36,7 @@
 
 @RESET
 
-	( theme ) #f0fd =System.r #f0c3 =System.g #f032 =System.b
+	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
 
 	~Screen.width #0002 DIV2 #0080 SUB2 =frame.x1
 	~Screen.height #0002 DIV2 #0038 SUB2 =frame.y1
@@ -47,6 +47,12 @@
 
 	,draw-timeline JSR2
 	,draw-controls JSR2
+
+
+	~frame.x1 #0028 SUB2 ~frame.y2 #0010 ADD2 #06 ,ch1_txt ,draw-label JSR2
+	~frame.x1 #0028 SUB2 ~frame.y2 #0018 ADD2 #01 ,ch2_txt ,draw-label JSR2
+	~frame.x1 #0028 SUB2 ~frame.y2 #0020 ADD2 #01 ,ch3_txt ,draw-label JSR2
+	~frame.x1 #0028 SUB2 ~frame.y2 #0028 ADD2 #01 ,ch4_txt ,draw-label JSR2
 
 BRK
 
@@ -59,7 +65,6 @@ BRK
 		,bang JSR2
 		,draw-position JSR2
 	$skip
-
 
 	~Mouse.state #00 EQU ,$click-end JNZ2
 
@@ -98,7 +103,7 @@ BRK
 	$skip
 	#00 SWP ,notes ADD2 PEK2
 	#0c #03 MUL SUB =Audio.ch1pitch
-	#44 =Audio.ch1vol
+	#11 =Audio.ch1vol
 	
 RTN
 
@@ -148,7 +153,7 @@ RTN
 		DUP STH #00 SWP #0e SWP SUB #0008 MUL2 ~frame.y1 ADD2 =Sprite.y
 		OVR #00 SWP #0008 MUL2 ~frame.x1 ADD2 =Sprite.x
 		,note2_icn =Sprite.addr
-		#01 STHr #00 EQU SUB =Sprite.color
+		#02 STHr #00 EQU SUB =Sprite.color
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$notes-loop JNZ
 	POP2
@@ -269,7 +274,6 @@ RTN
 
 @draw-controls ( -- )
 	
-	~frame.x1 #0000 ADD2 ~frame.y2 #0008 ADD2 #01 ,ch1_txt ,draw-label JSR2
 	~frame.x1 #0000 ADD2 ~frame.y2 #0010 ADD2 #01 ,env_txt ,draw-label JSR2
 
 	~frame.x1 #0000 ADD2 ~frame.y2 #0020 ADD2 #00 ,draw-knob JSR2
@@ -299,7 +303,7 @@ RTN
 	,cursor_icn =Sprite.addr 
 	~pointer.x =Sprite.x 
 	~pointer.y =Sprite.y 
-	#11 ~Mouse.state #00 NEQ ADD =Sprite.color
+	#12 ~Mouse.state #00 NEQ ADD =Sprite.color
 
 RTN
 
@@ -364,8 +368,11 @@ RTN
 @note2_icn [ 0000 1c3e 3e3e 1c00 ]
 @head_icn [ 0018 1818 7e3c 1800 ]
 
-@ch1_txt [ Channel1 00 ]
-@env_txt [ Enveloppe 00 ]
+@ch1_txt [ SQR1 00 ]
+@ch2_txt [ SQR2 00 ]
+@ch3_txt [ TRI3 00 ]
+@ch4_txt [ WAV4 00 ]
+@env_txt [ Envelope 00 ]
 @vol_txt [ Volume 00 ]
 
 @notes [ 

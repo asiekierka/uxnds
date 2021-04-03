@@ -22,14 +22,12 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
 Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 ```
-( hello world )
-
 %RTN { JMP2r }
 
 ( devices )
 
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0200 ,RESET JMP2
+|0200 ^RESET JMP
 |0204 ,ERROR JMP2
 |0208 ,FRAME JMP2
 
@@ -63,21 +61,9 @@ RTN
 
 ## TODOs
 
-### OS Boot Disk
-
-- Load external disk in disk2
-
-### Assembler
-
-- Includes
-- Defines
-- Jump helpers
-- Implement Peek/Pook to helpers
-- Create a theme designer application
-- DateTime device
-- Document controller.player2
-
-## Notes
+- Shortcut to export/import disk state
+- Implement Uxambly REPL
+- Load disks at a different place than 0x0000.
 
 ## Palettes
 
