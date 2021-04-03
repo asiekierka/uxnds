@@ -17,6 +17,7 @@
 ;knob { x 2 y 2 value 1 }
 ;head { pos 1 }
 ;track { active 1 ch1 20 ch2 20 ch3 20 ch4 20 }
+;pt { x 1 y 1 }
 
 ( devices )
 
@@ -54,7 +55,6 @@
 	#048c =Audio.ch1adsr
 	#159d =Audio.ch2adsr
 	#26ae =Audio.ch3adsr
-	#37bf =Audio.ch4adsr
 
 	,draw-timeline JSR2
 	,draw-controls JSR2
@@ -72,38 +72,80 @@ BRK
 	$skip
 
 	~Mouse.state #00 EQU ,$click-end JNZ2
-
 		~Mouse.x ~trkframe.x1 GTH2 ~Mouse.x ~trkframe.x2 LTH2 #0101 EQU2
 		~Mouse.y ~trkframe.y1 GTH2 ~Mouse.y ~trkframe.y2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,$no-track-click JNZ2
-			,clear-notes JSR2
-			( get note )
-			#0e ~Mouse.y ~trkframe.y1 SUB2 SWP POP #08 DIV SUB
-			~Mouse.state #10 NEQ ^$no-erase JNZ
-				POP #00
-			$no-erase
-			( get track )
-			,get-track JSR2 #00 ~Mouse.x ~trkframe.x1 SUB2 SWP POP #08 DIV ADD2
-			POK2
-			( release ) #00 =Mouse.state
-			,draw-notes JSR2
-		$no-track-click
-
+		#0101 EQU2 ,touch-trk JNZ2
 		~Mouse.x ~chnframe.x1 GTH2 ~Mouse.x ~chnframe.x2 LTH2 #0101 EQU2
 		~Mouse.y ~chnframe.y1 #0008 ADD2 GTH2 ~Mouse.y ~chnframe.y2 #0008 SUB2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,$no-channel-click JNZ2
-			,clear-notes JSR2
-			~Mouse.y ~chnframe.y1 SUB2 SWP POP #08 DIV #01 SUB =track.active
-			( release ) #00 =Mouse.state
-			,draw-channels JSR2
-			,draw-notes JSR2
-		$no-channel-click
-
+		#0101 EQU2 ,touch-chn JNZ2
+		~Mouse.x ~ctlframe.x1 GTH2 ~Mouse.x ~ctlframe.x2 LTH2 #0101 EQU2
+		~Mouse.y ~ctlframe.y1 #0008 ADD2 GTH2 ~Mouse.y ~ctlframe.y2 #0008 SUB2 LTH2 #0101 EQU2
+		#0101 EQU2 ,touch-ctl JNZ2	
 	$click-end
 
 BRK
 
 @ERROR
+
+BRK
+
+@touch-trk ( -- )
+	
+	,clear-notes JSR2
+	( get note )
+	#0e ~Mouse.y ~trkframe.y1 SUB2 SWP POP #08 DIV SUB
+	~Mouse.state #10 NEQ ^$no-erase JNZ
+		POP #00
+	$no-erase
+	( get track )
+	,get-track JSR2 #00 ~Mouse.x ~trkframe.x1 SUB2 SWP POP #08 DIV ADD2
+	POK2
+	( release ) #00 =Mouse.state
+	,draw-notes JSR2
+
+BRK
+
+@touch-chn ( -- )
+	
+	,clear-notes JSR2
+	~Mouse.y ~chnframe.y1 SUB2 SWP POP #08 DIV #01 SUB =track.active
+	( release ) #00 =Mouse.state
+	,draw-channels JSR2
+	,draw-notes JSR2
+	,draw-controls JSR2
+
+BRK
+
+@touch-ctl ( -- )
+	
+	~Mouse.x ~ctlframe.x1 SUB2 #0008 SUB2 #0008 DIV2 SWP POP #02 DIV =pt.x
+	~Mouse.y ~ctlframe.y1 SUB2 #0008 SUB2 #0008 DIV2 SWP POP #02 DIV =pt.y
+
+	~pt.x #00 NEQ ^$no-a JNZ
+		,Audio #00 ~track.active #02 MUL ADD2 PEK2
+		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 POK2
+	$no-a
+
+	~pt.x #01 NEQ ^$no-d JNZ
+		,Audio #00 ~track.active #02 MUL ADD2 PEK2
+		DUP #f0 AND STH #01 ADD #0f AND STHr ADD
+		,Audio #00 ~track.active #02 MUL ADD2 POK2
+	$no-d
+
+	~pt.x #02 NEQ ^$no-s JNZ
+		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2
+		#10 ADD ,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 POK2
+	$no-s
+
+	~pt.x #03 NEQ ^$no-r JNZ
+		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2
+		DUP #f0 AND STH #01 ADD #0f AND STHr ADD
+		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 POK2
+	$no-r
+
+	( release ) #00 =Mouse.state
+
+	,draw-controls JSR2
 
 BRK
 
@@ -189,7 +231,7 @@ RTN
 		( load ) OVR #00 SWP ,get-track JSR2 ADD2 PEK2
 		DUP STH #00 SWP #0e SWP SUB #0008 MUL2 ~trkframe.y1 ADD2 =Sprite.y
 		OVR #00 SWP #0008 MUL2 ~trkframe.x1 ADD2 =Sprite.x
-		,note2_icn =Sprite.addr
+		,note_icn =Sprite.addr
 		STHr #00 EQU ^$skip JNZ
 			#05 =Sprite.color
 		$skip
@@ -211,7 +253,7 @@ RTN
 	$loop 
 		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ^$skip JNZ
 			OVR2 ~trkframe.x1 ADD2 =Sprite.x
-			#01 =Sprite.color
+			#02 =Sprite.color
 			~Sprite.addr 8+ =Sprite.addr
 			OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 #0001 ADD2 ~trkframe.y2 #01 ,line-vertical-dotted JSR2
 		$skip
@@ -254,17 +296,17 @@ RTN
 	~trkframe.x1 #0028 SUB2 =Sprite.x
 	~trkframe.y1 =Sprite.y
 	,font_hex #0060 ADD2 =Sprite.addr
-	#01 =Sprite.color 
+	#03 =Sprite.color 
 	~trkframe.x1 #0030 SUB2 =Sprite.x
 	,font_hex #0020 ADD2 =Sprite.addr
-	#01 =Sprite.color 
+	#03 =Sprite.color 
 	~trkframe.x1 #0028 SUB2 =Sprite.x
 	~trkframe.y1 #0038 ADD2 =Sprite.y
 	,font_hex #0060 ADD2 =Sprite.addr
-	#01 =Sprite.color 
+	#03 =Sprite.color 
 	~trkframe.x1 #0030 SUB2 =Sprite.x
 	,font_hex #0018 ADD2 =Sprite.addr
-	#01 =Sprite.color 
+	#03 =Sprite.color 
 
 RTN
 
@@ -282,24 +324,13 @@ RTN
 	=knob.x
 
 	~knob.x =Sprite.x
-	~knob.y =Sprite.y
-	,knob_icns =Sprite.addr
-	#01 =Sprite.color 
+	~knob.y =Sprite.y ,knob_icns =Sprite.addr #01 =Sprite.color 
+	~knob.x 8+ =Sprite.x ,knob_icns 8+ =Sprite.addr #01 =Sprite.color 
+	~knob.y 8+ =Sprite.y ,knob_icns #0018 ADD2 =Sprite.addr #01 =Sprite.color 
+	~knob.x =Sprite.x ,knob_icns #0010 ADD2 =Sprite.addr #01 =Sprite.color 
 
-	~knob.x 8+ =Sprite.x
-	,knob_icns 8+ =Sprite.addr
-	#01 =Sprite.color 
-
-	~knob.y 8+ =Sprite.y
-	,knob_icns #0018 ADD2 =Sprite.addr
-	#01 =Sprite.color 
-
-	~knob.x =Sprite.x
-	,knob_icns #0010 ADD2 =Sprite.addr
-	#01 =Sprite.color 
-
-	~knob.x #0004 ADD2 =Sprite.x
-	~knob.y #0001 ADD2 =Sprite.y
+	~knob.x #00 #00 ~knob.value ,knob_offsetx ADD2 PEK2 ADD2 =Sprite.x
+	~knob.y #00 #00 ~knob.value ,knob_offsety ADD2 PEK2 ADD2 =Sprite.y
 	,knob_icns #0020 ADD2 =Sprite.addr
 	#05 =Sprite.color 
 
@@ -314,14 +345,24 @@ RTN
 	
 	~ctlframe.x1 ~ctlframe.y1 ~ctlframe.x2 ~ctlframe.y2 #01 ,line-rect JSR2
 
-	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0008 ADD2 #01 ,env_txt ,draw-label JSR2
+	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0008 ADD2 #02 ,env_txt ,draw-label JSR2
 
-	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0010 ADD2 #00 ,draw-knob JSR2
-	~ctlframe.x1 #0018 ADD2 ~ctlframe.y1 #0010 ADD2 #02 ,draw-knob JSR2
-	~ctlframe.x1 #0028 ADD2 ~ctlframe.y1 #0010 ADD2 #0a ,draw-knob JSR2
-	~ctlframe.x1 #0038 ADD2 ~ctlframe.y1 #0010 ADD2 #0c ,draw-knob JSR2
+	~ctlframe.x1 #0008 ADD2 ~ctlframe.y1 #0010 ADD2 
+		,Audio #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
+	,draw-knob JSR2
 
-	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0008 ADD2 #01 ,vol_txt ,draw-label JSR2
+	~ctlframe.x1 #0018 ADD2 ~ctlframe.y1 #0010 ADD2
+		,Audio #00 ~track.active #02 MUL ADD2 PEK2 #0f AND
+	,draw-knob JSR2
+
+	~ctlframe.x1 #0028 ADD2 ~ctlframe.y1 #0010 ADD2
+		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2 #04 SFT
+	,draw-knob JSR2
+	~ctlframe.x1 #0038 ADD2 ~ctlframe.y1 #0010 ADD2 
+		,Audio #00 ~track.active #02 MUL ADD2 #0001 ADD2 PEK2 #0f AND
+	,draw-knob JSR2
+
+	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0008 ADD2 #02 ,vol_txt ,draw-label JSR2
 
 	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0010 ADD2 #00 ,draw-knob JSR2
 	~ctlframe.x1 #0060 ADD2 ~ctlframe.y1 #0010 ADD2 #0f ,draw-knob JSR2
@@ -331,8 +372,6 @@ RTN
 @draw-channels
 	
 	~chnframe.x1 ~chnframe.y1 ~chnframe.x2 ~chnframe.y2 #01 ,line-rect JSR2
-
-	~track.active =Console.byte
 	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0008 ADD2 #01 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
 	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0010 ADD2 #01 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
 	~chnframe.x1 #0008 ADD2 ~chnframe.y1 #0018 ADD2 #01 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
@@ -416,14 +455,13 @@ RTN
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
 
-@note1_icn [ 0000 1c22 2222 1c00 ]
-@note2_icn [ 0000 1c3e 3e3e 1c00 ]
+@note_icn [ 0000 1c3e 3e3e 1c00 ]
 @head_icn [ 0018 1818 7e3c 1800 ]
 
 @ch1_txt [ CHN0 00 ]
 @ch2_txt [ CHN1 00 ]
 @ch3_txt [ CHN2 00 ]
-@ch4_txt [ CHN3 00 ]
+@ch4_txt [ ---- 00 ]
 @env_txt [ Envelope 00 ]
 @vol_txt [ Volume 00 ]
 
@@ -465,6 +503,16 @@ RTN
 	ff01 0101 0102 fc00 
 	fffe fc00 0000 ff00 
 	ff01 0101 0102 fc00 
+]
+
+@knob_offsetx
+[
+	04 05 06 07 08 07 06 05 04 04 03 02 01 00 01 02 03 
+]
+
+@knob_offsety
+[
+	00 01 02 03 04 05 06 07 08 07 06 05 04 04 03 02 01 
 ]
 
 @font_hex ( 0-F ) 
