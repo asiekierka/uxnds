@@ -15,7 +15,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 
-#define HOR 64
+#define HOR 48
 #define VER 32
 #define PAD 2
 #define RES (HOR * VER * 16)
@@ -64,7 +64,7 @@ static Uint32 note_periods[12] = {
 	(Uint32)0x9dcd * SAMPLE_FREQUENCY,
 	(Uint32)0x94f2 * SAMPLE_FREQUENCY, /* A-1 */
 	(Uint32)0x8c95 * SAMPLE_FREQUENCY,
-	(Uint32)0x84b2 * SAMPLE_FREQUENCY  /* B-1 */
+	(Uint32)0x84b2 * SAMPLE_FREQUENCY /* B-1 */
 };
 
 typedef struct audio_channel {
@@ -240,32 +240,34 @@ togglezoom(Uxn *u)
 }
 
 Sint16
-audio_envelope(Channel *c) {
-	if (c->age < c->a)
+audio_envelope(Channel *c)
+{
+	if(c->age < c->a)
 		return 0x0888 * c->age / c->a;
-	else if (c->age < c->d)
+	else if(c->age < c->d)
 		return 0x0444 * (2 * c->d - c->a - c->age) / (c->d - c->a);
-	else if (c->age < c->s)
+	else if(c->age < c->s)
 		return 0x0444;
-	else if (c->age < c->r)
+	else if(c->age < c->r)
 		return 0x0444 * (c->r - c->age) / (c->r - c->s);
 	else
 		return 0x0000;
 }
 
 void
-audio_callback(void* userdata, Uint8* stream, int len) {
-	Sint16 *samples = (Sint16 *) stream;
+audio_callback(void *userdata, Uint8 *stream, int len)
+{
+	Sint16 *samples = (Sint16 *)stream;
 	int i, j;
 	len >>= 2; /* use len for number of samples, not bytes */
-	for (j = len * 2 - 1; j >= 0; --j) samples[j] = 0;
-	for (i = 0; i < 4; ++i) {
+	for(j = len * 2 - 1; j >= 0; --j) samples[j] = 0;
+	for(i = 0; i < 4; ++i) {
 		Channel *c = &channels[i];
-		if (c->period < (1 << 20)) continue;
-		for (j = 0; j < len; ++j) {
+		if(c->period < (1 << 20)) continue;
+		for(j = 0; j < len; ++j) {
 			c->age += 1;
 			c->count += 1 << 20;
-			while (c->count > c->period) {
+			while(c->count > c->period) {
 				Sint16 mul;
 				c->count -= c->period;
 				c->phase = !c->phase;
@@ -277,13 +279,14 @@ audio_callback(void* userdata, Uint8* stream, int len) {
 			samples[j * 2 + 1] += c->value[1];
 		}
 	}
-	(void) userdata;
+	(void)userdata;
 }
 
 void
-silence(void) {
+silence(void)
+{
 	int i;
-	for (i = 0; i < 4; ++i) {
+	for(i = 0; i < 4; ++i) {
 		Channel *c = &channels[i];
 		c->volume[0] = 0;
 		c->volume[1] = 0;
@@ -496,7 +499,7 @@ Uint8
 audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
-	if (b0 & 1) {
+	if(b0 & 1) {
 		Uint16 addr = ptr + (b0 & 0x6);
 		Channel *c = &channels[(b0 & 0x6) >> 1];
 		SDL_LockAudioDevice(audio_id);
