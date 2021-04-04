@@ -564,37 +564,41 @@ ppnil(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 
 #pragma mark - Generics
 
+void
+runevents(Uxn *u)
+{
+	SDL_Event event;
+	while(SDL_PollEvent(&event) != 0) {
+		switch(event.type) {
+		case SDL_QUIT: quit(); break;
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEMOTION: domouse(u, &event); break;
+		case SDL_TEXTINPUT: dotext(u, &event); break;
+		case SDL_KEYDOWN: doctrl(u, &event, 1); break;
+		case SDL_KEYUP: doctrl(u, &event, 0); break;
+		case SDL_WINDOWEVENT:
+			if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
+				redraw(pixels, u);
+			break;
+		}
+	}
+}
+
 int
 start(Uxn *u)
 {
-	int ticknext = 0;
 	evaluxn(u, PAGE_VECTORS);
-	if(screen.reqdraw)
-		redraw(pixels, u);
+	redraw(pixels, u);
 	while(1) {
-		int tick = SDL_GetTicks();
-		SDL_Event event;
-		if(tick < ticknext)
-			SDL_Delay(ticknext - tick);
-		ticknext = tick + (1000 / FPS);
-		while(SDL_PollEvent(&event) != 0) {
-			switch(event.type) {
-			case SDL_QUIT: quit(); break;
-			case SDL_MOUSEBUTTONUP:
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEMOTION: domouse(u, &event); break;
-			case SDL_TEXTINPUT: dotext(u, &event); break;
-			case SDL_KEYDOWN: doctrl(u, &event, 1); break;
-			case SDL_KEYUP: doctrl(u, &event, 0); break;
-			case SDL_WINDOWEVENT:
-				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(pixels, u);
-				break;
-			}
-		}
+		float elapsed;
+		double start = SDL_GetPerformanceCounter();
+		runevents(u);
 		evaluxn(u, PAGE_VECTORS + 0x08);
 		if(screen.reqdraw)
 			redraw(pixels, u);
+		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
+		SDL_Delay(floor(16.666f - elapsed));
 	}
 }
 
