@@ -145,7 +145,7 @@ opcuxn(Uxn *u, Uint8 instr)
 int
 stepuxn(Uxn *u, Uint8 instr)
 {
-	if(getflag(&u->status, FLAG_LIT2) || getflag(&u->status, FLAG_LIT1))
+	if(u->status & 0x0c)
 		lituxn(u, instr);
 	else
 		opcuxn(u, instr);
