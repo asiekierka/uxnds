@@ -499,14 +499,15 @@ Uint8
 audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
+	m[PAGE_DEVICE + 0x0070 + b0] = b1;
 	if(b0 & 1) {
 		Uint16 addr = ptr + (b0 & 0x6);
 		Channel *c = &channels[(b0 & 0x6) >> 1];
 		SDL_LockAudioDevice(audio_id);
-		c->period = note_periods[m[addr + 8] % 12] >> (m[addr + 8] / 12);
+		c->period = note_periods[m[addr + 9] % 12] >> (m[addr + 9] / 12);
 		c->count %= c->period;
-		c->volume[0] = (m[addr + 9] >> 4) & 0xf;
-		c->volume[1] = m[addr + 9] & 0xf;
+		c->volume[0] = (m[addr + 8] >> 4) & 0xf;
+		c->volume[1] = m[addr + 8] & 0xf;
 		c->age = 0;
 		c->a = (SAMPLE_FREQUENCY >> 4) * ((m[addr] >> 4) & 0xf);
 		c->d = c->a + (SAMPLE_FREQUENCY >> 4) * (m[addr] & 0xf);

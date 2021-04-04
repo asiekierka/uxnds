@@ -29,7 +29,7 @@
 |0140 ;Keys { key 1 }
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|0170 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1pitch 1 ch1vol 1 ch2pitch 1 ch2vol 1 ch3pitch 1 ch3vol 1 ch4pitch 1 ch4vol 1 }
+|0170 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
 
 ( vectors )
@@ -53,10 +53,10 @@
 	~chnframe.x2 =ctlframe.x1 ~chnframe.y1 =ctlframe.y1
 	~trkframe.x2 =ctlframe.x2 ~chnframe.y2 =ctlframe.y2
 
-	( default envs )
-	#048c =Audio.ch1adsr
-	#159d =Audio.ch2adsr
-	#26ae =Audio.ch3adsr
+	( default settings )
+	#048c =Audio.ch1adsr #88 =Audio.ch1vol
+	#159d =Audio.ch2adsr #88 =Audio.ch2vol
+	#26ae =Audio.ch3adsr #88 =Audio.ch3vol
 
 	,draw-timeline JSR2
 	,draw-controls JSR2
@@ -68,11 +68,9 @@ BRK
 	
 	,draw-cursor JSR2
 	,move-head JSR2
-
 	~head.pos #08 MOD #00 NEQ ^$skip JNZ
 		,bang JSR2
 	$skip
-
 	~Mouse.state #00 EQU ,$click-end JNZ2
 		~Mouse.x ~trkframe.x1 GTH2 ~Mouse.x ~trkframe.x2 LTH2 #0101 EQU2
 		~Mouse.y ~trkframe.y1 GTH2 ~Mouse.y ~trkframe.y2 LTH2 #0101 EQU2
@@ -120,21 +118,28 @@ BRK
 	~Mouse.x ~ctlframe.x1 SUB2 8- 8/ SWP POP #02 DIV
 	DUP #00 NEQ ^$no-a JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD ,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-a
-
+		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD 
+		,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-a
 	DUP #01 NEQ ^$no-d JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2
 		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
 		,Audio #00 ~track.active #02 MUL ADD2 POK2 $no-d
-
 	DUP #02 NEQ ^$no-s JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD ,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-s
-
+		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD 
+		,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-s
 	DUP #03 NEQ ^$no-r JNZ
 		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2
 		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
 		,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-r
+	DUP #05 NEQ ^$no-left JNZ
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2
+		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD 
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 POK2 $no-left
+	DUP #06 NEQ ^$no-right JNZ
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2
+		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 POK2 $no-right
 	POP
 	( release ) #00 =Mouse.state
 	,draw-controls JSR2
@@ -150,8 +155,6 @@ BRK
 	$skip1
 	#00 SWP ,notes ADD2 PEK2
 	#0c #03 MUL SUB =Audio.ch1pitch
-	#11 =Audio.ch1vol
-	
 	$listen2
 	,track.ch2 #00 ~head.pos #08 DIV ADD2 PEK2 
 	#01 SUB
@@ -160,8 +163,6 @@ BRK
 	$skip2
 	#00 SWP ,notes ADD2 PEK2
 	#0c #03 MUL SUB =Audio.ch2pitch
-	#11 =Audio.ch2vol
-
 	$listen3
 	,track.ch3 #00 ~head.pos #08 DIV ADD2 PEK2 
 	#01 SUB
@@ -170,8 +171,6 @@ BRK
 	$skip3
 	#00 SWP ,notes ADD2 PEK2
 	#0c #03 MUL SUB =Audio.ch3pitch
-	#11 =Audio.ch3vol
-
 	$end
 
 RTN
@@ -320,6 +319,7 @@ RTN
 @draw-controls ( -- )
 	
 	~ctlframe.x1 ~ctlframe.y1 ~ctlframe.x2 ~ctlframe.y2 #01 ,line-rect JSR2
+	( env )
 	~ctlframe.x1 8+ ~ctlframe.y1 8+ #02 ,env_txt ,draw-label JSR2
 	~ctlframe.x1 8+ ~ctlframe.y1 #0010 ADD2 
 		,Audio #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
@@ -333,9 +333,14 @@ RTN
 	~ctlframe.x1 #0038 ADD2 ~ctlframe.y1 #0010 ADD2 
 		,Audio #00 ~track.active #02 MUL ADD2 ++ PEK2 #0f AND
 		,draw-knob JSR2
-	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 8+ #02 ,vol_txt ,draw-label JSR2
-	~ctlframe.x1 #0050 ADD2 ~ctlframe.y1 #0010 ADD2 #00 ,draw-knob JSR2
-	~ctlframe.x1 #0060 ADD2 ~ctlframe.y1 #0010 ADD2 #0f ,draw-knob JSR2
+	( vol )
+	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 8+ #02 ,vol_txt ,draw-label JSR2
+	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 #0010 ADD2
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
+	,draw-knob JSR2
+	~ctlframe.x1 #0068 ADD2 ~ctlframe.y1 #0010 ADD2 
+		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2 #0f AND
+	,draw-knob JSR2
 
 RTN
 
