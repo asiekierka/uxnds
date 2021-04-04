@@ -115,13 +115,13 @@ main(int argc, char **argv)
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
 
-	portuxn(&u, "console", console_poke);
-	portuxn(&u, "empty", ppnil);
-	portuxn(&u, "empty", ppnil);
-	portuxn(&u, "empty", ppnil);
-	portuxn(&u, "empty", ppnil);
-	portuxn(&u, "empty", ppnil);
-	portuxn(&u, "file", file_poke);
+	portuxn(&u, 0x00, "console", console_poke);
+	portuxn(&u, 0x01, "empty", ppnil);
+	portuxn(&u, 0x02, "empty", ppnil);
+	portuxn(&u, 0x03, "empty", ppnil);
+	portuxn(&u, 0x04, "empty", ppnil);
+	portuxn(&u, 0x05, "empty", ppnil);
+	portuxn(&u, 0x06, "file", file_poke);
 	start(&u);
 
 	return 0;
