@@ -18,7 +18,7 @@ WITH REGARD TO THIS SOFTWARE.
 /* clang-format off */
 void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
-Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < u->devices ? u->dev[id].poke(u, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
+Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < 0x10 ? u->dev[id].poke(u, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
 
 void   push8(Stack *s, Uint8 a) { if (s->ptr == 0xff) { s->error = 2; return; } s->dat[s->ptr++] = a; }
 Uint8  pop8(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->dat[--s->ptr]; }
@@ -118,7 +118,7 @@ void (*ops[])(Uxn *u) = {
 int
 haltuxn(Uxn *u, char *name, int id)
 {
-	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->counter);
+	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->ram.ptr);
 	return 0;
 }
 
@@ -164,7 +164,6 @@ evaluxn(Uxn *u, Uint16 vec)
 		Uint8 instr = u->ram.dat[u->ram.ptr++];
 		if(!stepuxn(u, instr))
 			return 0;
-		u->counter++;
 	}
 	return 1;
 }
@@ -191,11 +190,11 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1))
+portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1))
 {
-	Device *d = &u->dev[u->devices++];
-	d->addr = PAGE_DEVICE + (u->devices - 1) * 0x10;
+	Device *d = &u->dev[id];
+	d->addr = PAGE_DEVICE + id * 0x10;
 	d->poke = pofn;
-	printf("Device #%d: %s, at 0x%04x \n", u->devices - 1, name, d->addr);
+	printf("Device #%d: %s, at 0x%04x \n", id - 1, name, d->addr);
 	return d;
 }

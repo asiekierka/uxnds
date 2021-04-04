@@ -38,8 +38,7 @@ typedef struct Device {
 } Device;
 
 typedef struct Uxn {
-	Uint8 literal, status, devices;
-	Uint16 counter;
+	Uint8 literal, status;
 	Stack wst, rst, *src, *dst;
 	Memory ram;
 	Device dev[16];
@@ -50,4 +49,4 @@ int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
-Device *portuxn(Uxn *u, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));
+Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));

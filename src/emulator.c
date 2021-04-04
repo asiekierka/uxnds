@@ -612,22 +612,22 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, "console", console_poke);
-	devscreen = portuxn(&u, "screen", screen_poke);
-	portuxn(&u, "sprite", sprite_poke);
-	devctrl = portuxn(&u, "controller", ppnil);
-	devkey = portuxn(&u, "key", ppnil);
-	devmouse = portuxn(&u, "mouse", ppnil);
-	portuxn(&u, "file", file_poke);
-	devaudio = portuxn(&u, "audio", audio_poke);
-	portuxn(&u, "midi", ppnil);
-	portuxn(&u, "datetime", datetime_poke);
-	portuxn(&u, "---", ppnil);
-	portuxn(&u, "---", ppnil);
-	portuxn(&u, "---", ppnil);
-	portuxn(&u, "---", ppnil);
-	portuxn(&u, "---", ppnil);
-	portuxn(&u, "system", system_poke);
+	portuxn(&u, 0x00, "console", console_poke);
+	devscreen = portuxn(&u, 0x01, "screen", screen_poke);
+	portuxn(&u, 0x02, "sprite", sprite_poke);
+	devctrl = portuxn(&u, 0x03, "controller", ppnil);
+	devkey = portuxn(&u, 0x04, "key", ppnil);
+	devmouse = portuxn(&u, 0x05, "mouse", ppnil);
+	portuxn(&u, 0x06, "file", file_poke);
+	devaudio = portuxn(&u, 0x07, "audio", audio_poke);
+	portuxn(&u, 0x08, "midi", ppnil);
+	portuxn(&u, 0x09, "datetime", datetime_poke);
+	portuxn(&u, 0x0a, "---", ppnil);
+	portuxn(&u, 0x0b, "---", ppnil);
+	portuxn(&u, 0x0c, "---", ppnil);
+	portuxn(&u, 0x0d, "---", ppnil);
+	portuxn(&u, 0x0e, "---", ppnil);
+	portuxn(&u, 0x0f, "system", system_poke);
 
 	/* Write screen size to dev/screen */
 	u.ram.dat[devscreen->addr + 0] = (HOR * 8 >> 8) & 0xff;
