@@ -108,19 +108,6 @@ paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
 		dst[row + 8] |= 1UL << col;
 }
 
-void
-painticn(Uint8 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 blend)
-{
-	Uint16 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-			if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
-				continue;
-			paintpixel(dst, x + h, y + v, ch1 ? blend % 4 : blend / 4);
-		}
-}
-
 #pragma mark - Helpers
 
 void
@@ -459,12 +446,19 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	ptr += 8;
 	if(b0 == 0x0e) {
+		Uint16 v, h;
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		Uint16 a = (m[ptr + 4] << 8) + m[ptr + 5];
-		Uint8 source = (b1 >> 4) & 0xf;
-		Uint8 *layer = source % 2 ? screen.fg : screen.bg;
-		painticn(layer, x, y, &m[a], b1 & 0xf);
+		Uint8 blend = b1 & 0xf;
+		Uint8 *layer = ((b1 >> 4) & 0xf) % 2 ? screen.fg : screen.bg;
+		Uint8 *sprite = &m[(m[ptr + 4] << 8) + m[ptr + 5]];
+		for(v = 0; v < 8; v++)
+			for(h = 0; h < 8; h++) {
+				Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
+				if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
+					continue;
+				paintpixel(layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
+			}
 		screen.reqdraw = 1;
 	}
 	return b1;
@@ -500,7 +494,7 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	m[PAGE_DEVICE + 0x0070 + b0] = b1;
-	if(b0 & 1) {
+	if(b0 > 0x08 && b0 & 1) {
 		Uint16 addr = ptr + (b0 & 0x6);
 		Channel *c = &channels[(b0 & 0x6) >> 1];
 		SDL_LockAudioDevice(audio_id);

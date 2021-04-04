@@ -133,13 +133,13 @@ BRK
 		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
 		,Audio #00 ~track.active #02 MUL ADD2 ++ POK2 $no-r
 	DUP #05 NEQ ^$no-left JNZ
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 PEK2
 		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD 
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 POK2 $no-left
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 POK2 $no-left
 	DUP #06 NEQ ^$no-right JNZ
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 PEK2
 		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 POK2 $no-right
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 POK2 $no-right
 	POP
 	( release ) #00 =Mouse.state
 	,draw-controls JSR2
@@ -336,10 +336,10 @@ RTN
 	( vol )
 	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 8+ #02 ,vol_txt ,draw-label JSR2
 	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 #0010 ADD2
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 PEK2 #04 SFT
 	,draw-knob JSR2
 	~ctlframe.x1 #0068 ADD2 ~ctlframe.y1 #0010 ADD2 
-		,Audio #0009 ADD2 #00 ~track.active #02 MUL ADD2 PEK2 #0f AND
+		,Audio 8+ #00 ~track.active #02 MUL ADD2 PEK2 #0f AND
 	,draw-knob JSR2
 
 RTN
