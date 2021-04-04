@@ -34,7 +34,7 @@ Uint16 mempeek16(Uxn *u, Uint16 a) { return (mempeek8(u, a) << 8) + mempeek8(u, 
 /* Stack */
 void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
 void op_nop(Uxn *u) { (void)u; }
-void op_lit(Uxn *u) { u->literal += 1; }
+void op_lit(Uxn *u) { setflag(&u->status, FLAG_LIT1, 1); }
 void op_pop(Uxn *u) { pop8(u->src); }
 void op_dup(Uxn *u) { push8(u->src, peek8(u->src, 0)); }
 void op_swp(Uxn *u) { Uint8 b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, a); }
@@ -66,7 +66,7 @@ void op_ora(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_eor(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b ^ a); }
 void op_sft(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b >> (a & 0x07) << ((a & 0x70) >> 4)); }
 /* Stack */
-void op_lit16(Uxn *u) { u->literal += 2; }
+void op_lit16(Uxn *u) { setflag(&u->status, FLAG_LIT2, 1); }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(u->src)); }
 void op_pop16(Uxn *u) { pop16(u->src); }
 void op_dup16(Uxn *u) { push16(u->src, peek16(u->src, 0)); }
@@ -126,7 +126,11 @@ void
 lituxn(Uxn *u, Uint8 instr)
 {
 	push8(u->src, instr);
-	u->literal--;
+	if(getflag(&u->status, FLAG_LIT2)) {
+		setflag(&u->status, FLAG_LIT2, 0);
+		setflag(&u->status, FLAG_LIT1, 1);
+	} else if(getflag(&u->status, FLAG_LIT1))
+		setflag(&u->status, FLAG_LIT1, 0);
 }
 
 void
@@ -141,7 +145,7 @@ opcuxn(Uxn *u, Uint8 instr)
 int
 stepuxn(Uxn *u, Uint8 instr)
 {
-	if(u->literal > 0)
+	if(getflag(&u->status, FLAG_LIT2) || getflag(&u->status, FLAG_LIT1))
 		lituxn(u, instr);
 	else
 		opcuxn(u, instr);
@@ -155,7 +159,7 @@ stepuxn(Uxn *u, Uint8 instr)
 int
 evaluxn(Uxn *u, Uint16 vec)
 {
-	u->literal = 0;
+	u->status = 0;
 	u->ram.ptr = vec;
 	u->wst.error = 0;
 	u->rst.error = 0;
@@ -195,6 +199,6 @@ portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0
 	Device *d = &u->dev[id];
 	d->addr = PAGE_DEVICE + id * 0x10;
 	d->poke = pofn;
-	printf("Device #%d: %s, at 0x%04x \n", id - 1, name, d->addr);
+	printf("Device #%d: %s, at 0x%04x \n", id, name, d->addr);
 	return d;
 }
