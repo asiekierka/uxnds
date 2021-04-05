@@ -6,7 +6,6 @@
 
 ;cursor { x 2 y 2 blink 1 }
 
-
 |0100 ;Console { pad 8 char 1 byte 1 short 2 }
 |0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
@@ -28,7 +27,7 @@ BRK
 	( theme ) #0daf =System.r #02ff =System.g #035f =System.b
 	
 	( update cursor )
-	#02 ~cursor.blink #01 EQU ADD =Sprite.color
+	#02 =Sprite.color
 
 	,cursor_icn =Sprite.addr
 	~cursor.blink MOD2 #00 EQU =cursor.blink
