@@ -80,7 +80,7 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static SDL_AudioDeviceID audio_id;
 static Screen screen;
-static Device *devscreen, *devmouse, *devkey, *devctrl, *devaudio;
+static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl, *devaudio;
 
 #pragma mark - Helpers
 
@@ -582,7 +582,7 @@ ppnil(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 int
 start(Uxn *u)
 {
-	evaluxn(u, PAGE_VECTORS);
+	inituxn(u, 0x0200);
 	redraw(pixels, u);
 	while(1) {
 		SDL_Event event;
@@ -602,12 +602,13 @@ start(Uxn *u)
 				break;
 			}
 		}
-		evaluxn(u, PAGE_VECTORS + 0x08);
+		evaluxn(u, devscreen->vector);
 		if(screen.reqdraw)
 			redraw(pixels, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 		SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
 	}
+	return 1;
 }
 
 int
@@ -624,28 +625,28 @@ main(int argc, char **argv)
 	if(!init())
 		return error("Init", "Failed");
 
-	portuxn(&u, 0x00, "console", console_poke);
-	devscreen = portuxn(&u, 0x01, "screen", screen_poke);
-	portuxn(&u, 0x02, "sprite", sprite_poke);
-	devctrl = portuxn(&u, 0x03, "controller", ppnil);
-	devkey = portuxn(&u, 0x04, "key", ppnil);
-	devmouse = portuxn(&u, 0x05, "mouse", ppnil);
-	portuxn(&u, 0x06, "file", file_poke);
-	devaudio = portuxn(&u, 0x07, "audio", audio_poke);
-	portuxn(&u, 0x08, "midi", ppnil);
-	portuxn(&u, 0x09, "datetime", datetime_poke);
-	portuxn(&u, 0x0a, "---", ppnil);
+	devsystem = portuxn(&u, 0x00, "system", system_poke);
+	portuxn(&u, 0x01, "console", console_poke);
+	devscreen = portuxn(&u, 0x02, "screen", screen_poke);
+	portuxn(&u, 0x03, "sprite", sprite_poke);
+	devctrl = portuxn(&u, 0x04, "controller", ppnil);
+	devkey = portuxn(&u, 0x05, "key", ppnil);
+	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
+	portuxn(&u, 0x07, "file", file_poke);
+	devaudio = portuxn(&u, 0x08, "audio", audio_poke);
+	portuxn(&u, 0x09, "midi", ppnil);
+	portuxn(&u, 0x0a, "datetime", datetime_poke);
 	portuxn(&u, 0x0b, "---", ppnil);
 	portuxn(&u, 0x0c, "---", ppnil);
 	portuxn(&u, 0x0d, "---", ppnil);
 	portuxn(&u, 0x0e, "---", ppnil);
-	portuxn(&u, 0x0f, "system", system_poke);
+	portuxn(&u, 0x0f, "---", ppnil);
 
 	/* Write screen size to dev/screen */
-	u.ram.dat[devscreen->addr + 0] = (HOR * 8 >> 8) & 0xff;
-	u.ram.dat[devscreen->addr + 1] = HOR * 8 & 0xff;
-	u.ram.dat[devscreen->addr + 2] = (VER * 8 >> 8) & 0xff;
-	u.ram.dat[devscreen->addr + 3] = VER * 8 & 0xff;
+	u.ram.dat[devscreen->addr + 2] = (HOR * 8 >> 8) & 0xff;
+	u.ram.dat[devscreen->addr + 3] = HOR * 8 & 0xff;
+	u.ram.dat[devscreen->addr + 4] = (VER * 8 >> 8) & 0xff;
+	u.ram.dat[devscreen->addr + 5] = VER * 8 & 0xff;
 
 	start(&u);
 	quit();

@@ -11,18 +11,18 @@
 ;neralie { n0123 2 n4 1 n5 1 n6 1 n7 1 n8 1 n9 1 color 1 x 2 y 2 w 2 h 2 }
 ;mul { ahi 1 alo 1 bhi 1 blo 1 }
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0190 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
 
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
+( program )
 
-@RESET
+|0200 @RESET
+
 	( theme ) #03fd =System.r #0ef3 =System.g #0bf2 =System.b
+	( vectors ) ,FRAME =Screen.vector
 	#01 =fps.current
 
 	#000c

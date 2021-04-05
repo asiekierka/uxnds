@@ -152,6 +152,17 @@ evaluxn(Uxn *u, Uint16 vec)
 }
 
 int
+inituxn(Uxn *u, Uint16 vec)
+{
+	Uint8 i = 0;
+	if(!evaluxn(u, vec))
+		return 0;
+	for(i = 0; i < 0x10; ++i)
+		u->dev[i].vector = mempeek16(u, u->dev[i].addr);
+	return 1;
+}
+
+int
 bootuxn(Uxn *u)
 {
 	size_t i;
@@ -178,6 +189,6 @@ portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0
 	Device *d = &u->dev[id];
 	d->addr = PAGE_DEVICE + id * 0x10;
 	d->poke = pofn;
-	printf("Device #%d: %s, at 0x%04x \n", id, name, d->addr);
+	printf("Device added #%d: %s, at 0x%04x \n", id, name, d->addr);
 	return d;
 }

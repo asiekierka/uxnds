@@ -32,7 +32,7 @@ typedef struct {
 struct Uxn;
 
 typedef struct Device {
-	Uint16 addr;
+	Uint16 addr, vector;
 	Uint8 (*poke)(struct Uxn *, Uint16, Uint8, Uint8);
 } Device;
 
@@ -44,5 +44,6 @@ typedef struct Uxn {
 
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
+int inituxn(Uxn *u, Uint16 vec);
 int evaluxn(Uxn *u, Uint16 vec);
 Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));
