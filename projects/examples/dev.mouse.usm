@@ -16,13 +16,13 @@
 |0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
 |0170 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
 
-@RESET
+( program )
+
+|0200 @RESET
 
 	( theme ) #03fd =System.r #0ef3 =System.g #0bf2 =System.b
+	( vectors ) ,FRAME =Screen.vector
 	
 	#004f =Audio.ch1adsr #33 =Audio.ch1vol
 

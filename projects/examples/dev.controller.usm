@@ -13,9 +13,9 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { p1 1 }
-|0150 ;Keys { key 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 p1 1 }
+|0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse { x 2 y 2 state 1 chord 1 change 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 |0180 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
@@ -34,13 +34,7 @@
 
 BRK
 
-@FRAME 
-
-	~Controller.p1 ,on-ctrl-arrows JNZ2
-
-BRK
-
-@on-ctrl-arrows
+@FRAME
 
 	#0a =slime
 	,default_icn =Sprite.addr
@@ -81,5 +75,3 @@ BRK
 @left_icn    [ 3c7e ef1f 1fef 7e3c ]
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
 @slime_icn   [ 0000 183c 3c18 0000 ]
-
-@ERROR BRK 

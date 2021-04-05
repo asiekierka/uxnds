@@ -6,13 +6,13 @@
 
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
 
-@RESET
+( program )
+
+|0200 @RESET
 
 	( theme ) #0ffc =System.r #0f0b =System.g #0f03 =System.b
+	( vectors ) ,FRAME =Screen.vector
 	
 	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
 	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2

@@ -82,10 +82,6 @@ BRK
 
 BRK
 
-@ERROR
-
-BRK
-
 @touch-trk ( -- )
 	
 	,clear-notes JSR2

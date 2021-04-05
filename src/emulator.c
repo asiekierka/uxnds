@@ -351,7 +351,7 @@ void
 domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = devmouse->addr;
+	Uint16 addr = devmouse->addr + 2;
 	Uint16 x = clamp(event->motion.x / ZOOM - PAD * 8, 0, HOR * 8 - 1);
 	Uint16 y = clamp(event->motion.y / ZOOM - PAD * 8, 0, VER * 8 - 1);
 	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
@@ -381,7 +381,7 @@ void
 dotext(Uxn *u, SDL_Event *event)
 {
 	int i;
-	Uint16 addr = devkey->addr;
+	Uint16 addr = devkey->addr + 2;
 	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
 		return;
 	for(i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i) {
@@ -396,7 +396,7 @@ void
 doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = devctrl->addr;
+	Uint16 addr = devctrl->addr + 2;
 	if(z && event->key.keysym.sym == SDLK_h) {
 		if(SDL_GetModState() & KMOD_LCTRL)
 			toggledebug(u);
@@ -408,11 +408,11 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	case SDLK_LALT: flag = 0x02; break;
 	case SDLK_BACKSPACE:
 		flag = 0x04;
-		if(z) u->ram.dat[devkey->addr] = 0x08;
+		if(z) u->ram.dat[devkey->addr + 2] = 0x08;
 		break;
 	case SDLK_RETURN:
 		flag = 0x08;
-		if(z) u->ram.dat[devkey->addr] = 0x0d;
+		if(z) u->ram.dat[devkey->addr + 2] = 0x0d;
 		break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
@@ -592,10 +592,22 @@ start(Uxn *u)
 			case SDL_QUIT: quit(); break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEMOTION: domouse(u, &event); break;
-			case SDL_TEXTINPUT: dotext(u, &event); break;
-			case SDL_KEYDOWN: doctrl(u, &event, 1); break;
-			case SDL_KEYUP: doctrl(u, &event, 0); break;
+			case SDL_MOUSEMOTION:
+				domouse(u, &event);
+				evaluxn(u, devmouse->vector);
+				break;
+			case SDL_TEXTINPUT:
+				dotext(u, &event);
+				evaluxn(u, devkey->vector);
+				break;
+			case SDL_KEYDOWN:
+				doctrl(u, &event, 1);
+				evaluxn(u, devctrl->vector);
+				break;
+			case SDL_KEYUP:
+				doctrl(u, &event, 0);
+				evaluxn(u, devctrl->vector);
+				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
 					redraw(pixels, u);

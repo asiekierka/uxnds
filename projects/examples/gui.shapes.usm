@@ -16,11 +16,10 @@
 |0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
 |0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
 
-@RESET
+( program )
+
+|0200 @RESET
 	
 	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
 	
@@ -160,6 +159,3 @@ RTN
 	8f83 8383 8383 83ff fff7 fdff c0e2 f1ff
 	7fef bfff 07af 5fff ffff ffff ffff ffff
 ]
-
-@FRAME BRK 
-@ERROR BRK 

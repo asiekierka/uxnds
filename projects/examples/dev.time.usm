@@ -21,17 +21,12 @@
 |0190 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
 
-( vectors )
-
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
-
 ( program )
 
-@RESET 
+|0200 @RESET
 	
 	( theme ) #0ff8 =System.r #0f08 =System.g #0f08 =System.b
+	( vectors ) ,FRAME =Screen.vector
 
 	#1000 =Audio.ch1adsr
 	#66 =Audio.ch1vol

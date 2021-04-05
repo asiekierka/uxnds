@@ -1,55 +1,59 @@
 ( Dev/Keys )
 
+%RTN { JMP2r }
 %8+  { #0008 ADD2 }
 %8*  { #0030 SFT2 }
 %MOD2 { #03 AND  }
 
-;cursor { x 2 y 2 blink 1 }
+;cursor { x 2 y 2 }
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0110 ;Screen { width 2 height 2 pad 4 y 2 x 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0130 ;Controller { buttons 1 }
-|0140 ;Keys { key 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
 
-@RESET 
+( program )
 
-	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
+|0200 @RESET
+
+	( theme ) #0f73 =System.r #0fe3 =System.g #0fc3 =System.b
+	( vectors ) ,KEY =Keys.vector
+	( vectors ) ,BUTTON =Controller.vector
+	,draw-cursor JSR2
 	
 BRK
 
-@FRAME
-
-	( theme ) #0daf =System.r #02ff =System.g #035f =System.b
+@KEY
 	
-	( update cursor )
-	#02 =Sprite.color
-
 	,cursor_icn =Sprite.addr
-	~cursor.blink MOD2 #00 EQU =cursor.blink
+	,font #00 ~Keys.key 8* ADD2 =Sprite.addr
+	( draw ) #01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x
+	( release ) #00 =Keys.key
+	,draw-cursor JSR2
 
-	~Keys #00 EQU ^$end JNZ
+BRK
 
+@BUTTON
+	
 	( enter key )
-	~Keys #0d NEQ ^$no-return JNZ
+	~Controller.button #08 NEQ ^$no-return JNZ 
+		#00 =Sprite.color
 		#0000 =Sprite.x
 		( incr ) ~Sprite.y 8+ =Sprite.y
-		( release ) #00 =Keys
-		BRK
+		( release ) #00 =Controller.button
+		,draw-cursor JSR2
 	$no-return
 
-	,font #00 ~Keys 8* ADD2 =Sprite.addr
-	( draw ) #01 =Sprite.color
-	( incr ) ~Sprite.x 8+ =Sprite.x
-	( release ) #00 =Keys
-
-	$end
-
 BRK
+
+@draw-cursor
+	
+	,cursor_icn =Sprite.addr #02 =Sprite.color
+
+RTN
 
 @cursor_icn [ ffff ffff ffff ffff ]
 
@@ -88,7 +92,5 @@ BRK
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
-
-@ERROR BRK 
 
 ;text { body 2 }
