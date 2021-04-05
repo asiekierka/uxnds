@@ -90,6 +90,15 @@ clamp(int val, int min, int max)
 	return (val >= min) ? (val <= max) ? val : max : min;
 }
 
+void
+setflag(Uint8 *a, char flag, int b)
+{
+	if(b)
+		*a |= flag;
+	else
+		*a &= (~flag);
+}
+
 #pragma mark - Paint
 
 void
@@ -598,7 +607,7 @@ start(Uxn *u)
 		if(screen.reqdraw)
 			redraw(pixels, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
-		SDL_Delay(floor(16.666f - elapsed));
+		SDL_Delay((int)(16.666f - elapsed));
 	}
 }
 

@@ -16,7 +16,6 @@ WITH REGARD TO THIS SOFTWARE.
 #pragma mark - Operations
 
 /* clang-format off */
-void   setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
 int    getflag(Uint8 *a, char flag) { return *a & flag; }
 Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < 0x10 ? u->dev[id].poke(u, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
 
@@ -32,9 +31,9 @@ Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1)
 void   mempoke16(Uxn *u, Uint16 a, Uint16 b) { mempoke8(u, a, b >> 8); mempoke8(u, a + 1, b); }
 Uint16 mempeek16(Uxn *u, Uint16 a) { return (mempeek8(u, a) << 8) + mempeek8(u, a + 1); }
 /* Stack */
-void op_brk(Uxn *u) { setflag(&u->status, FLAG_HALT, 1); }
+void op_brk(Uxn *u) { u->ram.ptr = 0; }
 void op_nop(Uxn *u) { (void)u; }
-void op_lit(Uxn *u) { setflag(&u->status, FLAG_LIT1, 1); }
+void op_lit(Uxn *u) { push8(u->src, mempeek8(u, u->ram.ptr++)); }
 void op_pop(Uxn *u) { pop8(u->src); }
 void op_dup(Uxn *u) { push8(u->src, peek8(u->src, 0)); }
 void op_swp(Uxn *u) { Uint8 b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, a); }
@@ -66,7 +65,7 @@ void op_ora(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_eor(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b ^ a); }
 void op_sft(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b >> (a & 0x07) << ((a & 0x70) >> 4)); }
 /* Stack */
-void op_lit16(Uxn *u) { setflag(&u->status, FLAG_LIT2, 1); }
+void op_lit16(Uxn *u) { push16(u->src, mempeek16(u, u->ram.ptr++)); u->ram.ptr++; }
 void op_nop16(Uxn *u) { printf("%04x\n", pop16(u->src)); }
 void op_pop16(Uxn *u) { pop16(u->src); }
 void op_dup16(Uxn *u) { push16(u->src, peek16(u->src, 0)); }
@@ -123,17 +122,6 @@ haltuxn(Uxn *u, char *name, int id)
 }
 
 void
-lituxn(Uxn *u, Uint8 instr)
-{
-	push8(u->src, instr);
-	if(getflag(&u->status, FLAG_LIT2)) {
-		setflag(&u->status, FLAG_LIT2, 0);
-		setflag(&u->status, FLAG_LIT1, 1);
-	} else if(getflag(&u->status, FLAG_LIT1))
-		setflag(&u->status, FLAG_LIT1, 0);
-}
-
-void
 opcuxn(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x3f, freturn = instr & 0x40;
@@ -145,10 +133,7 @@ opcuxn(Uxn *u, Uint8 instr)
 int
 stepuxn(Uxn *u, Uint8 instr)
 {
-	if(u->status & 0x0c)
-		lituxn(u, instr);
-	else
-		opcuxn(u, instr);
+	opcuxn(u, instr);
 	if(u->wst.error)
 		return haltuxn(u, u->wst.error == 1 ? "Working-stack underflow" : "Working-stack overflow", instr);
 	if(u->rst.error)
@@ -159,12 +144,10 @@ stepuxn(Uxn *u, Uint8 instr)
 int
 evaluxn(Uxn *u, Uint16 vec)
 {
-	u->status = 0;
 	u->ram.ptr = vec;
 	u->wst.error = 0;
 	u->rst.error = 0;
-	setflag(&u->status, FLAG_HALT, 0);
-	while(!(u->status & FLAG_HALT)) {
+	while(u->ram.ptr) {
 		Uint8 instr = u->ram.dat[u->ram.ptr++];
 		if(!stepuxn(u, instr))
 			return 0;
