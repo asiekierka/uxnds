@@ -16,8 +16,6 @@ typedef signed char Sint8;
 typedef unsigned short Uint16;
 typedef signed short Sint16;
 
-#define FLAG_LIT1 0x04
-#define FLAG_LIT2 0x08
 #define PAGE_DEVICE 0x0100
 #define PAGE_VECTORS 0x0200
 
@@ -44,7 +42,6 @@ typedef struct Uxn {
 	Device dev[16];
 } Uxn;
 
-int getflag(Uint8 *status, char flag);
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);

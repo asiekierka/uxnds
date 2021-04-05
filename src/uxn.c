@@ -16,15 +16,12 @@ WITH REGARD TO THIS SOFTWARE.
 #pragma mark - Operations
 
 /* clang-format off */
-int    getflag(Uint8 *a, char flag) { return *a & flag; }
 Uint8  devpoke8(Uxn *u, Uint8 id, Uint8 b0, Uint8 b1){ return id < 0x10 ? u->dev[id].poke(u, PAGE_DEVICE + id * 0x10, b0, b1) : b1; }
-
 void   push8(Stack *s, Uint8 a) { if (s->ptr == 0xff) { s->error = 2; return; } s->dat[s->ptr++] = a; }
 Uint8  pop8(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->dat[--s->ptr]; }
 Uint8  peek8(Stack *s, Uint8 a) { if (s->ptr < a + 1) s->error = 1; return s->dat[s->ptr - a - 1]; }
 void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = (a & 0xff00) == PAGE_DEVICE ? devpoke8(u, (a & 0xff) >> 4, a & 0xf, b) : b; }
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
-
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
@@ -118,6 +115,7 @@ int
 haltuxn(Uxn *u, char *name, int id)
 {
 	printf("Halted: %s#%04x, at 0x%04x\n", name, id, u->ram.ptr);
+	u->ram.ptr = 0;
 	return 0;
 }
 
@@ -148,8 +146,7 @@ evaluxn(Uxn *u, Uint16 vec)
 	u->wst.error = 0;
 	u->rst.error = 0;
 	while(u->ram.ptr) {
-		Uint8 instr = u->ram.dat[u->ram.ptr++];
-		if(!stepuxn(u, instr))
+		if(!stepuxn(u, u->ram.dat[u->ram.ptr++]))
 			return 0;
 	}
 	return 1;

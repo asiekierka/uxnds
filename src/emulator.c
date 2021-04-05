@@ -99,6 +99,12 @@ setflag(Uint8 *a, char flag, int b)
 		*a &= (~flag);
 }
 
+int
+getflag(Uint8 *a, char flag)
+{
+	return *a & flag;
+}
+
 #pragma mark - Paint
 
 void
