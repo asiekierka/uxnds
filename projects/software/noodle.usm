@@ -54,10 +54,10 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { p1 1 }
-|0150 ;Keys { key 1 }
-|0160 ;Mouse { x 2 y 2 state 1 chord 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 ( program )
@@ -134,7 +134,7 @@ BRK
 	~Mouse.state #00 EQU ,$no-touch JNZ2
 
 		( drag )
-		~Controller #02 NEQ ,$no-drag JNZ2
+		~Controller.button #02 NEQ ,$no-drag JNZ2
 			~brush.drag #00 NEQ ^$no-drag-start JNZ
 				~canvas.x1 =origin.x1
 				~canvas.y1 =origin.y1
@@ -262,8 +262,8 @@ BRK
 
 	$no-touch
 
-	~Controller.p1 #00 EQU ,$no-ctrl JNZ2
-		~Controller.p1 #f0 AND
+	~Controller.button #00 EQU ,$no-ctrl JNZ2
+		~Controller.button #f0 AND
 			DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
 				( move ) ~zoom.y -- =zoom.y $no-up
 			DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
@@ -275,8 +275,8 @@ BRK
 		#00 EQU #04 JNZ ,draw-canvas JSR2
 	$no-ctrl
 	
-	~Keys #00 EQU ,$no-keys JNZ2
-		~Keys 
+	~Keys.key #00 EQU ,$no-keys JNZ2
+		~Keys.key 
 		DUP #20 NEQ ^$no-space JNZ
 			( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
 		DUP #08 NEQ ^$no-backspace JNZ
@@ -293,7 +293,7 @@ BRK
 			( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
 		DUP 
 			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ^$no-numkey JNZ
-			( size ) ~Keys #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
+			( size ) ~Keys.key #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
 		POP
 		( release ) #00 =Keys
 	$no-keys
@@ -306,21 +306,21 @@ BRK
 
 @on-rename ( -- )
 
-	~Keys #00 EQU ,$no-keys JNZ2
+	~Keys.key #00 EQU ,$no-keys JNZ2
 		( enter )
-		~Keys #0d NEQ ^$no-enter JNZ
+		~Keys.key #0d NEQ ^$no-enter JNZ
 			#00 =document.edit
 			,redraw JSR2 BRK
 			$no-enter
 		( backspace )
-		~Keys #08 NEQ ^$no-backspace JNZ
+		~Keys.key #08 NEQ ^$no-backspace JNZ
 			~path.length #00 EQU ^$end JNZ
 			~path.length #01 SUB =path.length
 			^$end JMP
 			$no-backspace
 		( default )
 		~path.length #1f EQU ^$end JNZ
-			~Keys ,path.name #00 ~path.length ADD2 POK2
+			~Keys.key ,path.name #00 ~path.length ADD2 POK2
 			~path.length #01 ADD =path.length
 			$end
 		#00 ,path.name #00 ~path.length ADD2 POK2
@@ -659,7 +659,7 @@ RTN
 	( draw size cursor )
 	~brush.tool #01 NEQ ,$outside-canvas JNZ2
 	( do not draw size when holding alt )
-	~Controller #02 EQU ,$outside-canvas JNZ2
+	~Controller.button #02 EQU ,$outside-canvas JNZ2
 	~Mouse.x CLN2r ~canvas.x1 GTH2 STH2r ~canvas.x2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2
 	~Mouse.y CLN2r ~canvas.y1 GTH2 STH2r ~canvas.y2 LTH2 #0101 NEQ2 ,$outside-canvas JNZ2	
 	( do not draw size in toolpane )
@@ -673,7 +673,7 @@ RTN
 	$outside-canvas
 	( draw new cursor )
 	~cursor.x =Sprite.x ~cursor.y =Sprite.y
-	,pointers_icn #00 ~Controller #02 EQU 8* ADD2 =Sprite.addr
+	,pointers_icn #00 ~Controller.button #02 EQU 8* ADD2 =Sprite.addr
 	#1f ~Mouse.state #01 EQU #0a MUL SUB =Sprite.color
 
 RTN
@@ -997,7 +997,5 @@ RTN
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
-
-@ERROR BRK 
 
 |2100 @data

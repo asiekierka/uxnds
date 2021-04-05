@@ -189,6 +189,6 @@ portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *u, Uint16 ptr, Uint8 b0
 	Device *d = &u->dev[id];
 	d->addr = PAGE_DEVICE + id * 0x10;
 	d->poke = pofn;
-	printf("Device added #%d: %s, at 0x%04x \n", id, name, d->addr);
+	printf("Device added #%02x: %s, at 0x%04x \n", id, name, d->addr);
 	return d;
 }

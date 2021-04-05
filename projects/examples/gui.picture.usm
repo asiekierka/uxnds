@@ -4,15 +4,19 @@
 
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #0ffc =System.r #0f0b =System.g #0f03 =System.b
-	( vectors ) ,FRAME =Screen.vector
 	
 	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
 	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2
@@ -309,6 +313,3 @@ RTN
 	1081 4182 0500 0000 aa25 512a 44aa 0000 0254 0992 4984 0000 9452 4925 5289 0000
 
 ]
-
-@FRAME BRK 
-@ERROR BRK 

@@ -726,7 +726,5 @@ RTN
 @filepath1     [ projects/examples/gui.hover.usm 00 ]
 @filepath      [ projects/examples/dev.time.usm 00 ]
 
-@ERROR BRK 
-
 ;clip { len 2 body 256 }
 ;document { eof 2 body 2 }

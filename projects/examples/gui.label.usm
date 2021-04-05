@@ -3,20 +3,21 @@
 %RTN { JMP2r }
 
 ;label { x 2 y 2 color 1 addr 2 }
-;rect { x1 2 y1 2 x2 2 y2 2 }
 ;center { x 2 y 2 }
-;i { short 2 }
 
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
 |0200 @RESET
 	
 	( theme ) #0f0f =System.r #0fff =System.g #0ff0 =System.b
-	( vectors ) ,FRAME =Screen.vector
 	
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
@@ -129,6 +130,3 @@ RTN
 @text3 [ Right 20 Aligned 00 ]
 @text4 [ even 00 ]
 @text5 [ odd 00 ]
-
-@FRAME BRK 
-@ERROR BRK 

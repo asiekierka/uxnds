@@ -39,8 +39,6 @@
 	OVR2 OVR2 ~lines.x1 ,v JSR2
 	          ~lines.x2 ,v JSR2
 
-	@ERROR BRK
-
 @FRAME
 	,update-fps JSR2
 	#00 =neralie.color

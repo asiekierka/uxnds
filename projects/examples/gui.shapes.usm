@@ -10,16 +10,19 @@
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
 ;color { byte 1 }
-
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
-|0200 @RESET
+|0200
 	
 	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
 	

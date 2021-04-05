@@ -20,7 +20,7 @@
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #03fd =System.r #0ef3 =System.g #0bf2 =System.b
 	( vectors ) ,on-mouse =Mouse.vector

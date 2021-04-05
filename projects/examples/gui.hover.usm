@@ -10,17 +10,20 @@
 ;r2 { x1 2 y1 2 x2 2 y2 2 }
 ;r3 { x1 2 y1 2 x2 2 y2 2 }
 
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #0f0f =System.r #0fff =System.g #0ff0 =System.b
-	( vectors ) ,FRAME =Screen.vector
+	( vectors ) ,on-mouse =Mouse.vector
 	
 	#0020 #0030 #0060 #0060 =r1.y2 =r1.x2 =r1.y1 =r1.x1
 	#0058 #0050 #0090 #0080 =r2.y2 =r2.x2 =r2.y1 =r2.x1
@@ -28,7 +31,7 @@
 
 BRK
 
-@FRAME 
+@on-mouse 
 
 	,pointer_icn =pointer.sprite
 
@@ -98,5 +101,3 @@ RTN
 @clear_icn   [ 0000 0000 0000 0000 ]
 @pointer_icn [ 80c0 e0f0 f8e0 1000 ]
 @hand_icn    [ 4040 4070 f8f8 f870 ]
-
-@ERROR BRK 

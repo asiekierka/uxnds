@@ -16,7 +16,7 @@
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #0f73 =System.r #0fe3 =System.g #0fc3 =System.b
 	( vectors ) ,KEY =Keys.vector
