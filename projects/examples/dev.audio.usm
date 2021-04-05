@@ -153,24 +153,21 @@ BRK
 	DUP #ff NEQ ^$skip1 JNZ
 		POP ^$listen2 JMP
 	$skip1
-	#00 SWP ,notes ADD2 PEK2
-	#0c #03 MUL SUB =Audio.ch1pitch
+	#00 SWP ,notes ADD2 PEK2 =Audio.ch1pitch
 	$listen2
 	,track.ch2 #00 ~head.pos #08 DIV ADD2 PEK2 
 	#01 SUB
 	DUP #ff NEQ ^$skip2 JNZ
 		POP ^$listen3 JMP
 	$skip2
-	#00 SWP ,notes ADD2 PEK2
-	#0c #03 MUL SUB =Audio.ch2pitch
+	#00 SWP ,notes ADD2 PEK2 =Audio.ch2pitch
 	$listen3
 	,track.ch3 #00 ~head.pos #08 DIV ADD2 PEK2 
 	#01 SUB
 	DUP #ff NEQ ^$skip3 JNZ
 		POP ^$end JMP
 	$skip3
-	#00 SWP ,notes ADD2 PEK2
-	#0c #03 MUL SUB =Audio.ch3pitch
+	#00 SWP ,notes ADD2 PEK2 =Audio.ch3pitch
 	$end
 
 RTN
@@ -438,8 +435,8 @@ RTN
 @head_icn    [ 0018 1818 7e3c 1800 ]
 
 @notes [ 
-	60 62 64 65 67 69 71 
-	72 74 76 77 79 81 83
+	3c 3e 40 41 43 45 47
+	48 4a 4c 4d 4f 51 53
 ]
 
 @knob_icns [
