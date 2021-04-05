@@ -45,6 +45,7 @@
 |0200 @RESET
 
 	( theme ) #e0fc =System.r #30cc =System.g #30ac =System.b
+	( vectors ) ,FRAME =Screen.vector
 
 	,FRAME =Screen.vector
 

@@ -22,25 +22,22 @@
 
 ( devices )
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0130 ;Controller { p1 1 }
-|0140 ;Keys { key 1 }
-|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
-|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|0170 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { buttons 1 }
+|0150 ;Keys { key 1 }
+|0160 ;Mouse { x 2 y 2 state 1 chord 1 change 1 }
+|0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|0180 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
 
 ( vectors )
 
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
-
-@RESET
+|0200 @RESET
 
 	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
+	( vectors ) ,FRAME =Screen.vector
 
 	~Screen.width #0002 DIV2 DUP2 #0080 SUB2 =trkframe.x1
 	 #0080 ADD2 =trkframe.x2
