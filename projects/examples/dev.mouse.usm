@@ -10,25 +10,24 @@
 ;pointer { x 2 y 2 }
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
-|0170 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
 |0200 @RESET
 
 	( theme ) #03fd =System.r #0ef3 =System.g #0bf2 =System.b
-	( vectors ) ,FRAME =Screen.vector
-	
-	#004f =Audio.ch1adsr #33 =Audio.ch1vol
+	( vectors ) ,on-mouse =Mouse.vector
 
 BRK
 
-@FRAME
+@on-mouse
  	
  	( clear )
 	~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
@@ -39,7 +38,6 @@ BRK
 		~Mouse.x DUP2 =circle.xc
 		~Mouse.y DUP2 =circle.yc
 		#0000 =circle.r
-		( play sound ) ~Screen.width #000c DIV2 ADD2 #0002 DIV2 SWP POP =Audio.ch1pitch
 		( release ) #00 =Mouse.state
 	$no-touch
 
@@ -96,8 +94,6 @@ RTN
 		~circle.xc ~circle.y SUB2 =Screen.x ~circle.yc ~circle.x SUB2 =Screen.y ~color =Screen.color
 
 RTN
-
-@ERROR BRK 
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]

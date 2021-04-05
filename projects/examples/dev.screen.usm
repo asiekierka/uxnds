@@ -14,7 +14,6 @@
 ;window { x1 2 y1 2 x2 2 y2 2 w 2 h 2 }
 ;label { x 2 y 2 addr 2 }
 ;slider { x1 2 y 2 x2 2 pos 2 }
-;addr { short 2 }
 ;selection { byte 1 }
 ;theme { 
 	r1 1 r2 1 r3 1 r4 1 
@@ -22,17 +21,20 @@
 	b1 1 b2 1 b3 1 b4 1 
 }
 
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0150 ;Mouse  { x 2 y 2 state 1 chord 1 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
 |0200 @RESET
 
 	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
-	( vectors ) ,FRAME =Screen.vector
+	( vectors ) ,on-mouse =Mouse.vector
 	
 	#00a0 =window.w
 	#0050 =window.h
@@ -84,7 +86,7 @@
 
 BRK
 
-@FRAME 
+@on-mouse 
 	
 	~Mouse.state #00 EQU ,$no-touch JNZ2
 
@@ -124,18 +126,18 @@ BRK
 
 @update-theme
 
-	#01F8 PEK2 #0f AND ~theme.r1 #40 SFT ADD #01F8 POK2
-	#01Fa PEK2 #0f AND ~theme.g1 #40 SFT ADD #01Fa POK2
-	#01Fc PEK2 #0f AND ~theme.b1 #40 SFT ADD #01Fc POK2
-	#01F8 PEK2 #f0 AND ~theme.r2 ADD #01F8 POK2
-	#01Fa PEK2 #f0 AND ~theme.g2 ADD #01Fa POK2
-	#01Fc PEK2 #f0 AND ~theme.b2 ADD #01Fc POK2
-	#01F9 PEK2 #0f AND ~theme.r3 #40 SFT ADD #01F9 POK2
-	#01Fb PEK2 #0f AND ~theme.g3 #40 SFT ADD #01Fb POK2
-	#01Fd PEK2 #0f AND ~theme.b3 #40 SFT ADD #01Fd POK2
-	#01F9 PEK2 #f0 AND ~theme.r4 ADD #01F9 POK2
-	#01Fb PEK2 #f0 AND ~theme.g4 ADD #01Fb POK2
-	#01Fd PEK2 #f0 AND ~theme.b4 ADD #01Fd POK2
+	#0108 PEK2 #0f AND ~theme.r1 #40 SFT ADD #0108 POK2
+	#010a PEK2 #0f AND ~theme.g1 #40 SFT ADD #010a POK2
+	#010c PEK2 #0f AND ~theme.b1 #40 SFT ADD #010c POK2
+	#0108 PEK2 #f0 AND ~theme.r2 ADD #0108 POK2
+	#010a PEK2 #f0 AND ~theme.g2 ADD #010a POK2
+	#010c PEK2 #f0 AND ~theme.b2 ADD #010c POK2
+	#0109 PEK2 #0f AND ~theme.r3 #40 SFT ADD #0109 POK2
+	#010b PEK2 #0f AND ~theme.g3 #40 SFT ADD #010b POK2
+	#010d PEK2 #0f AND ~theme.b3 #40 SFT ADD #010d POK2
+	#0109 PEK2 #f0 AND ~theme.r4 ADD #0109 POK2
+	#010b PEK2 #f0 AND ~theme.g4 ADD #010b POK2
+	#010d PEK2 #f0 AND ~theme.b4 ADD #010d POK2
 
 RTN
 
@@ -154,10 +156,6 @@ RTN
 	~window.x1 #0050 ADD2 ~window.y1 #0010 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.r1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 	~window.x1 #0050 ADD2 ~window.y1 #0020 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.g1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 	~window.x1 #0050 ADD2 ~window.y1 #0030 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.b1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
-
-	~window.x1 #0008 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.r ,draw-short JSR2
-	~window.x1 #0030 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.g ,draw-short JSR2
-	~window.x1 #0058 ADD2 =Sprite.x ~window.y1 =Sprite.y ~System.b ,draw-short JSR2
 
 	~window.x1 #0050 ADD2 =Sprite.x
 	~window.y1 #0040 ADD2 =Sprite.y
@@ -197,23 +195,6 @@ RTN
 	~pointer.x =Sprite.x 
 	~pointer.y =Sprite.y 
 	#13 =Sprite.color
-
-RTN
-
-@draw-short ( short )
-
-	=addr
-	,font_hex #00 ~addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #04 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #04 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #04 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ~addr ++ PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #04 =Sprite.color
 
 RTN
 
@@ -303,19 +284,6 @@ RTN
 @green_txt    [ Green 00 ]
 @blue_txt     [ Blue 00 ]
 
-
-@font_hex ( 0-F TODO: should pull from @font instead.. ) 
-[
-	003c 464a 5262 3c00 0018 0808 0808 1c00
-	003c 4202 3c40 7e00 003c 421c 0242 3c00
-	000c 1424 447e 0400 007e 407c 0242 3c00
-	003c 407c 4242 3c00 007e 0204 0810 1000
-	003c 423c 4242 3c00 003c 4242 3e02 3c00
-	003c 4242 7e42 4200 007c 427c 4242 7c00 
-	003c 4240 4042 3c00 007c 4242 4242 7c00 
-	007e 4078 4040 7e00 007e 4078 4040 4000
-]
-
 @font ( spectrum-zx font ) 
 [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
@@ -351,5 +319,3 @@ RTN
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
-
-@ERROR BRK 

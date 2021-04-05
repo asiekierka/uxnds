@@ -561,10 +561,9 @@ Uint8
 system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
-	m[PAGE_DEVICE + 0x00f0 + b0] = b1;
-	loadtheme(&m[PAGE_DEVICE + 0x00f8]);
+	m[PAGE_DEVICE + b0] = b1;
+	loadtheme(&m[PAGE_DEVICE + 0x0008]);
 	(void)ptr;
-	(void)b0;
 	return b1;
 }
 
