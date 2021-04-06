@@ -45,9 +45,9 @@
 |0200 @RESET
 
 	( theme ) #e0fc =System.r #30cc =System.g #30ac =System.b
-	( vectors ) ,FRAME =Screen.vector
-
-	,FRAME =Screen.vector
+	( vectors ) ,on-button =Controller.vector
+	( vectors ) ,on-key =Keys.vector
+	( vectors ) ,on-mouse =Mouse.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
 	~Screen.height 2/ #003f SUB2 =bankview.y 
@@ -63,40 +63,36 @@
 
 BRK
 
-@FRAME 
+@on-key
 
-	( keyboard controls )
+	~Keys.key #31 LTH ^$skip JNZ
+	~Keys.key #33 GTH ^$skip JNZ
+	( select ) ~Keys.key #31 SUB =bankview.mode
+	( release ) #00 =Keys.key
+	,redraw JSR2 
+	$skip
 
-	~Keys.key #00 EQU ^$no-key JNZ
+BRK
 
-		~Keys.key #31 LTH ^$no-key JNZ
-		~Keys.key #33 GTH ^$no-key JNZ
-		( select ) ~Keys.key #31 SUB =bankview.mode
-		( release ) #00 =Keys.key
-		,redraw JSR2 
+@on-button
+	
+	~Controller.button
+	DUP #10 EQU ^$no-ctrl-up JNZ
+		~tileview.addr #0080 ADD2 =tileview.addr $no-ctrl-up
+	DUP #20 EQU ^$no-ctrl-down JNZ
+		~tileview.addr #0080 SUB2 =tileview.addr $no-ctrl-down
+	DUP #40 EQU ^$no-ctrl-left JNZ
+		~tileview.addr 8+ =tileview.addr $no-ctrl-left
+	DUP #80 EQU ^$no-ctrl-right JNZ
+		~tileview.addr 8- =tileview.addr $no-ctrl-right
+	POP
+	~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
+	,redraw JSR2
 
-	$no-key
+BRK
 
-	~Controller.button #00 EQU ^$no-ctrl JNZ
-
-		~Controller.button
-		DUP #10 EQU ^$no-ctrl-up JNZ
-			~tileview.addr #0080 ADD2 =tileview.addr $no-ctrl-up
-		DUP #20 EQU ^$no-ctrl-down JNZ
-			~tileview.addr #0080 SUB2 =tileview.addr $no-ctrl-down
-		DUP #40 EQU ^$no-ctrl-left JNZ
-			~tileview.addr 8+ =tileview.addr $no-ctrl-left
-		DUP #80 EQU ^$no-ctrl-right JNZ
-			~tileview.addr 8- =tileview.addr $no-ctrl-right
-		POP
-
-		~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
-		,redraw JSR2
-
-	$no-ctrl
-
-	( mouse controls )
-
+@on-mouse
+	
 	~Mouse.state #00 EQU ,$click-end JNZ2
 
 		( toolbar )
