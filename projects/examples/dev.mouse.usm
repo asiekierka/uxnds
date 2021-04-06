@@ -3,19 +3,14 @@
 %RTN { JMP2r }
 %++  { #0001 ADD2 }
 %--  { #0001 SUB2 }
-%8+  { #0008 ADD2 }
-%ABS2 { DUP2 #000f SFT2 #ffff SWP2 SWP POP MUL2? } 
 
 ;color { byte 1 }
 ;pointer { x 2 y 2 }
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
@@ -23,16 +18,23 @@
 |0200
 
 	( theme ) #03fd =System.r #0ef3 =System.g #0bf2 =System.b
+	( vectors ) ,on-screen =Screen.vector
 	( vectors ) ,on-mouse =Mouse.vector
+
+BRK
+
+@on-screen
+	
+	( clear ) ~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
+	( draw ) ~circle.xc ~circle.yc ~circle.r #0001 ADD2 #03 ,draw-circle JSR2
 
 BRK
 
 @on-mouse
  	
- 	( clear )
-	~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
-
 	,draw-cursor JSR2
+
+	( clear ) ~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
 
 	~Mouse.state #00 EQU ^$no-touch JNZ
 		~Mouse.x DUP2 =circle.xc
@@ -40,9 +42,6 @@ BRK
 		#0000 =circle.r
 		( release ) #00 =Mouse.state
 	$no-touch
-
- 	( draw )
-	~circle.xc ~circle.yc ~circle.r #0001 ADD2 #03 ,draw-circle JSR2
 
 BRK 
 

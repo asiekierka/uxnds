@@ -3,13 +3,8 @@
 %RTN { JMP2r }
 %8+  { #0008 ADD2 }
 %8*  { #0030 SFT2 }
-%MOD2 { #03 AND  }
-
-;cursor { x 2 y 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
@@ -92,5 +87,3 @@ RTN
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
-
-;text { body 2 }

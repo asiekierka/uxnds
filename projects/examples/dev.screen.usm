@@ -22,11 +22,8 @@
 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
@@ -53,6 +50,67 @@
 	~Screen.width #0002 DIV2 =center.x
 	~Screen.height #0002 DIV2 =center.y
 
+	,update-theme JSR2
+	,draw-background JSR2
+	,draw-window JSR2
+
+BRK
+
+@on-mouse 
+	
+	,draw-cursor JSR2
+
+	~Mouse.state #00 NEQ ,$no-skip JNZ2 BRK $no-skip
+
+	~Mouse.y ~window.y1 SUB2 STEP8 
+
+	DUP2 #0010 NEQ2 ^$no-touch-red JNZ
+		~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-red JNZ
+		~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-red JNZ
+		( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.r1 #00 ~selection ADD2 POK2
+	$no-touch-red
+	DUP2 #0020 NEQ2 ^$no-touch-green JNZ
+		~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-green JNZ
+		~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-green JNZ
+		( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.g1 #00 ~selection ADD2 POK2
+	$no-touch-green
+	DUP2 #0030 NEQ2 ^$no-touch-blue JNZ
+		~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-blue JNZ
+		~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-blue JNZ
+		( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.b1 #00 ~selection ADD2 POK2
+	$no-touch-blue
+	DUP2 #0040 NEQ2 ^$no-touch-radio JNZ
+		~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-radio JNZ
+		~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-radio JNZ
+		~Mouse.x ~window.x1 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B =selection
+	$no-touch-radio
+
+	POP2
+
+	,update-theme JSR2
+	,draw-window JSR2 
+
+BRK 
+
+@update-theme
+
+	#0108 PEK2 #0f AND ~theme.r1 #40 SFT ADD #0108 POK2
+	#010a PEK2 #0f AND ~theme.g1 #40 SFT ADD #010a POK2
+	#010c PEK2 #0f AND ~theme.b1 #40 SFT ADD #010c POK2
+	#0108 PEK2 #f0 AND ~theme.r2 ADD #0108 POK2
+	#010a PEK2 #f0 AND ~theme.g2 ADD #010a POK2
+	#010c PEK2 #f0 AND ~theme.b2 ADD #010c POK2
+	#0109 PEK2 #0f AND ~theme.r3 #40 SFT ADD #0109 POK2
+	#010b PEK2 #0f AND ~theme.g3 #40 SFT ADD #010b POK2
+	#010d PEK2 #0f AND ~theme.b3 #40 SFT ADD #010d POK2
+	#0109 PEK2 #f0 AND ~theme.r4 ADD #0109 POK2
+	#010b PEK2 #f0 AND ~theme.g4 ADD #010b POK2
+	#010d PEK2 #f0 AND ~theme.b4 ADD #010d POK2
+
+RTN
+
+@draw-background
+	
 	( draw hor line )
 	#0000 =Screen.x ~center.y =Screen.y
 	#0000 ~Screen.width ( from/to )
@@ -80,64 +138,6 @@
 		( incr ) SWP #01 ADD SWP 
 		DUP2 LTH ^$draw-blends JNZ
 	POP POP
-
-	,update-theme JSR2
-	,draw-window JSR2
-
-BRK
-
-@on-mouse 
-	
-	~Mouse.state #00 EQU ,$no-touch JNZ2
-
-		~Mouse.y ~window.y1 SUB2 STEP8 
-
-		DUP2 #0010 NEQ2 ^$no-touch-red JNZ
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-red JNZ
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-red JNZ
-			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.r1 #00 ~selection ADD2 POK2
-		$no-touch-red
-		DUP2 #0020 NEQ2 ^$no-touch-green JNZ
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-green JNZ
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-green JNZ
-			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.g1 #00 ~selection ADD2 POK2
-		$no-touch-green
-		DUP2 #0030 NEQ2 ^$no-touch-blue JNZ
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-blue JNZ
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-blue JNZ
-			( get new value ) ~Mouse.x ~window.x1 SUB2 #0050 SUB2 #0004 DIV2 S2B ,theme.b1 #00 ~selection ADD2 POK2
-		$no-touch-blue
-		DUP2 #0040 NEQ2 ^$no-touch-radio JNZ
-			~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-radio JNZ
-			~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-radio JNZ
-			~Mouse.x ~window.x1 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B =selection
-		$no-touch-radio
-
-		POP2
-
-		,update-theme JSR2
-		,draw-window JSR2 
-		
-	$no-touch
-
-	,draw-cursor JSR2
-
-BRK 
-
-@update-theme
-
-	#0108 PEK2 #0f AND ~theme.r1 #40 SFT ADD #0108 POK2
-	#010a PEK2 #0f AND ~theme.g1 #40 SFT ADD #010a POK2
-	#010c PEK2 #0f AND ~theme.b1 #40 SFT ADD #010c POK2
-	#0108 PEK2 #f0 AND ~theme.r2 ADD #0108 POK2
-	#010a PEK2 #f0 AND ~theme.g2 ADD #010a POK2
-	#010c PEK2 #f0 AND ~theme.b2 ADD #010c POK2
-	#0109 PEK2 #0f AND ~theme.r3 #40 SFT ADD #0109 POK2
-	#010b PEK2 #0f AND ~theme.g3 #40 SFT ADD #010b POK2
-	#010d PEK2 #0f AND ~theme.b3 #40 SFT ADD #010d POK2
-	#0109 PEK2 #f0 AND ~theme.r4 ADD #0109 POK2
-	#010b PEK2 #f0 AND ~theme.g4 ADD #010b POK2
-	#010d PEK2 #f0 AND ~theme.b4 ADD #010d POK2
 
 RTN
 

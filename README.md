@@ -26,14 +26,11 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 ( devices )
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|0200 ^RESET JMP
-|0204 ,ERROR JMP2
-|0208 ,FRAME JMP2
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 }
 
 ( program )
 
-@RESET 
+|0200
 	
 	,text1 ,print-label JSR2
 	,text2 ,print-label JSR2
@@ -54,9 +51,6 @@ RTN
 
 @text1 [ Welcome 20 to 20 UxnVM 0a00 ]
 @text2 [ Hello 20 World 0a00 ] 
-
-@FRAME BRK
-@ERROR BRK 
 ```
 
 ## TODOs

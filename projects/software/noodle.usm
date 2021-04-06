@@ -62,12 +62,15 @@
 
 ( program )
 
-|0200 @RESET
+|0200
 	
 	( theme ) 
 	#e0fa =theme.r0 #30fa =theme.g0 #30fa =theme.b0 ( normal mode )
 	#00fe =theme.r1 #00f3 =theme.g1 #00f3 =theme.b1 ( presentation mode )
-	( vectors ) ,FRAME =Screen.vector
+	( vectors ) ,on-screen =Screen.vector
+	( vectors ) ,on-key =Keys.vector
+	( vectors ) ,on-button =Controller.vector
+	( vectors ) ,on-mouse =Mouse.vector
 
 	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
 
@@ -93,10 +96,23 @@
 
 BRK
 
-@FRAME ( -- )
+@on-screen ( -- )
+	
+	~document.edit #01 NEQ ^$no-edit JNZ
+		#0008 =Sprite.x 
+		~Screen.height #0010 SUB2 =Sprite.y
+		,path.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
+		$clear
+			#00 =Sprite.color
+			~Sprite.x 8+ DUP2 =Sprite.x
+			~Screen.width LTH2 ^$clear JNZ
+		( blink ) ~timer #01 ADD =timer
+	$no-edit
 
-	~document.edit #01 EQU ,on-rename JNZ2
+BRK
 
+@on-mouse
+	
 	,draw-cursor JSR2
 
 	( release drag )
@@ -262,79 +278,80 @@ BRK
 
 	$no-touch
 
-	~Controller.button #00 EQU ,$no-ctrl JNZ2
-		~Controller.button #f0 AND
-			DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
-				( move ) ~zoom.y -- =zoom.y $no-up
-			DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
-				( move ) ~zoom.y ++ =zoom.y $no-down
-			DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
-				( move ) ~zoom.x -- =zoom.x $no-left
-			DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
-				( move ) ~zoom.x ++ =zoom.x $no-right
-		#00 EQU #04 JNZ ,draw-canvas JSR2
-	$no-ctrl
-	
-	~Keys.key #00 EQU ,$no-keys JNZ2
-		~Keys.key 
-		DUP #20 NEQ ^$no-space JNZ
-			( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
-		DUP #08 NEQ ^$no-backspace JNZ
-			( erase ) ,clear JSR2 $no-backspace
-		DUP #71 NEQ ^$no-qkey JNZ
-			( tool0 ) #00 =brush.tool ,draw-toolpane JSR2 $no-qkey
-		DUP #77 NEQ ^$no-wkey JNZ
-			( tool0 ) #01 =brush.tool ,draw-toolpane JSR2 $no-wkey
-		DUP #65 NEQ ^$no-ekey JNZ
-			( tool0 ) #02 =brush.tool ,draw-toolpane JSR2 $no-ekey
-		DUP #72 NEQ ^$no-rkey JNZ
-			( tool0 ) #03 =brush.tool ,draw-toolpane JSR2 $no-rkey
-		DUP #74 NEQ ^$no-tkey JNZ
-			( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
-		DUP 
-			DUP #30 GTH SWP #39 LTH #0101 NEQ2 ^$no-numkey JNZ
-			( size ) ~Keys.key #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
-		POP
-		( release ) #00 =Keys
-	$no-keys
-
 	~Mouse.x =cursor.x0
 	~Mouse.y =cursor.y0
 	~Mouse.state =brush.last
 
 BRK
 
-@on-rename ( -- )
-
-	~Keys.key #00 EQU ,$no-keys JNZ2
+@on-button
+	
+	( if in renaming mode )
+	~document.edit #01 NEQ ,$no-edit JNZ2
 		( enter )
-		~Keys.key #0d NEQ ^$no-enter JNZ
+		~Controller.button #08 NEQ ^$no-edit-enter JNZ
 			#00 =document.edit
-			,redraw JSR2 BRK
-			$no-enter
+			,redraw JSR2
+			BRK
+			$no-edit-enter
 		( backspace )
-		~Keys.key #08 NEQ ^$no-backspace JNZ
-			~path.length #00 EQU ^$end JNZ
+		~Controller.button #04 NEQ ^$no-edit-backspace JNZ
+			~path.length #00 EQU ^$edit-end JNZ
 			~path.length #01 SUB =path.length
-			^$end JMP
-			$no-backspace
+			#00 ,path.name #00 ~path.length ADD2 POK2
+			BRK
+			$no-edit-backspace
+		$edit-end
+		BRK
+	$no-edit
+
+	~Controller.button #f0 AND
+		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
+			( move ) ~zoom.y -- =zoom.y $no-up
+		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
+			( move ) ~zoom.y ++ =zoom.y $no-down
+		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
+			( move ) ~zoom.x -- =zoom.x $no-left
+		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
+			( move ) ~zoom.x ++ =zoom.x $no-right
+	#00 EQU #04 JNZ ,draw-canvas JSR2
+
+BRK
+
+@on-key
+	
+	( if in renaming mode )
+	~document.edit #01 NEQ ,$no-edit JNZ2
 		( default )
-		~path.length #1f EQU ^$end JNZ
+		~path.length #1f EQU ^$edit-end JNZ
 			~Keys.key ,path.name #00 ~path.length ADD2 POK2
 			~path.length #01 ADD =path.length
-			$end
+			$edit-end
 		#00 ,path.name #00 ~path.length ADD2 POK2
-		#00 =Keys.key
-	$no-keys
-	( draw )
-	#0008 =Sprite.x ~Screen.height #0010 SUB2 =Sprite.y
-	,path.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
-	$clear
-		#00 =Sprite.color
-		~Sprite.x 8+ DUP2 =Sprite.x
-		~Screen.width LTH2 ^$clear JNZ
-	( blink timer )
-	~timer #01 ADD =timer
+		( release ) #00 =Keys.key
+		BRK
+	$no-edit
+
+	~Keys.key 
+	DUP #20 NEQ ^$no-space JNZ
+		( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
+	DUP #08 NEQ ^$no-backspace JNZ
+		( erase ) ,clear JSR2 $no-backspace
+	DUP #71 NEQ ^$no-qkey JNZ
+		( tool0 ) #00 =brush.tool ,draw-toolpane JSR2 $no-qkey
+	DUP #77 NEQ ^$no-wkey JNZ
+		( tool0 ) #01 =brush.tool ,draw-toolpane JSR2 $no-wkey
+	DUP #65 NEQ ^$no-ekey JNZ
+		( tool0 ) #02 =brush.tool ,draw-toolpane JSR2 $no-ekey
+	DUP #72 NEQ ^$no-rkey JNZ
+		( tool0 ) #03 =brush.tool ,draw-toolpane JSR2 $no-rkey
+	DUP #74 NEQ ^$no-tkey JNZ
+		( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
+	DUP 
+		DUP #30 GTH SWP #39 LTH #0101 NEQ2 ^$no-numkey JNZ
+		( size ) ~Keys.key #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
+	POP
+	( release ) #00 =Keys.key
 
 BRK
 
