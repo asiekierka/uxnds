@@ -595,17 +595,14 @@ start(Uxn *u)
 				domouse(u, &event);
 				evaluxn(u, devmouse->vector);
 				break;
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				doctrl(u, &event, event.type == SDL_KEYDOWN);
+				evaluxn(u, devctrl->vector);
+				break;
 			case SDL_TEXTINPUT:
 				dotext(u, &event);
 				evaluxn(u, devkey->vector);
-				break;
-			case SDL_KEYDOWN:
-				doctrl(u, &event, 1);
-				evaluxn(u, devctrl->vector);
-				break;
-			case SDL_KEYUP:
-				doctrl(u, &event, 0);
-				evaluxn(u, devctrl->vector);
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)

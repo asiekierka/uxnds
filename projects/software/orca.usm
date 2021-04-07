@@ -1,0 +1,247 @@
+( Orca )
+
+%RTN { JMP2r }
+%8* { #0008 MUL2 } %8/ { #0008 DIV2 }
+
+( variables )
+
+;timer { byte 1 frame 1 }
+;grid { width 1 height 1 }
+;selection { x1 1 y1 1 x2 1 y2 1 }
+
+( devices )
+
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
+
+|0200
+
+	( theme ) #0faf =System.r #0fff =System.g #0f5f =System.b
+	( vectors ) ,on-button =Controller.vector
+	( vectors ) ,on-key =Keys.vector
+	( vectors ) ,on-frame =Screen.vector
+
+	( find size )
+	~Screen.width 8/ SWP POP =grid.width
+	~Screen.height 8/ SWP POP =grid.height
+
+	,redraw JSR2
+
+BRK
+
+@on-frame
+
+	~timer #01 ADD DUP =timer
+
+	#10 EQU ^$tick JNZ BRK $tick
+
+	,run JSR2
+
+	#00 =timer
+	~timer.frame #01 ADD =timer.frame
+
+BRK
+
+@on-key
+	
+	~Keys.key #00 NEQ ^$continue JNZ BRK $continue
+
+	~selection.x1 ~selection.y1 ~Keys.key ,put-char JSR2
+
+	( release ) #00 =Keys.key
+
+	,redraw JSR2
+
+BRK
+
+@on-button
+	
+	( arrows )
+	~Controller.button #f0 AND
+		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
+			~selection.y1 #01 SUB =selection.y1 
+			~selection.y2 #01 SUB =selection.y2 $no-up
+		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
+			~selection.y1 #01 ADD =selection.y1 
+			~selection.y2 #01 ADD =selection.y2 $no-down
+		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
+			~selection.x1 #01 SUB =selection.x1 
+			~selection.x2 #01 SUB =selection.x2 $no-left
+		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
+			~selection.x1 #01 ADD =selection.x1 
+			~selection.x2 #01 ADD =selection.x2 $no-right
+	POP
+	,redraw JSR2
+
+BRK
+
+@is-selected ( x y -- flag )
+	
+	~selection.x1 ~selection.y1 EQU2
+
+RTN
+
+@put-char (x y char -- )
+	
+	ROT ROT  
+
+	#00 SWP #00 ~grid.width MUL2
+
+	ROT #00 SWP ADD2 ,data ADD2 POK2
+
+RTN
+
+@get-char ( x y -- char )
+	
+	#00 SWP #00 ~grid.width MUL2
+
+	ROT #00 SWP ADD2 ,data ADD2 PEK2
+
+RTN
+
+@get-value ( x y -- value )
+	
+	POP2 #01
+
+RTN
+
+@get-char-sprite ( x y -- addr )
+	
+	,get-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2
+
+RTN
+
+@op-a ( x y char -- )
+
+	POP
+
+	( get left ) DUP2 SWP #01 SUB SWP ,get-value JSR2 STH
+	( get right ) DUP2 SWP #01 ADD SWP ,get-value JSR2 STH
+
+	#01 ADD ADDr STHr ( remove this extra addition -> ) #30 ADD ,put-char JSR2
+
+RTN
+
+@op-b ( x y char -- )
+	
+	POP POP2
+
+RTN
+
+@op-c ( x y char -- )
+	
+	POP
+	#01 ADD
+	#30 ~timer.frame ADD ,put-char JSR2
+
+RTN
+
+@run-char ( x y char -- )
+	
+	( A ) DUP #41 EQU ,op-a JNZ2
+	( B ) DUP #42 EQU ,op-b JNZ2
+	( C ) DUP #43 EQU ,op-c JNZ2
+	POP POP2
+
+RTN
+
+@run
+	
+	#00 ~grid.height
+	$ver
+		#00 ~grid.width
+		$hor
+			( get x,y ) SWP2 OVR STH SWP2 OVR STHr DUP2 
+			,get-char JSR2 
+			,run-char JSR2 
+			$next-char
+			( incr )    SWP #01 ADD SWP
+			DUP2 LTH ^$hor JNZ
+		POP2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ^$ver JNZ
+	POP2
+
+	,redraw JSR2
+
+RTN
+
+@redraw ( -- )
+	
+	#00 ~grid.height
+	$ver
+		( pos-y ) OVR #00 SWP #0008 MUL2 =Sprite.y
+		#00 ~grid.width
+		$hor
+			( pos-x )   OVR #00 SWP #0008 MUL2 =Sprite.x 
+			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
+			( sprite )  DUP2 ,get-char-sprite JSR2 =Sprite.addr
+			( draw )    ,is-selected JSR2 #08 MUL #01 ADD =Sprite.color
+			( incr )    SWP #01 ADD SWP
+			DUP2 LTH ^$hor JNZ
+		POP2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ^$ver JNZ
+	POP2
+
+RTN
+
+@blank_icn [ ffff ffff ffff ffff ]
+
+@font ( specter8-frag font ) 
+[
+	0000 0000 0000 0000 0008 0808 0800 0800
+	0014 1400 0000 0000 0024 7e24 247e 2400
+	0008 1e28 1c0a 3c08 0000 2204 0810 2200
+	0030 4832 4c44 3a00 0008 1000 0000 0000
+	0004 0808 0808 0400 0020 1010 1010 2000
+	0000 2214 0814 2200 0000 0808 3e08 0800
+	0000 0000 0000 0810 0000 0000 3e00 0000
+	0000 0000 0000 0800 0000 0204 0810 2000
+	003c 464a 5262 3c00 0018 0808 0808 1c00
+	003c 4202 3c40 7e00 003c 421c 0242 3c00
+	000c 1424 447e 0400 007e 407c 0242 3c00
+	003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00
+	0000 0010 0000 1000 0000 1000 0010 1020
+	0000 0810 2010 0800 0000 003e 003e 0000
+	0000 1008 0408 1000 003c 420c 1000 1000
+	003c 4232 4a42 3c00 003c 4242 7e42 4200
+	007c 427c 4242 7c00 003c 4240 4042 3c00
+	007c 4242 4242 7c00 007e 4078 4040 7e00
+	007e 4078 4040 4000 003c 4240 4642 3c00
+	0042 427e 4242 4200 001c 0808 0808 1c00
+	007e 0202 0242 3c00 0042 4478 4442 4200
+	0040 4040 4040 7e00 0042 665a 4242 4200
+	0042 6252 4a46 4200 003c 4242 4242 3c00
+	007c 4242 7c40 4000 003c 4242 4244 3a00
+	007c 4242 7c44 4200 003e 403c 0242 3c00
+	007e 0808 0808 1000 0042 4242 4244 3a00
+	0042 4242 4224 1800 0042 4242 5a66 4200
+	0042 423c 4242 4200 0042 423e 0242 3c00
+	007e 020c 3040 7e00 000c 0808 0808 0c00
+	0040 2010 0804 0200 0030 1010 1010 3000
+	0008 1400 0000 0000 0000 0000 0000 7e00
+	0008 0400 0000 0000 0000 3c02 3e42 3a00
+	0040 407c 4242 7c00 0000 3c42 4042 3c00
+	0002 023e 4242 3e00 0000 3c42 7e40 3e00
+	0000 3e40 7840 4000 0000 3c42 3e02 3c00
+	0040 405c 6242 4200 0008 0018 0808 0400
+	0008 0018 0808 4830 0040 4244 7844 4200
+	0010 1010 1010 0c00 0000 6c52 5252 5200
+	0000 5c62 4242 4200 0000 3c42 4242 3c00
+	0000 7c42 427c 4040 0000 3e42 423e 0202
+	0000 5c62 4040 4000 0000 3e40 3c02 7c00
+	0008 7e08 0808 1000 0000 4242 4244 3a00
+	0000 4242 4224 1800 0000 5252 5252 2e00
+	0000 4224 1824 4200 0000 4242 3e02 7c00
+	0000 7e02 3c40 7e00 000c 0810 1008 0c00
+	0008 0808 0808 0800 0030 1008 0810 3000
+	0000 0032 4c00 0000 3c42 99a1 a199 423c
+]
+
+@data [ elephant ]

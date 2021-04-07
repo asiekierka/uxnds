@@ -4,13 +4,12 @@
 
 ( devices )
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
-|01F0 .RESET .FRAME .ERROR ( vectors )
-|01F8 [ 13fd 1ef3 1bf2 ] ( palette )
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 }
 
 ( program )
 
-|0400 @RESET 
+|0200 
 	
 	( for loop )
 	#00 #0d
@@ -41,6 +40,3 @@
 	POP
 
 BRK
-
-@FRAME BRK
-@ERROR BRK 
