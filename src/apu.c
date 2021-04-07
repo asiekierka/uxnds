@@ -140,8 +140,8 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		q->dat[q->n++] = (m[0xd] << 8) + b1;
 	} else if(b0 == 0xf && q != NULL) {
 		q->ends = 1;
-		return b1;
 	}
+	return b1;
 }
 
 int
