@@ -17,7 +17,7 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
-|01a0 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
 
 ( program )
 
@@ -30,11 +30,11 @@ BRK
 
 @FRAME
 	
-	#00 =Time.get
+	#00 =DateTime.refresh
 
 	( only draw once per second )
-	~Time.second ~current.second NEQ #01 JNZ BRK
-	~Time.second =current.second
+	~DateTime.second ~current.second NEQ #01 JNZ BRK
+	~DateTime.second =current.second
 
 	( clear )
 	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
@@ -42,13 +42,13 @@ BRK
 	#0080 SCALEX #0080 SCALEY ~needles.hx ~needles.hy #00 ,draw-line JSR2
 
 	( place )
-	#00 ~Time.second #0002 MUL2 ,table ADD2 LDR2
+	#00 ~DateTime.second #0002 MUL2 ,table ADD2 LDR2
 		#00 SWP SCALEY =needles.sy 
 		#00 SWP SCALEX =needles.sx
-	#00 ~Time.minute #0002 MUL2 ,table ADD2 LDR2
+	#00 ~DateTime.minute #0002 MUL2 ,table ADD2 LDR2
 		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY =needles.my 
 		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX =needles.mx
-	#00 ~Time.hour 12HOURS #05 MUL #0002 MUL2 ,table ADD2 LDR2
+	#00 ~DateTime.hour 12HOURS #05 MUL #0002 MUL2 ,table ADD2 LDR2
 		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY =needles.hy 
 		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX =needles.hx
 
@@ -72,22 +72,22 @@ BRK
 	~Screen.height #0002 DIV2 #0048 ADD2 =Sprite.y
 	~Screen.width #0002 DIV2
 	DUP2 #0020 SUB2 =Sprite.x 
-		,font_hex #00 ~Time.hour #0a DIV #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.hour #0a DIV #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	DUP2 #0018 SUB2 =Sprite.x 
-		,font_hex #00 ~Time.hour #0a MOD #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.hour #0a MOD #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	DUP2 #0008 SUB2 =Sprite.x 
-		,font_hex #00 ~Time.minute #0a DIV #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.minute #0a DIV #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	DUP2 =Sprite.x 
-		,font_hex #00 ~Time.minute #0a MOD #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.minute #0a MOD #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	DUP2 #0010 ADD2 =Sprite.x 
-		,font_hex #00 ~Time.second #0a DIV #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.second #0a DIV #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	DUP2 #0018 ADD2 =Sprite.x 
-		,font_hex #00 ~Time.second #0a MOD #08 MUL ADD2 =Sprite.addr 
+		,font_hex #00 ~DateTime.second #0a MOD #08 MUL ADD2 =Sprite.addr 
 		#02 =Sprite.color
 	POP2
 

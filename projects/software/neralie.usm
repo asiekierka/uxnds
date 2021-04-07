@@ -15,7 +15,7 @@
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 pad 4 get 1 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 pad 4 refresh 1 }
 
 ( program )
 
@@ -81,7 +81,7 @@
 	~DateTime.year #07d6 SUB2
 	#000a ,modf JSR2 ,digit JSR2
 	                 ,digit JSR2
-	~DateTime.doy
+	~DateTime.doty
 	#000e ,modf JSR2 ^letter JSR
 	#000a ,modf JSR2 ^digit JSR
 	                 ^digit JSR
@@ -185,7 +185,7 @@
 	^$loop JMP
 
 @update-fps ( -- )
-	#00 =DateTime.get
+	#00 =DateTime.refresh
 	~fps.next #01 ADD =fps.next
 	~DateTime.second ~fps.second NEQ JMP JMP2r
 	~DateTime.second =fps.second
