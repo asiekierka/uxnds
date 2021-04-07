@@ -11,7 +11,7 @@
 |0140 ;Keys { key 1 }
 |0150 ;Mouse { x 2 y 2 state 1 chord 1 }
 |0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|0170 ;Audio { ch1asdr 2 ch2asdr 2 ch3asdr 2 ch4asdr 2 ch1pitch 1 ch1vol 1 ch2pitch 1 ch2vol 1 ch3pitch 1 ch3vol 1 ch4pitch 1 ch4vol 1 }
+|0180 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
 |01F0 ;System { pad 8 r 2 g 2 b 2 }
 
 ( vectors )

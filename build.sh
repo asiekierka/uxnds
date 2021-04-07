@@ -6,6 +6,7 @@ clang-format -i src/uxn.h
 clang-format -i src/uxn.c
 clang-format -i src/emulator.c
 clang-format -i src/debugger.c
+clang-format -i src/apu.c
 
 echo "Cleaning.."
 rm -f ./bin/assembler
@@ -19,12 +20,12 @@ if [ "${1}" = '--debug' ];
 then
 	echo "[debug]"
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/assembler.c -o bin/assembler
-	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/emulator.c -L/usr/local/lib -lSDL2 -o bin/emulator
+	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/emulator.c src/apu.c -L/usr/local/lib -lSDL2 -o bin/emulator
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/debugger.c -o bin/debugger
 else
 	cc src/assembler.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/assembler
 	cc src/uxn.c src/debugger.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/debugger
-	cc src/uxn.c src/emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
+	cc src/uxn.c src/emulator.c src/apu.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
 fi
 
 echo "Assembling.."

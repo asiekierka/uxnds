@@ -17,7 +17,6 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
 |0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
-|0180 ;Audio { ch1adsr 2 ch2adsr 2 ch3adsr 2 ch4adsr 2 ch1vol 1 ch1pitch 1 ch2vol 1 ch2pitch 1 ch3vol 1 ch3pitch 1 ch4vol 1 ch4pitch 1 }
 |01a0 ;Time { year 2 month 1 day 1 hour 1 minute 1 second 1 dow 1 doy 2 isdst 1 get 1 }
 
 ( program )
@@ -26,12 +25,6 @@
 	
 	( theme ) #0ff8 =System.r #0f08 =System.g #0f08 =System.b
 	( vectors ) ,FRAME =Screen.vector
-
-	#1000 =Audio.ch1adsr
-	#66 =Audio.ch1vol
-
-	#0003 =Audio.ch2adsr
-	#66 =Audio.ch2vol
 
 BRK
 
@@ -42,13 +35,6 @@ BRK
 	( only draw once per second )
 	~Time.second ~current.second NEQ #01 JNZ BRK
 	~Time.second =current.second
-
-	( play sounds )
-	#0d =Audio.ch1pitch
-
-	~Time.second #0f MOD #00 NEQ ^$no-tone JNZ
-		#0d #02 MUL =Audio.ch2pitch
-	$no-tone
 
 	( clear )
 	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
