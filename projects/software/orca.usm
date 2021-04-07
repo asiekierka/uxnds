@@ -1,16 +1,23 @@
 ( Orca 
 	
 	TODO
+		- Display guides
 		- Clamp selection to grid
-		- Chorded copy/paste
+		- Synthax highlight
 		- Locking ports
 		- Detect capitalization
-		- Fill grid with . characters on start
-		- Display guides
-		- Draw Frame number in UI
+		- Draw Interface
+			- Position
+			- Frame
+			- BPM
+			- Toggle Guides
+			- New
+			- Save
+			- Load
 		- Comments
 		- Load/Save
 		- Copy/Paste
+		- Copy/paste(chorded)
 )
 
 %RTN { JMP2r }
@@ -36,7 +43,7 @@
 
 |0200
 
-	( theme ) #0faf =System.r #0fff =System.g #0f5f =System.b
+	( theme ) #08f3 =System.r #08fc =System.g #08f9 =System.b
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-key =Keys.vector
 	( vectors ) ,on-mouse =Mouse.vector
@@ -196,6 +203,24 @@ RTN
 
 RTN
 
+@get-char-sprite-grid ( x y -- addr )
+	
+	DUP2 ,get-char JSR2 
+	( if character is dot )
+	DUP #2e NEQ ^$no-bar JNZ
+		( check if x,y is grid )
+		POP
+		#08 MOD #00 EQU
+		SWP
+		#08 MOD #00 EQU
+		( make it a + ) #0101 EQU2 #00 SWP #0058 MUL2 ,font ADD2
+		RTN
+	$no-bar
+	STH POP2 STHr
+	#20 SUB #00 SWP #0008 MUL2 ,font ADD2
+
+RTN
+
 @op-a ( x y char -- )
 
 	POP
@@ -210,7 +235,13 @@ RTN
 
 @op-b ( x y char -- )
 	
-	POP POP2
+	POP
+	( get left ) DUP2 SWP #01 SUB SWP ,get-value JSR2 STH
+	( get right ) DUP2 SWP #01 ADD SWP ,get-value JSR2 STH
+	( incr y ) #01 ADD 
+	( get result ) SUBr STHr 
+	,get-value-char JSR2 
+	,put-char JSR2
 
 RTN
 
@@ -240,7 +271,6 @@ RTN
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr DUP2 
 			,get-char JSR2 
 			,run-char JSR2 
-			$next-char
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
@@ -260,8 +290,8 @@ RTN
 		$hor
 			( pos-x )   OVR #00 SWP #0008 MUL2 =Sprite.x 
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
-			( sprite )  DUP2 ,get-char-sprite JSR2 =Sprite.addr
-			( draw )    ,is-selected JSR2 #08 MUL #01 ADD =Sprite.color
+			( sprite )  DUP2 ,get-char-sprite-grid JSR2 =Sprite.addr
+			( draw )    ,is-selected JSR2 #0d MUL #01 ADD =Sprite.color
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
