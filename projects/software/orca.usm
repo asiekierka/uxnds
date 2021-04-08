@@ -7,13 +7,6 @@
 		- Locking ports
 		- Detect capitalization
 		- Draw Interface
-			- Position
-			- Frame
-			- BPM
-			- Toggle Guides
-			- New
-			- Save
-			- Load
 		- Comments
 		- Load/Save
 		- Copy/Paste
@@ -21,6 +14,7 @@
 )
 
 %RTN { JMP2r }
+%8+ { #0008 ADD2 }
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %MOD { DUP2 DIV MUL SUB }
 
@@ -281,6 +275,38 @@ RTN
 
 RTN
 
+@draw-interface ( -- )
+	
+	~Screen.height #0008 SUB2 =Sprite.y
+
+	( TODO: Position )
+	( TODO: Frame )
+	( TODO: BPM )
+
+	~Screen.width #0028 SUB2 =Sprite.x
+
+	( TODO: Toggle Guides )
+	~Sprite.x 8+ =Sprite.x
+	,eye_icns =Sprite.addr
+	#01 =Sprite.color
+
+	( TODO: New )
+	~Sprite.x 8+ =Sprite.x
+	,filestate_icn =Sprite.addr
+	#01 =Sprite.color
+
+	( TODO: Load )
+	~Sprite.x 8+ =Sprite.x
+	,load_icn =Sprite.addr
+	#01 =Sprite.color
+
+	( TODO: Save )
+	~Sprite.x 8+ =Sprite.x
+	,save_icn =Sprite.addr
+	#01 =Sprite.color
+
+RTN
+
 @redraw ( -- )
 	
 	#00 ~grid.height
@@ -298,6 +324,8 @@ RTN
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$ver JNZ
 	POP2
+
+	,draw-interface JSR2
 
 RTN
 
@@ -326,17 +354,23 @@ RTN
 ( b36 to char-lc )
 
 @b36clc [
-	
 	30 31 32 33 34 35 36 37
 	38 39 61 62 63 64 65 66
 	67 68 69 6a 6b 6c 6d 6e
 	6f 70 71 72 73 74 75 76
 	77 78 79 7a
-
 ]
 
 @cursor_icn [ 80c0 e0f0 f8e0 1000 ]
 @blank_icn  [ 0000 0000 0000 0000 ]
+
+@eye_icns
+	[ 0038 4492 2810 0000 ] ( open )
+	[ 0000 0082 4438 0000 ] ( closed )
+
+@filestate_icn  [ 1054 28c6 2854 1000 ]
+@load_icn       [ feaa d6aa d4aa f400 ]
+@save_icn       [ fe82 8282 848a f400 ]
 
 @font ( specter8-frag font ) 
 [

@@ -17,8 +17,6 @@ WITH REGARD TO THIS SOFTWARE.
 #include "ppu.h"
 #include "apu.h"
 
-int initapu(Uxn *u, Uint8 id);
-
 static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
@@ -27,14 +25,11 @@ static Ppu ppu;
 static Apu apu;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl, *devapu;
 
-#pragma mark - Helpers
-
-/* clang-format off */
-int  clamp(int val, int min, int max) { return (val >= min) ? (val <= max) ? val : max : min; }
-void setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
-/* clang-format on */
-
-#pragma mark - Core
+int
+clamp(int val, int min, int max)
+{
+	return (val >= min) ? (val <= max) ? val : max : min;
+}
 
 int
 error(char *msg, const char *err)
@@ -188,7 +183,10 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
-	setflag(&u->ram.dat[addr], flag, z);
+	if(z)
+		u->ram.dat[addr] |= flag;
+	else
+		u->ram.dat[addr] &= (~flag);
 }
 
 #pragma mark - Devices
