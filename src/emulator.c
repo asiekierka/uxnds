@@ -14,25 +14,11 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 #include "uxn.h"
+#include "ppu.h"
 
 int initapu(Uxn *u, Uint8 id);
-void stepapu(Uxn *u);
 
-#define HOR 48
-#define VER 32
-#define PAD 2
-#define RES (HOR * VER * 16)
-
-typedef struct {
-	Uint8 reqdraw, bg[RES], fg[RES];
-	Uint16 x1, y1, x2, y2;
-} Screen;
-
-int WIDTH = 8 * HOR + 8 * PAD * 2;
-int HEIGHT = 8 * VER + 8 * PAD * 2;
-int FPS = 30, GUIDES = 0, ZOOM = 2;
-
-Uint32 *pixels, theme[4];
+static Ppu screen;
 
 Uint8 font[][8] = {
 	{0x00, 0x3c, 0x46, 0x4a, 0x52, 0x62, 0x3c, 0x00},
@@ -56,7 +42,6 @@ static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 SDL_AudioDeviceID audio_id;
-static Screen screen;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl;
 
 #pragma mark - Helpers
@@ -82,65 +67,7 @@ getflag(Uint8 *a, char flag)
 	return *a & flag;
 }
 
-#pragma mark - Paint
-
-void
-paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
-{
-	Uint16 row = (y % 8) + ((x / 8 + y / 8 * HOR) * 16), col = 7 - (x % 8);
-	if(x >= HOR * 8 || y >= VER * 8 || row > RES - 8)
-		return;
-	if(color == 0 || color == 2)
-		dst[row] &= ~(1UL << col);
-	else
-		dst[row] |= 1UL << col;
-	if(color == 0 || color == 1)
-		dst[row + 8] &= ~(1UL << col);
-	else
-		dst[row + 8] |= 1UL << col;
-}
-
 #pragma mark - Helpers
-
-void
-clear(Uint32 *dst)
-{
-	int v, h;
-	for(v = 0; v < HEIGHT; v++)
-		for(h = 0; h < WIDTH; h++)
-			dst[v * WIDTH + h] = theme[0];
-}
-
-void
-drawpixel(Uint32 *dst, Uint16 x, Uint16 y, Uint8 color)
-{
-	if(x >= screen.x1 && x <= screen.x2 && y >= screen.x1 && y <= screen.y2)
-		dst[y * WIDTH + x] = theme[color];
-}
-
-void
-drawchr(Uint32 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 alpha)
-{
-	Uint8 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
-			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-			if(!alpha || (alpha && ch1 + ch2 != 0))
-				drawpixel(dst, x + 7 - h, y + v, ch1 + ch2);
-		}
-}
-
-void
-drawicn(Uint32 *dst, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 bg)
-{
-	Uint8 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = (sprite[v] >> (7 - h)) & 0x1;
-			drawpixel(dst, x + h, y + v, ch1 ? fg : bg);
-		}
-}
 
 #pragma mark - Core
 
@@ -152,35 +79,21 @@ error(char *msg, const char *err)
 }
 
 void
-loadtheme(Uint8 *addr)
-{
-	int i;
-	for(i = 0; i < 4; ++i) {
-		Uint8
-			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		theme[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
-	}
-	screen.reqdraw = 1;
-}
-
-void
 drawdebugger(Uint32 *dst, Uxn *u)
 {
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x10; ++i) { /* memory */
 		x = ((i % 8) * 3 + 3) * 8, y = screen.x1 + 8 + i / 8 * 8, b = u->wst.dat[i];
-		drawicn(dst, x, y, font[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
-		drawicn(dst, x + 8, y, font[b & 0xf], 1 + (u->wst.ptr == i), 0);
+		drawicn(&screen, x, y, font[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
+		drawicn(&screen, x + 8, y, font[b & 0xf], 1 + (u->wst.ptr == i), 0);
 	}
 	for(x = 0; x < 32; ++x) {
-		drawpixel(dst, x, HEIGHT / 2, 2);
-		drawpixel(dst, WIDTH - x, HEIGHT / 2, 2);
-		drawpixel(dst, WIDTH / 2, HEIGHT - x, 2);
-		drawpixel(dst, WIDTH / 2, x, 2);
-		drawpixel(dst, WIDTH / 2 - 16 + x, HEIGHT / 2, 2);
-		drawpixel(dst, WIDTH / 2, HEIGHT / 2 - 16 + x, 2);
+		drawpixel(&screen, x, HEIGHT / 2, 2);
+		drawpixel(&screen, WIDTH - x, HEIGHT / 2, 2);
+		drawpixel(&screen, WIDTH / 2, HEIGHT - x, 2);
+		drawpixel(&screen, WIDTH / 2, x, 2);
+		drawpixel(&screen, WIDTH / 2 - 16 + x, HEIGHT / 2, 2);
+		drawpixel(&screen, WIDTH / 2, HEIGHT / 2 - 16 + x, 2);
 	}
 }
 
@@ -191,10 +104,10 @@ redraw(Uint32 *dst, Uxn *u)
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x) {
 			Uint16 key = (y * HOR + x) * 16;
-			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.bg[key], 0);
-			drawchr(dst, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
+			drawchr(&screen, (x + PAD) * 8, (y + PAD) * 8, &screen.bg[key], 0);
+			drawchr(&screen, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
 		}
-	if(GUIDES)
+	if(screen.debugger)
 		drawdebugger(dst, u);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
@@ -206,22 +119,22 @@ redraw(Uint32 *dst, Uxn *u)
 void
 toggledebug(Uxn *u)
 {
-	GUIDES = !GUIDES;
-	redraw(pixels, u);
+	screen.debugger = !screen.debugger;
+	redraw(screen.output, u);
 }
 
 void
 togglezoom(Uxn *u)
 {
-	ZOOM = ZOOM == 3 ? 1 : ZOOM + 1;
-	SDL_SetWindowSize(gWindow, WIDTH * ZOOM, HEIGHT * ZOOM);
-	redraw(pixels, u);
+	screen.zoom = screen.zoom == 3 ? 1 : screen.zoom + 1;
+	SDL_SetWindowSize(gWindow, WIDTH * screen.zoom, HEIGHT * screen.zoom);
+	redraw(screen.output, u);
 }
 
 void
 quit(void)
 {
-	free(pixels);
+	free(screen.output);
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	SDL_DestroyRenderer(gRenderer);
@@ -237,7 +150,7 @@ init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * ZOOM, HEIGHT * ZOOM, SDL_WINDOW_SHOWN);
+	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * screen.zoom, HEIGHT * screen.zoom, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
 		return error("Window", SDL_GetError());
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
@@ -246,9 +159,9 @@ init(void)
 	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
-	if(!(pixels = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
+	if(!(screen.output = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
 		return error("Pixels", "Failed to allocate memory");
-	clear(pixels);
+	clear(&screen);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
 	screen.x1 = PAD * 8;
@@ -263,8 +176,8 @@ domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devmouse->addr + 2;
-	Uint16 x = clamp(event->motion.x / ZOOM - PAD * 8, 0, HOR * 8 - 1);
-	Uint16 y = clamp(event->motion.y / ZOOM - PAD * 8, 0, VER * 8 - 1);
+	Uint16 x = clamp(event->motion.x / screen.zoom - PAD * 8, 0, HOR * 8 - 1);
+	Uint16 y = clamp(event->motion.y / screen.zoom - PAD * 8, 0, VER * 8 - 1);
 	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
 	u->ram.dat[addr + 1] = x & 0xff;
 	u->ram.dat[addr + 2] = (y >> 8) & 0xff;
@@ -450,7 +363,7 @@ system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	m[PAGE_DEVICE + b0] = b1;
-	loadtheme(&m[PAGE_DEVICE + 0x0008]);
+	loadtheme(&screen, &m[PAGE_DEVICE + 0x0008]);
 	(void)ptr;
 	return b1;
 }
@@ -470,7 +383,7 @@ int
 start(Uxn *u)
 {
 	inituxn(u, 0x0200);
-	redraw(pixels, u);
+	redraw(screen.output, u);
 	while(1) {
 		SDL_Event event;
 		double elapsed, start = SDL_GetPerformanceCounter();
@@ -498,14 +411,14 @@ start(Uxn *u)
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(pixels, u);
+					redraw(screen.output, u);
 				break;
 			}
 		}
 		evaluxn(u, devscreen->vector);
 		SDL_UnlockAudioDevice(audio_id);
 		if(screen.reqdraw)
-			redraw(pixels, u);
+			redraw(screen.output, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 		SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
 	}
@@ -516,6 +429,7 @@ int
 main(int argc, char **argv)
 {
 	Uxn u;
+	screen.zoom = 2;
 
 	if(argc < 2)
 		return error("Input", "Missing");

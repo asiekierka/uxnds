@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-#include <stdlib.h>
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
