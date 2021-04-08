@@ -15,15 +15,18 @@ WITH REGARD TO THIS SOFTWARE.
 
 #include "uxn.h"
 #include "ppu.h"
+#include "apu.h"
 
 int initapu(Uxn *u, Uint8 id);
 
-SDL_AudioDeviceID audio_id;
+static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
+static Apu apu;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl;
+Device *devapu;
 
 #pragma mark - Helpers
 
@@ -39,6 +42,12 @@ error(char *msg, const char *err)
 {
 	printf("Error %s: %s\n", msg, err);
 	return 0;
+}
+
+static void
+audio_callback(void *u, Uint8 *stream, int len)
+{
+	apu_render(&apu, (Uxn *)u, (Sint16 *)stream, len >> 2);
 }
 
 void
@@ -86,8 +95,9 @@ quit(void)
 }
 
 int
-init(void)
+init(Uxn *u)
 {
+	SDL_AudioSpec as;
 	if(!initppu(&ppu, 48, 32, 16))
 		return error("PPU", "Init failure");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -103,6 +113,17 @@ init(void)
 		return error("Texture", SDL_GetError());
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
+	SDL_zero(as);
+	as.freq = SAMPLE_FREQUENCY;
+	as.format = AUDIO_S16;
+	as.channels = 2;
+	as.callback = audio_callback;
+	as.samples = 2048;
+	as.userdata = u;
+	audio_id = SDL_OpenAudioDevice(NULL, 0, &as, NULL, 0);
+	if(!audio_id)
+		return error("Audio", SDL_GetError());
+	SDL_PauseAudioDevice(audio_id, 0);
 	return 1;
 }
 
@@ -258,6 +279,27 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	return b1;
 }
 
+static Uint8
+audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	Uint8 *m = u->ram.dat + ptr;
+	if(b0 == 0xa) {
+		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
+		while(b1 >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
+		apu_play_note(&apu.notes[b1], (m[0x0] << 8) + m[0x1], (m[0x2] << 8) + m[0x3], m[0x8], m[0x9]);
+	} else if(b0 == 0xe && apu.queue != NULL) {
+		if(apu.queue->n == apu.queue->sz) {
+			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
+			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
+		}
+		apu.queue->dat[apu.queue->n++] = (m[0xb] << 8) + m[0xc];
+		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
+	} else if(b0 == 0xf && apu.queue != NULL) {
+		apu.queue->finishes = 1;
+	}
+	return b1;
+}
+
 Uint8
 midi_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
@@ -367,7 +409,7 @@ main(int argc, char **argv)
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
-	if(!init())
+	if(!init(&u))
 		return error("Init", "Failed");
 
 	devsystem = portuxn(&u, 0x00, "system", system_poke);
@@ -378,8 +420,7 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, 0x05, "key", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
 	portuxn(&u, 0x07, "file", file_poke);
-	if(!initapu(&u, 0x08))
-		return 1;
+	devapu = portuxn(&u, 0x08, "audio", audio_poke);
 	portuxn(&u, 0x09, "midi", ppnil);
 	portuxn(&u, 0x0a, "datetime", datetime_poke);
 	portuxn(&u, 0x0b, "---", ppnil);
