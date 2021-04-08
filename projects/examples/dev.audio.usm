@@ -7,7 +7,6 @@
 %MOD { DUP2 DIV MUL SUB }
 %TRACK { ,track.ch1 #00 ~track.active #0020 MUL2 ADD2 }
 %SOUND { STH #00 =Audio.value STHr #00 =Audio.delay }
-%SOUND2 { =Audio.value =Audio.delay }
 %SOUND_FINISH { #00 =Audio.finish }
 
 ( variables )
@@ -30,19 +29,21 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { buttons 1 }
-|0150 ;Keys { key 1 }
+|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0140 ;Controller { vector 2 button 1 }
+|0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 |0180 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
 
 ( vectors )
 
-|0200 @RESET
+|0200
 
 	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
-	( vectors ) ,FRAME =Screen.vector
+	( vectors ) ,on-screen =Screen.vector
+	( vectors ) ,on-mouse =Mouse.vector
+	( vectors ) ,on-key =Keys.vector
 
 	~Screen.width #0002 DIV2 DUP2 #0080 SUB2 =trkframe.x1
 	 #0080 ADD2 =trkframe.x2
@@ -61,19 +62,25 @@
 	#10 =adsr.ch2a #50 =adsr.ch2d #90 =adsr.ch2s #d0 =adsr.ch2r #88 =volume.ch2
 	#20 =adsr.ch3a #60 =adsr.ch3d #a0 =adsr.ch3s #e0 =adsr.ch3r #88 =volume.ch3
 
+	~volume.ch3 =Audio.volume
+
 	,draw-timeline JSR2
 	,draw-controls JSR2
 	,draw-channels JSR2
 
 BRK
 
-@FRAME
+@on-screen ( -> )
 	
-	,draw-cursor JSR2
 	,move-head JSR2
 	~head.pos #08 MOD #00 NEQ ^$skip JNZ
 		,bang JSR2
 	$skip
+
+BRK
+
+@on-mouse ( -> )
+
 	~Mouse.state #00 EQU ,$click-end JNZ2
 		~Mouse.x ~trkframe.x1 GTH2 ~Mouse.x ~trkframe.x2 LTH2 #0101 EQU2
 		~Mouse.y ~trkframe.y1 GTH2 ~Mouse.y ~trkframe.y2 LTH2 #0101 EQU2
@@ -86,7 +93,40 @@ BRK
 		#0101 EQU2 ,touch-ctl JNZ2	
 	$click-end
 
+	,draw-cursor JSR2
+
 BRK
+
+@on-key ( -> )
+
+	~Keys.key 
+	DUP #61 NEQ ^$no-c JNZ
+		,notes PEK2 ,play JSR2 $no-c
+	DUP #73 NEQ ^$no-d JNZ
+		,notes #0001 ADD2 PEK2 ,play JSR2 $no-d
+	DUP #64 NEQ ^$no-e JNZ
+		,notes #0002 ADD2 PEK2 ,play JSR2 $no-e
+	DUP #66 NEQ ^$no-f JNZ
+		,notes #0003 ADD2 PEK2 ,play JSR2 $no-f
+	DUP #67 NEQ ^$no-g JNZ
+		,notes #0004 ADD2 PEK2 ,play JSR2 $no-g
+	DUP #68 NEQ ^$no-a JNZ
+		,notes #0005 ADD2 PEK2 ,play JSR2 $no-a
+	DUP #6a NEQ ^$no-b JNZ
+		,notes #0006 ADD2 PEK2 ,play JSR2 $no-b
+	DUP #6b NEQ ^$no-c2 JNZ
+		,notes #0007 ADD2 PEK2 ,play JSR2 $no-c2
+	POP
+
+BRK
+
+@play ( pitch -- )
+
+	=Audio.pitch
+	,triangle-wave =Audio.wave
+	~track.active =Audio.play
+
+RTN
 
 @touch-trk ( -- )
 	

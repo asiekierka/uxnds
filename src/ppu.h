@@ -22,7 +22,6 @@ typedef unsigned int Uint32;
 #define VER 32
 #define PAD 2
 #define RES (HOR * VER * 16)
-
 #define WIDTH (8 * HOR + 8 * PAD * 2)
 #define HEIGHT (8 * VER + 8 * PAD * 2)
 
