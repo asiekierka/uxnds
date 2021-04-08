@@ -32,11 +32,8 @@ typedef struct Ppu {
 	Uint32 *output, colors[4];
 } Ppu;
 
-void clear(Ppu *p);
-void drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color);
-void drawchr(Ppu *p, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 alpha);
-void drawicn(Ppu *p, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 bg);
-void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);
-void paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color);
-void loadtheme(Ppu *p, Uint8 *addr);
 int initppu(Ppu *p);
+void draw(Ppu *p);
+void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);
+void loadtheme(Ppu *p, Uint8 *addr);
+void putpixel(Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);

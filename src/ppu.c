@@ -33,10 +33,9 @@ Uint8 font[][8] = {
 void
 clear(Ppu *p)
 {
-	int v, h;
-	for(v = 0; v < HEIGHT; v++)
-		for(h = 0; h < WIDTH; h++)
-			p->output[v * WIDTH + h] = p->colors[0];
+	int i, sz = HEIGHT * WIDTH;
+	for(i = 0; i < sz; ++i)
+		p->output[i] = p->colors[0];
 }
 
 void
@@ -90,19 +89,19 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 }
 
 void
-paintpixel(Uint8 *dst, Uint16 x, Uint16 y, Uint8 color)
+putpixel(Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	Uint16 row = (y % 8) + ((x / 8 + y / 8 * HOR) * 16), col = 7 - (x % 8);
 	if(x >= HOR * 8 || y >= VER * 8 || row > RES - 8)
 		return;
 	if(color == 0 || color == 2)
-		dst[row] &= ~(1UL << col);
+		layer[row] &= ~(1UL << col);
 	else
-		dst[row] |= 1UL << col;
+		layer[row] |= 1UL << col;
 	if(color == 0 || color == 1)
-		dst[row + 8] &= ~(1UL << col);
+		layer[row + 8] &= ~(1UL << col);
 	else
-		dst[row + 8] |= 1UL << col;
+		layer[row + 8] |= 1UL << col;
 }
 
 void
@@ -117,6 +116,18 @@ loadtheme(Ppu *p, Uint8 *addr)
 		p->colors[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
 	}
 	p->reqdraw = 1;
+}
+
+void
+draw(Ppu *p)
+{
+	Uint16 x, y;
+	for(y = 0; y < VER; ++y)
+		for(x = 0; x < HOR; ++x) {
+			Uint16 key = (y * HOR + x) * 16;
+			drawchr(p, (x + PAD) * 8, (y + PAD) * 8, &p->bg[key], 0);
+			drawchr(p, (x + PAD) * 8, (y + PAD) * 8, &p->fg[key], 1);
+		}
 }
 
 int

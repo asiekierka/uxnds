@@ -18,36 +18,20 @@ WITH REGARD TO THIS SOFTWARE.
 
 int initapu(Uxn *u, Uint8 id);
 
-static Ppu screen;
-
+SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
-SDL_AudioDeviceID audio_id;
+
+static Ppu ppu;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl;
 
 #pragma mark - Helpers
 
-int
-clamp(int val, int min, int max)
-{
-	return (val >= min) ? (val <= max) ? val : max : min;
-}
-
-void
-setflag(Uint8 *a, char flag, int b)
-{
-	if(b)
-		*a |= flag;
-	else
-		*a &= (~flag);
-}
-
-int
-getflag(Uint8 *a, char flag)
-{
-	return *a & flag;
-}
+/* clang-format off */
+int  clamp(int val, int min, int max) { return (val >= min) ? (val <= max) ? val : max : min; }
+void setflag(Uint8 *a, char flag, int b) { if(b) *a |= flag; else *a &= (~flag); }
+/* clang-format on */
 
 #pragma mark - Core
 
@@ -61,41 +45,35 @@ error(char *msg, const char *err)
 void
 redraw(Uint32 *dst, Uxn *u)
 {
-	Uint16 x, y;
-	for(y = 0; y < VER; ++y)
-		for(x = 0; x < HOR; ++x) {
-			Uint16 key = (y * HOR + x) * 16;
-			drawchr(&screen, (x + PAD) * 8, (y + PAD) * 8, &screen.bg[key], 0);
-			drawchr(&screen, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
-		}
-	if(screen.debugger)
-		drawdebugger(&screen, u->wst.dat, u->wst.ptr);
+	draw(&ppu);
+	if(ppu.debugger)
+		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
-	screen.reqdraw = 0;
+	ppu.reqdraw = 0;
 }
 
 void
 toggledebug(Uxn *u)
 {
-	screen.debugger = !screen.debugger;
-	redraw(screen.output, u);
+	ppu.debugger = !ppu.debugger;
+	redraw(ppu.output, u);
 }
 
 void
 togglezoom(Uxn *u)
 {
-	screen.zoom = screen.zoom == 3 ? 1 : screen.zoom + 1;
-	SDL_SetWindowSize(gWindow, WIDTH * screen.zoom, HEIGHT * screen.zoom);
-	redraw(screen.output, u);
+	ppu.zoom = ppu.zoom == 3 ? 1 : ppu.zoom + 1;
+	SDL_SetWindowSize(gWindow, WIDTH * ppu.zoom, HEIGHT * ppu.zoom);
+	redraw(ppu.output, u);
 }
 
 void
 quit(void)
 {
-	free(screen.output);
+	free(ppu.output);
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	SDL_DestroyRenderer(gRenderer);
@@ -111,7 +89,7 @@ init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * screen.zoom, HEIGHT * screen.zoom, SDL_WINDOW_SHOWN);
+	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * ppu.zoom, HEIGHT * ppu.zoom, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
 		return error("Window", SDL_GetError());
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
@@ -122,7 +100,7 @@ init(void)
 		return error("Texture", SDL_GetError());
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
-	if(!initppu(&screen))
+	if(!initppu(&ppu))
 		return error("PPU", "Init failure");
 	return 1;
 }
@@ -132,8 +110,8 @@ domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devmouse->addr + 2;
-	Uint16 x = clamp(event->motion.x / screen.zoom - PAD * 8, 0, HOR * 8 - 1);
-	Uint16 y = clamp(event->motion.y / screen.zoom - PAD * 8, 0, VER * 8 - 1);
+	Uint16 x = clamp(event->motion.x / ppu.zoom - PAD * 8, 0, HOR * 8 - 1);
+	Uint16 y = clamp(event->motion.y / ppu.zoom - PAD * 8, 0, VER * 8 - 1);
 	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
 	u->ram.dat[addr + 1] = x & 0xff;
 	u->ram.dat[addr + 2] = (y >> 8) & 0xff;
@@ -149,9 +127,9 @@ domouse(Uxn *u, SDL_Event *event)
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		setflag(&u->ram.dat[addr + 4], flag, 1);
-		if(flag == 0x10 && getflag(&u->ram.dat[addr + 4], 0x01))
+		if(flag == 0x10 && (u->ram.dat[addr + 4] & 0x01))
 			u->ram.dat[addr + 5] = 0x01;
-		if(flag == 0x01 && getflag(&u->ram.dat[addr + 4], 0x10))
+		if(flag == 0x01 && (u->ram.dat[addr + 4] & 0x10))
 			u->ram.dat[addr + 5] = 0x10;
 		break;
 	}
@@ -229,8 +207,8 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	if(b0 == 0x0c) {
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		paintpixel(b1 >> 4 & 0xf ? screen.fg : screen.bg, x, y, b1 & 0xf);
-		screen.reqdraw = 1;
+		putpixel(b1 >> 4 & 0xf ? ppu.fg : ppu.bg, x, y, b1 & 0xf);
+		ppu.reqdraw = 1;
 	}
 	return b1;
 }
@@ -245,16 +223,16 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
 		Uint8 blend = b1 & 0xf;
-		Uint8 *layer = ((b1 >> 4) & 0xf) % 2 ? screen.fg : screen.bg;
+		Uint8 *layer = ((b1 >> 4) & 0xf) % 2 ? ppu.fg : ppu.bg;
 		Uint8 *sprite = &m[(m[ptr + 4] << 8) + m[ptr + 5]];
 		for(v = 0; v < 8; v++)
 			for(h = 0; h < 8; h++) {
 				Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
 				if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
 					continue;
-				paintpixel(layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
+				putpixel(layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
 			}
-		screen.reqdraw = 1;
+		ppu.reqdraw = 1;
 	}
 	return b1;
 }
@@ -319,7 +297,7 @@ system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	m[PAGE_DEVICE + b0] = b1;
-	loadtheme(&screen, &m[PAGE_DEVICE + 0x0008]);
+	loadtheme(&ppu, &m[PAGE_DEVICE + 0x0008]);
 	(void)ptr;
 	return b1;
 }
@@ -339,7 +317,7 @@ int
 start(Uxn *u)
 {
 	inituxn(u, 0x0200);
-	redraw(screen.output, u);
+	redraw(ppu.output, u);
 	while(1) {
 		SDL_Event event;
 		double elapsed, start = SDL_GetPerformanceCounter();
@@ -367,14 +345,14 @@ start(Uxn *u)
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(screen.output, u);
+					redraw(ppu.output, u);
 				break;
 			}
 		}
 		evaluxn(u, devscreen->vector);
 		SDL_UnlockAudioDevice(audio_id);
-		if(screen.reqdraw)
-			redraw(screen.output, u);
+		if(ppu.reqdraw)
+			redraw(ppu.output, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 		SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
 	}
@@ -385,7 +363,7 @@ int
 main(int argc, char **argv)
 {
 	Uxn u;
-	screen.zoom = 2;
+	ppu.zoom = 2;
 
 	if(argc < 2)
 		return error("Input", "Missing");
