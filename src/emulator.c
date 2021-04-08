@@ -83,6 +83,7 @@ quit(void)
 	free(ppu.output);
 	free(ppu.fg);
 	free(ppu.bg);
+	SDL_UnlockAudioDevice(audio_id);
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	SDL_DestroyRenderer(gRenderer);
@@ -136,20 +137,17 @@ domouse(Uxn *u, SDL_Event *event)
 	mempoke16(u, addr + 0, x);
 	mempoke16(u, addr + 2, y);
 	u->ram.dat[addr + 5] = 0x00;
-	switch(event->button.button) {
-	case SDL_BUTTON_LEFT: flag = 0x01; break;
-	case SDL_BUTTON_RIGHT: flag = 0x10; break;
-	}
+	flag = event->button.button == SDL_BUTTON_LEFT ? 0x01 : 0x10;
 	switch(event->type) {
-	case SDL_MOUSEBUTTONUP:
-		setflag(&u->ram.dat[addr + 4], flag, 0);
-		break;
 	case SDL_MOUSEBUTTONDOWN:
-		setflag(&u->ram.dat[addr + 4], flag, 1);
+		u->ram.dat[addr + 4] |= flag;
 		if(flag == 0x10 && (u->ram.dat[addr + 4] & 0x01))
 			u->ram.dat[addr + 5] = 0x01;
 		if(flag == 0x01 && (u->ram.dat[addr + 4] & 0x10))
 			u->ram.dat[addr + 5] = 0x10;
+		break;
+	case SDL_MOUSEBUTTONUP:
+		u->ram.dat[addr + 4] &= (~flag);
 		break;
 	}
 }
@@ -183,14 +181,8 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	switch(event->key.keysym.sym) {
 	case SDLK_LCTRL: flag = 0x01; break;
 	case SDLK_LALT: flag = 0x02; break;
-	case SDLK_BACKSPACE:
-		flag = 0x04;
-		if(z) u->ram.dat[devkey->addr + 2] = 0x08;
-		break;
-	case SDLK_RETURN:
-		flag = 0x08;
-		if(z) u->ram.dat[devkey->addr + 2] = 0x0d;
-		break;
+	case SDLK_BACKSPACE: flag = 0x04; break;
+	case SDLK_RETURN: flag = 0x08; break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
 	case SDLK_LEFT: flag = 0x40; break;
@@ -293,9 +285,8 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		}
 		apu.queue->dat[apu.queue->n++] = (m[0xb] << 8) + m[0xc];
 		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
-	} else if(b0 == 0xf && apu.queue != NULL) {
+	} else if(b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;
-	}
 	return b1;
 }
 
@@ -362,19 +353,18 @@ start(Uxn *u)
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT:
-				SDL_UnlockAudioDevice(audio_id);
 				quit();
+				break;
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				doctrl(u, &event, event.type == SDL_KEYDOWN);
+				evaluxn(u, devctrl->vector);
 				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION:
 				domouse(u, &event);
 				evaluxn(u, devmouse->vector);
-				break;
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				doctrl(u, &event, event.type == SDL_KEYDOWN);
-				evaluxn(u, devctrl->vector);
 				break;
 			case SDL_TEXTINPUT:
 				dotext(u, &event);

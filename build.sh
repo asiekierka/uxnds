@@ -1,14 +1,15 @@
 #!/bin/bash
 
 echo "Formatting.."
-clang-format -i src/assembler.c
 clang-format -i src/uxn.h
 clang-format -i src/uxn.c
+clang-format -i src/ppu.h
+clang-format -i src/ppu.c
+clang-format -i src/apu.h
+clang-format -i src/apu.c
+clang-format -i src/assembler.c
 clang-format -i src/emulator.c
 clang-format -i src/debugger.c
-clang-format -i src/ppu.c
-clang-format -i src/apu.c
-clang-format -i src/apu.h
 
 echo "Cleaning.."
 rm -f ./bin/assembler
@@ -31,7 +32,7 @@ else
 fi
 
 echo "Assembling.."
-./bin/assembler projects/software/noodle.usm bin/boot.rom
+./bin/assembler projects/software/nasu.usm bin/boot.rom
 
 echo "Running.."
 if [ "${2}" = '--cli' ]; 

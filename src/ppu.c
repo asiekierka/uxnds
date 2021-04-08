@@ -143,7 +143,6 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	p->pad = pad;
 	p->width = (8 * p->hor + p->pad * 2);
 	p->height = (8 * p->ver + p->pad * 2);
-
 	if(!(p->output = malloc(p->width * p->height * sizeof(Uint32))))
 		return 0;
 	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
