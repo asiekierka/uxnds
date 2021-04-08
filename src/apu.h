@@ -37,9 +37,9 @@ typedef struct {
 } Note;
 
 typedef struct {
-    Queue *queue;
-    Note *notes;
-    int n_notes;
+	Queue *queue;
+	Note *notes;
+	int n_notes;
 } Apu;
 
 void apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples);

@@ -8,6 +8,7 @@ clang-format -i src/emulator.c
 clang-format -i src/debugger.c
 clang-format -i src/ppu.c
 clang-format -i src/apu.c
+clang-format -i src/apu.h
 
 echo "Cleaning.."
 rm -f ./bin/assembler
