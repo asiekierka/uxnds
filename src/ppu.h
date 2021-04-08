@@ -18,21 +18,14 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 typedef unsigned int Uint32;
 
-#define HOR 48
-#define VER 32
-#define PAD 2
-#define RES (HOR * VER * 16)
-#define WIDTH (8 * HOR + 8 * PAD * 2)
-#define HEIGHT (8 * VER + 8 * PAD * 2)
-
 typedef struct Ppu {
-	Uint8 reqdraw, zoom, debugger, bg[RES], fg[RES];
-	Uint16 x1, y1, x2, y2;
+	Uint8 reqdraw, zoom, debugger, *bg, *fg;
+	Uint16 hor, ver, pad, width, height, x1, y1, x2, y2;
 	Uint32 *output, colors[4];
 } Ppu;
 
-int initppu(Ppu *p);
-void draw(Ppu *p);
+int initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad);
+void drawppu(Ppu *p);
 void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);
 void loadtheme(Ppu *p, Uint8 *addr);
-void putpixel(Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);
+void putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);

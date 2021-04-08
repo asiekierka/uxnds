@@ -33,16 +33,21 @@ Uint8 font[][8] = {
 void
 clear(Ppu *p)
 {
-	int i, sz = HEIGHT * WIDTH;
-	for(i = 0; i < sz; ++i)
+	int i, sz = p->height * p->width;
+	for(i = 0; i < sz; ++i) {
 		p->output[i] = p->colors[0];
+		p->fg[i] = 0;
+		p->bg[i] = 0;
+		p->fg[sz + i] = 0;
+		p->bg[sz + i] = 0;
+	}
 }
 
 void
 drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
 {
 	if(x >= p->x1 && x <= p->x2 && y >= p->x1 && y <= p->y2)
-		p->output[y * WIDTH + x] = p->colors[color];
+		p->output[y * p->width + x] = p->colors[color];
 }
 
 void
@@ -79,20 +84,20 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 		drawicn(p, x + 8, y, font[b & 0xf], 1 + (ptr == i), 0);
 	}
 	for(x = 0; x < 32; ++x) {
-		drawpixel(p, x, HEIGHT / 2, 2);
-		drawpixel(p, WIDTH - x, HEIGHT / 2, 2);
-		drawpixel(p, WIDTH / 2, HEIGHT - x, 2);
-		drawpixel(p, WIDTH / 2, x, 2);
-		drawpixel(p, WIDTH / 2 - 16 + x, HEIGHT / 2, 2);
-		drawpixel(p, WIDTH / 2, HEIGHT / 2 - 16 + x, 2);
+		drawpixel(p, x, p->height / 2, 2);
+		drawpixel(p, p->width - x, p->height / 2, 2);
+		drawpixel(p, p->width / 2, p->height - x, 2);
+		drawpixel(p, p->width / 2, x, 2);
+		drawpixel(p, p->width / 2 - 16 + x, p->height / 2, 2);
+		drawpixel(p, p->width / 2, p->height / 2 - 16 + x, 2);
 	}
 }
 
 void
-putpixel(Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
+putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
-	Uint16 row = (y % 8) + ((x / 8 + y / 8 * HOR) * 16), col = 7 - (x % 8);
-	if(x >= HOR * 8 || y >= VER * 8 || row > RES - 8)
+	Uint16 row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16), col = 7 - (x % 8);
+	if(x >= p->hor * 8 || y >= p->ver * 8 || row > (p->hor * p->ver * 16) - 8)
 		return;
 	if(color == 0 || color == 2)
 		layer[row] &= ~(1UL << col);
@@ -119,26 +124,36 @@ loadtheme(Ppu *p, Uint8 *addr)
 }
 
 void
-draw(Ppu *p)
+drawppu(Ppu *p)
 {
 	Uint16 x, y;
-	for(y = 0; y < VER; ++y)
-		for(x = 0; x < HOR; ++x) {
-			Uint16 key = (y * HOR + x) * 16;
-			drawchr(p, (x + PAD) * 8, (y + PAD) * 8, &p->bg[key], 0);
-			drawchr(p, (x + PAD) * 8, (y + PAD) * 8, &p->fg[key], 1);
+	for(y = 0; y < p->ver; ++y)
+		for(x = 0; x < p->hor; ++x) {
+			Uint16 key = (y * p->hor + x) * 16;
+			drawchr(p, x * 8 + p->pad, y * 8 + p->pad, &p->bg[key], 0);
+			drawchr(p, x * 8 + p->pad, y * 8 + p->pad, &p->fg[key], 1);
 		}
 }
 
 int
-initppu(Ppu *p)
+initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 {
-	if(!(p->output = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
+	p->hor = hor;
+	p->ver = ver;
+	p->pad = pad;
+	p->width = (8 * p->hor + p->pad * 2);
+	p->height = (8 * p->ver + p->pad * 2);
+
+	if(!(p->output = malloc(p->width * p->height * sizeof(Uint32))))
+		return 0;
+	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
+		return 0;
+	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
 		return 0;
 	clear(p);
-	p->x1 = PAD * 8;
-	p->x2 = WIDTH - PAD * 8 - 1;
-	p->y1 = PAD * 8;
-	p->y2 = HEIGHT - PAD * 8 - 1;
+	p->x1 = p->pad;
+	p->x2 = p->width - p->pad - 1;
+	p->y1 = p->pad;
+	p->y2 = p->height - p->pad - 1;
 	return 1;
 }

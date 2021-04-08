@@ -22,7 +22,6 @@ SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
-
 static Ppu ppu;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl;
 
@@ -45,10 +44,10 @@ error(char *msg, const char *err)
 void
 redraw(Uint32 *dst, Uxn *u)
 {
-	draw(&ppu);
+	drawppu(&ppu);
 	if(ppu.debugger)
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
-	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
+	SDL_UpdateTexture(gTexture, NULL, dst, ppu.width * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
@@ -66,7 +65,7 @@ void
 togglezoom(Uxn *u)
 {
 	ppu.zoom = ppu.zoom == 3 ? 1 : ppu.zoom + 1;
-	SDL_SetWindowSize(gWindow, WIDTH * ppu.zoom, HEIGHT * ppu.zoom);
+	SDL_SetWindowSize(gWindow, ppu.width * ppu.zoom, ppu.height * ppu.zoom);
 	redraw(ppu.output, u);
 }
 
@@ -74,6 +73,8 @@ void
 quit(void)
 {
 	free(ppu.output);
+	free(ppu.fg);
+	free(ppu.bg);
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	SDL_DestroyRenderer(gRenderer);
@@ -87,21 +88,21 @@ quit(void)
 int
 init(void)
 {
+	if(!initppu(&ppu, 48, 32, 16))
+		return error("PPU", "Init failure");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH * ppu.zoom, HEIGHT * ppu.zoom, SDL_WINDOW_SHOWN);
+	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppu.width * ppu.zoom, ppu.height * ppu.zoom, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
 		return error("Window", SDL_GetError());
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
 	if(gRenderer == NULL)
 		return error("Renderer", SDL_GetError());
-	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
+	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width, ppu.height);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
-	if(!initppu(&ppu))
-		return error("PPU", "Init failure");
 	return 1;
 }
 
@@ -110,12 +111,10 @@ domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devmouse->addr + 2;
-	Uint16 x = clamp(event->motion.x / ppu.zoom - PAD * 8, 0, HOR * 8 - 1);
-	Uint16 y = clamp(event->motion.y / ppu.zoom - PAD * 8, 0, VER * 8 - 1);
-	u->ram.dat[addr + 0] = (x >> 8) & 0xff;
-	u->ram.dat[addr + 1] = x & 0xff;
-	u->ram.dat[addr + 2] = (y >> 8) & 0xff;
-	u->ram.dat[addr + 3] = y & 0xff;
+	Uint16 x = clamp(event->motion.x / ppu.zoom - ppu.pad, 0, ppu.hor * 8 - 1);
+	Uint16 y = clamp(event->motion.y / ppu.zoom - ppu.pad, 0, ppu.ver * 8 - 1);
+	mempoke16(u, addr + 0, x);
+	mempoke16(u, addr + 2, y);
 	u->ram.dat[addr + 5] = 0x00;
 	switch(event->button.button) {
 	case SDL_BUTTON_LEFT: flag = 0x01; break;
@@ -193,9 +192,6 @@ console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	case 0x0d: printf("%s\n", &m[(m[ptr + 0x0c] << 8) + b1]); break;
 	}
 	fflush(stdout);
-	(void)m;
-	(void)ptr;
-	(void)b0;
 	return b1;
 }
 
@@ -207,7 +203,7 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	if(b0 == 0x0c) {
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		putpixel(b1 >> 4 & 0xf ? ppu.fg : ppu.bg, x, y, b1 & 0xf);
+		putpixel(&ppu, b1 >> 4 & 0xf ? ppu.fg : ppu.bg, x, y, b1 & 0xf);
 		ppu.reqdraw = 1;
 	}
 	return b1;
@@ -230,7 +226,7 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 				Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
 				if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
 					continue;
-				putpixel(layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
+				putpixel(&ppu, layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
 			}
 		ppu.reqdraw = 1;
 	}
@@ -393,10 +389,8 @@ main(int argc, char **argv)
 	portuxn(&u, 0x0f, "---", ppnil);
 
 	/* Write screen size to dev/screen */
-	u.ram.dat[devscreen->addr + 2] = (HOR * 8 >> 8) & 0xff;
-	u.ram.dat[devscreen->addr + 3] = HOR * 8 & 0xff;
-	u.ram.dat[devscreen->addr + 4] = (VER * 8 >> 8) & 0xff;
-	u.ram.dat[devscreen->addr + 5] = VER * 8 & 0xff;
+	mempoke16(&u, devscreen->addr + 2, ppu.hor * 8);
+	mempoke16(&u, devscreen->addr + 4, ppu.ver * 8);
 
 	start(&u);
 	quit();

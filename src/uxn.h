@@ -17,7 +17,7 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 #define PAGE_DEVICE 0x0100
-#define PAGE_VECTORS 0x0200
+#define PAGE_PROGRAM 0x0200
 
 typedef struct {
 	Uint8 ptr, error;
@@ -47,3 +47,4 @@ int bootuxn(Uxn *c);
 int inituxn(Uxn *u, Uint16 vec);
 int evaluxn(Uxn *u, Uint16 vec);
 Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));
+void mempoke16(Uxn *u, Uint16 a, Uint16 b);
