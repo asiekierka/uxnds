@@ -20,24 +20,6 @@ int initapu(Uxn *u, Uint8 id);
 
 static Ppu screen;
 
-Uint8 font[][8] = {
-	{0x00, 0x3c, 0x46, 0x4a, 0x52, 0x62, 0x3c, 0x00},
-	{0x00, 0x18, 0x28, 0x08, 0x08, 0x08, 0x3e, 0x00},
-	{0x00, 0x3c, 0x42, 0x02, 0x3c, 0x40, 0x7e, 0x00},
-	{0x00, 0x3c, 0x42, 0x1c, 0x02, 0x42, 0x3c, 0x00},
-	{0x00, 0x08, 0x18, 0x28, 0x48, 0x7e, 0x08, 0x00},
-	{0x00, 0x7e, 0x40, 0x7c, 0x02, 0x42, 0x3c, 0x00},
-	{0x00, 0x3c, 0x40, 0x7c, 0x42, 0x42, 0x3c, 0x00},
-	{0x00, 0x7e, 0x02, 0x04, 0x08, 0x10, 0x10, 0x00},
-	{0x00, 0x3c, 0x42, 0x3c, 0x42, 0x42, 0x3c, 0x00},
-	{0x00, 0x3c, 0x42, 0x42, 0x3e, 0x02, 0x3c, 0x00},
-	{0x00, 0x3c, 0x42, 0x42, 0x7e, 0x42, 0x42, 0x00},
-	{0x00, 0x7c, 0x42, 0x7c, 0x42, 0x42, 0x7c, 0x00},
-	{0x00, 0x3c, 0x42, 0x40, 0x40, 0x42, 0x3c, 0x00},
-	{0x00, 0x78, 0x44, 0x42, 0x42, 0x44, 0x78, 0x00},
-	{0x00, 0x7e, 0x40, 0x7c, 0x40, 0x40, 0x7e, 0x00},
-	{0x00, 0x7e, 0x40, 0x40, 0x7c, 0x40, 0x40, 0x00}};
-
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
@@ -67,8 +49,6 @@ getflag(Uint8 *a, char flag)
 	return *a & flag;
 }
 
-#pragma mark - Helpers
-
 #pragma mark - Core
 
 int
@@ -76,25 +56,6 @@ error(char *msg, const char *err)
 {
 	printf("Error %s: %s\n", msg, err);
 	return 0;
-}
-
-void
-drawdebugger(Uint32 *dst, Uxn *u)
-{
-	Uint8 i, x, y, b;
-	for(i = 0; i < 0x10; ++i) { /* memory */
-		x = ((i % 8) * 3 + 3) * 8, y = screen.x1 + 8 + i / 8 * 8, b = u->wst.dat[i];
-		drawicn(&screen, x, y, font[(b >> 4) & 0xf], 1 + (u->wst.ptr == i), 0);
-		drawicn(&screen, x + 8, y, font[b & 0xf], 1 + (u->wst.ptr == i), 0);
-	}
-	for(x = 0; x < 32; ++x) {
-		drawpixel(&screen, x, HEIGHT / 2, 2);
-		drawpixel(&screen, WIDTH - x, HEIGHT / 2, 2);
-		drawpixel(&screen, WIDTH / 2, HEIGHT - x, 2);
-		drawpixel(&screen, WIDTH / 2, x, 2);
-		drawpixel(&screen, WIDTH / 2 - 16 + x, HEIGHT / 2, 2);
-		drawpixel(&screen, WIDTH / 2, HEIGHT / 2 - 16 + x, 2);
-	}
 }
 
 void
@@ -108,7 +69,7 @@ redraw(Uint32 *dst, Uxn *u)
 			drawchr(&screen, (x + PAD) * 8, (y + PAD) * 8, &screen.fg[key], 1);
 		}
 	if(screen.debugger)
-		drawdebugger(dst, u);
+		drawdebugger(&screen, u->wst.dat, u->wst.ptr);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
@@ -159,15 +120,10 @@ init(void)
 	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
-	if(!(screen.output = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32))))
-		return error("Pixels", "Failed to allocate memory");
-	clear(&screen);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
-	screen.x1 = PAD * 8;
-	screen.x2 = WIDTH - PAD * 8 - 1;
-	screen.y1 = PAD * 8;
-	screen.y2 = HEIGHT - PAD * 8 - 1;
+	if(!initppu(&screen))
+		return error("PPU", "Init failure");
 	return 1;
 }
 
