@@ -46,7 +46,7 @@ clear(Ppu *p)
 void
 drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
 {
-	if(x >= p->x1 && x <= p->x2 && y >= p->x1 && y <= p->y2)
+	if(x >= p->pad && x <= p->width - p->pad - 1 && y >= p->pad && y <= p->height - p->pad - 1)
 		p->output[y * p->width + x] = p->colors[color];
 }
 
@@ -79,7 +79,7 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 {
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x10; ++i) { /* memory */
-		x = ((i % 8) * 3 + 3) * 8, y = p->x1 + 8 + i / 8 * 8, b = stack[i];
+		x = ((i % 8) * 3 + 3) * 8, y = p->pad + 8 + i / 8 * 8, b = stack[i];
 		drawicn(p, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i), 0);
 		drawicn(p, x + 8, y, font[b & 0xf], 1 + (ptr == i), 0);
 	}
@@ -151,9 +151,5 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
 		return 0;
 	clear(p);
-	p->x1 = p->pad;
-	p->x2 = p->width - p->pad - 1;
-	p->y1 = p->pad;
-	p->y2 = p->height - p->pad - 1;
 	return 1;
 }

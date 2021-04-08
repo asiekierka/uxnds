@@ -20,7 +20,7 @@ typedef unsigned int Uint32;
 
 typedef struct Ppu {
 	Uint8 reqdraw, zoom, debugger, *bg, *fg;
-	Uint16 hor, ver, pad, width, height, x1, y1, x2, y2;
+	Uint16 hor, ver, pad, width, height;
 	Uint32 *output, colors[4];
 } Ppu;
 
