@@ -25,8 +25,7 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu;
-static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl;
-Device *devapu;
+static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl, *devapu;
 
 #pragma mark - Helpers
 
@@ -421,6 +420,7 @@ main(int argc, char **argv)
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
 	portuxn(&u, 0x07, "file", file_poke);
 	devapu = portuxn(&u, 0x08, "audio", audio_poke);
+	apu.channel_addr = devapu->addr + 0xa;
 	portuxn(&u, 0x09, "midi", ppnil);
 	portuxn(&u, 0x0a, "datetime", datetime_poke);
 	portuxn(&u, 0x0b, "---", ppnil);

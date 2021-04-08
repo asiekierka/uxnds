@@ -13,8 +13,6 @@ WITH REGARD TO THIS SOFTWARE.
 #include "uxn.h"
 #include "apu.h"
 
-extern Device *devapu;
-
 static Uint32 note_advances[12] = {
 	0x82d01286 / (SAMPLE_FREQUENCY / 30), /* C7 */
 	0x8a976073 / (SAMPLE_FREQUENCY / 30),
@@ -47,7 +45,7 @@ render_note(Apu *apu, Uxn *u, int note_i, Sint16 *samples, int n_samples)
 				if(apu->queue->i == apu->queue->n) {
 					apu->queue->i = apu->queue->n = 0;
 					if(!apu->queue->finishes) {
-						u->ram.dat[devapu->addr + 0xa] = note_i;
+						u->ram.dat[apu->channel_addr] = note_i;
 						evaluxn(u, wv->vector);
 					}
 				}
