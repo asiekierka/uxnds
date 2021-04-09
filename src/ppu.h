@@ -13,9 +13,7 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 typedef unsigned char Uint8;
-typedef signed char Sint8;
 typedef unsigned short Uint16;
-typedef signed short Sint16;
 typedef unsigned int Uint32;
 
 typedef struct Ppu {
@@ -27,5 +25,6 @@ typedef struct Ppu {
 int initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad);
 void drawppu(Ppu *p);
 void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);
-void loadtheme(Ppu *p, Uint8 *addr);
+void getcolors(Ppu *p, Uint8 *addr);
 void putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);
+void putsprite(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color);

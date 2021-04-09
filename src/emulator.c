@@ -215,7 +215,8 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	if(b0 == 0x0c) {
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		putpixel(&ppu, b1 >> 4 & 0xf ? ppu.fg : ppu.bg, x, y, b1 & 0xf);
+		Uint8 *layer = b1 >> 4 & 0xf ? ppu.fg : ppu.bg;
+		putpixel(&ppu, layer, x, y, b1 & 0xf);
 		reqdraw = 1;
 	}
 	return b1;
@@ -227,19 +228,11 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	ptr += 8;
 	if(b0 == 0x0e) {
-		Uint16 v, h;
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		Uint8 blend = b1 & 0xf;
-		Uint8 *layer = ((b1 >> 4) & 0xf) % 2 ? ppu.fg : ppu.bg;
+		Uint8 *layer = (b1 >> 4) & 0xf ? ppu.fg : ppu.bg;
 		Uint8 *sprite = &m[(m[ptr + 4] << 8) + m[ptr + 5]];
-		for(v = 0; v < 8; v++)
-			for(h = 0; h < 8; h++) {
-				Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-				if(ch1 == 0 && (blend == 0x05 || blend == 0x0a || blend == 0x0f))
-					continue;
-				putpixel(&ppu, layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
-			}
+		putsprite(&ppu, layer, x, y, sprite, b1 & 0xf);
 		reqdraw = 1;
 	}
 	return b1;
@@ -325,7 +318,7 @@ system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	m[PAGE_DEVICE + b0] = b1;
-	loadtheme(&ppu, &m[PAGE_DEVICE + 0x0008]);
+	getcolors(&ppu, &m[PAGE_DEVICE + 0x0008]);
 	reqdraw = 1;
 	(void)ptr;
 	return b1;

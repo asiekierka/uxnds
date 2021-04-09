@@ -110,7 +110,20 @@ putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-loadtheme(Ppu *p, Uint8 *addr)
+putsprite(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
+{
+	Uint16 v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
+			if(ch1 == 0 && (color == 0x05 || color == 0x0a || color == 0x0f))
+				continue;
+			putpixel(p, layer, x + h, y + v, ch1 ? color % 4 : color / 4);
+		}
+}
+
+void
+getcolors(Ppu *p, Uint8 *addr)
 {
 	int i;
 	for(i = 0; i < 4; ++i) {
