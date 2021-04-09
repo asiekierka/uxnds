@@ -1,13 +1,12 @@
 ( Orca 
 	
 	TODO
-		- Display guides
-		- Clamp selection to grid
 		- Synthax highlight
+		- B operating doesn't loop around
 		- Locking ports
 		- Detect capitalization
-		- Draw Interface
 		- Comments
+		- Scale selection
 		- Load/Save
 		- Copy/Paste
 		- Copy/paste(chorded)
@@ -20,7 +19,7 @@
 
 ( variables )
 
-;timer { byte 1 frame 1 }
+;timer { byte 1 frame 1 speed 1 }
 ;grid { width 1 height 1 }
 ;selection { x1 1 y1 1 x2 1 y2 1 }
 ;cursor { x 2 y 2 }
@@ -45,7 +44,7 @@
 
 	( find size )
 	~Screen.width 8/ SWP POP =grid.width
-	~Screen.height 8/ SWP POP =grid.height
+	~Screen.height 8/ SWP POP #02 SUB =grid.height
 
 	( fill grid with dots )
 
@@ -58,18 +57,19 @@ BRK
 
 	~timer #01 ADD DUP =timer
 
-	#10 EQU ^$tick JNZ BRK $tick
+	( skip ) #08 EQU ^$tick JNZ BRK $tick
+
+	~timer.frame #01 ADD =timer.frame
 
 	,run JSR2
 
 	#00 =timer
-	~timer.frame #01 ADD =timer.frame
 
 BRK
 
 @on-key
 	
-	~Keys.key #00 NEQ ^$continue JNZ BRK $continue
+	( skip ) ~Keys.key #00 NEQ ^$continue JNZ BRK $continue
 
 	~selection.x1 ~selection.y1 ~Keys.key ,put-char JSR2
 
@@ -84,15 +84,19 @@ BRK
 	( arrows )
 	~Controller.button #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
+			~selection.y1 #00 EQU ^$no-up JNZ
 			~selection.y1 #01 SUB =selection.y1 
 			~selection.y2 #01 SUB =selection.y2 $no-up
 		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
+			~selection.y1 ~grid.height #01 SUB EQU ^$no-down JNZ
 			~selection.y1 #01 ADD =selection.y1 
 			~selection.y2 #01 ADD =selection.y2 $no-down
 		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
+			~selection.x1 #00 EQU ^$no-left JNZ
 			~selection.x1 #01 SUB =selection.x1 
 			~selection.x2 #01 SUB =selection.x2 $no-left
 		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
+			~selection.x1 ~grid.width #01 SUB EQU ^$no-right JNZ
 			~selection.x1 #01 ADD =selection.x1 
 			~selection.x2 #01 ADD =selection.x2 $no-right
 	POP
@@ -147,6 +151,8 @@ BRK
 		DUP2 LTH ^$ver JNZ
 	POP2
 
+	#9a =timer.speed
+
 RTN
 
 @is-selected ( x y -- flag )
@@ -181,7 +187,7 @@ RTN
 
 @get-value-char ( value -- char )
 	
-	#00 SWP ,b36clc ADD2 PEK2
+	#24 MOD #00 SWP ,b36clc ADD2 PEK2
 	
 RTN
 
@@ -193,27 +199,21 @@ RTN
 
 @get-char-sprite ( x y -- addr )
 	
-	,get-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2
-
-RTN
-
-@get-char-sprite-grid ( x y -- addr )
-	
 	DUP2 ,get-char JSR2 
 	( if character is dot )
 	DUP #2e NEQ ^$no-bar JNZ
 		( check if x,y is grid )
 		POP
-		#08 MOD #00 EQU
-		SWP
-		#08 MOD #00 EQU
-		( make it a + ) #0101 EQU2 #00 SWP #0058 MUL2 ,font ADD2
-		RTN
+		DUP2 #08 MOD #00 EQU SWP #08 MOD #00 EQU #0101 NEQ2 ^$no-marker8 JNZ POP2 ,marker8_icn RTN $no-marker8
+		DUP2 #02 MOD #00 EQU SWP #02 MOD #00 EQU #0101 NEQ2 ^$no-marker4 JNZ POP2 ,marker4_icn RTN $no-marker4
+		POP2 ,font RTN
 	$no-bar
 	STH POP2 STHr
 	#20 SUB #00 SWP #0008 MUL2 ,font ADD2
 
 RTN
+
+( operators )
 
 @op-a ( x y char -- )
 
@@ -221,7 +221,7 @@ RTN
 	( get left ) DUP2 SWP #01 SUB SWP ,get-value JSR2 STH
 	( get right ) DUP2 SWP #01 ADD SWP ,get-value JSR2 STH
 	( incr y ) #01 ADD 
-	( get result ) ADDr STHr 
+	( get result ) ADDr STHr
 	,get-value-char JSR2 
 	,put-char JSR2
 
@@ -247,11 +247,190 @@ RTN
 
 RTN
 
+@op-d ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-e ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-f ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-g ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-h ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-i ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-j ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-k ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-l ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-m ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-n ( x y char -- )
+	
+	STH
+	( limit )
+	DUP #00 NEQ ^$not-edge JNZ
+		#2a ,put-char JSR2
+		POP STHr
+		RTN
+	$not-edge
+	( collide )
+	DUP2 #01 SUB ,get-char JSR2 #2e EQU ^$not-collide JNZ
+		#2a ,put-char JSR2
+		POP STHr
+		RTN
+	$not-collide
+	DUP2 STHr
+	SWP #01 SUB SWP ,put-char JSR2	
+	#2e ,put-char JSR2
+	
+RTN
+
+@op-o ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-p ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-q ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-r ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-s ( x y char -- )
+	
+	STH DUP2 STHr
+	SWP #01 ADD SWP ,put-char JSR2	
+	#2e ,put-char JSR2
+	( TODO: Lock )
+	
+RTN
+
+@op-t ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-u ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-v ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-w ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-x ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-y ( x y char -- )
+
+	POP POP2
+	
+RTN
+
+@op-z ( x y char -- )
+
+	POP POP2
+	
+RTN
+
 @run-char ( x y char -- )
 	
 	( A ) DUP #41 EQU ,op-a JNZ2
 	( B ) DUP #42 EQU ,op-b JNZ2
 	( C ) DUP #43 EQU ,op-c JNZ2
+	( D ) DUP #44 EQU ,op-d JNZ2
+	( E ) DUP #45 EQU ,op-e JNZ2
+	( F ) DUP #46 EQU ,op-f JNZ2
+	( G ) DUP #47 EQU ,op-g JNZ2
+	( H ) DUP #48 EQU ,op-h JNZ2
+	( I ) DUP #49 EQU ,op-i JNZ2
+	( J ) DUP #4a EQU ,op-j JNZ2
+	( K ) DUP #4b EQU ,op-k JNZ2
+	( L ) DUP #4c EQU ,op-l JNZ2
+	( M ) DUP #4d EQU ,op-m JNZ2
+	( N ) DUP #4e EQU ,op-n JNZ2
+	( O ) DUP #4f EQU ,op-o JNZ2
+	( P ) DUP #50 EQU ,op-p JNZ2
+	( Q ) DUP #51 EQU ,op-q JNZ2
+	( R ) DUP #52 EQU ,op-r JNZ2
+	( S ) DUP #53 EQU ,op-s JNZ2
+	( T ) DUP #54 EQU ,op-t JNZ2
+	( U ) DUP #55 EQU ,op-u JNZ2
+	( V ) DUP #56 EQU ,op-v JNZ2
+	( W ) DUP #57 EQU ,op-w JNZ2
+	( X ) DUP #58 EQU ,op-x JNZ2
+	( Y ) DUP #59 EQU ,op-y JNZ2
+	( Z ) DUP #5a EQU ,op-z JNZ2
 	POP POP2
 
 RTN
@@ -279,31 +458,58 @@ RTN
 	
 	~Screen.height #0008 SUB2 =Sprite.y
 
-	( TODO: Position )
-	( TODO: Frame )
-	( TODO: BPM )
+	( Positionx )
+	#0000 =Sprite.x
+	~selection.x1 
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0008 =Sprite.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
 
+	( Positiony )
+	#0010 =Sprite.x
+	~selection.y1 
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0018 =Sprite.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+	#0020 =Sprite.x
+	,position_icn =Sprite.addr
+	#03 =Sprite.color
+
+	( Frame )
+	#0030 =Sprite.x
+	~timer.frame 
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0038 =Sprite.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+	#0040 =Sprite.x
+	,beat_icn =Sprite.addr
+	#01 ~timer.frame #08 MOD #00 EQU #02 MUL ADD =Sprite.color
+
+	( Speed )
+	#0050 =Sprite.x
+	~timer.speed 
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+	#0058 =Sprite.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
+	#02 =Sprite.color
+
+	( TODO: Signal VU )
+
+	( File )
 	~Screen.width #0028 SUB2 =Sprite.x
-
-	( TODO: Toggle Guides )
-	~Sprite.x 8+ =Sprite.x
-	,eye_icns =Sprite.addr
-	#01 =Sprite.color
-
-	( TODO: New )
-	~Sprite.x 8+ =Sprite.x
-	,filestate_icn =Sprite.addr
-	#01 =Sprite.color
-
-	( TODO: Load )
-	~Sprite.x 8+ =Sprite.x
-	,load_icn =Sprite.addr
-	#01 =Sprite.color
-
-	( TODO: Save )
-	~Sprite.x 8+ =Sprite.x
-	,save_icn =Sprite.addr
-	#01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,eye_icns =Sprite.addr #01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,filestate_icn =Sprite.addr #01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,load_icn =Sprite.addr #01 =Sprite.color
+	~Sprite.x 8+ =Sprite.x ,save_icn =Sprite.addr #01 =Sprite.color
 
 RTN
 
@@ -316,7 +522,7 @@ RTN
 		$hor
 			( pos-x )   OVR #00 SWP #0008 MUL2 =Sprite.x 
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
-			( sprite )  DUP2 ,get-char-sprite-grid JSR2 =Sprite.addr
+			( sprite )  DUP2 ,get-char-sprite JSR2 =Sprite.addr
 			( draw )    ,is-selected JSR2 #0d MUL #01 ADD =Sprite.color
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
@@ -361,16 +567,20 @@ RTN
 	77 78 79 7a
 ]
 
-@cursor_icn [ 80c0 e0f0 f8e0 1000 ]
-@blank_icn  [ 0000 0000 0000 0000 ]
+@cursor_icn     [ 80c0 e0f0 f8e0 1000 ]
+@blank_icn      [ 0000 0000 0000 0000 ]
+@position_icn   [ 0066 4200 0042 6600 ]
+@beat_icn       [ 0000 1038 7c38 1000 ]
+@marker8_icn    [ 0000 2400 0024 0000 ]
+@marker4_icn    [ 0000 0000 0000 1000 ]
+@filestate_icn  [ 1054 28c6 2854 1000 ]
+@load_icn       [ feaa d6aa d4aa f400 ]
+@save_icn       [ fe82 8282 848a f400 ]
 
 @eye_icns
 	[ 0038 4492 2810 0000 ] ( open )
 	[ 0000 0082 4438 0000 ] ( closed )
 
-@filestate_icn  [ 1054 28c6 2854 1000 ]
-@load_icn       [ feaa d6aa d4aa f400 ]
-@save_icn       [ fe82 8282 848a f400 ]
 
 @font ( specter8-frag font ) 
 [
@@ -379,7 +589,7 @@ RTN
 	0008 1e28 1c0a 3c08 0000 2204 0810 2200
 	0030 4832 4c44 3a00 0008 1000 0000 0000
 	0004 0808 0808 0400 0020 1010 1010 2000
-	0000 2214 0814 2200 0000 0808 3e08 0800
+	005a 2442 4224 5a00 0000 0808 3e08 0800
 	0000 0000 0000 0810 0000 0000 3e00 0000
 	0000 0000 0000 0800 0000 0204 0810 2000
 	003c 464a 5262 3c00 0018 0808 0808 1c00
@@ -424,4 +634,4 @@ RTN
 	0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@data [ elephant ]
+@data [ ]
