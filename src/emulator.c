@@ -25,6 +25,8 @@ static Ppu ppu;
 static Apu apu;
 static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl, *devapu;
 
+Uint8 zoom = 0, debug = 0, reqdraw = 0;
+
 int
 clamp(int val, int min, int max)
 {
@@ -48,27 +50,27 @@ void
 redraw(Uint32 *dst, Uxn *u)
 {
 	drawppu(&ppu);
-	if(ppu.debugger)
+	if(debug)
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
 	SDL_UpdateTexture(gTexture, NULL, dst, ppu.width * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
-	ppu.reqdraw = 0;
+	reqdraw = 0;
 }
 
 void
 toggledebug(Uxn *u)
 {
-	ppu.debugger = !ppu.debugger;
+	debug = !debug;
 	redraw(ppu.output, u);
 }
 
 void
 togglezoom(Uxn *u)
 {
-	ppu.zoom = ppu.zoom == 3 ? 1 : ppu.zoom + 1;
-	SDL_SetWindowSize(gWindow, ppu.width * ppu.zoom, ppu.height * ppu.zoom);
+	zoom = zoom == 3 ? 1 : zoom + 1;
+	SDL_SetWindowSize(gWindow, ppu.width * zoom, ppu.height * zoom);
 	redraw(ppu.output, u);
 }
 
@@ -97,7 +99,7 @@ init(Uxn *u)
 		return error("PPU", "Init failure");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppu.width * ppu.zoom, ppu.height * ppu.zoom, SDL_WINDOW_SHOWN);
+	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppu.width * zoom, ppu.height * zoom, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
 		return error("Window", SDL_GetError());
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
@@ -127,8 +129,8 @@ domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
 	Uint16 addr = devmouse->addr + 2;
-	Uint16 x = clamp(event->motion.x / ppu.zoom - ppu.pad, 0, ppu.hor * 8 - 1);
-	Uint16 y = clamp(event->motion.y / ppu.zoom - ppu.pad, 0, ppu.ver * 8 - 1);
+	Uint16 x = clamp(event->motion.x / zoom - ppu.pad, 0, ppu.hor * 8 - 1);
+	Uint16 y = clamp(event->motion.y / zoom - ppu.pad, 0, ppu.ver * 8 - 1);
 	mempoke16(u, addr + 0, x);
 	mempoke16(u, addr + 2, y);
 	u->ram.dat[addr + 5] = 0x00;
@@ -214,7 +216,7 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
 		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
 		putpixel(&ppu, b1 >> 4 & 0xf ? ppu.fg : ppu.bg, x, y, b1 & 0xf);
-		ppu.reqdraw = 1;
+		reqdraw = 1;
 	}
 	return b1;
 }
@@ -238,7 +240,7 @@ sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 					continue;
 				putpixel(&ppu, layer, x + h, y + v, ch1 ? blend % 4 : blend / 4);
 			}
-		ppu.reqdraw = 1;
+		reqdraw = 1;
 	}
 	return b1;
 }
@@ -324,6 +326,7 @@ system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	m[PAGE_DEVICE + b0] = b1;
 	loadtheme(&ppu, &m[PAGE_DEVICE + 0x0008]);
+	reqdraw = 1;
 	(void)ptr;
 	return b1;
 }
@@ -376,7 +379,7 @@ start(Uxn *u)
 		}
 		evaluxn(u, devscreen->vector);
 		SDL_UnlockAudioDevice(audio_id);
-		if(ppu.reqdraw)
+		if(reqdraw)
 			redraw(ppu.output, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 		SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
@@ -388,7 +391,7 @@ int
 main(int argc, char **argv)
 {
 	Uxn u;
-	ppu.zoom = 2;
+	zoom = 2;
 
 	if(argc < 2)
 		return error("Input", "Missing");

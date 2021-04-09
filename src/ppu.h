@@ -19,7 +19,7 @@ typedef signed short Sint16;
 typedef unsigned int Uint32;
 
 typedef struct Ppu {
-	Uint8 reqdraw, zoom, debugger, *bg, *fg;
+	Uint8 *bg, *fg;
 	Uint16 hor, ver, pad, width, height;
 	Uint32 *output, colors[4];
 } Ppu;
