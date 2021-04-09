@@ -215,10 +215,11 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		Uint16 y = mempeek16(u, ptr + 10);
 		Uint8 *addr = &u->ram.dat[mempeek16(u, ptr + 12)];
 		Uint8 *layer = (b1 >> 4 & 0xf) % 2 ? ppu.fg : ppu.bg;
-		if((b1 >> 4 & 0xf) / 2)
-			putsprite(&ppu, layer, x, y, addr, b1 & 0xf);
-		else
-			putpixel(&ppu, layer, x, y, b1 & 0xf);
+		switch((b1 >> 4) / 2) {
+		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
+		case 1: puticn(&ppu, layer, x, y, addr, b1 & 0xf); break;
+		case 2: putchr(&ppu, layer, x, y, addr, b1 & 0xf); break;
+		}
 		reqdraw = 1;
 	}
 	return b1;
@@ -384,13 +385,12 @@ main(int argc, char **argv)
 	devsystem = portuxn(&u, 0x00, "system", system_poke);
 	portuxn(&u, 0x01, "console", console_poke);
 	devscreen = portuxn(&u, 0x02, "screen", screen_poke);
-	portuxn(&u, 0x03, "---", ppnil);
+	devapu = portuxn(&u, 0x03, "audio", audio_poke);
 	devctrl = portuxn(&u, 0x04, "controller", ppnil);
 	devkey = portuxn(&u, 0x05, "key", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
 	portuxn(&u, 0x07, "file", file_poke);
-	devapu = portuxn(&u, 0x08, "audio", audio_poke);
-	apu.channel_addr = devapu->addr + 0xa;
+	portuxn(&u, 0x03, "---", ppnil);
 	portuxn(&u, 0x09, "midi", ppnil);
 	portuxn(&u, 0x0a, "datetime", datetime_poke);
 	portuxn(&u, 0x0b, "---", ppnil);
@@ -398,6 +398,8 @@ main(int argc, char **argv)
 	portuxn(&u, 0x0d, "---", ppnil);
 	portuxn(&u, 0x0e, "---", ppnil);
 	portuxn(&u, 0x0f, "---", ppnil);
+
+	apu.channel_addr = devapu->addr + 0xa;
 
 	/* Write screen size to dev/screen */
 	mempoke16(&u, devscreen->addr + 2, ppu.hor * 8);

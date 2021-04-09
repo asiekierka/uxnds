@@ -110,7 +110,7 @@ putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-putsprite(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
+puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
@@ -119,6 +119,18 @@ putsprite(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 			if(ch1 == 0 && (color == 0x05 || color == 0x0a || color == 0x0f))
 				continue;
 			putpixel(p, layer, x + h, y + v, ch1 ? color % 4 : color / 4);
+		}
+}
+
+void
+putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
+{
+	Uint16 v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1) * color;
+			Uint8 ch2 = ((sprite[v + 8] >> (7 - h)) & 0x1) * color;
+			putpixel(p, layer, x + h, y + v, (ch1 - ch2 + color / 4) & 0x3);
 		}
 }
 
