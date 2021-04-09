@@ -390,7 +390,7 @@ main(int argc, char **argv)
 	devkey = portuxn(&u, 0x05, "key", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
 	portuxn(&u, 0x07, "file", file_poke);
-	portuxn(&u, 0x03, "---", ppnil);
+	portuxn(&u, 0x08, "---", ppnil);
 	portuxn(&u, 0x09, "midi", ppnil);
 	portuxn(&u, 0x0a, "datetime", datetime_poke);
 	portuxn(&u, 0x0b, "---", ppnil);
