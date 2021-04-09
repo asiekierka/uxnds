@@ -13,8 +13,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 pad 4 refresh 1 }
 
 ( program )
@@ -50,7 +49,7 @@
 	,neralie-lines JSR2
 	BRK
 
-	#02 =Sprite.color
+	#22 =Screen.color
 	#0000 #00 ~number.count DUP2 ,h JSR2
 	~number.count #01 ADD =number.count
 
@@ -76,8 +75,8 @@
 	JMP2r
 
 @arvelie-text ( -- )
-	~Screen.width #0002 DIV2 #0034 SUB2 =Sprite.x
-	~Screen.height #0008 SUB2 =Sprite.y
+	~Screen.width #0002 DIV2 #0034 SUB2 =Screen.x
+	~Screen.height #0008 SUB2 =Screen.y
 	~DateTime.year #07d6 SUB2
 	#000a ,modf JSR2 ,digit JSR2
 	                 ,digit JSR2
@@ -88,7 +87,7 @@
 	JMP2r
 
 @neralie-text ( -- )
-	~Screen.width #0002 DIV2 #0004 SUB2 =Sprite.x
+	~Screen.width #0002 DIV2 #0004 SUB2 =Screen.x
 	~neralie.n0123
 	#03e8 ,modf JSR2 ^digit JSR
 	#0064 ,modf JSR2 ^digit JSR
@@ -100,14 +99,14 @@
 	JMP2r
 
 @letter ( index* -- )
-	#0008 MUL2 ,font-letters ADD2 =Sprite.addr
+	#0008 MUL2 ,font-letters ADD2 =Screen.addr
 	^digit-middle JMP
 
 @digit ( index* -- )
-	#0008 MUL2 ,font-numbers ADD2 =Sprite.addr
+	#0008 MUL2 ,font-numbers ADD2 =Screen.addr
 	$middle
-	~neralie.color =Sprite.color
-	~Sprite.x #0008 ADD2 =Sprite.x
+	~neralie.color #20 ADD =Screen.color
+	~Screen.x #0008 ADD2 =Screen.x
 	JMP2r
 
 @neralie-lines ( -- )
@@ -116,14 +115,14 @@
 
 	,neralie.n4 SWP POP ~neralie.n0123
 	DUP2 ,$h JSR2
-	,$next JSR2 #0001 =Sprite.x ~neralie.y #0003 SUB2 =Sprite.y ^digit JSR
+	,$next JSR2 #0001 =Screen.x ~neralie.y #0003 SUB2 =Screen.y ^digit JSR
 	DUP2 ,$v JSR2
 	#04 ,v-spacing POK2
 	~lines.y1 #0003 SUB2 ~neralie.y ~neralie.x ,v JSR2
 	#01 ,v-spacing POK2
-	^$next JSR #0001 =Sprite.y ~neralie.x #0003 SUB2 =Sprite.x ,digit JSR2
+	^$next JSR #0001 =Screen.y ~neralie.x #0003 SUB2 =Screen.x ,digit JSR2
 	DUP2 ^$h JSR
-	^$next JSR ~Screen.width #0009 SUB2 =Sprite.x ~neralie.y #0003 SUB2 =Sprite.y ,digit JSR2
+	^$next JSR ~Screen.width #0009 SUB2 =Screen.x ~neralie.y #0003 SUB2 =Screen.y ,digit JSR2
 	DUP2 ^$v JSR
 	^$next JSR POP2
 	DUP2 ^$h JSR

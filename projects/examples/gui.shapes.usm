@@ -14,8 +14,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -33,10 +32,10 @@
 	#0080 #0030 #00b0 #0070 #02 ,line-rect JSR2
 	#0090 #0040 #00c0 #0080 #03 ,line-rect JSR2
 
-	#0000 #0080 #0020 #0020 #01 ,pict_small ,draw-picture JSR2
-	#0010 #0088 #0020 #0020 #02 ,pict_small ,draw-picture JSR2
-	#0020 #0090 #0020 #0020 #03 ,pict_small ,draw-picture JSR2
-	#0030 #0098 #0020 #0020 #04 ,pict_small ,draw-picture JSR2
+	#0000 #0080 #0020 #0020 #21 ,pict_small ,draw-picture JSR2
+	#0010 #0088 #0020 #0020 #22 ,pict_small ,draw-picture JSR2
+	#0020 #0090 #0020 #0020 #23 ,pict_small ,draw-picture JSR2
+	#0030 #0098 #0020 #0020 #24 ,pict_small ,draw-picture JSR2
 
 	#0020 #0020 #0070 #0080 #01 ,draw-line JSR2
 	#0020 #0080 #0070 #0030 #02 ,draw-line JSR2
@@ -108,16 +107,16 @@ RTN
 
 @draw-picture ( x y width height color addr )
 	
-	( load ) DUP2 =Sprite.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Sprite.y =pict.y =pict.x
+	( load ) DUP2 =Screen.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Screen.y =pict.y =pict.x
 	$ver
-		~pict.x =Sprite.x 
+		~pict.x =Screen.x 
 		$hor
-			( draw ) ~pict.color =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
-			( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
-		( incr ) ~Sprite.y 8+ =Sprite.y
-	~Sprite.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
+			( draw ) ~pict.color =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
+			( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
+		( incr ) ~Screen.y 8+ =Screen.y
+	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
 
 RTN
 

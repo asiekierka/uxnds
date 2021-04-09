@@ -46,5 +46,7 @@ int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
 int inituxn(Uxn *u, Uint16 vec);
 int evaluxn(Uxn *u, Uint16 vec);
-Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));
 void mempoke16(Uxn *u, Uint16 a, Uint16 b);
+Uint16 mempeek16(Uxn *u, Uint16 a);
+
+Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));

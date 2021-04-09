@@ -22,8 +22,7 @@
 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
@@ -130,11 +129,11 @@ RTN
 	POP2 POP2
 
 	( draw blending modes )
-	#0020 =Sprite.x #0020 =Sprite.y ,icon_icn =Sprite.addr
-	#00 #10
+	#0000 =Screen.x #0020 =Screen.y ,icon_icn =Screen.addr
+	#20 #30
 	$draw-blends
-		( move ) OVR #00 SWP #0008 MUL2 #0020 ADD2 =Sprite.x
-		( draw ) OVR =Sprite.color
+		( move ) OVR #00 SWP #0008 MUL2 =Screen.x
+		( draw ) OVR =Screen.color
 		( incr ) SWP #01 ADD SWP 
 		DUP2 LTH ^$draw-blends JNZ
 	POP POP
@@ -149,52 +148,52 @@ RTN
 	~window.x1 ~window.y1 ~window.x2 ~window.y2 #01 ,line-rect JSR2
 	~window.x1 #0002 SUB2 ~window.y1 #0002 SUB2 ~window.x2 #0002 ADD2 ~window.y2 #0002 ADD2 #01 ,line-rect JSR2
 
-	~window.x1 #0008 ADD2 ~window.y1 #0010 ADD2 #05 ,red_txt ,draw-label JSR2
-	~window.x1 #0008 ADD2 ~window.y1 #0020 ADD2 #05 ,green_txt ,draw-label JSR2
-	~window.x1 #0008 ADD2 ~window.y1 #0030 ADD2 #05 ,blue_txt ,draw-label JSR2
+	~window.x1 #0008 ADD2 ~window.y1 #0010 ADD2 #25 ,red_txt ,draw-label JSR2
+	~window.x1 #0008 ADD2 ~window.y1 #0020 ADD2 #25 ,green_txt ,draw-label JSR2
+	~window.x1 #0008 ADD2 ~window.y1 #0030 ADD2 #25 ,blue_txt ,draw-label JSR2
 
 	~window.x1 #0050 ADD2 ~window.y1 #0010 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.r1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 	~window.x1 #0050 ADD2 ~window.y1 #0020 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.g1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 	~window.x1 #0050 ADD2 ~window.y1 #0030 ADD2 ~window.x1 #0080 ADD2 #00 ,theme.b1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
 
-	~window.x1 #0050 ADD2 =Sprite.x
-	~window.y1 #0040 ADD2 =Sprite.y
-	,radio_icns #00 ~selection #00 EQU #0008 MUL2 ADD2 =Sprite.addr
-	#05 =Sprite.color
+	~window.x1 #0050 ADD2 =Screen.x
+	~window.y1 #0040 ADD2 =Screen.y
+	,radio_icns #00 ~selection #00 EQU #0008 MUL2 ADD2 =Screen.addr
+	#25 =Screen.color
 
-	~window.x1 #0060 ADD2 =Sprite.x
-	~window.y1 #0040 ADD2 =Sprite.y
-	,radio_icns #00 ~selection #01 EQU #0008 MUL2 ADD2 =Sprite.addr
-	#05 =Sprite.color
+	~window.x1 #0060 ADD2 =Screen.x
+	~window.y1 #0040 ADD2 =Screen.y
+	,radio_icns #00 ~selection #01 EQU #0008 MUL2 ADD2 =Screen.addr
+	#25 =Screen.color
 
-	~window.x1 #0070 ADD2 =Sprite.x
-	~window.y1 #0040 ADD2 =Sprite.y
-	,radio_icns #00 ~selection #02 EQU #0008 MUL2 ADD2 =Sprite.addr
-	#05 =Sprite.color
+	~window.x1 #0070 ADD2 =Screen.x
+	~window.y1 #0040 ADD2 =Screen.y
+	,radio_icns #00 ~selection #02 EQU #0008 MUL2 ADD2 =Screen.addr
+	#25 =Screen.color
 
-	~window.x1 #0080 ADD2 =Sprite.x
-	~window.y1 #0040 ADD2 =Sprite.y
-	,radio_icns #00 ~selection #03 EQU #0008 MUL2 ADD2 =Sprite.addr
-	#05 =Sprite.color
+	~window.x1 #0080 ADD2 =Screen.x
+	~window.y1 #0040 ADD2 =Screen.y
+	,radio_icns #00 ~selection #03 EQU #0008 MUL2 ADD2 =Screen.addr
+	#25 =Screen.color
 
 RTN
 
 @draw-cursor
 
 	( clear last cursor )
-	,clear_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#10 =Sprite.color
+	,clear_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#30 =Screen.color
 
 	( record pointer positions )
 	~Mouse.x =pointer.x ~Mouse.y =pointer.y
 
 	( draw new cursor )
-	,pointer_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#13 =Sprite.color
+	,pointer_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#33 =Screen.color
 
 RTN
 
@@ -202,26 +201,26 @@ RTN
 	
 	( load ) =color =slider.pos =slider.x2 =slider.y =slider.x1
 
-	~slider.x1 =Sprite.x
-	~slider.y =Sprite.y
-	,halftone_icn =Sprite.addr
+	~slider.x1 =Screen.x
+	~slider.y =Screen.y
+	,halftone_icn =Screen.addr
 
-	,slidera_icn =Sprite.addr
-	( draw ) #05 =Sprite.color
-	,sliderb_icn =Sprite.addr
+	,slidera_icn =Screen.addr
+	( draw ) #25 =Screen.color
+	,sliderb_icn =Screen.addr
 
 	$loop
-		( incr ) ~Sprite.x 8+ =Sprite.x
-		( draw ) #05 =Sprite.color
-		~Sprite.x ~slider.x2 #0008 ADD2 LTH2 ^$loop JNZ
+		( incr ) ~Screen.x 8+ =Screen.x
+		( draw ) #25 =Screen.color
+		~Screen.x ~slider.x2 #0008 ADD2 LTH2 ^$loop JNZ
 
-	( incr ) ~Sprite.x #0004 ADD2 =Sprite.x
-	,sliderc_icn =Sprite.addr
-	( draw ) #05 =Sprite.color
+	( incr ) ~Screen.x #0004 ADD2 =Screen.x
+	,sliderc_icn =Screen.addr
+	( draw ) #25 =Screen.color
 
-	~slider.x1 ~slider.pos ADD2 =Sprite.x
-	,sliderd_icn =Sprite.addr
-	( draw ) #0a =Sprite.color
+	~slider.x1 ~slider.pos ADD2 =Screen.x
+	,sliderd_icn =Screen.addr
+	( draw ) #2a =Screen.color
 
 RTN
 
@@ -258,11 +257,11 @@ RTN
 
 @draw-label ( x y color addr )
 	
-	( load ) =label.addr =color =Sprite.y =Sprite.x ~label.addr
+	( load ) =label.addr =color =Screen.y =Screen.x ~label.addr
 	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr ~color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr ~color =Screen.color
 		( incr ) ++
-		( incr ) ~Sprite.x 8+ =Sprite.x
+		( incr ) ~Screen.x 8+ =Screen.x
 		DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 

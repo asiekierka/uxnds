@@ -9,8 +9,7 @@
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
@@ -48,19 +47,19 @@ BRK
 @draw-cursor ( -- )
 
 	( clear last cursor )
-	,clear_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#10 =Sprite.color
+	,clear_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#30 =Screen.color
 
 	( record pointer positions )
 	~Mouse.x =pointer.x ~Mouse.y =pointer.y
 
 	( draw new cursor )
-	,cursor_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#11 ~Mouse.state #00 NEQ ADD =Sprite.color
+	,cursor_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#31 ~Mouse.state #00 NEQ ADD =Screen.color
 
 RTN
 

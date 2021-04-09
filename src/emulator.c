@@ -210,29 +210,15 @@ console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	Uint8 *m = u->ram.dat;
-	ptr += 8;
-	if(b0 == 0x0c) {
-		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
-		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		Uint8 *layer = b1 >> 4 & 0xf ? ppu.fg : ppu.bg;
-		putpixel(&ppu, layer, x, y, b1 & 0xf);
-		reqdraw = 1;
-	}
-	return b1;
-}
-
-Uint8
-sprite_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
-{
-	Uint8 *m = u->ram.dat;
-	ptr += 8;
 	if(b0 == 0x0e) {
-		Uint16 x = (m[ptr] << 8) + m[ptr + 1];
-		Uint16 y = (m[ptr + 2] << 8) + m[ptr + 3];
-		Uint8 *layer = (b1 >> 4) & 0xf ? ppu.fg : ppu.bg;
-		Uint8 *sprite = &m[(m[ptr + 4] << 8) + m[ptr + 5]];
-		putsprite(&ppu, layer, x, y, sprite, b1 & 0xf);
+		Uint16 x = mempeek16(u, ptr + 8);
+		Uint16 y = mempeek16(u, ptr + 10);
+		Uint8 *addr = &u->ram.dat[mempeek16(u, ptr + 12)];
+		Uint8 *layer = (b1 >> 4 & 0xf) % 2 ? ppu.fg : ppu.bg;
+		if((b1 >> 4 & 0xf) / 2)
+			putsprite(&ppu, layer, x, y, addr, b1 & 0xf);
+		else
+			putpixel(&ppu, layer, x, y, b1 & 0xf);
 		reqdraw = 1;
 	}
 	return b1;
@@ -398,7 +384,7 @@ main(int argc, char **argv)
 	devsystem = portuxn(&u, 0x00, "system", system_poke);
 	portuxn(&u, 0x01, "console", console_poke);
 	devscreen = portuxn(&u, 0x02, "screen", screen_poke);
-	portuxn(&u, 0x03, "sprite", sprite_poke);
+	portuxn(&u, 0x03, "---", ppnil);
 	devctrl = portuxn(&u, 0x04, "controller", ppnil);
 	devkey = portuxn(&u, 0x05, "key", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);

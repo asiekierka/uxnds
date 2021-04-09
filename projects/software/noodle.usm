@@ -53,8 +53,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -99,12 +98,12 @@ BRK
 @on-screen ( -- )
 	
 	~document.edit #01 NEQ ^$no-edit JNZ
-		#0008 =Sprite.x 
-		~Screen.height #0010 SUB2 =Sprite.y
+		#0008 =Screen.x 
+		~Screen.height #0010 SUB2 =Screen.y
 		,path.name #01 ~timer #04 DIV #03 AND #03 MUL ADD ,draw-label JSR2
 		$clear
-			#00 =Sprite.color
-			~Sprite.x 8+ DUP2 =Sprite.x
+			#20 =Screen.color
+			~Screen.x 8+ DUP2 =Screen.x
 			~Screen.width LTH2 ^$clear JNZ
 		( blink ) ~timer #01 ADD =timer
 	$no-edit
@@ -623,37 +622,37 @@ RTN
 	
 	~zoom.active #01 EQU ,draw-canvas-zoom JNZ2
 
-	~canvas.y1 =Sprite.y
-	,data =Sprite.addr
+	~canvas.y1 =Screen.y
+	,data =Screen.addr
 	$ver
-		~canvas.x1 =Sprite.x 
+		~canvas.x1 =Screen.x 
 		$hor
-			( draw ) #09 =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
-			( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~canvas.x2 NEQ2 ^$hor JNZ
-		( incr ) ~Sprite.y 8+ =Sprite.y
-	~Sprite.y ~canvas.y2 NEQ2 ^$ver JNZ
+			( draw ) #29 =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
+			( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~canvas.x2 NEQ2 ^$hor JNZ
+		( incr ) ~Screen.y 8+ =Screen.y
+	~Screen.y ~canvas.y2 NEQ2 ^$ver JNZ
 
 RTN
 
 @draw-canvas-zoom ( -- )
 	
 	~zoom.y =pt1.y
-	~canvas.y1 =Sprite.y
-	,data =Sprite.addr
+	~canvas.y1 =Screen.y
+	,data =Screen.addr
 	$ver
-		~canvas.x1 =Sprite.x 
+		~canvas.x1 =Screen.x 
 		~zoom.x =pt1.x
 		$hor
-			( incr ) ,bigpixel_icn #0008 #00 ~pt1.x ~pt1.y ,get-pixel JSR2 MUL2 ADD2 =Sprite.addr
-			( draw ) #09 =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
+			( incr ) ,bigpixel_icn #0008 #00 ~pt1.x ~pt1.y ,get-pixel JSR2 MUL2 ADD2 =Screen.addr
+			( draw ) #29 =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
 			( incr ) ~pt1.x ++ =pt1.x
-		~Sprite.x ~canvas.x2 NEQ2 ^$hor JNZ
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		~Screen.x ~canvas.x2 NEQ2 ^$hor JNZ
+		( incr ) ~Screen.y 8+ =Screen.y
 		( incr ) ~pt1.y ++ =pt1.y
-	~Sprite.y ~canvas.y2 NEQ2 ^$ver JNZ
+	~Screen.y ~canvas.y2 NEQ2 ^$ver JNZ
 
 RTN
 
@@ -666,11 +665,11 @@ RTN
 	#00 NEQ 
 	#0101 EQU2 RTN? ( Return if unchanged )
 
-	,blank_icn =Sprite.addr
+	,blank_icn =Screen.addr
 	( clear brush size )
-	~cursor.x #0003 SUB2 =Sprite.x ~cursor.y #0003 SUB2 =Sprite.y #10 =Sprite.color
+	~cursor.x #0003 SUB2 =Screen.x ~cursor.y #0003 SUB2 =Screen.y #30 =Screen.color
 	( clear last cursor )
-	~cursor.x =Sprite.x ~cursor.y =Sprite.y #10 =Sprite.color
+	~cursor.x =Screen.x ~cursor.y =Screen.y #30 =Screen.color
 	( record cursor positions )
 	~Mouse.x =cursor.x ~Mouse.y =cursor.y
 	( draw size cursor )
@@ -683,15 +682,15 @@ RTN
 	~Mouse.x CLN2r ~toolpane.x1 GTH2 STH2r ~toolpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~toolpane.y1 GTH2 STH2r ~toolpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
 	~Mouse.x CLN2r ~sizepane.x1 GTH2 STH2r ~sizepane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~sizepane.y1 GTH2 STH2r ~sizepane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
 	~Mouse.x CLN2r ~pattpane.x1 GTH2 STH2r ~pattpane.x2 LTH2 #0101 EQU2 ~Mouse.y CLN2r ~pattpane.y1 GTH2 STH2r ~pattpane.y2 LTH2 #0101 EQU2 #0101 EQU2 ,$outside-canvas JNZ2
-		~cursor.x #0003 SUB2 =Sprite.x ~cursor.y #0003 SUB2 =Sprite.y
-		,brush_icns #00 ~brush.size 8* ADD2 =Sprite.addr
-		#11 ~Mouse.state #02 MUL ADD =Sprite.color
+		~cursor.x #0003 SUB2 =Screen.x ~cursor.y #0003 SUB2 =Screen.y
+		,brush_icns #00 ~brush.size 8* ADD2 =Screen.addr
+		#31 ~Mouse.state #02 MUL ADD =Screen.color
 		~Mouse.state #00 EQU ^$outside-canvas JNZ RTN
 	$outside-canvas
 	( draw new cursor )
-	~cursor.x =Sprite.x ~cursor.y =Sprite.y
-	,pointers_icn #00 ~Controller.button #02 EQU 8* ADD2 =Sprite.addr
-	#1f ~Mouse.state #01 EQU #0a MUL SUB =Sprite.color
+	~cursor.x =Screen.x ~cursor.y =Screen.y
+	,pointers_icn #00 ~Controller.button #02 EQU 8* ADD2 =Screen.addr
+	#3f ~Mouse.state #01 EQU #0a MUL SUB =Screen.color
 
 RTN
 
@@ -703,18 +702,18 @@ RTN
 	~toolpane.x1 -- ~toolpane.y1 -- ~toolpane.x2 ~toolpane.y2 #00 ,line-rect JSR2
 	~toolpane.x1 #0002 SUB2 ~toolpane.y1 #0002 SUB2 ~toolpane.x2 ~toolpane.y2 #01 ,line-rect JSR2
 
-	~toolpane.x1 =Sprite.x ~toolpane.y1 =Sprite.y ,tool_icns =Sprite.addr
+	~toolpane.x1 =Screen.x ~toolpane.y1 =Screen.y ,tool_icns =Screen.addr
 
 	$loop
-		( draw ) #01 ~Sprite.x ~toolpane.x1 SUB2 8/ SWP POP ~brush.tool EQU #02 MUL ADD =Sprite.color
-		( incr ) ~Sprite.x 8+ =Sprite.x
-		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~toolpane.x2 LTH2 ^$loop JNZ
+		( draw ) #21 ~Screen.x ~toolpane.x1 SUB2 8/ SWP POP ~brush.tool EQU #02 MUL ADD =Screen.color
+		( incr ) ~Screen.x 8+ =Screen.x
+		( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~toolpane.x2 LTH2 ^$loop JNZ
 
 	~zoom.active #01 NEQ ^$no-zoom JNZ
-		~Sprite.x #0008 SUB2 =Sprite.x
-		,tool_icns #0028 ADD2 =Sprite.addr
-		#01 #04 ~brush.tool EQU #02 MUL ADD =Sprite.color
+		~Screen.x #0008 SUB2 =Screen.x
+		,tool_icns #0028 ADD2 =Screen.addr
+		#21 #04 ~brush.tool EQU #02 MUL ADD =Screen.color
 		$no-zoom
 
 RTN
@@ -727,13 +726,13 @@ RTN
 	~pattpane.x1 -- ~pattpane.y1 -- ~pattpane.x2 ~pattpane.y2 #00 ,line-rect JSR2
 	~pattpane.x1 #0002 SUB2 ~pattpane.y1 #0002 SUB2 ~pattpane.x2 ~pattpane.y2 #01 ,line-rect JSR2
 
-	~pattpane.x1 =Sprite.x ~pattpane.y1 =Sprite.y ,patt_icns =Sprite.addr
+	~pattpane.x1 =Screen.x ~pattpane.y1 =Screen.y ,patt_icns =Screen.addr
 
 	$loop
-		( draw ) #01 ~Sprite.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.patt EQU #02 MUL ADD =Sprite.color
-		( incr ) ~Sprite.x 8+ =Sprite.x
-		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~pattpane.x2 LTH2 ^$loop JNZ
+		( draw ) #21 ~Screen.x ~pattpane.x1 SUB2 8/ SWP POP ~brush.patt EQU #02 MUL ADD =Screen.color
+		( incr ) ~Screen.x 8+ =Screen.x
+		( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~pattpane.x2 LTH2 ^$loop JNZ
 
 RTN
 
@@ -745,13 +744,13 @@ RTN
 	~sizepane.x1 -- ~sizepane.y1 -- ~sizepane.x2 ~sizepane.y2 #00 ,line-rect JSR2
 	~sizepane.x1 #0002 SUB2 ~sizepane.y1 #0002 SUB2 ~sizepane.x2 ~sizepane.y2 #01 ,line-rect JSR2
 
-	~sizepane.x1 =Sprite.x ~sizepane.y1 =Sprite.y ,size_icns =Sprite.addr
+	~sizepane.x1 =Screen.x ~sizepane.y1 =Screen.y ,size_icns =Screen.addr
 
 	$loop
-		( draw ) #01 ~Sprite.x ~sizepane.x1 SUB2 8/ SWP POP ~brush.size EQU #02 MUL ADD =Sprite.color
-		( incr ) ~Sprite.x 8+ =Sprite.x
-		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~sizepane.x2 LTH2 ^$loop JNZ
+		( draw ) #21 ~Screen.x ~sizepane.x1 SUB2 8/ SWP POP ~brush.size EQU #02 MUL ADD =Screen.color
+		( incr ) ~Screen.x 8+ =Screen.x
+		( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~sizepane.x2 LTH2 ^$loop JNZ
 
 RTN
 
@@ -763,13 +762,13 @@ RTN
 	~viewpane.x1 -- ~viewpane.y1 -- ~viewpane.x2 ~viewpane.y2 #00 ,line-rect JSR2
 	~viewpane.x1 #0002 SUB2 ~viewpane.y1 #0002 SUB2 ~viewpane.x2 ~viewpane.y2 #01 ,line-rect JSR2
 
-	~viewpane.x1 =Sprite.x ~viewpane.y1 =Sprite.y ,view_icns =Sprite.addr
+	~viewpane.x1 =Screen.x ~viewpane.y1 =Screen.y ,view_icns =Screen.addr
 
 	$loop
-		( draw ) #01 =Sprite.color
-		( incr ) ~Sprite.x 8+ =Sprite.x
-		( incr ) ~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x ~viewpane.x2 LTH2 ^$loop JNZ
+		( draw ) #21 =Screen.color
+		( incr ) ~Screen.x 8+ =Screen.x
+		( incr ) ~Screen.addr 8+ =Screen.addr
+		~Screen.x ~viewpane.x2 LTH2 ^$loop JNZ
 
 RTN
 
@@ -791,35 +790,35 @@ RTN
 
 	~document.presentation #01 EQU ,$skip-size JNZ2
 		( draw size )
-		#0010 =Sprite.y
+		#0010 =Screen.y
 		( draw width )
-		~Screen.width #00a0 SUB2 =Sprite.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-		( draw ) #01 =Sprite.color
-		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Sprite.addr
-		( draw ) #01 =Sprite.color
+		~Screen.width #00a0 SUB2 =Screen.x ,font_hex ~canvas.w #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+		( draw ) #21 =Screen.color
+		~Screen.x 8+ =Screen.x ,font_hex ~canvas.w #0f AND #08 MUL ADD2 =Screen.addr
+		( draw ) #21 =Screen.color
 		( draw height )
-		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-		( draw ) #01 =Sprite.color
-		~Sprite.x 8+ =Sprite.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Sprite.addr
-		( draw ) #01 =Sprite.color
+		~Screen.x 8+ =Screen.x ,font_hex ~canvas.h #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+		( draw ) #21 =Screen.color
+		~Screen.x 8+ =Screen.x ,font_hex ~canvas.h #0f AND #08 MUL ADD2 =Screen.addr
+		( draw ) #21 =Screen.color
 	$skip-size
 
 	( draw save/load/guides icons )
-	~Screen.height #0010 SUB2 =Sprite.y
-	~Screen.width #0028 SUB2 =Sprite.x
-	,eye_icn #00 ~document.presentation #08 MUL ADD2 =Sprite.addr
-	#03 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,filestate_icn =Sprite.addr
-	#03 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,load_icn =Sprite.addr
-	#03 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,save_icn =Sprite.addr
-	#03 =Sprite.color
+	~Screen.height #0010 SUB2 =Screen.y
+	~Screen.width #0028 SUB2 =Screen.x
+	,eye_icn #00 ~document.presentation #08 MUL ADD2 =Screen.addr
+	#23 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,filestate_icn =Screen.addr
+	#23 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,load_icn =Screen.addr
+	#23 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,save_icn =Screen.addr
+	#23 =Screen.color
 	
-	#0008 =Sprite.x
+	#0008 =Screen.x
 	,path.name #01 ,draw-label JSR2
 
 RTN
@@ -861,10 +860,10 @@ RTN
 	
 	=color 
 	$loop
-		DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-		( draw ) ~color =Sprite.color
+		DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		( draw ) ~color #20 ADD =Screen.color
 		( incr ) #0001 ADD2
-		( incr ) ~Sprite.x 8+ =Sprite.x
+		( incr ) ~Screen.x 8+ =Screen.x
 		( loop ) DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 

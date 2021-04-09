@@ -12,8 +12,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -65,19 +64,19 @@ BRK
 @draw-cursor
 
 	( clear last cursor )
-	,clear_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#10 =Sprite.color
+	,clear_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#30 =Screen.color
 
 	( record pointer positions )
 	~Mouse.x =pointer.x ~Mouse.y =pointer.y
 
 	( draw new cursor )
-	~pointer.sprite =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#11 =Sprite.color
+	~pointer.sprite =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#31 =Screen.color
 
 RTN
 

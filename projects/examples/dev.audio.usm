@@ -28,8 +28,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -223,14 +222,14 @@ RTN
 @move-head ( -- )
 
 	( clear )
-	~trkframe.y1 8- =Sprite.y
-	~trkframe.x1 #00 ~head.pos ADD2 =Sprite.x
-	,head_icn =Sprite.addr
-	#00 =Sprite.color
+	~trkframe.y1 8- =Screen.y
+	~trkframe.x1 #00 ~head.pos ADD2 =Screen.x
+	,head_icn =Screen.addr
+	#20 =Screen.color
 	( incr ) ~head.pos #01 ADD =head.pos
-	~trkframe.x1 #00 ~head.pos ADD2 =Sprite.x
-	,head_icn =Sprite.addr 
-	#01 ( if note ) TRACK #00 ~head.pos #08 DIV ADD2 PEK2 #00 NEQ ADD =Sprite.color
+	~trkframe.x1 #00 ~head.pos ADD2 =Screen.x
+	,head_icn =Screen.addr 
+	#21 ( if note ) TRACK #00 ~head.pos #08 DIV ADD2 PEK2 #00 NEQ ADD =Screen.color
 
 RTN
 
@@ -239,10 +238,10 @@ RTN
 	#00 #20
 	$loop
 		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Sprite.y
-		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Sprite.x
+		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Screen.y
+		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Screen.x
 		STHr #00 EQU ^$skip JNZ
-			#00 =Sprite.color
+			#20 =Screen.color
 		$skip
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$loop JNZ
@@ -255,11 +254,11 @@ RTN
 	#00 #20
 	$notes-loop
 		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Sprite.y
-		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Sprite.x
-		,note_icn =Sprite.addr
+		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Screen.y
+		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Screen.x
+		,note_icn =Screen.addr
 		STHr #00 EQU ^$skip JNZ
-			#05 =Sprite.color
+			#25 =Screen.color
 		$skip
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ^$notes-loop JNZ
@@ -273,14 +272,14 @@ RTN
 	~trkframe.x1 ~trkframe.y1 ~trkframe.x2 ~trkframe.y2 #01 ,line-rect JSR2
 
 	( grid )
-	~trkframe.y1 #0010 SUB2 =Sprite.y
-	,font_hex =Sprite.addr
+	~trkframe.y1 #0010 SUB2 =Screen.y
+	,font_hex =Screen.addr
 	#0000 #0100 
 	$loop 
 		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ^$skip JNZ
-			OVR2 ~trkframe.x1 ADD2 =Sprite.x
-			#02 =Sprite.color
-			~Sprite.addr 8+ =Sprite.addr
+			OVR2 ~trkframe.x1 ADD2 =Screen.x
+			#22 =Screen.color
+			~Screen.addr 8+ =Screen.addr
 			OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ++ ~trkframe.y2 #01 ,line-vertical-dotted JSR2
 		$skip
 		OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ~trkframe.y2 #01 ,line-vertical-dotted JSR2
@@ -295,18 +294,18 @@ RTN
 
 @draw-octave ( x y -- )
 
-	=Sprite.y
-	=Sprite.x
-	,octave_icn =Sprite.addr
-	~Sprite.y ~Sprite.y #0038 ADD2
+	=Screen.y
+	=Screen.x
+	,octave_icn =Screen.addr
+	~Screen.y ~Screen.y #0038 ADD2
 	$loop
-		OVR2 =Sprite.y
-		#01 =Sprite.color
-		~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x 8+ =Sprite.x
-		#01 =Sprite.color
-		~Sprite.addr 8+ =Sprite.addr
-		~Sprite.x 8- =Sprite.x
+		OVR2 =Screen.y
+		#21 =Screen.color
+		~Screen.addr 8+ =Screen.addr
+		~Screen.x 8+ =Screen.x
+		#21 =Screen.color
+		~Screen.addr 8+ =Screen.addr
+		~Screen.x 8- =Screen.x
 		SWP2 8+ SWP2
 		OVR2 OVR2 LTH2 ^$loop JNZ
 	POP2
@@ -318,20 +317,20 @@ RTN
 	
 	~trkframe.x1 #0018 SUB2 DUP2 ~trkframe.y1 ,draw-octave JSR2
 	~trkframe.y1 #0038 ADD2 ,draw-octave JSR2
-	~trkframe.x1 #0028 SUB2 =Sprite.x
-	~trkframe.y1 #0030 ADD2 =Sprite.y
-	,font_hex #0028 ADD2 =Sprite.addr
-	#03 =Sprite.color 
-	~trkframe.x1 #0030 SUB2 =Sprite.x
-	,font_hex #0060 ADD2 =Sprite.addr
-	#03 =Sprite.color 
-	~trkframe.x1 #0028 SUB2 =Sprite.x
-	~trkframe.y1 #0068 ADD2 =Sprite.y
-	,font_hex #0020 ADD2 =Sprite.addr
-	#03 =Sprite.color 
-	~trkframe.x1 #0030 SUB2 =Sprite.x
-	,font_hex #0060 ADD2 =Sprite.addr
-	#03 =Sprite.color 
+	~trkframe.x1 #0028 SUB2 =Screen.x
+	~trkframe.y1 #0030 ADD2 =Screen.y
+	,font_hex #0028 ADD2 =Screen.addr
+	#23 =Screen.color 
+	~trkframe.x1 #0030 SUB2 =Screen.x
+	,font_hex #0060 ADD2 =Screen.addr
+	#23 =Screen.color 
+	~trkframe.x1 #0028 SUB2 =Screen.x
+	~trkframe.y1 #0068 ADD2 =Screen.y
+	,font_hex #0020 ADD2 =Screen.addr
+	#23 =Screen.color 
+	~trkframe.x1 #0030 SUB2 =Screen.x
+	,font_hex #0060 ADD2 =Screen.addr
+	#23 =Screen.color 
 
 RTN
 
@@ -345,19 +344,19 @@ RTN
 @draw-knob ( x* y* value -- )
 	
 	( load ) =knob.value =knob.y =knob.x
-	~knob.x =Sprite.x
-	~knob.y =Sprite.y ,knob_icns =Sprite.addr #01 =Sprite.color 
-	~knob.x 8+ =Sprite.x ,knob_icns 8+ =Sprite.addr #01 =Sprite.color 
-	~knob.y 8+ =Sprite.y ,knob_icns #0018 ADD2 =Sprite.addr #01 =Sprite.color 
-	~knob.x =Sprite.x ,knob_icns #0010 ADD2 =Sprite.addr #01 =Sprite.color 
-	~knob.x #00 #00 ~knob.value ,knob_offsetx ADD2 PEK2 ADD2 =Sprite.x
-	~knob.y #00 #00 ~knob.value ,knob_offsety ADD2 PEK2 ADD2 =Sprite.y
-	,knob_icns #0020 ADD2 =Sprite.addr
-	#05 =Sprite.color 
-	~knob.x #0004 ADD2 =Sprite.x
-	~knob.y #0010 ADD2 =Sprite.y
-	,font_hex #00 ~knob.value #08 MUL ADD2 =Sprite.addr
-	#01 =Sprite.color 
+	~knob.x =Screen.x
+	~knob.y =Screen.y ,knob_icns =Screen.addr #21 =Screen.color 
+	~knob.x 8+ =Screen.x ,knob_icns 8+ =Screen.addr #21 =Screen.color 
+	~knob.y 8+ =Screen.y ,knob_icns #0018 ADD2 =Screen.addr #21 =Screen.color 
+	~knob.x =Screen.x ,knob_icns #0010 ADD2 =Screen.addr #21 =Screen.color 
+	~knob.x #00 #00 ~knob.value ,knob_offsetx ADD2 PEK2 ADD2 =Screen.x
+	~knob.y #00 #00 ~knob.value ,knob_offsety ADD2 PEK2 ADD2 =Screen.y
+	,knob_icns #0020 ADD2 =Screen.addr
+	#25 =Screen.color 
+	~knob.x #0004 ADD2 =Screen.x
+	~knob.y #0010 ADD2 =Screen.y
+	,font_hex #00 ~knob.value #08 MUL ADD2 =Screen.addr
+	#21 =Screen.color 
 
 RTN
 
@@ -365,7 +364,7 @@ RTN
 	
 	~ctlframe.x1 ~ctlframe.y1 ~ctlframe.x2 ~ctlframe.y2 #01 ,line-rect JSR2
 	( env )
-	~ctlframe.x1 8+ ~ctlframe.y1 8+ #02 ,env_txt ,draw-label JSR2
+	~ctlframe.x1 8+ ~ctlframe.y1 8+ #22 ,env_txt ,draw-label JSR2
 	~ctlframe.x1 8+ ~ctlframe.y1 #0010 ADD2 
 		,adsr #00 ~track.active #04 MUL ADD2 PEK2 #04 SFT
 		,draw-knob JSR2
@@ -379,7 +378,7 @@ RTN
 		,adsr #00 ~track.active #04 MUL ADD2 #0003 ADD2 PEK2 #04 SFT
 		,draw-knob JSR2
 	( vol )
-	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 8+ #02 ,vol_txt ,draw-label JSR2
+	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 8+ #22 ,vol_txt ,draw-label JSR2
 	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 #0010 ADD2
 		,volume #00 ~track.active ADD2 PEK2 #04 SFT
 	,draw-knob JSR2
@@ -392,27 +391,27 @@ RTN
 @draw-channels
 	
 	~chnframe.x1 ~chnframe.y1 ~chnframe.x2 ~chnframe.y2 #01 ,line-rect JSR2
-	~chnframe.x1 8+ ~chnframe.y1 8+ #01 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0010 ADD2 #01 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0018 ADD2 #01 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0020 ADD2 #01 ~track.active #03 EQU #07 MUL ADD ,ch4_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 8+ #21 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0010 ADD2 #21 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0018 ADD2 #21 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
+	~chnframe.x1 8+ ~chnframe.y1 #0020 ADD2 #21 ~track.active #03 EQU #07 MUL ADD ,ch4_txt ,draw-label JSR2
 
 RTN
 
 @draw-cursor ( -- )
 
 	( clear last cursor )
-	,clear_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#10 =Sprite.color
+	,clear_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#30 =Screen.color
 	( record pointer positions )
 	~Mouse.x =pointer.x ~Mouse.y =pointer.y
 	( draw new cursor )
-	,cursor_icn =Sprite.addr 
-	~pointer.x =Sprite.x 
-	~pointer.y =Sprite.y 
-	#12 ~Mouse.state #00 NEQ ADD =Sprite.color
+	,cursor_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#32 ~Mouse.state #00 NEQ ADD =Screen.color
 
 RTN
 
@@ -420,12 +419,12 @@ RTN
 
 @draw-label ( x y color addr -- )
 	
-	( load ) =label.addr =label.color =Sprite.y =Sprite.x 
+	( load ) =label.addr =label.color =Screen.y =Screen.x 
 	~label.addr
 	$loop
-		( draw ) DUP2 PEK2 #00 SWP 8* ,font ADD2 =Sprite.addr ~label.color =Sprite.color
+		( draw ) DUP2 PEK2 #00 SWP 8* ,font ADD2 =Screen.addr ~label.color =Screen.color
 		( incr ) ++
-		( incr ) ~Sprite.x 8+ =Sprite.x
+		( incr ) ~Screen.x 8+ =Screen.x
 		DUP2 PEK2 #00 NEQ ^$loop JNZ
 	POP2
 

@@ -33,8 +33,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -254,65 +253,65 @@ RTN
 
 	( position )
 
-	~bankview.x =Sprite.x
-	~bankview.y #0010 SUB2 =Sprite.y
+	~bankview.x =Screen.x
+	~bankview.y #0010 SUB2 =Screen.y
 	~bankview.addr ,draw-short JSR2
 
 	( toolbar )
 
-	~bankview.x #0068 ADD2 =Sprite.x
-	~bankview.y #0010 SUB2 =Sprite.y
-	,tool_selector =Sprite.addr
-	#01 ~bankview.mode #00 EQU ADD =Sprite.color
+	~bankview.x #0068 ADD2 =Screen.x
+	~bankview.y #0010 SUB2 =Screen.y
+	,tool_selector =Screen.addr
+	#21 ~bankview.mode #00 EQU ADD =Screen.color
 
-	~Sprite.x 8+ =Sprite.x
-	,tool_hand =Sprite.addr
-	#01 ~bankview.mode #01 EQU ADD =Sprite.color
+	~Screen.x 8+ =Screen.x
+	,tool_hand =Screen.addr
+	#21 ~bankview.mode #01 EQU ADD =Screen.color
 
-	~Sprite.x 8+ =Sprite.x
-	,tool_eraser =Sprite.addr
-	#01 ~bankview.mode #02 EQU ADD =Sprite.color
+	~Screen.x 8+ =Screen.x
+	,tool_eraser =Screen.addr
+	#21 ~bankview.mode #02 EQU ADD =Screen.color
 
-	~tileview.x #0070 ADD2 =Sprite.x
-	,load_icn =Sprite.addr
-	#01 =Sprite.color
+	~tileview.x #0070 ADD2 =Screen.x
+	,load_icn =Screen.addr
+	#21 =Screen.color
 
-	~tileview.x #0078 ADD2 =Sprite.x
-	,save_icn =Sprite.addr
-	#01 =Sprite.color
+	~tileview.x #0078 ADD2 =Screen.x
+	,save_icn =Screen.addr
+	#21 =Screen.color
 
 	( guides )
 
-	#00 =i ,font_hex =Sprite.addr
+	#00 =i ,font_hex =Screen.addr
 	$guides
-		~bankview.x #0010 SUB2 =Sprite.x
-		~bankview.y #00 ~i #08 MUL ADD2 =Sprite.y
-		( draw ) #02 =Sprite.color
-		~bankview.x #00 ~i #08 MUL ADD2 =Sprite.x
-		~bankview.y #0088 ADD2 =Sprite.y
-		( draw ) #02 =Sprite.color
-		~Sprite.addr 8+ =Sprite.addr
+		~bankview.x #0010 SUB2 =Screen.x
+		~bankview.y #00 ~i #08 MUL ADD2 =Screen.y
+		( draw ) #22 =Screen.color
+		~bankview.x #00 ~i #08 MUL ADD2 =Screen.x
+		~bankview.y #0088 ADD2 =Screen.y
+		( draw ) #22 =Screen.color
+		~Screen.addr 8+ =Screen.addr
 		( incr ) ~i #01 ADD =i
 		~i #10 LTH ^$guides JNZ
 
 	( body )
 
-	~bankview.x =Sprite.x ~bankview.y =Sprite.y
-	#00 =pt.x #00 =pt.y ~bankview.addr =Sprite.addr
+	~bankview.x =Screen.x ~bankview.y =Screen.y
+	#00 =pt.x #00 =pt.y ~bankview.addr =Screen.addr
 	$ver
 		#00 =pt.x
-		~bankview.x =Sprite.x
+		~bankview.x =Screen.x
 		$hor
-			( draw ) #01
-				~Sprite.addr ~tileview.addr LTH2 
-				~Sprite.addr ~tileview.addr #0018 ADD2 GTH2 
-				#0000 EQU2 #06 MUL ADD =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
-			( incr ) ~Sprite.addr 8+ =Sprite.addr
+			( draw ) #21
+				~Screen.addr ~tileview.addr LTH2 
+				~Screen.addr ~tileview.addr #0018 ADD2 GTH2 
+				#0000 EQU2 #06 MUL ADD =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
+			( incr ) ~Screen.addr 8+ =Screen.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			~pt.x #10 LTH ,$hor JNZ2
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~Screen.y 8+ =Screen.y
 		~pt.y #10 LTH ,$ver JNZ2
 
 RTN
@@ -321,36 +320,36 @@ RTN
 
 	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0080 ADD2 ~tileview.y #0081 ADD2 #03 ,line-rect JSR2
 
-	~tileview.x #0028 ADD2 =Sprite.x
-	~tileview.y #0010 SUB2 =Sprite.y
-	~tileview.addr =Sprite.addr
-	#03 =Sprite.color
+	~tileview.x #0028 ADD2 =Screen.x
+	~tileview.y #0010 SUB2 =Screen.y
+	~tileview.addr =Screen.addr
+	#23 =Screen.color
 
 	( position )
 
-	~tileview.x =Sprite.x
-	~tileview.y #0010 SUB2 =Sprite.y
+	~tileview.x =Screen.x
+	~tileview.y #0010 SUB2 =Screen.y
 	~tileview.addr ,draw-short JSR2
 
 	( body )
 
-	~tileview.x =Sprite.x
-	~tileview.y =Sprite.y
+	~tileview.x =Screen.x
+	~tileview.y =Screen.y
 	~tileview.addr =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =Sprite.x
-	~tileview.y =Sprite.y
+	~tileview.x #0040 ADD2 =Screen.x
+	~tileview.y =Screen.y
 	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x =Sprite.x
-	~tileview.y #0040 ADD2 =Sprite.y
+	~tileview.x =Screen.x
+	~tileview.y #0040 ADD2 =Screen.y
 	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =Sprite.x
-	~tileview.y #0040 ADD2 =Sprite.y
+	~tileview.x #0040 ADD2 =Screen.x
+	~tileview.y #0040 ADD2 =Screen.y
 	~tileview.addr 8+ =tileview.addr
 	,draw-tileview-icn JSR2
 
@@ -374,43 +373,43 @@ RTN
 
 	( bytes )
 
-	~tileview.y #0018 ADD2 =Sprite.y
+	~tileview.y #0018 ADD2 =Screen.y
 	#00 =i
 	$bytes
-		~tileview.x #0088 ADD2 =Sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-		( draw ) #02 =Sprite.color
-		~Sprite.x 8+ =Sprite.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
-		( draw ) #02 =Sprite.color
+		~tileview.x #0088 ADD2 =Screen.x
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+		( draw ) #22 =Screen.color
+		~Screen.x 8+ =Screen.x
+		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #0f AND #08 MUL ADD2 =Screen.addr
+		( draw ) #22 =Screen.color
 		( incr ) ~i #01 ADD =i
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~Screen.y 8+ =Screen.y
 	~i #08 LTH ,$bytes JNZ2
 
 	( operations )
 
-	~Sprite.y 8+ =Sprite.y
-	,movedown_icn =Sprite.addr
-	#01 =Sprite.color
-	~Sprite.x 8- =Sprite.x
-	,moveup_icn =Sprite.addr
-	#01 =Sprite.color
+	~Screen.y 8+ =Screen.y
+	,movedown_icn =Screen.addr
+	#21 =Screen.color
+	~Screen.x 8- =Screen.x
+	,moveup_icn =Screen.addr
+	#21 =Screen.color
 
 	( draw tiles )
-	~tileview.y =Sprite.y
-	#00 =pt.x #00 =pt.y ~tileview.addr =Sprite.addr
+	~tileview.y =Screen.y
+	#00 =pt.x #00 =pt.y ~tileview.addr =Screen.addr
 
 	$tiles-ver
 		#00 =pt.x
-		~tileview.x #0088 ADD2 =Sprite.x
+		~tileview.x #0088 ADD2 =Screen.x
 		$tiles-hor
-			( draw ) #03 =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
-			( incr ) ~Sprite.addr 8+ =Sprite.addr
+			( draw ) #23 =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
+			( incr ) ~Screen.addr 8+ =Screen.addr
 			( incr ) ~pt.x #01 ADD =pt.x
 			~pt.x #02 LTH ,$tiles-hor JNZ2
 		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~Screen.y 8+ =Screen.y
 		~pt.y #02 LTH ,$tiles-ver JNZ2
 
 RTN
@@ -424,14 +423,14 @@ RTN
 			( get bit )
 			,blank_icn #00
 			~tileview.addr #00 ~pt.y ADD2 PEK2 #07 ~pt.x SUB SFT #01 AND ( get bit )
-			8* ADD2 =Sprite.addr ( add *8 )
-			( draw ) #01 =Sprite.color
-			( incr ) ~Sprite.x 8+ =Sprite.x
+			8* ADD2 =Screen.addr ( add *8 )
+			( draw ) #21 =Screen.color
+			( incr ) ~Screen.x 8+ =Screen.x
 			( incr ) ~pt.x #01 ADD =pt.x
 			~pt.x #08 LTH ,$hor JNZ2
-		( incr ) ~Sprite.y 8+ =Sprite.y
+		( incr ) ~Screen.y 8+ =Screen.y
 		( incr ) ~pt.y #01 ADD =pt.y
-		~Sprite.x #0040 SUB2 =Sprite.x
+		~Screen.x #0040 SUB2 =Screen.x
 		~pt.y #08 LTH ,$ver JNZ2
 
 RTN
@@ -444,37 +443,37 @@ RTN
 	#0000 EQU2 RTN? ( Return if unchanged )
 
 	( clear last cursor )
-	~mouse.x =Sprite.x
-	~mouse.y =Sprite.y
-	,blank_icn =Sprite.addr
-	#10 =Sprite.color
+	~mouse.x =Screen.x
+	~mouse.y =Screen.y
+	,blank_icn =Screen.addr
+	#30 =Screen.color
 
 	( record mouse positions )
 	~Mouse.x =mouse.x 
 	~Mouse.y =mouse.y
 
 	( draw new cursor )
-	~mouse.x =Sprite.x
-	~mouse.y =Sprite.y
-	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =Sprite.addr
-	#12 =Sprite.color
+	~mouse.x =Screen.x
+	~mouse.y =Screen.y
+	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =Screen.addr
+	#32 =Screen.color
 
 RTN
 
 @draw-short ( short )
 
 	=addr
-	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
-	~Sprite.x 8+ =Sprite.x
-	,font_hex #00 ,addr ++ PEK2 #0f AND #08 MUL ADD2 =Sprite.addr
-	( draw ) #02 =Sprite.color
+	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,font_hex #00 ,addr PEK2 #0f AND #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,font_hex #00 ,addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,font_hex #00 ,addr ++ PEK2 #0f AND #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
 
 RTN
 

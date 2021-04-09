@@ -6,8 +6,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -18,24 +17,24 @@
 
 	( theme ) #0ffc =System.r #0f0b =System.g #0f03 =System.b
 	
-	#0000 #0000 #0100 #0100 #01 ,pict_large ,draw-picture JSR2
-	#0098 #0060 #0080 #0080 #01 ,pict_medium ,draw-picture JSR2
-	#0020 #0090 #0020 #0020 #0a ,pict_small ,draw-picture JSR2
+	#0000 #0000 #0100 #0100 #21 ,pict_large ,draw-picture JSR2
+	#0098 #0060 #0080 #0080 #21 ,pict_medium ,draw-picture JSR2
+	#0020 #0090 #0020 #0020 #2a ,pict_small ,draw-picture JSR2
 
 BRK
 
 @draw-picture ( x y width height color addr )
 	
-	DUP2 =Sprite.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Sprite.y =pict.y =pict.x
+	DUP2 =Screen.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Screen.y =pict.y =pict.x
 	$ver
-		~pict.x =Sprite.x 
+		~pict.x =Screen.x 
 		$hor
-			( draw ) ~pict.color =Sprite.color
-			( incr ) ~Sprite.x #0008 ADD2 =Sprite.x
-			( incr ) ~Sprite.addr #0008 ADD2 =Sprite.addr
-		~Sprite.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
-		( incr ) ~Sprite.y #0008 ADD2 =Sprite.y
-	~Sprite.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
+			( draw ) ~pict.color =Screen.color
+			( incr ) ~Screen.x #0008 ADD2 =Screen.x
+			( incr ) ~Screen.addr #0008 ADD2 =Screen.addr
+		~Screen.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
+		( incr ) ~Screen.y #0008 ADD2 =Screen.y
+	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
 
 RTN
 
