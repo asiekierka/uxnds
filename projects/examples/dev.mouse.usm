@@ -1,10 +1,15 @@
 ( Dev/Mouse )
 
 %RTN { JMP2r }
+%8+  { #0008 ADD2 }
 %++  { #0001 ADD2 }
 %--  { #0001 SUB2 }
 
+;touch1 { xc 2 yc 2 r 2 }
+;touch2 { xc 2 yc 2 r 2 }
+
 ;color { byte 1 }
+;addr { short 2 }
 ;pointer { x 2 y 2 }
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
@@ -23,9 +28,18 @@
 BRK
 
 @on-screen
-	
-	( clear ) ~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
-	( draw ) ~circle.xc ~circle.yc ~circle.r #0001 ADD2 #03 ,draw-circle JSR2
+
+	( clear ) ~touch1.xc ~touch1.yc ~touch1.r #00 ,draw-circle JSR2
+	( clear ) ~touch2.xc ~touch2.yc ~touch2.r #00 ,draw-circle JSR2
+
+	~touch1.r ++ =touch1.r
+	~touch2.r ++ =touch2.r
+
+	( draw ) ~touch1.xc ~touch1.yc ~touch1.r #03 ,draw-circle JSR2
+	( draw ) ~touch2.xc ~touch2.yc ~touch2.r #02 ,draw-circle JSR2
+
+	~touch1.xc ~touch1.yc #23 ,touch1.r #0001 ADD2 ,draw-byte JSR2
+	~touch2.xc ~touch2.yc #28 ,touch2.r #0001 ADD2 ,draw-byte JSR2
 
 BRK
 
@@ -33,14 +47,16 @@ BRK
  	
 	,draw-cursor JSR2
 
-	( clear ) ~circle.xc ~circle.yc ~circle.r #00 ,draw-circle JSR2
-
-	~Mouse.state #00 EQU ^$no-touch JNZ
-		~Mouse.x DUP2 =circle.xc
-		~Mouse.y DUP2 =circle.yc
-		#0000 =circle.r
+	~Mouse.state #01 NEQ ,$no-touch1 JNZ2
+		( clear )   ~touch1.xc ~touch1.yc ~touch1.r #00 ,draw-circle JSR2
+		( update )  ~Mouse.x =touch1.xc ~Mouse.y =touch1.yc #0000 =touch1.r
 		( release ) #00 =Mouse.state
-	$no-touch
+	$no-touch1
+	~Mouse.state #10 NEQ ,$no-touch2 JNZ2
+		( clear )   ~touch2.xc ~touch2.yc ~touch2.r #00 ,draw-circle JSR2
+		( update )  ~Mouse.x =touch2.xc ~Mouse.y =touch2.yc #0000 =touch2.r
+		( release ) #00 =Mouse.state
+	$no-touch2
 
 BRK 
 
@@ -93,5 +109,30 @@ RTN
 
 RTN
 
+@draw-byte ( x y color addr -- )
+
+	=addr STH
+	=Screen.y
+	=Screen.x
+	,font_hex #00 ~addr PEK2 #04 SFT #0008 MUL2 ADD2 =Screen.addr
+	STHr DUP STH =Screen.color
+	,font_hex #00 ~addr PEK2 #0f AND #0008 MUL2 ADD2 =Screen.addr
+	~Screen.x 8+ =Screen.x
+	STHr =Screen.color
+
+RTN
+
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
+
+@font_hex
+[
+	003c 464a 5262 3c00 0018 0808 0808 1c00
+	003c 4202 3c40 7e00 003c 421c 0242 3c00
+	000c 1424 447e 0400 007e 407c 0242 3c00
+	003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00
+	003c 4242 7e42 4200 007c 427c 4242 7c00 
+	003c 4240 4042 3c00 007c 4242 4242 7c00 
+	007e 4078 4040 7e00 007e 4078 4040 4000
+]

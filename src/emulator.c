@@ -128,23 +128,25 @@ void
 domouse(Uxn *u, SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = devmouse->addr + 2;
 	Uint16 x = clamp(event->motion.x / zoom - ppu.pad, 0, ppu.hor * 8 - 1);
 	Uint16 y = clamp(event->motion.y / zoom - ppu.pad, 0, ppu.ver * 8 - 1);
-	mempoke16(u, addr + 0, x);
-	mempoke16(u, addr + 2, y);
-	u->ram.dat[addr + 5] = 0x00;
-	flag = event->button.button == SDL_BUTTON_LEFT ? 0x01 : 0x10;
+	mempoke16(u, devmouse->addr + 2, x);
+	mempoke16(u, devmouse->addr + 4, y);
+	u->ram.dat[devmouse->addr + 7] = 0x00;
+	switch(event->button.button) {
+	case SDL_BUTTON_LEFT: flag = 0x01; break;
+	case SDL_BUTTON_RIGHT: flag = 0x10; break;
+	}
 	switch(event->type) {
 	case SDL_MOUSEBUTTONDOWN:
-		u->ram.dat[addr + 4] |= flag;
-		if(flag == 0x10 && (u->ram.dat[addr + 4] & 0x01))
-			u->ram.dat[addr + 5] = 0x01;
-		if(flag == 0x01 && (u->ram.dat[addr + 4] & 0x10))
-			u->ram.dat[addr + 5] = 0x10;
+		u->ram.dat[devmouse->addr + 6] |= flag;
+		if(flag == 0x10 && (u->ram.dat[devmouse->addr + 6] & 0x01))
+			u->ram.dat[devmouse->addr + 7] = 0x01;
+		if(flag == 0x01 && (u->ram.dat[devmouse->addr + 6] & 0x10))
+			u->ram.dat[devmouse->addr + 7] = 0x10;
 		break;
 	case SDL_MOUSEBUTTONUP:
-		u->ram.dat[addr + 4] &= (~flag);
+		u->ram.dat[devmouse->addr + 6] &= (~flag);
 		break;
 	}
 }
