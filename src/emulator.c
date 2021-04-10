@@ -214,8 +214,8 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		Uint16 x = mempeek16(u, ptr + 8);
 		Uint16 y = mempeek16(u, ptr + 10);
 		Uint8 *addr = &u->ram.dat[mempeek16(u, ptr + 12)];
-		Uint8 *layer = (b1 >> 4 & 0xf) % 2 ? ppu.fg : ppu.bg;
-		switch((b1 >> 4) / 2) {
+		Uint8 *layer = b1 >> 4 & 0x1 ? ppu.fg : ppu.bg;
+		switch(b1 >> 5) {
 		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
 		case 1: puticn(&ppu, layer, x, y, addr, b1 & 0xf); break;
 		case 2: putchr(&ppu, layer, x, y, addr, b1 & 0xf); break;
