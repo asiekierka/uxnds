@@ -130,7 +130,7 @@ putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1) * color;
 			Uint8 ch2 = ((sprite[v + 8] >> (7 - h)) & 0x1) * color;
-			putpixel(p, layer, x + h, y + v, (((ch1 + ch2 * 2) + color - 1) & 0x3));
+			putpixel(p, layer, x + h, y + v, (((ch1 + ch2 * 2) + color / 4) & 0x3));
 		}
 }
 
