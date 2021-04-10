@@ -2,6 +2,7 @@
 
 %RTN { JMP2r }
 
+;pointer { x 2 y 2 sprite 2 } 
 ;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
@@ -10,18 +11,60 @@
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
+|0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 ( program )
 
 |0200
 
-	( theme ) #0ffc =System.r #0f0b =System.g #0f03 =System.b
+	( theme ) #ac52 =System.r #a362 =System.g #b253 =System.b
+	( vectors ) ,on-mouse =Mouse.vector
+
+	( load )
 	
-	#0000 #0000 #0100 #0100 #21 ,pict_large ,draw-picture JSR2
-	#0098 #0060 #0080 #0080 #21 ,pict_medium ,draw-picture JSR2
-	#0020 #0090 #0020 #0020 #2a ,pict_small ,draw-picture JSR2
+	#0000 #0000 #0100 #0100 #2c ,pict_large ,draw-picture JSR2
+
+	( load ) ,filepath =File.name #4000 =File.length ,img =File.load
+	( draw ) #0080 #0020 #0100 #0100 #41 ,img ,draw-chr JSR2
+
+	#0128 #0010 #0080 #0080 #2e ,pict_medium ,draw-picture JSR2
+	#0020 #00d0 #0020 #0020 #25 ,pict_small ,draw-picture JSR2
 
 BRK
+
+@on-mouse 
+
+	( clear last cursor )
+	,clear_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#30 =Screen.color
+
+	( record pointer positions )
+	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+
+	( draw new cursor )
+	,pointer_icn =Screen.addr 
+	~pointer.x =Screen.x 
+	~pointer.y =Screen.y 
+	#33 =Screen.color
+
+BRK 
+
+@draw-chr ( x y width height color addr )
+	
+	DUP2 =Screen.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Screen.y =pict.y =pict.x
+	$ver
+		~pict.x =Screen.x 
+		$hor
+			( draw ) ~pict.color =Screen.color
+			( incr ) ~Screen.x #0008 ADD2 =Screen.x
+			( incr ) ~Screen.addr #0010 ADD2 =Screen.addr
+		~Screen.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
+		( incr ) ~Screen.y #0008 ADD2 =Screen.y
+	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
+
+RTN
 
 @draw-picture ( x y width height color addr )
 	
@@ -37,6 +80,9 @@ BRK
 	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
 
 RTN
+
+@clear_icn   [ 0000 0000 0000 0000 ]
+@pointer_icn [ 80c0 e0f0 f8e0 1000 ]
 
 @pict_small [
 	ff80 8080 8080 8088 ffff fffc f8f9 f1f4
@@ -312,3 +358,7 @@ RTN
 	1081 4182 0500 0000 aa25 512a 44aa 0000 0254 0992 4984 0000 9452 4925 5289 0000
 
 ]
+
+@filepath      [ projects/pictures/zerotwo2020.chr 00 ]
+
+|3000 @img
