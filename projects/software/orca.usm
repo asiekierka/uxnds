@@ -3,7 +3,6 @@
 	TODO
 		- Synthax highlight
 		- B operating doesn't loop around
-		- Locking ports
 		- Detect capitalization
 		- Comments
 		- Scale selection
@@ -17,6 +16,23 @@
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %MOD { DUP2 DIV MUL SUB }
 
+%GRID-CELLS { #2000 }
+%GRID-LOCKS { #3000 }
+%GRID-TYPES { #4000 }
+
+%GET-OFFSET {
+	#00 SWP #00 ~grid.width MUL2 ROT #00 SWP ADD2
+} ( x y -- offset* )
+%GET-INDEX { 
+	GET-OFFSET GRID-CELLS ADD2 
+} ( x y -- index* )
+%SET-CELL { 
+	ROT ROT GET-INDEX POK2 
+} ( x y char -- )
+%GET-CELL { 
+	GET-INDEX PEK2 
+} ( x y -- char )
+
 ( variables )
 
 ;timer { byte 1 frame 1 speed 1 }
@@ -29,7 +45,6 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0130 ;Sprite { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
 |0140 ;Controller { vector 2 button 1 }
 |0150 ;Keys { vector 2 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
@@ -71,7 +86,7 @@ BRK
 	
 	( skip ) ~Keys.key #00 NEQ ^$continue JNZ BRK $continue
 
-	~selection.x1 ~selection.y1 ~Keys.key ,put-char JSR2
+	~selection.x1 ~selection.y1 ~Keys.key SET-CELL
 
 	( release ) #00 =Keys.key
 
@@ -103,7 +118,7 @@ BRK
 
 	~Controller.button #04 NEQ ^$no-backspace JNZ
 		~Controller.button =Console.byte
-		~selection.x1 ~selection.y1 #2e ,put-char JSR2 ( put . char )
+		~selection.x1 ~selection.y1 #2e SET-CELL ( put . char )
 	$no-backspace
 
 	,redraw JSR2
@@ -119,20 +134,20 @@ BRK
 	$no-touch
 
 	( clear last cursor )
-	~cursor.x =Sprite.x
-	~cursor.y =Sprite.y
-	,blank_icn =Sprite.addr
-	#10 =Sprite.color
+	~cursor.x =Screen.x
+	~cursor.y =Screen.y
+	,blank_icn =Screen.addr
+	#30 =Screen.color
 
 	( record cursor positions )
 	~Mouse.x =cursor.x 
 	~Mouse.y =cursor.y
 
 	( draw new cursor )
-	~cursor.x =Sprite.x
-	~cursor.y =Sprite.y
-	,cursor_icn =Sprite.addr
-	#12 ~Mouse.state #01 EQU ADD =Sprite.color
+	~cursor.x =Screen.x
+	~cursor.y =Screen.y
+	,cursor_icn =Screen.addr
+	#32 ~Mouse.state #01 EQU ADD =Screen.color
 	
 BRK
 
@@ -143,7 +158,7 @@ BRK
 		#00 ~grid.width
 		$hor
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
-			#2e ,put-char JSR2
+			#2e SET-CELL
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
@@ -161,25 +176,19 @@ RTN
 
 RTN
 
-@put-char (x y char -- )
+@set-lock ( x y flag -- )
 	
-	ROT ROT  
-
-	#00 SWP #00 ~grid.width MUL2
-
-	ROT #00 SWP ADD2 ,data ADD2 POK2
+	ROT ROT GET-OFFSET GRID-LOCKS ADD2 POK2
 
 RTN
 
-@get-char ( x y -- char )
+@get-lock ( x y -- flag )
 	
-	#00 SWP #00 ~grid.width MUL2
-
-	ROT #00 SWP ADD2 ,data ADD2 PEK2
+	GET-OFFSET GRID-LOCKS ADD2 PEK2
 
 RTN
 
-@get-char-value ( char -- value )
+@get-cell-value ( char -- value )
 	
 	#00 SWP ,values ADD2 PEK2
 
@@ -193,13 +202,13 @@ RTN
 
 @get-value ( x y -- value )
 	
-	,get-char JSR2 #20 SUB ,get-char-value JSR2
+	GET-CELL #20 SUB ,get-cell-value JSR2
 
 RTN
 
-@get-char-sprite ( x y -- addr )
+@get-cell-sprite ( x y -- addr )
 	
-	DUP2 ,get-char JSR2 
+	DUP2 GET-CELL 
 	( if character is dot )
 	DUP #2e NEQ ^$no-bar JNZ
 		( check if x,y is grid )
@@ -223,7 +232,7 @@ RTN
 	( incr y ) #01 ADD 
 	( get result ) ADDr STHr
 	,get-value-char JSR2 
-	,put-char JSR2
+	SET-CELL
 
 RTN
 
@@ -235,7 +244,7 @@ RTN
 	( incr y ) #01 ADD 
 	( get result ) SUBr STHr 
 	,get-value-char JSR2 
-	,put-char JSR2
+	SET-CELL
 
 RTN
 
@@ -243,7 +252,7 @@ RTN
 	
 	POP
 	#01 ADD
-	#30 ~timer.frame #08 MOD ADD ,put-char JSR2
+	#30 ~timer.frame #08 MOD ADD SET-CELL
 
 RTN
 
@@ -312,19 +321,16 @@ RTN
 	STH
 	( limit )
 	DUP #00 NEQ ^$not-edge JNZ
-		#2a ,put-char JSR2
-		POP STHr
-		RTN
+		#2a SET-CELL POP STHr RTN 
 	$not-edge
 	( collide )
-	DUP2 #01 SUB ,get-char JSR2 #2e EQU ^$not-collide JNZ
-		#2a ,put-char JSR2
-		POP STHr
-		RTN
+	DUP2 #01 SUB GET-CELL #2e EQU ^$not-collide JNZ
+		#2a SET-CELL POP STHr RTN
 	$not-collide
+	( move )
 	DUP2 STHr
-	SWP #01 SUB SWP ,put-char JSR2	
-	#2e ,put-char JSR2
+	SWP #01 SUB SWP SET-CELL	
+	#2e SET-CELL
 	
 RTN
 
@@ -354,10 +360,10 @@ RTN
 
 @op-s ( x y char -- )
 	
-	STH DUP2 STHr
-	SWP #01 ADD SWP ,put-char JSR2	
-	#2e ,put-char JSR2
-	( TODO: Lock )
+	STH 
+	( clear ) DUP2 #2e SET-CELL
+	( move ) #01 ADD DUP2 #01 ,set-lock JSR2
+	STHr SET-CELL
 	
 RTN
 
@@ -381,7 +387,19 @@ RTN
 
 @op-w ( x y char -- )
 
-	POP POP2
+	STH
+	( limit )
+	OVR #00 NEQ ^$not-edge JNZ
+		#2a SET-CELL POP STHr RTN 
+	$not-edge
+	( collide )
+	DUP2 SWP #01 SUB SWP GET-CELL #2e EQU ^$not-collide JNZ
+		#2a SET-CELL POP STHr RTN
+	$not-collide
+	( move )
+	DUP2 
+	SWP #01 SUB SWP STHr SET-CELL	
+	#2e SET-CELL
 	
 RTN
 
@@ -403,8 +421,26 @@ RTN
 	
 RTN
 
+@op-bang ( x y char -- )
+
+	POP
+	#2e SET-CELL
+
+RTN
+
 @run-char ( x y char -- )
 	
+	( skip dot )
+	DUP #2e NEQ ^$not-dot JNZ
+		POP POP2 RTN
+	$not-dot
+
+	( skip locked )
+	ROT ROT DUP2 ,get-lock JSR2 #00 EQU ^$not-locked JNZ
+		POP POP2 RTN 
+	$not-locked
+	ROT
+
 	( A ) DUP #41 EQU ,op-a JNZ2
 	( B ) DUP #42 EQU ,op-b JNZ2
 	( C ) DUP #43 EQU ,op-c JNZ2
@@ -418,7 +454,7 @@ RTN
 	( K ) DUP #4b EQU ,op-k JNZ2
 	( L ) DUP #4c EQU ,op-l JNZ2
 	( M ) DUP #4d EQU ,op-m JNZ2
-	( N ) DUP #4e EQU ,op-n JNZ2
+	( N ) DUP #4e EQU ,op-n JNZ2 ( done. )
 	( O ) DUP #4f EQU ,op-o JNZ2
 	( P ) DUP #50 EQU ,op-p JNZ2
 	( Q ) DUP #51 EQU ,op-q JNZ2
@@ -427,23 +463,42 @@ RTN
 	( T ) DUP #54 EQU ,op-t JNZ2
 	( U ) DUP #55 EQU ,op-u JNZ2
 	( V ) DUP #56 EQU ,op-v JNZ2
-	( W ) DUP #57 EQU ,op-w JNZ2
+	( W ) DUP #57 EQU ,op-w JNZ2 ( done. )
 	( X ) DUP #58 EQU ,op-x JNZ2
 	( Y ) DUP #59 EQU ,op-y JNZ2
 	( Z ) DUP #5a EQU ,op-z JNZ2
+	( * ) DUP #2a EQU ,op-bang JNZ2
 	POP POP2
 
 RTN
 
-@run
+@init ( -- )
 	
 	#00 ~grid.height
 	$ver
 		#00 ~grid.width
 		$hor
-			( get x,y ) SWP2 OVR STH SWP2 OVR STHr DUP2 
-			,get-char JSR2 
-			,run-char JSR2 
+			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
+			( unlock ) #00 ,set-lock JSR2
+			( incr ) SWP #01 ADD SWP
+			DUP2 LTH ^$hor JNZ
+		POP2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ^$ver JNZ
+	POP2
+
+RTN
+
+@run ( -- )
+	
+	,init JSR2
+
+	#00 ~grid.height
+	$ver
+		#00 ~grid.width
+		$hor
+			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
+			DUP2 GET-CELL ,run-char JSR2
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
@@ -456,60 +511,60 @@ RTN
 
 @draw-interface ( -- )
 	
-	~Screen.height #0008 SUB2 =Sprite.y
+	~Screen.height #0008 SUB2 =Screen.y
 
 	( Positionx )
-	#0000 =Sprite.x
+	#0000 =Screen.x
 	~selection.x1 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0008 =Sprite.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
+	#0008 =Screen.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
 
 	( Positiony )
-	#0010 =Sprite.x
+	#0010 =Screen.x
 	~selection.y1 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0018 =Sprite.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
+	#0018 =Screen.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
 
-	#0020 =Sprite.x
-	,position_icn =Sprite.addr
-	#03 =Sprite.color
+	#0020 =Screen.x
+	,position_icn =Screen.addr
+	#23 =Screen.color
 
 	( Frame )
-	#0030 =Sprite.x
+	#0030 =Screen.x
 	~timer.frame 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0038 =Sprite.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
+	#0038 =Screen.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
 
-	#0040 =Sprite.x
-	,beat_icn =Sprite.addr
-	#01 ~timer.frame #08 MOD #00 EQU #02 MUL ADD =Sprite.color
+	#0040 =Screen.x
+	,beat_icn =Screen.addr
+	#21 ~timer.frame #08 MOD #00 EQU #02 MUL ADD =Screen.color
 
 	( Speed )
-	#0050 =Sprite.x
+	#0050 =Screen.x
 	~timer.speed 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
-	#0058 =Sprite.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Sprite.addr
-	#02 =Sprite.color
+		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
+	#0058 =Screen.x
+		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+	#22 =Screen.color
 
 	( TODO: Signal VU )
 
 	( File )
-	~Screen.width #0028 SUB2 =Sprite.x
-	~Sprite.x 8+ =Sprite.x ,eye_icns =Sprite.addr #01 =Sprite.color
-	~Sprite.x 8+ =Sprite.x ,filestate_icn =Sprite.addr #01 =Sprite.color
-	~Sprite.x 8+ =Sprite.x ,load_icn =Sprite.addr #01 =Sprite.color
-	~Sprite.x 8+ =Sprite.x ,save_icn =Sprite.addr #01 =Sprite.color
+	~Screen.width #0028 SUB2 =Screen.x
+	~Screen.x 8+ =Screen.x ,eye_icns =Screen.addr #21 =Screen.color
+	~Screen.x 8+ =Screen.x ,filestate_icn =Screen.addr #21 =Screen.color
+	~Screen.x 8+ =Screen.x ,load_icn =Screen.addr #21 =Screen.color
+	~Screen.x 8+ =Screen.x ,save_icn =Screen.addr #21 =Screen.color
 
 RTN
 
@@ -517,13 +572,13 @@ RTN
 	
 	#00 ~grid.height
 	$ver
-		( pos-y ) OVR #00 SWP #0008 MUL2 =Sprite.y
+		( pos-y ) OVR #00 SWP #0008 MUL2 =Screen.y
 		#00 ~grid.width
 		$hor
-			( pos-x )   OVR #00 SWP #0008 MUL2 =Sprite.x 
+			( pos-x )   OVR #00 SWP #0008 MUL2 =Screen.x 
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
-			( sprite )  DUP2 ,get-char-sprite JSR2 =Sprite.addr
-			( draw )    ,is-selected JSR2 #0d MUL #01 ADD =Sprite.color
+			( sprite )  DUP2 ,get-cell-sprite JSR2 =Screen.addr
+			( draw )    ,is-selected JSR2 #0d MUL #21 ADD =Screen.color
 			( incr )    SWP #01 ADD SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
