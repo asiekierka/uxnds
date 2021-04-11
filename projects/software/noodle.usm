@@ -52,10 +52,9 @@
 ( devices )
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
@@ -67,7 +66,6 @@
 	#e0fa =theme.r0 #30fa =theme.g0 #30fa =theme.b0 ( normal mode )
 	#00fe =theme.r1 #00f3 =theme.g1 #00f3 =theme.b1 ( presentation mode )
 	( vectors ) ,on-screen =Screen.vector
-	( vectors ) ,on-key =Keys.vector
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-mouse =Mouse.vector
 
@@ -283,55 +281,49 @@ BRK
 
 BRK
 
-@on-button
-	
+@on-button ( -> )
+
 	( if in renaming mode )
 	~document.edit #01 NEQ ,$no-edit JNZ2
+	~Controller.key #00 EQU ,$no-edit JNZ2
 		( enter )
-		~Controller.button #08 NEQ ^$no-edit-enter JNZ
+		~Controller.key #0d NEQ ^$no-edit-enter JNZ
 			#00 =document.edit
 			,redraw JSR2
 			BRK
 			$no-edit-enter
 		( backspace )
-		~Controller.button #04 NEQ ^$no-edit-backspace JNZ
+		~Controller.key #08 NEQ ^$no-edit-backspace JNZ
 			~path.length #00 EQU ^$edit-end JNZ
 			~path.length #01 SUB =path.length
 			#00 ,path.name #00 ~path.length ADD2 POK2
 			BRK
 			$no-edit-backspace
-		$edit-end
-		BRK
-	$no-edit
-
-	~Controller.button #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
-			( move ) ~zoom.y -- =zoom.y $no-up
-		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
-			( move ) ~zoom.y ++ =zoom.y $no-down
-		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
-			( move ) ~zoom.x -- =zoom.x $no-left
-		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
-			( move ) ~zoom.x ++ =zoom.x $no-right
-	#00 EQU #04 JNZ ,draw-canvas JSR2
-
-BRK
-
-@on-key
-	
-	( if in renaming mode )
-	~document.edit #01 NEQ ,$no-edit JNZ2
 		( default )
 		~path.length #1f EQU ^$edit-end JNZ
-			~Keys.key ,path.name #00 ~path.length ADD2 POK2
+			~Controller.key ,path.name #00 ~path.length ADD2 POK2
 			~path.length #01 ADD =path.length
-			$edit-end
+			~Controller.key =Console.byte
+		$edit-end
 		#00 ,path.name #00 ~path.length ADD2 POK2
-		( release ) #00 =Keys.key
 		BRK
 	$no-edit
+	
+	( control zoom )
+	~zoom.active #00 EQU ^$skip-zoom JNZ
+		~Controller.button #f0 AND
+			DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ
+				( move ) ~zoom.y -- =zoom.y $no-up
+			DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ
+				( move ) ~zoom.y ++ =zoom.y $no-down
+			DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ
+				( move ) ~zoom.x -- =zoom.x $no-left
+			DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ
+				( move ) ~zoom.x ++ =zoom.x $no-right
+		#00 EQU #04 JNZ ,draw-canvas JSR2
+	$skip-zoom
 
-	~Keys.key 
+	~Controller.key 
 	DUP #20 NEQ ^$no-space JNZ
 		( toggle zoom ) ~zoom.active #00 EQU =zoom.active ,redraw JSR2 $no-space 
 	DUP #08 NEQ ^$no-backspace JNZ
@@ -348,9 +340,8 @@ BRK
 		( tool0 ) #04 =brush.tool ,draw-toolpane JSR2 $no-tkey
 	DUP 
 		DUP #30 GTH SWP #39 LTH #0101 NEQ2 ^$no-numkey JNZ
-		( size ) ~Keys.key #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
+		( size ) ~Controller.key #31 SUB =brush.size ,draw-sizepane JSR2 $no-numkey
 	POP
-	( release ) #00 =Keys.key
 
 BRK
 

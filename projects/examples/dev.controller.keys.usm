@@ -5,42 +5,39 @@
 %8*  { #0030 SFT2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 pad 6 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 
 ( program )
 
 |0200
 
 	( theme ) #0f73 =System.r #0fe3 =System.g #0fc3 =System.b
-	( vectors ) ,KEY =Keys.vector
-	( vectors ) ,BUTTON =Controller.vector
+	( vectors ) ,on-button =Controller.vector
 	,draw-cursor JSR2
 	
 BRK
 
-@KEY
+@on-button
 	
-	,cursor_icn =Screen.addr
-	,font #00 ~Keys.key 8* ADD2 =Screen.addr
-	( draw ) #21 =Screen.color
-	~Screen.x 8+ =Screen.x
-	( release ) #00 =Keys.key
-	,draw-cursor JSR2
+	~Controller.key #00 NEQ ^$skip JNZ BRK $skip  
 
-BRK
-
-@BUTTON
-	
-	( enter key )
-	~Controller.button #08 NEQ ^$no-return JNZ 
+	~Controller.key #0d NEQ ^$no-return JNZ 
 		#20 =Screen.color
 		#0000 =Screen.x
 		( incr ) ~Screen.y 8+ =Screen.y
-		( release ) #00 =Controller.button
 		,draw-cursor JSR2
+		BRK
 	$no-return
+
+	~Controller.key =Console.char
+
+	,cursor_icn =Screen.addr
+	,font #00 ~Controller.key 8* ADD2 =Screen.addr
+	( draw ) #21 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,draw-cursor JSR2
 
 BRK
 

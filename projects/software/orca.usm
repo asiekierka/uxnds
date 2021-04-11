@@ -45,15 +45,13 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 |0200
 
 	( theme ) #08f3 =System.r #08fc =System.g #08f9 =System.b
 	( vectors ) ,on-button =Controller.vector
-	( vectors ) ,on-key =Keys.vector
 	( vectors ) ,on-mouse =Mouse.vector
 	( vectors ) ,on-frame =Screen.vector
 
@@ -82,20 +80,14 @@ BRK
 
 BRK
 
-@on-key
-	
-	( skip ) ~Keys.key #00 NEQ ^$continue JNZ BRK $continue
-
-	~selection.x1 ~selection.y1 ~Keys.key SET-CELL
-
-	( release ) #00 =Keys.key
-
-	,redraw JSR2
-
-BRK
-
 @on-button
 	
+	~Controller.key #00 EQU ^$no-key JNZ
+		~selection.x1 ~selection.y1 ~Controller.key SET-CELL
+		~Controller.key =Console.byte
+		,redraw JSR2
+	$no-key
+
 	( arrows )
 	~Controller.button #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 

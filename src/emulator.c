@@ -23,7 +23,7 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu;
-static Device *devsystem, *devscreen, *devmouse, *devkey, *devctrl, *devapu;
+static Device *devsystem, *devscreen, *devmouse, *devctrl, *devapu;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -152,25 +152,9 @@ domouse(Uxn *u, SDL_Event *event)
 }
 
 void
-dotext(Uxn *u, SDL_Event *event)
-{
-	int i;
-	Uint16 addr = devkey->addr + 2;
-	if(SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL)
-		return;
-	for(i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i) {
-		char c = event->text.text[i];
-		if(c < ' ' || c > '~')
-			break;
-		u->ram.dat[addr] = c;
-	}
-}
-
-void
 doctrl(Uxn *u, SDL_Event *event, int z)
 {
 	Uint8 flag = 0x00;
-	Uint16 addr = devctrl->addr + 2;
 	if(z && event->key.keysym.sym == SDLK_h) {
 		if(SDL_GetModState() & KMOD_LCTRL)
 			toggledebug(u);
@@ -180,17 +164,19 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	switch(event->key.keysym.sym) {
 	case SDLK_LCTRL: flag = 0x01; break;
 	case SDLK_LALT: flag = 0x02; break;
-	case SDLK_BACKSPACE: flag = 0x04; break;
-	case SDLK_RETURN: flag = 0x08; break;
+	case SDLK_ESCAPE: flag = 0x04; break;
+	case SDLK_LSHIFT: flag = 0x08; break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
 	case SDLK_LEFT: flag = 0x40; break;
 	case SDLK_RIGHT: flag = 0x80; break;
 	}
-	if(z)
-		u->ram.dat[addr] |= flag;
-	else
-		u->ram.dat[addr] &= (~flag);
+	if(flag && z)
+		u->ram.dat[devctrl->addr + 2] |= flag;
+	else if(flag)
+		u->ram.dat[devctrl->addr + 2] &= (~flag);
+	if(z && event->key.keysym.sym < 20)
+		u->ram.dat[devctrl->addr + 3] = event->key.keysym.sym;
 }
 
 #pragma mark - Devices
@@ -338,20 +324,19 @@ start(Uxn *u)
 			case SDL_QUIT:
 				quit();
 				break;
+			case SDL_TEXTINPUT:
+				if(event.text.text[0] >= ' ' || event.text.text[0] <= '~')
+					u->ram.dat[devctrl->addr + 3] = event.text.text[0];
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
 				evaluxn(u, devctrl->vector);
-				break;
+				u->ram.dat[devctrl->addr + 3] = 0;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION:
 				domouse(u, &event);
 				evaluxn(u, devmouse->vector);
-				break;
-			case SDL_TEXTINPUT:
-				dotext(u, &event);
-				evaluxn(u, devkey->vector);
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
@@ -389,7 +374,7 @@ main(int argc, char **argv)
 	devscreen = portuxn(&u, 0x02, "screen", screen_poke);
 	devapu = portuxn(&u, 0x03, "audio", audio_poke);
 	devctrl = portuxn(&u, 0x04, "controller", ppnil);
-	devkey = portuxn(&u, 0x05, "key", ppnil);
+	portuxn(&u, 0x05, "---", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
 	portuxn(&u, 0x07, "file", file_poke);
 	portuxn(&u, 0x08, "---", ppnil);

@@ -12,7 +12,7 @@
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 p1 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 
 |0200
 
@@ -35,7 +35,7 @@ BRK
 
 	( hold ctrl key to change slime color )
 
-	~Controller.p1 #0f AND
+	~Controller.button #0f AND
 		DUP #01 NEQ ^$no-ctrl JNZ #25 =slime $no-ctrl
 		DUP #02 NEQ ^$no-alt JNZ #2f =slime $no-alt
 	POP
@@ -43,7 +43,7 @@ BRK
 	( clear ) #30 =Screen.color
 
 	( detect movement )
-	~Controller.p1 #f0 AND
+	~Controller.button #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
 			( move ) ~Screen.y -- =Screen.y ,up_icn =Screen.addr $no-up
 		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 

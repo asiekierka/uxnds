@@ -6,17 +6,19 @@
 ;center { x 2 y 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
-|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 
 ( program )
 
-|0200 @RESET
+|0200
 	
 	( theme ) #0f0f =System.r #0fff =System.g #0ff0 =System.b
+	
+	,draw JSR2
+	
+BRK
+
+@draw ( -- )
 	
 	( find screen center )
 	~Screen.width #0002 DIV2 =center.x
@@ -34,10 +36,10 @@
 	~center.x ~center.y #0010 ADD2 #2c ,text3 ,draw-label-right JSR2
 	~center.x ~center.y #0020 ADD2 #2c ,text4 ,draw-label-middle JSR2
 	~center.x ~center.y #0030 ADD2 #2c ,text5 ,draw-label-middle JSR2
-	
-BRK
 
-@draw-label-left ( x y color addr )
+RTN
+
+@draw-label-left ( x y color addr -- )
 	
 	( load ) =label.addr =label.color =Screen.y =Screen.x 
 	~label.addr
@@ -50,7 +52,7 @@ BRK
 
 RTN
 
-@draw-label-middle ( x y color addr )
+@draw-label-middle ( x y color addr -- )
 	
 	( load ) =label.addr =label.color =Screen.y
 	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 =Screen.x 
@@ -64,7 +66,7 @@ RTN
 
 RTN
 
-@draw-label-right ( x y color addr )
+@draw-label-right ( x y color addr -- )
 	
 	( load ) =label.addr =label.color =Screen.y
 	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 =Screen.x 
@@ -78,7 +80,7 @@ RTN
 
 RTN
 
-@get-text-length ( label )
+@get-text-length ( label* -- length )
 	
 	#0000 ( counter )
 	$loop

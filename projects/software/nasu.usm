@@ -34,18 +34,16 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #e0fc =System.r #30cc =System.g #30ac =System.b
 	( vectors ) ,on-button =Controller.vector
-	( vectors ) ,on-key =Keys.vector
 	( vectors ) ,on-mouse =Mouse.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
@@ -56,20 +54,10 @@
 	~Screen.height 2/ #003f SUB2 =tileview.y 
 	,bank #0448 ADD2 =tileview.addr
 
-	,filepath ,load-file JSR2
+	,filepath1 =File.name #0800 =File.length ,bank =File.load
+	,filepath2 =File.name #0800 =File.length ,bank #0800 ADD2 =File.load
 
 	,redraw JSR2
-
-BRK
-
-@on-key
-
-	~Keys.key #31 LTH ^$skip JNZ
-	~Keys.key #33 GTH ^$skip JNZ
-	( select ) ~Keys.key #31 SUB =bankview.mode
-	( release ) #00 =Keys.key
-	,redraw JSR2 
-	$skip
 
 BRK
 
@@ -86,6 +74,11 @@ BRK
 		~tileview.addr 8- =tileview.addr $no-ctrl-right
 	POP
 	~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
+
+	~Controller.key #31 LTH ^$skip JNZ
+	~Controller.key #33 GTH ^$skip JNZ
+	( select ) ~Controller.key #31 SUB =bankview.mode
+	$skip
 	,redraw JSR2
 
 BRK
@@ -105,12 +98,12 @@ BRK
 				,redraw JSR2 ,$click-end JMP2
 			$no-brush-click
 			~Mouse.x ~tileview.x SUB2 8/ #000e NEQ2 ^$no-load-click JNZ
-				( load ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.load
+				( load ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.load
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
 			$no-load-click
 			~Mouse.x ~tileview.x SUB2 8/ #000f NEQ2 ^$no-save-click JNZ
-				( save ) ,filepath  =File.name #0800 =File.length ~bankview.addr =File.save
+				( save ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.save
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
 			$no-save-click
@@ -205,12 +198,6 @@ BRK
 	,draw-cursor JSR2
 
 BRK
-
-@load-file ( path )
-
-	=File.name #0800 =File.length ,bank =File.load
-
-RTN
 
 @op_shiftup
 	
@@ -505,7 +492,8 @@ RTN
 @save_icn      [ fe82 8282 848a f400 ]
 @moveup_icn    [ 0010 387c fe10 1000 ]
 @movedown_icn  [ 0010 1010 fe7c 3810 ]
-@filepath      [ projects/fonts/specter8.bit 00 ]
+@filepath1     [ projects/fonts/specter8.bit 00 ]
+@filepath2     [ projects/pictures/cibo.bit 00 ]
 
 @font_hex ( 0-F ) 
 [
