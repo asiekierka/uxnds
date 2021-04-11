@@ -87,7 +87,7 @@ type_byte = (size, has_subtree) ->
 		when '1'
 			'1'
 		when '2'
-			'3'
+			'2'
 		else
 			'0'
 	n1 .. n2
@@ -135,6 +135,17 @@ do
 		if s == '('
 			return 'normal-(  '
 		'macro-%-3s'\format convert[s]
+	label_value = (k) -> '[ %02x ]'\format k\byte!
+	dag['('] = nil
+	add_globals root, dag, label_name, label_value, '', '   '
+
+do
+	root, dag = build_dag_from_chars ']\0', '('
+	dump io.stdout, root, dag
+	label_name = (s) ->
+		if s == '('
+			return 'normal-(  '
+		'data-%-4s'\format convert[s]
 	label_value = (k) -> '[ %02x ]'\format k\byte!
 	dag['('] = nil
 	add_globals root, dag, label_name, label_value, '', '   '

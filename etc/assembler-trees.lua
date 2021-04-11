@@ -155,7 +155,7 @@ type_byte = function(size, has_subtree)
   if '1' == _exp_0 then
     n2 = '1'
   elseif '2' == _exp_0 then
-    n2 = '3'
+    n2 = '2'
   else
     n2 = '0'
   end
@@ -228,6 +228,23 @@ do
       return 'normal-(  '
     end
     return ('macro-%-3s'):format(convert[s])
+  end
+  local label_value
+  label_value = function(k)
+    return ('[ %02x ]'):format(k:byte())
+  end
+  dag['('] = nil
+  add_globals(root, dag, label_name, label_value, '', '   ')
+end
+do
+  local root, dag = build_dag_from_chars(']\0', '(')
+  dump(io.stdout, root, dag)
+  local label_name
+  label_name = function(s)
+    if s == '(' then
+      return 'normal-(  '
+    end
+    return ('data-%-4s'):format(convert[s])
   end
   local label_value
   label_value = function(k)
