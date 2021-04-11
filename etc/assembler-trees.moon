@@ -35,6 +35,8 @@ dump = (f, root, dag, level = 0) ->
 	if dag[root][2]
 		dump f, dag[root][2], dag, level + 1
 
+convert = setmetatable { ['.']: 'dot', ['\0']: 'nul' },
+	__index: (k) => k
 -- deal with opcodes
 
 write_opcode_tree = do
@@ -53,12 +55,12 @@ write_opcode_tree = do
 	table.sort order_to_opcode
 	root, opcode_to_links = build_dag order_to_opcode
 	(f) ->
+		f\write '\t$tree   .$op-%s ( opcode tree )\n'\format root\lower!
+		f\write '\t$start\n'
 		for i = 0, #byte_to_opcode
 			opcode = byte_to_opcode[i]
 			f\write '\t'
-			if opcode == root
-				f\write '$root   '
-			elseif opcode != '---'
+			if opcode != '---'
 				f\write '$op-%s '\format opcode\lower!
 			else
 				f\write '        '
@@ -111,14 +113,31 @@ add_globals = (root, dag, key_to_label, key_to_contents, pad_before = '', pad_af
 do
 	root, dag = build_dag_from_chars '{}[]%@$;|=~,.^#"\0', '(', ')'
 	check_terminals dag, ')'
--- 	dump io.stdout, root, dag
-	convert = {
-		['.']: 'dot'
-		['\0']: 'nul'
-	}
-	label_name = (s) -> 'first-char-%-3s'\format convert[s] or s
+	label_name = (s) -> 'normal-%-3s'\format convert[s]
 	label_value = (k) -> '[ %02x ]'\format k\byte!
-	add_globals root, dag, label_name, label_value, '  ', '     '
+	add_globals root, dag, label_name, label_value, '', '   '
+
+do
+	root, dag = build_dag_from_chars '{}', '\0', '('
+	dump io.stdout, root, dag
+	label_name = (s) ->
+		if s == '('
+			return 'normal-(  '
+		'variable-%s'\format convert[s]
+	label_value = (k) -> '[ %02x ]'\format k\byte!
+	dag['('] = nil
+	add_globals root, dag, label_name, label_value, '', '   '
+
+do
+	root, dag = build_dag_from_chars '{}\0', '('
+	dump io.stdout, root, dag
+	label_name = (s) ->
+		if s == '('
+			return 'normal-(  '
+		'macro-%-3s'\format convert[s]
+	label_value = (k) -> '[ %02x ]'\format k\byte!
+	dag['('] = nil
+	add_globals root, dag, label_name, label_value, '', '   '
 
 devices = {}
 
@@ -147,7 +166,7 @@ f = assert io.open '%s.tmp'\format(filename), 'w'
 state = 'normal'
 machine =
 	normal: (l) ->
-		if l\match '%$disasm .*%$asm'
+		if l\match '%( opcode tree %)'
 			write_opcode_tree f
 			state = 'opcode'
 		elseif l\match '^%@'
@@ -166,7 +185,7 @@ machine =
 			f\write l
 			f\write '\n'
 	opcode: (l) ->
-		if not l\match '%['
+		if not l\match '.'
 			f\write l
 			f\write '\n'
 			state = 'normal'

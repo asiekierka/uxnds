@@ -1,54 +1,41 @@
 ;tree { search-key 2 max-key-len 1 }
-;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 }
+;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 heap 2 addr 2 subtree 2 }
 
 %HCF { #0000 DIV }
+%SHORT_FLAG { #20 }
 
 ( devices )
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 string 2 }
-|0110 ;Screen { width 2 height 2 pad 4 x 2 y 2 color 1 }
-|0120 ;Sprite { pad 8 x 2 y 2 addr 2 color 1 }
-|0130 ;Controller { p1 1 }
-|0140 ;Keys { key 1 }
-|0150 ;Mouse { x 2 y 2 state 1 chord 1 }
-|0160 ;File { pad 8 name 2 length 2 load 2 save 2 }
-|01F0 ;System { pad 8 r 2 g 2 b 2 }
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
+|0130 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
+|0160 ;Mouse { vector 2 x 2 y 2 state 1 chord 1 }
+|0170 ;File { vector 2 pad 6 name 2 length 2 load 3 save 2 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
 
 ( vectors )
 
 |0200 ^RESET JMP
-|0204 BRK
-|0208 BRK
 
 @RESET
-	#b000 #c000 #0010 ,memcpy JSR2
-	HCF
-
-	,$token ,strlen JSR2
-	HCF
-
-	#00
-	$loop
-	DUP ,highest-bit JSR2
-	( )
-	POP
-	#01 ADD
-	DUP ^$loop JNZ
-	POP
-
+	,assembler-heap-start =assembler.heap
+	#0070 =assembler.addr
 
 	,$token ^assemble-token JSR
 	,$token2 ^assemble-token JSR
 	,$token3 ^assemble-token JSR
+	,$token4 ^assemble-token JSR
+	,$token5 ^assemble-token JSR
 	~assembler.state
 	HCF
 
-	$token [ hello 00 ]
-	$token2 [ 00 ]
-	$token3 [ 00 ]
-
-@assemble-tokens ( string-ptr* -- )
-	DUP2 ^assemble-token JSR
+	$token [ 25 xyllo 00 ]
+	$token2 [ 7b 00 ]
+	$token3 [ there 00 ]
+	$token4 [ 00 ]
+	$token5 [ 7d 00 ]
 
 @assemble-token ( string-ptr* -- )
 	( get location of tree )
@@ -179,36 +166,6 @@
 	STH POP2 POP2 STHr POP2r
 	JMP2r
 
-@memcpy ( src-ptr* dest-ptr* length* -- )
-	SWP2 STH2
-
-	$loop
-	DUP2 ORA ^$keep-going JNZ
-	POP2 POP2 POP2r
-	JMP2r
-
-	$keep-going
-	#0001 SUB2
-	SWP2 DUP2 PEK2 DUP2r STH2r POK2
-	#0001 ADD2 SWP2
-	LIT2r [ 0001 ] ADD2r
-	^$loop JMP
-
-@strlen ( string-ptr* -- length* )
-	DUP2 #0001 SUB2
-	$loop
-	#0001 ADD2
-	DUP2 PEK2 ^$loop JNZ
-	SWP2 SUB2
-	JMP2r
-
-
-
-
-@add-label ( string-ptr* label-flags -- )
-	( NYI )
-	POP POP2 JMP2r
-
 @highest-bit ( n -- 00 if n is 00
                  OR 01 if n is 01
                  OR 02 if n is 02..03
@@ -225,6 +182,104 @@
 
 	$lookup
 	[ 01 06 02 07 05 04 03 08 ]
+
+@memcpy ( src-ptr* dest-ptr* length* -- after-dest-ptr* )
+	SWP2 STH2
+
+	$loop
+	DUP2 ORA ^$keep-going JNZ
+	POP2 POP2 STH2r
+	JMP2r
+
+	$keep-going
+	#0001 SUB2
+	SWP2 DUP2 PEK2 DUP2r STH2r POK2
+	#0001 ADD2 SWP2
+	LIT2r [ 0001 ] ADD2r
+	^$loop JMP
+
+@strcpy ( src-ptr* dest-ptr* -- after-dest-ptr* )
+	OVR2 ^strlen JSR #0001 ADD2 ^memcpy JMP
+
+@strlen ( string-ptr* -- length* )
+	DUP2 #0001 SUB2
+	$loop
+	#0001 ADD2
+	DUP2 PEK2 ^$loop JNZ
+	SWP2 SUB2
+	JMP2r
+
+@append-heap ( string-ptr* -- after-string-ptr* )
+	~assembler.heap ,strcpy JSR2
+	DUP2 =assembler.heap
+	JMP2r
+
+@append-tree ( string-ptr* incoming-ptr* -- binary-data* )
+	~assembler.heap SWP2 STR2
+	,$zero-pointers ~assembler.heap #0004 ^memcpy JSR =assembler.heap
+	^append-heap JSR
+	JMP2r
+
+	$zero-pointers [ 0000 0000 ]
+
+@add-label ( string-ptr* label-flags -- )
+	ROT ROT
+	DUP2 ,label-tree SWP2 #ff ,traverse-tree JSR2
+	^$new-label JNZ
+
+	( label already exists, check the flags and addr value )
+	SWP2 POP2
+	DUP2 #0001 ADD2 LDR2 ~assembler.addr EQU2 ^$addr-okay JNZ
+	( FIXME address is different to previous run, or label defined twice )
+	$addr-okay
+	PEK2 EQU ^$type-okay JNZ
+	( FIXME node type is different to before )
+	$type-okay
+	JMP2r
+
+	$new-label
+	^append-tree JSR
+	(
+	~assembler.heap SWP2 STR2
+	,$zero-pointers ~assembler.heap #0004 ^memcpy JSR =assembler.heap
+	~assembler.heap ,strcpy JSR2
+	)
+	DUP2 STH2 POK2 STH2r
+	DUP2 #0001 ADD2 ~assembler.addr SWP2 STR2
+	#0003 ADD2 =assembler.heap
+	JMP2r
+
+@lookup-label ( string-ptr* -- address* node-type if found
+                            OR false-address* 00 if not found )
+	( FIXME deal with dotted labels )
+	DUP2 ,label-tree SWP2 #ff ,traverse-tree JSR2
+	^$not-found JNZ
+
+	SWP2 POP2
+	DUP2 #0001 ADD2 LDR2 SWP2 PEK2
+	JMP2r
+
+	$not-found
+	POP2
+	( FIXME complain about missing label )
+	POP2
+	( false-address is out of reach for JMP )
+	~assembler.addr #8765 ADD2
+	#00
+	JMP2r
+
+@write-byte ( byte -- )
+	( FIXME ) =Console.byte
+	~assembler.addr #0001 ADD2 =assembler.addr
+	JMP2r
+
+@write-short ( short -- )
+	( FIXME ) =Console.short
+	~assembler.addr #0002 ADD2 =assembler.addr
+	JMP2r
+
+@label-tree .l-root
+@macro-tree [ 0000 ]
 
 @opcodes
 	(
@@ -266,7 +321,8 @@
 		by seven (the size of each node). By multiplying the byte value by seven
 		and adding to $disasm, we get the opcode name when disassembling too.
 	)
-	$tree   .$root
+	$tree   .$op-lth ( opcode tree )
+	$start
 	$op-brk .$op-add .$op-dup $disasm [ BRK ] $asm
 	$op-nop .$op-mul .$op-ovr         [ NOP ]
 	$op-lit [ 0000 ] [ 0000 ]         [ LIT ]
@@ -278,7 +334,7 @@
 	$op-equ .$op-brk .$op-jnz         [ EQU ]
 	$op-neq [ 0000 ] [ 0000 ]         [ NEQ ]
 	$op-gth [ 0000 ] [ 0000 ]         [ GTH ]
-	$root   .$op-equ .$op-pok         [ LTH ]
+	$op-lth .$op-equ .$op-pok         [ LTH ]
 	$op-gts .$op-gth .$op-jmp         [ GTS ]
 	$op-lts [ 0000 ] [ 0000 ]         [ LTS ]
 	        [ 0000 ] [ 0000 ]         [ ??? ]
@@ -302,23 +358,23 @@
 
 @state-machine-pointers
 ( normal mode 00 )
-.first-char-root .nyi
-( FIXME 01 )
-.nyi .nyi
-( FIXME 02 )
-.nyi .nyi
-( FIXME 04 )
-.nyi .nyi
-( FIXME 08 )
-.nyi .nyi
-( FIXME 10 )
-.nyi .nyi
+.normal-root   .nyi
+( macro definition 01 )
+.macro-root    .macro-main
+( macro definition, contents ignored 02 )
+.macro-root    .ignore
+( variable definition, expect field size 08 )
+.variable-nul  .variable-size
+( variable definition, expect field name 04 )
+.variable-root .variable-name
+( reserved for future use 10 )
+.normal-(      .ignore
 ( literal data 20 )
-[ 0000 ] .nyi
-( FIXME 40 )
-.nyi .nyi
+[ 0000 ]       .nyi
+( reserved for future use 40 )
+.normal-(      .ignore
 ( comment 80 )
-.first-char-) .ignore
+.normal-)      .ignore
 
 (
 	Next up, we have the tree of code corresponding to each token's
@@ -337,11 +393,11 @@
 	doesn't matter what other bits are set, a comment's a comment.
 )
 
-@first-char-(     [ 0000 ]      .first-char-)   [ 28 ]
+@normal-(   [ 0000 ]    .normal-)   [ 28 ]
 	~assembler.state #80 ORA =assembler.state
 JMP2r
 
-@first-char-)     [ 0000 ]        [ 0000 ]      [ 29 ]
+@normal-)   [ 0000 ]    [ 0000 ]    [ 29 ]
 	~assembler.state #7f AND =assembler.state
 JMP2r
 
@@ -349,11 +405,11 @@ JMP2r
 	Left and right square brackets start and end literal data sections.
 )
 
-@first-char-[   .first-char-@   .first-char-]   [ 5b ]
+@normal-[   .normal-@   .normal-]   [ 5b ]
 	~assembler.state #20 ORA =assembler.state
 JMP2r
 
-@first-char-]     [ 0000 ]        [ 0000 ]      [ 5d ]
+@normal-]   [ 0000 ]    [ 0000 ]    [ 5d ]
 	~assembler.state #df AND =assembler.state
 JMP2r
 
@@ -362,33 +418,229 @@ JMP2r
 	local labels that follow.
 )
 
-@first-char-@     [ 0000 ]        [ 0000 ]      [ 40 ]
-	~assembler.pass ^$scope JNZ
+@normal-@   [ 0000 ]    [ 0000 ]    [ 40 ]
+	~assembler.token
 	DUP2 #00 ,add-label JSR2
 
 	$scope
-	DUP2 ,strlen JSR2
-	DUP2 =assembler.scope-len POP
-	,assembler.scope SWP2 JMP2
+	,assembler.scope ,strcpy JSR2
+	DUP2 ,assembler.scope SUB2 =assembler.scope-len POP
+	#0001 SUB2 #2d SWP POK POP
+	JMP2r
 
-@first-char-root
-@first-char-=   .first-char-$   .first-char-^   [ 3d ]
-@first-char-"   .first-char-nul .first-char-#   [ 22 ]
-@first-char-#     [ 0000 ]        [ 0000 ]      [ 23 ]
-@first-char-$   .first-char-"   .first-char-,   [ 24 ]
-@first-char-%     [ 0000 ]      .first-char-(   [ 25 ]
-@first-char-,   .first-char-%   .first-char-dot [ 2c ]
-@first-char-dot   [ 0000 ]      .first-char-;   [ 2e ]
-@first-char-;     [ 0000 ]        [ 0000 ]      [ 3b ]
-@first-char-^   .first-char-[   .first-char-|   [ 5e ]
-@first-char-{     [ 0000 ]        [ 0000 ]      [ 7b ]
-@first-char-|   .first-char-{   .first-char-}   [ 7c ]
-@first-char-}     [ 0000 ]      .first-char-~   [ 7d ]
-@first-char-~     [ 0000 ]        [ 0000 ]      [ 7e ]
+(
+	Dollar signs introduce local labels, which use the scope defined above.
+)
 
-@first-char-nul   [ 0000 ]        [ 0000 ]      [ 00 ]
+@normal-$   .normal-"   .normal-,   [ 24 ]
+	~assembler.token
+	,assembler.scope ~assembler.scope-len ADD
+	,strcpy JSR2 POP2
+
+	,assembler.scope #00 ,add-label JMP2 ( tail call )
+
+(
+	Hash signs followed by two or four hex digits write a literal.
+)
+
+@normal-#   [ 0000 ]    [ 0000 ]    [ 23 ]
+	~assembler.token ,parse-hex-string JSR2
+	DUP ^$valid JNZ
+	( FIXME complain about invalid hex literal )
+	POP
+	JMP2r
+	
+	$valid
+	DUP #01 SUB SHORT_FLAG MUL ( short flag for opcode )
+	,opcodes-op-lit ,opcodes-start SUB2 #07 DIV
+	ADD ADD ,write-byte JSR2
+
+	#02 EQU ^$short JNZ
+	,write-byte JMP2 ( tail call )
+
+	$short
+	,write-short JMP2 ( tail call )
+
+(
+	A pipe moves the current address to the hex value given.
+)
+
+@normal-|   .normal-{   .normal-}   [ 7c ]
+	~assembler.token ,parse-hex-string JSR2
+	DUP #02 EQU ^$valid JNZ
+	#00 EQU JMP POP
+	( FIXME complain about invalid hex literal )
+	JMP2r
+
+	$valid
+	POP
+	DUP2 ~assembler.addr LTH2 ^$backwards JNZ
+	( FIXME add zeroes when writing )
+	=assembler.addr
+	JMP2r
+
+	$backwards
+	( FIXME complain about going backwards )
+	POP2
+	JMP2r
+
+(
+	Commas and dots write the label address - the comma precedes this
+	with a LIT2 opcode.
+)
+
+@normal-,   .normal-%   .normal-dot [ 2c ]
+	,opcodes-op-lit ,opcodes-start SUB2 #07 DIV SHORT_FLAG ADD ,write-byte JSR2 POP
+	^normal-dot-main JMP
+
+@normal-dot [ 0000 ]    .normal-;   [ 2e ]
+	$main
+	~assembler.token ,lookup-label JSR2
+	POP ( don't care about node type )
+	,write-short JMP2 ( tail call )
+
+(
+	Caret writes LIT, followed by the label address as an offset.
+)
+
+@normal-^   .normal-[   .normal-|   [ 5e ]
+	,opcodes-op-lit ,opcodes-start SUB2 #07 DIV ,write-byte JSR2 POP
+	~assembler.token ,lookup-label JSR2
+	POP ( don't care about node type )
+	~assembler.addr SUB2
+	DUP2 #ff79 GTH2 ^$okay JNZ
+	DUP2 #0080 LTH2 ^$okay JNZ
+
+	( FIXME complain about jump being too far )
+
+	$okay
+	,write-byte JSR2 POP
+	JMP2r
+
+(
+	Tilde and equals are the load and store helpers respectively.
+	If the target is in the zero page, use LDR/PEK or STR/POK opcodes,
+	otherwise use LDR2/PEK2 or STR2/POK2 opcodes.
+)
+@normal-~   [ 0000 ]    [ 0000 ]    [ 7e ]
+	LIT2r .opcodes-op-ldr LIT2r .opcodes-op-pek
+	^normal-=-main JMP
+
+@normal-root
+@normal-=   .normal-$   .normal-^   [ 3d ]
+	LIT2r .opcodes-op-str LIT2r .opcodes-op-pok
+	$main
+	~assembler.token ,lookup-label JSR2
+	DUP #01 AND ^$valid JNZ
+
+	( FIXME complain about helper not being usable )
+	POP2 JMP2r
+
+	$valid
+	#02 AND ^$two-byte JNZ
+	SWP2r
+	$two-byte
+	POP2r
+	LIT2r .opcodes-start SUB2r LITr [ 07 ] DIVr
+	OVR #00 EQU ^$byte-mode JNZ
+
+	,write-short SHORT_FLAG ^$end JMP
+
+	$byte-mode
+	SWP POP
+	,write-byte #00
+
+	$end
+	,opcodes-op-lit ,opcodes-start SUB2 #07 DIV ADD ADD ,write-byte JSR2
+	JSR2
+	STHr ,write-byte JSR2
+	POPr
+	JMP2r
+
+(
+	Semicolons introduce variables. The variable name is added to the label
+	tree as usual, but all of the subfields are collected into their own tree
+	pointed to in the variable name's binary data.
+)
+@normal-;   [ 0000 ]    [ 0000 ]    [ 3b ]
+	~assembler.token #80 ,add-label JSR2
+	~assembler.heap #0000 OVR2 STR2
+	DUP2 =assembler.subtree
+	#0002 ADD2 =assembler.heap
+
+	~assembler.state #0c ORA =assembler.state
+	JMP2r
+
+@variable-root
+@variable-{ .variable-nul .variable-} [ 7b ]
+	JMP2r
+
+@variable-nul [ 0000 ]    .normal-(   [ 00 ]
+	JMP2r
+
+@variable-} [ 0000 ]    [ 0000 ]    [ 7d ]
+	~assembler.state #f3 AND =assembler.state
+	JMP2r
+
+@variable-name
+@variable-size
+	,nyi JMP2r
+
+(
+	Percent signs introduce macros. The macro name is added to the macro tree,
+	and all the arguments are collected into a list that follows the label's
+	binary data.
+)
+@normal-%   [ 0000 ]    .normal-(   [ 25 ]
+	,macro-tree ~assembler.token #ff ,traverse-tree JSR2
+	^$new-macro JNZ
+
+	( macro already exists, we assume defined in a previous pass
+	  we totally ignore the contents )
+	POP2
+	~assembler.state #02 ORA =assembler.state
+	JMP2r
+
+	$new-macro
+	~assembler.token SWP2 ,append-tree JSR2
+	POP2
+	~assembler.state #01 ORA =assembler.state
+	JMP2r
+
+@macro-root
+@macro-{   .macro-nul .macro-}   [ 7b ]
+	JMP2r
+
+@macro-}   [ 0000 ]    [ 0000 ]    [ 7d ]
+	~assembler.heap DUP2 #f0 ROT ROT POK2
+	#0001 ADD2 =assembler.heap
+	~assembler.state #fc AND =assembler.state
+	JMP2r
+
+@macro-nul [ 0000 ]    .normal-(   [ 00 ]
+	JMP2r
+
+@macro-main
+	~assembler.token ,append-heap JSR2
+	POP2
+	JMP2r
+
+
+@normal-"   .normal-nul .normal-#   [ 22 ]
+	( FIXME NYI )
+	JMP2r
+
+@normal-{   [ 0000 ]    [ 0000 ]    [ 7b ]
+	( these are spurious, but ignore them anyway )
+	JMP2r
+
+@normal-}   [ 0000 ]    .normal-~   [ 7d ]
+	( these are spurious, but ignore them anyway )
+	JMP2r
+
+@normal-nul [ 0000 ]    [ 0000 ]    [ 00 ]
 @ignore
-JMP2r
+	JMP2r
 
 @nyi
 	,$string =Console.string
@@ -419,47 +671,70 @@ JMP2r
 	If there is a subtree, it is searched when the reference contains a dot.
 )
 
-@l-Console         [ 0000 ]          [ 0000 ]         [ Console 00 ]    [ 80 ] .Console .l-Console-root
-@l-Console-byte    [ 0000 ]          [ 0000 ]         [ byte 00 ]       [ 01 ] .Console.byte
+@l-Audio           [ 0000 ]          [ 0000 ]         [ Audio 00 ]      [ 80 ] .Audio .l-Audio-root
+@l-Audio-delay     [ 0000 ]          [ 0000 ]         [ delay 00 ]      [ 03 ] .Audio.delay
+@l-Audio-envelope .l-Audio-delay    .l-Audio-finish   [ envelope 00 ]   [ 03 ] .Audio.envelope
+@l-Audio-finish    [ 0000 ]          [ 0000 ]         [ finish 00 ]     [ 01 ] .Audio.finish
+@l-Audio-pitch    .l-Audio-envelope .l-Audio-value    [ pitch 00 ]      [ 01 ] .Audio.pitch
+@l-Audio-play      [ 0000 ]          [ 0000 ]         [ play 00 ]       [ 01 ] .Audio.play
+@l-Audio-root
+@l-Audio-value    .l-Audio-play     .l-Audio-volume   [ value 00 ]      [ 03 ] .Audio.value
+@l-Audio-volume    [ 0000 ]         .l-Audio-wave     [ volume 00 ]     [ 01 ] .Audio.volume
+@l-Audio-wave      [ 0000 ]          [ 0000 ]         [ wave 00 ]       [ 03 ] .Audio.wave
+@l-Console        .l-Audio          .l-Controller     [ Console 00 ]    [ 80 ] .Console .l-Console-root
+@l-Console-byte    [ 0000 ]         .l-Console-char   [ byte 00 ]       [ 01 ] .Console.byte
+@l-Console-char    [ 0000 ]          [ 0000 ]         [ char 00 ]       [ 01 ] .Console.char
 @l-Console-root
-@l-Console-char   .l-Console-byte   .l-Console-short  [ char 00 ]       [ 01 ] .Console.char
-@l-Console-short   [ 0000 ]         .l-Console-string [ short 00 ]      [ 03 ] .Console.short
-@l-Console-string  [ 0000 ]          [ 0000 ]         [ string 00 ]     [ 03 ] .Console.string
-@l-Controller     .l-Console        .l-File           [ Controller 00 ] [ 80 ] .Controller .l-Controller-root
+@l-Console-short  .l-Console-byte   .l-Console-string [ short 00 ]      [ 03 ] .Console.short
+@l-Console-string  [ 0000 ]         .l-Console-vector [ string 00 ]     [ 03 ] .Console.string
+@l-Console-vector  [ 0000 ]          [ 0000 ]         [ vector 00 ]     [ 03 ] .Console.vector
+@l-Controller      [ 0000 ]          [ 0000 ]         [ Controller 00 ] [ 80 ] .Controller .l-Controller-root
+@l-Controller-button  [ 0000 ]          [ 0000 ]         [ button 00 ]     [ 01 ] .Controller.button
+@l-Controller-key .l-Controller-button .l-Controller-vector [ key 00 ]        [ 01 ] .Controller.key
 @l-Controller-root
-@l-Controller-p1   [ 0000 ]          [ 0000 ]         [ p1 00 ]         [ 01 ] .Controller.p1
+@l-Controller-vector  [ 0000 ]          [ 0000 ]         [ vector 00 ]     [ 03 ] .Controller.vector
+@l-DateTime       .l-Console        .l-Mouse          [ DateTime 00 ]   [ 80 ] .DateTime .l-DateTime-root
+@l-DateTime-day    [ 0000 ]          [ 0000 ]         [ day 00 ]        [ 01 ] .DateTime.day
+@l-DateTime-dotw  .l-DateTime-day   .l-DateTime-doty  [ dotw 00 ]       [ 01 ] .DateTime.dotw
+@l-DateTime-doty   [ 0000 ]         .l-DateTime-hour  [ doty 00 ]       [ 03 ] .DateTime.doty
+@l-DateTime-hour   [ 0000 ]          [ 0000 ]         [ hour 00 ]       [ 01 ] .DateTime.hour
+@l-DateTime-isdst .l-DateTime-dotw  .l-DateTime-refresh [ isdst 00 ]      [ 01 ] .DateTime.isdst
+@l-DateTime-minute  [ 0000 ]         .l-DateTime-month [ minute 00 ]     [ 01 ] .DateTime.minute
+@l-DateTime-month  [ 0000 ]          [ 0000 ]         [ month 00 ]      [ 01 ] .DateTime.month
+@l-DateTime-refresh .l-DateTime-minute .l-DateTime-second [ refresh 00 ]    [ 01 ] .DateTime.refresh
+@l-DateTime-root
+@l-DateTime-second  [ 0000 ]         .l-DateTime-year  [ second 00 ]     [ 01 ] .DateTime.second
+@l-DateTime-year   [ 0000 ]          [ 0000 ]         [ year 00 ]       [ 03 ] .DateTime.year
 @l-File            [ 0000 ]          [ 0000 ]         [ File 00 ]       [ 80 ] .File .l-File-root
-@l-File-length     [ 0000 ]          [ 0000 ]         [ length 00 ]     [ 03 ] .File.length
+@l-File-length     [ 0000 ]         .l-File-load      [ length 00 ]     [ 03 ] .File.length
+@l-File-load       [ 0000 ]          [ 0000 ]         [ load 00 ]       [ 00 ] .File.load
+@l-File-name      .l-File-length    .l-File-save      [ name 00 ]       [ 03 ] .File.name
 @l-File-root
-@l-File-load      .l-File-length    .l-File-name      [ load 00 ]       [ 03 ] .File.load
-@l-File-name       [ 0000 ]         .l-File-save      [ name 00 ]       [ 03 ] .File.name
-@l-File-save       [ 0000 ]          [ 0000 ]         [ save 00 ]       [ 03 ] .File.save
-@l-root
-@l-Keys           .l-Controller     .l-Screen         [ Keys 00 ]       [ 80 ] .Keys .l-Keys-root
-@l-Keys-root
-@l-Keys-key        [ 0000 ]          [ 0000 ]         [ key 00 ]        [ 01 ] .Keys.key
-@l-Mouse           [ 0000 ]          [ 0000 ]         [ Mouse 00 ]      [ 80 ] .Mouse .l-Mouse-root
-@l-Mouse-chord     [ 0000 ]          [ 0000 ]         [ chord 00 ]      [ 01 ] .Mouse.chord
+@l-File-save       [ 0000 ]         .l-File-vector    [ save 00 ]       [ 03 ] .File.save
+@l-File-vector     [ 0000 ]          [ 0000 ]         [ vector 00 ]     [ 03 ] .File.vector
+@l-Mouse          .l-File           .l-Screen         [ Mouse 00 ]      [ 80 ] .Mouse .l-Mouse-root
+@l-Mouse-chord     [ 0000 ]         .l-Mouse-state    [ chord 00 ]      [ 01 ] .Mouse.chord
 @l-Mouse-root
-@l-Mouse-state    .l-Mouse-chord    .l-Mouse-x        [ state 00 ]      [ 01 ] .Mouse.state
+@l-Mouse-state     [ 0000 ]          [ 0000 ]         [ state 00 ]      [ 01 ] .Mouse.state
+@l-Mouse-vector   .l-Mouse-chord    .l-Mouse-x        [ vector 00 ]     [ 03 ] .Mouse.vector
 @l-Mouse-x         [ 0000 ]         .l-Mouse-y        [ x 00 ]          [ 03 ] .Mouse.x
 @l-Mouse-y         [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Mouse.y
-@l-Screen         .l-Mouse          .l-Sprite         [ Screen 00 ]     [ 80 ] .Screen .l-Screen-root
-@l-Screen-color    [ 0000 ]         .l-Screen-height  [ color 00 ]      [ 01 ] .Screen.color
+@l-Screen          [ 0000 ]         .l-System         [ Screen 00 ]     [ 80 ] .Screen .l-Screen-root
+@l-Screen-addr     [ 0000 ]          [ 0000 ]         [ addr 00 ]       [ 03 ] .Screen.addr
+@l-Screen-color   .l-Screen-addr    .l-Screen-height  [ color 00 ]      [ 01 ] .Screen.color
 @l-Screen-height   [ 0000 ]          [ 0000 ]         [ height 00 ]     [ 03 ] .Screen.height
 @l-Screen-root
-@l-Screen-width   .l-Screen-color   .l-Screen-x       [ width 00 ]      [ 03 ] .Screen.width
-@l-Screen-x        [ 0000 ]         .l-Screen-y       [ x 00 ]          [ 03 ] .Screen.x
+@l-Screen-vector  .l-Screen-color   .l-Screen-x       [ vector 00 ]     [ 03 ] .Screen.vector
+@l-Screen-width    [ 0000 ]          [ 0000 ]         [ width 00 ]      [ 03 ] .Screen.width
+@l-Screen-x       .l-Screen-width   .l-Screen-y       [ x 00 ]          [ 03 ] .Screen.x
 @l-Screen-y        [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Screen.y
-@l-Sprite          [ 0000 ]         .l-System         [ Sprite 00 ]     [ 80 ] .Sprite .l-Sprite-root
-@l-Sprite-addr     [ 0000 ]          [ 0000 ]         [ addr 00 ]       [ 03 ] .Sprite.addr
-@l-Sprite-root
-@l-Sprite-color   .l-Sprite-addr    .l-Sprite-x       [ color 00 ]      [ 01 ] .Sprite.color
-@l-Sprite-x        [ 0000 ]         .l-Sprite-y       [ x 00 ]          [ 03 ] .Sprite.x
-@l-Sprite-y        [ 0000 ]          [ 0000 ]         [ y 00 ]          [ 03 ] .Sprite.y
 @l-System          [ 0000 ]          [ 0000 ]         [ System 00 ]     [ 80 ] .System .l-System-root
 @l-System-b        [ 0000 ]          [ 0000 ]         [ b 00 ]          [ 03 ] .System.b
-@l-System-root
 @l-System-g       .l-System-b       .l-System-r       [ g 00 ]          [ 03 ] .System.g
-@l-System-r        [ 0000 ]          [ 0000 ]         [ r 00 ]          [ 03 ] .System.r
+@l-System-r        [ 0000 ]         .l-System-vector  [ r 00 ]          [ 03 ] .System.r
+@l-System-root
+@l-System-vector   [ 0000 ]          [ 0000 ]         [ vector 00 ]     [ 03 ] .System.vector
+@l-root
+
+@assembler-heap-start
 

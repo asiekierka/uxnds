@@ -74,6 +74,14 @@ dump = function(f, root, dag, level)
     return dump(f, dag[root][2], dag, level + 1)
   end
 end
+local convert = setmetatable({
+  ['.'] = 'dot',
+  ['\0'] = 'nul'
+}, {
+  __index = function(self, k)
+    return k
+  end
+})
 local write_opcode_tree
 do
   local byte_to_opcode = { }
@@ -105,12 +113,12 @@ do
   table.sort(order_to_opcode)
   local root, opcode_to_links = build_dag(order_to_opcode)
   write_opcode_tree = function(f)
+    f:write(('\t$tree   .$op-%s ( opcode tree )\n'):format(root:lower()))
+    f:write('\t$start\n')
     for i = 0, #byte_to_opcode do
       local opcode = byte_to_opcode[i]
       f:write('\t')
-      if opcode == root then
-        f:write('$root   ')
-      elseif opcode ~= '---' then
+      if opcode ~= '---' then
         f:write(('$op-%s '):format(opcode:lower()))
       else
         f:write('        ')
@@ -184,19 +192,49 @@ end
 do
   local root, dag = build_dag_from_chars('{}[]%@$;|=~,.^#"\0', '(', ')')
   check_terminals(dag, ')')
-  local convert = {
-    ['.'] = 'dot',
-    ['\0'] = 'nul'
-  }
   local label_name
   label_name = function(s)
-    return ('first-char-%-3s'):format(convert[s] or s)
+    return ('normal-%-3s'):format(convert[s])
   end
   local label_value
   label_value = function(k)
     return ('[ %02x ]'):format(k:byte())
   end
-  add_globals(root, dag, label_name, label_value, '  ', '     ')
+  add_globals(root, dag, label_name, label_value, '', '   ')
+end
+do
+  local root, dag = build_dag_from_chars('{}', '\0', '(')
+  dump(io.stdout, root, dag)
+  local label_name
+  label_name = function(s)
+    if s == '(' then
+      return 'normal-(  '
+    end
+    return ('variable-%s'):format(convert[s])
+  end
+  local label_value
+  label_value = function(k)
+    return ('[ %02x ]'):format(k:byte())
+  end
+  dag['('] = nil
+  add_globals(root, dag, label_name, label_value, '', '   ')
+end
+do
+  local root, dag = build_dag_from_chars('{}\0', '(')
+  dump(io.stdout, root, dag)
+  local label_name
+  label_name = function(s)
+    if s == '(' then
+      return 'normal-(  '
+    end
+    return ('macro-%-3s'):format(convert[s])
+  end
+  local label_value
+  label_value = function(k)
+    return ('[ %02x ]'):format(k:byte())
+  end
+  dag['('] = nil
+  add_globals(root, dag, label_name, label_value, '', '   ')
 end
 local devices = { }
 local add_device
@@ -252,7 +290,7 @@ local f = assert(io.open(('%s.tmp'):format(filename), 'w'))
 local state = 'normal'
 local machine = {
   normal = function(l)
-    if l:match('%$disasm .*%$asm') then
+    if l:match('%( opcode tree %)') then
       write_opcode_tree(f)
       state = 'opcode'
     elseif l:match('^%@') then
@@ -277,7 +315,7 @@ local machine = {
     end
   end,
   opcode = function(l)
-    if not l:match('%[') then
+    if not l:match('.') then
       f:write(l)
       f:write('\n')
       state = 'normal'
