@@ -327,6 +327,7 @@ start(Uxn *u)
 			case SDL_TEXTINPUT:
 				if(event.text.text[0] >= ' ' || event.text.text[0] <= '~')
 					u->ram.dat[devctrl->addr + 3] = event.text.text[0];
+				break;
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
