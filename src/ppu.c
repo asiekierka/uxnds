@@ -64,36 +64,6 @@ drawchr(Ppu *p, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 alpha)
 }
 
 void
-drawicn(Ppu *p, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 fg, Uint8 bg)
-{
-	Uint8 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = (sprite[v] >> (7 - h)) & 0x1;
-			drawpixel(p, x + h, y + v, ch1 ? fg : bg);
-		}
-}
-
-void
-drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
-{
-	Uint8 i, x, y, b;
-	for(i = 0; i < 0x10; ++i) { /* memory */
-		x = ((i % 8) * 3 + 3) * 8, y = p->pad + 8 + i / 8 * 8, b = stack[i];
-		drawicn(p, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i), 0);
-		drawicn(p, x + 8, y, font[b & 0xf], 1 + (ptr == i), 0);
-	}
-	for(x = 0; x < 32; ++x) {
-		drawpixel(p, x, p->height / 2, 2);
-		drawpixel(p, p->width - x, p->height / 2, 2);
-		drawpixel(p, p->width / 2, p->height - x, 2);
-		drawpixel(p, p->width / 2, x, 2);
-		drawpixel(p, p->width / 2 - 16 + x, p->height / 2, 2);
-		drawpixel(p, p->width / 2, p->height / 2 - 16 + x, 2);
-	}
-}
-
-void
 putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	Uint16 row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16), col = 7 - (x % 8);
@@ -132,6 +102,25 @@ putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 			Uint8 ch2 = ((sprite[v + 8] >> (7 - h)) & 0x1) * color;
 			putpixel(p, layer, x + h, y + v, (((ch1 + ch2 * 2) + color / 4) & 0x3));
 		}
+}
+
+void
+drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
+{
+	Uint8 i, x, y, b;
+	for(i = 0; i < 0x20; ++i) { /* memory */
+		x = ((i % 8) * 3 + 1) * 8, y = (i / 8 + 1) * 8, b = stack[i];
+		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 2);
+		puticn(p, p->bg, x + 8, y, font[b & 0xf], 2);
+	}
+	for(x = 0; x < 0x20; ++x) {
+		drawpixel(p, x, p->height / 2, 2);
+		drawpixel(p, p->width - x, p->height / 2, 2);
+		drawpixel(p, p->width / 2, p->height - x, 2);
+		drawpixel(p, p->width / 2, x, 2);
+		drawpixel(p, p->width / 2 - 16 + x, p->height / 2, 2);
+		drawpixel(p, p->width / 2, p->height / 2 - 16 + x, 2);
+	}
 }
 
 void
