@@ -303,7 +303,6 @@ BRK
 		~path.length #1f EQU ^$edit-end JNZ
 			~Controller.key ,path.name #00 ~path.length ADD2 POK2
 			~path.length #01 ADD =path.length
-			~Controller.key =Console.byte
 		$edit-end
 		#00 ,path.name #00 ~path.length ADD2 POK2
 		BRK

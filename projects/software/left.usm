@@ -45,8 +45,7 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0110 ;Console { pad 8 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 }
-|0150 ;Keys { vector 2 key 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
 |0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
 
@@ -56,7 +55,6 @@
 	
 	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
 	( vectors ) ,on-mouse =Mouse.vector
-	( vectors ) ,on-key =Keys.vector
 	( vectors ) ,on-button =Controller.vector
 
 	( load file )
@@ -70,38 +68,11 @@
 
 BRK
 
-@on-key
-
-	~Keys #08 NEQ ^$no-backspace JNZ
-		( erase )
-		~selection.to ~selection.from SUB2 #0001 NEQ2 ^$erase-multiple JNZ
-			~selection.to ~selection.from SUB2 ,shift-left JSR2
-			,$erase-end JMP2
-		$erase-multiple
-			~selection.from ++ =selection.from
-			~selection.to ~selection.from SUB2 ++ ,shift-left JSR2
-		$erase-end
-		~selection.from -- =selection.from
-		^$keys-end JMP
-	$no-backspace
-
-	( insert )
-	~selection.to ~selection.from SUB2 ,shift-right JSR2
-	~Keys ~selection.from POK2
-	~selection.from ++ =selection.from
-
-	$keys-end
-	~selection.from ++ =selection.to
-	( release ) #00 =Keys
-	,redraw JSR2
-
-BRK 
-
 @on-button ( -> )
 	
 	( alt + arrow )
-	~Controller #0f AND #02 NEQ ^$no-alt JNZ
-		~Controller #04 SFT 
+	~Controller.button #0f AND #02 NEQ ^$no-alt JNZ
+		~Controller.button #04 SFT 
 		DUP #01 NEQ ^$no-aup JNZ
 			( sel word ) ,find-wordstart JSR2 =selection.to $no-aup
 		DUP #02 NEQ ^$no-adown JNZ
@@ -117,8 +88,8 @@ BRK
 	$no-alt
 
 	( ctrl + arrow )
-	~Controller #0f AND #01 NEQ ^$no-ctrl JNZ
-		~Controller #04 SFT 
+	~Controller.button #0f AND #01 NEQ ^$no-ctrl JNZ
+		~Controller.button #04 SFT 
 		DUP #01 NEQ ^$no-cup JNZ
 			( jump scroll ) #0004 ,scroll-up JSR2 $no-cup
 		DUP #02 NEQ ^$no-cdown JNZ
@@ -133,8 +104,8 @@ BRK
 	$no-ctrl
 
 	( arrow )
-	~Controller #f0 AND #00 EQU ,$no-arrow JNZ2
-		~Controller #f0 AND
+	~Controller.button #f0 AND #00 EQU ,$no-arrow JNZ2
+		~Controller.button #f0 AND
 		DUP #10 NEQ ^$no-arrowup JNZ
 			( clamp ) ~position.y #0000 EQU2 ^$no-arrowup JNZ
 			,find-lineoffset JSR2 =position.x ~position.y -- =position.y 
@@ -155,6 +126,28 @@ BRK
 		,follow-selection JSR2 
 		,redraw JSR2 
 	$no-arrow
+
+	~Controller.key #08 NEQ ^$no-backspace JNZ
+		( erase )
+		~selection.to ~selection.from SUB2 #0001 NEQ2 ^$erase-multiple JNZ
+			~selection.to ~selection.from SUB2 ,shift-left JSR2
+			,$erase-end JMP2
+		$erase-multiple
+			~selection.from ++ =selection.from
+			~selection.to ~selection.from SUB2 ++ ,shift-left JSR2
+		$erase-end
+		~selection.from -- =selection.from
+		~selection.from ++ =selection.to
+		,redraw JSR2
+		BRK
+	$no-backspace
+
+	( insert )
+	~selection.to ~selection.from SUB2 ,shift-right JSR2
+	~Controller.key ~selection.from POK2
+	~selection.from ++ =selection.from
+	~selection.from ++ =selection.to
+	,redraw JSR2
 
 BRK
 
@@ -199,7 +192,7 @@ BRK
 		BRK
 	$no-chords
 	( drag )
-	~Mouse.state ~touch.state NEQ ~Controller #0f AND #02 NEQ #0101 EQU2 ^$no-drag JNZ
+	~Mouse.state ~touch.state NEQ ~Controller.button #0f AND #02 NEQ #0101 EQU2 ^$no-drag JNZ
 		( on drag )
 		,find-selection JSR2 ++ =selection.to
 		,clamp-selection JSR2

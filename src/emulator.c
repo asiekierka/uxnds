@@ -164,8 +164,8 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 	switch(event->key.keysym.sym) {
 	case SDLK_LCTRL: flag = 0x01; break;
 	case SDLK_LALT: flag = 0x02; break;
-	case SDLK_ESCAPE: flag = 0x04; break;
-	case SDLK_LSHIFT: flag = 0x08; break;
+	case SDLK_LSHIFT: flag = 0x04; break;
+	case SDLK_ESCAPE: flag = 0x08; break;
 	case SDLK_UP: flag = 0x10; break;
 	case SDLK_DOWN: flag = 0x20; break;
 	case SDLK_LEFT: flag = 0x40; break;
@@ -332,6 +332,7 @@ start(Uxn *u)
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
 				evaluxn(u, devctrl->vector);
 				u->ram.dat[devctrl->addr + 3] = 0;
+				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION:

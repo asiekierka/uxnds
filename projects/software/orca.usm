@@ -84,7 +84,6 @@ BRK
 	
 	~Controller.key #00 EQU ^$no-key JNZ
 		~selection.x1 ~selection.y1 ~Controller.key SET-CELL
-		~Controller.key =Console.byte
 		,redraw JSR2
 	$no-key
 
@@ -108,8 +107,7 @@ BRK
 			~selection.x2 #01 ADD =selection.x2 $no-right
 	POP
 
-	~Controller.button #04 NEQ ^$no-backspace JNZ
-		~Controller.button =Console.byte
+	~Controller.key #08 NEQ ^$no-backspace JNZ
 		~selection.x1 ~selection.y1 #2e SET-CELL ( put . char )
 	$no-backspace
 
