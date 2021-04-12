@@ -1,0 +1,63 @@
+( GUI Animation )
+
+;dvd { x 2 y 2 dx 1 dy 1 }
+
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
+
+( program )
+
+|0200
+	
+	( theme ) #4cfd =System.r #4cf3 =System.g #dcf2 =System.b
+	( vectors ) ,on-frame =Screen.vector
+	( init ) ~Screen.width #0002 DIV2 =dvd.x
+	( init ) ~Screen.height #0002 DIV2 =dvd.y
+	
+BRK
+
+@on-frame ( -> )
+	
+	( clear ) #20 ,draw-dvd JSR2
+	( hit-right ) ~dvd.x ~Screen.width #0020 SUB2 EQU2
+	( hit-left ) ~dvd.x #0000 EQU2 
+	#0000 EQU2 ^$no-flipx JNZ 
+		~dvd.dx #00 EQU =dvd.dx $no-flipx
+	( hit-bottom ) ~dvd.y ~Screen.height #0010 SUB2 EQU2
+	( hit-top ) ~dvd.y #0000 EQU2 
+	#0000 EQU2 ^$no-flipy JNZ 
+		~dvd.dy #00 EQU =dvd.dy $no-flipy
+	( incr ) ~dvd.x #0001 #00 ~dvd.dx #00 EQU #fffe MUL2 ADD2 ADD2 =dvd.x 
+	( incr ) ~dvd.y #0001 #00 ~dvd.dy #00 EQU #fffe MUL2 ADD2 ADD2 =dvd.y 
+	( draw ) #21 ,draw-dvd JSR2
+
+BRK
+
+@draw-dvd ( color -- )
+	
+	( stash color ) STH 
+	,dvd_icn =Screen.addr
+	~dvd.y ~dvd.y #0010 ADD2
+	$ver
+		OVR2 =Screen.y
+		~dvd.x ~dvd.x #0020 ADD2
+		$hor
+			OVR2 =Screen.x
+			( draw ) DUPr STHr =Screen.color
+			( next ) ~Screen.addr #0008 ADD2 =Screen.addr
+			( incr ) SWP2 #0008 ADD2 SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2
+		( incr ) SWP2 #0008 ADD2 SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
+	( destroy color ) POPr
+
+JMP2r
+
+@dvd_icn [
+	001f 3f38 3838 787f 00fe fe7e 7777 e3c3
+	000f 1f3b 7b77 e7c7 00fc fe8f 8707 0efc
+	7f00 000f ff7f 0700 0301 00ff f0f8 ff00
+	8700 00ff 7f7f ff00 f000 00e0 fcfc 8000
+]

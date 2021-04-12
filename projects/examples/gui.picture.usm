@@ -27,6 +27,8 @@
 	#0128 #0010 #0080 #0080 #2e ,pict_medium ,draw-picture JSR2
 	#0020 #00d0 #0020 #0020 #25 ,pict_small ,draw-picture JSR2
 
+	#0010 #0010 #0020 #0010 #25 ,dvd_icn ,draw-picture JSR2
+
 BRK
 
 @on-mouse 
@@ -77,6 +79,17 @@ RTN
 	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
 
 RTN
+
+@dvd_icn [
+	001f 3f38 3838 787f
+	00fe fe7e 7777 e3c3
+	000f 1f3b 7b77 e7c7
+	00fc fe8f 8707 0efc
+	7f00 000f ff7f 0700
+	0301 00ff f0f8 ff00
+	8700 00ff 7f7f ff00
+	f000 00e0 fcfc 8000
+]
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @pointer_icn [ 80c0 e0f0 f8e0 1000 ]

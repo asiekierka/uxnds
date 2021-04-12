@@ -51,19 +51,6 @@ drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-drawchr(Ppu *p, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 alpha)
-{
-	Uint8 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> h) & 0x1);
-			Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-			if(!alpha || (alpha && ch1 + ch2 != 0))
-				drawpixel(p, x + 7 - h, y + v, ch1 + ch2);
-		}
-}
-
-void
 putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	Uint16 row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16), col = 7 - (x % 8);
@@ -142,9 +129,20 @@ drawppu(Ppu *p)
 	Uint16 x, y;
 	for(y = 0; y < p->ver; ++y)
 		for(x = 0; x < p->hor; ++x) {
+			Uint8 v, h;
 			Uint16 key = (y * p->hor + x) * 16;
-			drawchr(p, x * 8 + p->pad, y * 8 + p->pad, &p->bg[key], 0);
-			drawchr(p, x * 8 + p->pad, y * 8 + p->pad, &p->fg[key], 1);
+			for(v = 0; v < 8; v++)
+				for(h = 0; h < 8; h++) {
+					Uint8 *sprite = &p->fg[key];
+					Uint8 ch1 = ((sprite[v] >> h) & 0x1);
+					Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+					if(ch1 + ch2 == 0) {
+						sprite = &p->bg[key];
+						ch1 = ((sprite[v] >> h) & 0x1);
+						ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+					}
+					drawpixel(p, x * 8 + p->pad + 7 - h, y * 8 + p->pad + v, ch1 + ch2);
+				}
 		}
 }
 

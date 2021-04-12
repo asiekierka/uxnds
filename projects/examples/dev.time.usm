@@ -23,11 +23,11 @@
 |0200
 	
 	( theme ) #0ff8 =System.r #0f08 =System.g #0f08 =System.b
-	( vectors ) ,FRAME =Screen.vector
+	( vectors ) ,on-frame =Screen.vector
 
 BRK
 
-@FRAME
+@on-frame
 	
 	#00 =DateTime.refresh
 
