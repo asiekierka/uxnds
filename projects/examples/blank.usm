@@ -10,7 +10,7 @@
 |0130 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
 |0140 ;Controller { vector 2 button 1 key 1 }
 |0160 ;Mouse { vector 2 x 2 y 2 state 1 chord 1 }
-|0170 ;File { vector 2 pad 6 name 2 length 2 load 3 save 2 }
+|0170 ;File { vector 2 pad 6 name 2 length 2 load 2 save 2 }
 |01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
 
 |0200 
