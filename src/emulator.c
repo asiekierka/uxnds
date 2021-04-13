@@ -253,7 +253,10 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
 			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
 		}
-		apu.queue->dat[apu.queue->n++] = (m[0xb] << 8) + m[0xc];
+		if(apu.queue->is_envelope)
+			apu.queue->dat[apu.queue->n++] = (m[0xb] << 7) + (m[0xc] >> 1);
+		else
+			apu.queue->dat[apu.queue->n++] = (m[0xb] << 8) + m[0xc] + 0x8000;
 		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
 	} else if(b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;

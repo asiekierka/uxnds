@@ -17,7 +17,7 @@ typedef signed int Sint32;
 
 typedef struct {
 	Uint16 *dat;
-	Uint8 i, n, sz, finishes;
+	Uint8 i, n, sz, finishes, is_envelope;
 } Queue;
 
 typedef struct {

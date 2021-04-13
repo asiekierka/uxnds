@@ -87,9 +87,10 @@ apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volu
 	for(i = 0; i < 2; ++i) {
 		note->volume[i] = 0xf & (volume >> 4 * (1 - i));
 		note->wv[i].count = note->wv[i].period = 0;
-		note->wv[i].end_value = 0;
+		note->wv[i].end_value = 0x8000 * (1 - i);
 		note->wv[i].queue.n = note->wv[i].queue.i = 0;
 		note->wv[i].queue.finishes = 0;
+		note->wv[i].queue.is_envelope = i;
 	}
 	note->wv[0].vector = wave_vector;
 	note->wv[0].advance = note_advances[pitch % 12] >> (8 - pitch / 12);

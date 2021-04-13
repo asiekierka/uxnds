@@ -470,24 +470,24 @@ RTN
 RTN
 
 @adsr-envelope ( -- )
-	#7f ,adsr #00 ~Audio.play #04 MUL ADD2 PEK2 SOUND
-	#40 ,adsr #00 ~Audio.play #04 MUL ADD2 #0001 ADD2 PEK2 SOUND
-	#40 ,adsr #00 ~Audio.play #04 MUL ADD2 #0002 ADD2 PEK2 SOUND
+	#ff ,adsr #00 ~Audio.play #04 MUL ADD2 PEK2 SOUND
+	#80 ,adsr #00 ~Audio.play #04 MUL ADD2 #0001 ADD2 PEK2 SOUND
+	#80 ,adsr #00 ~Audio.play #04 MUL ADD2 #0002 ADD2 PEK2 SOUND
 	#00 ,adsr #00 ~Audio.play #04 MUL ADD2 #0003 ADD2 PEK2 SOUND
 	SOUND_FINISH
 	BRK
 
 @square-wave ( -- )
-	#5800 SOUND
-	#5880 SOUND
 	#a800 SOUND
 	#a880 SOUND
+	#5800 SOUND
+	#5880 SOUND
 	BRK
 
 @triangle-wave ( -- )
-	#7f40 SOUND
-	#8180 SOUND
-	#0040 SOUND
+	#ff40 SOUND
+	#0080 SOUND
+	#8040 SOUND
 	BRK
 
 @ch1_txt [ CHN0 00 ]
