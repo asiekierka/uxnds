@@ -225,9 +225,10 @@ RTN
 	( get right ) DUP2 SWP ++ SWP GET-CELL-VALUE STH
 	( incr y ) ++ 
 	( get result ) SUBr STHr 
-	DUP =Console.byte
 	GET-CHAR 
 	SET-CELL
+
+	( NOTE: Issue is not with modulo, but with converting ff to 36 )
 
 RTN
 

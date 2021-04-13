@@ -13,6 +13,8 @@
 ;pointer { x 2 y 2 }
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
+( devices )
+
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }

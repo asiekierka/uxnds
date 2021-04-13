@@ -23,7 +23,7 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu;
-static Device *devsystem, *devscreen, *devmouse, *devctrl, *devapu;
+static Device *devsystem, *devscreen, *devmouse, *devctrl, *devapu, *devfile;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -219,13 +219,14 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
 	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
-	Uint16 offset = (m[ptr + 0] << 8) + m[ptr + 1];
+	Uint16 offset = (m[ptr + 2] << 8) + m[ptr + 3];
 	if(b0 == 0x0d) {
 		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
 		FILE *f = fopen(name, "r");
 		if(f && fseek(f, offset, SEEK_SET) != -1 && fread(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Loaded %d bytes, at %04x from %s\n", length, addr, name);
+			evaluxn(u, devfile->vector);
 		}
 	} else if(b0 == 0x0f) {
 		Uint16 addr = (m[ptr + 8 + 6] << 8) + b1;
@@ -233,6 +234,7 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		if(f && fseek(f, offset, SEEK_SET) != -1 && fwrite(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Saved %d bytes, at %04x from %s\n", length, addr, name);
+			evaluxn(u, devfile->vector);
 		}
 	}
 	return b1;
@@ -378,7 +380,7 @@ main(int argc, char **argv)
 	devctrl = portuxn(&u, 0x04, "controller", ppnil);
 	portuxn(&u, 0x05, "---", ppnil);
 	devmouse = portuxn(&u, 0x06, "mouse", ppnil);
-	portuxn(&u, 0x07, "file", file_poke);
+	devfile = portuxn(&u, 0x07, "file", file_poke);
 	portuxn(&u, 0x08, "---", ppnil);
 	portuxn(&u, 0x09, "midi", ppnil);
 	portuxn(&u, 0x0a, "datetime", datetime_poke);

@@ -58,11 +58,13 @@ RTN
 - Shortcut to export/import disk state
 - Implement Uxambly REPL
 - Load disks at a different place than 0x0000.
+- Curl device? 8-bit web browser?
 
 ## Palettes
 
-- `[ 6a03 4a0d aa0c ]`, purple/cyan
-- `[ a1f3 a14d a16c ]`, grey-pink/teal
+- `#6a03` `#4a0d` `#aa0c`, purple/cyan
+- `#a1f3` `#a14d` `#a16c`, grey-pink/teal
+- `#8c4b` `#884b` `#e8bb`, commodore64
 
 ## Refs
 
