@@ -32,7 +32,7 @@ typedef struct {
 struct Uxn;
 
 typedef struct Device {
-	Uint16 addr, vector;
+	Uint16 addr;
 	Uint8 (*poke)(struct Uxn *, Uint16, Uint8, Uint8);
 } Device;
 
@@ -44,7 +44,6 @@ typedef struct Uxn {
 
 int loaduxn(Uxn *c, char *filepath);
 int bootuxn(Uxn *c);
-int inituxn(Uxn *u, Uint16 vec);
 int evaluxn(Uxn *u, Uint16 vec);
 void mempoke16(Uxn *u, Uint16 a, Uint16 b);
 Uint16 mempeek16(Uxn *u, Uint16 a);

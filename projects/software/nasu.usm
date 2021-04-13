@@ -45,6 +45,7 @@
 	( theme ) #e0fc =System.r #30cc =System.g #30ac =System.b
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-mouse =Mouse.vector
+	( vectors ) ,on-transfer =File.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
 	~Screen.height 2/ #003f SUB2 =bankview.y 
@@ -61,7 +62,13 @@
 
 BRK
 
-@on-button
+@on-transfer ( -> )
+	
+	,redraw JSR2
+	
+BRK
+
+@on-button ( -> )
 	
 	~Controller.button
 	DUP #10 EQU ^$no-ctrl-up JNZ
@@ -83,7 +90,7 @@ BRK
 
 BRK
 
-@on-mouse
+@on-mouse ( -> )
 	
 	~Mouse.state #00 EQU ,$click-end JNZ2
 

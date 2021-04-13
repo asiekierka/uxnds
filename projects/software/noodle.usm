@@ -68,6 +68,7 @@
 	( vectors ) ,on-screen =Screen.vector
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-mouse =Mouse.vector
+	( vectors ) ,on-transfer =File.vector
 
 	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
 
@@ -79,7 +80,6 @@
 
 	( load file )
 	,untitled_txt ,path.name ,strcpy JSR2
-	,path.name ,load-file JSR2
 
 	( setup panes )
 	#0010 =toolpane.x1 #0010 =toolpane.y1 ~toolpane.x1 #0028 ADD2 =toolpane.x2 ~toolpane.y1 #0008 ADD2 =toolpane.y2
@@ -91,9 +91,19 @@
 	,center JSR2
 	,clear JSR2
 
+	( load default file )
+	,path.name ,load-file JSR2
+
 BRK
 
-@on-screen ( -- )
+@on-transfer ( -> )
+	
+	,draw-canvas JSR2
+	( release ) #00 =Mouse.state
+
+BRK
+
+@on-screen ( -> )
 	
 	~document.edit #01 NEQ ^$no-edit JNZ
 		#0008 =Screen.x 
@@ -108,7 +118,7 @@ BRK
 
 BRK
 
-@on-mouse
+@on-mouse ( -> )
 	
 	,draw-cursor JSR2
 

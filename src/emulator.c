@@ -218,15 +218,15 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
 	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
-	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
-	Uint16 offset = (m[ptr + 2] << 8) + m[ptr + 3];
+	Uint16 length = mempeek16(u, ptr + 8 + 2);
+	Uint16 offset = mempeek16(u, ptr + 2);
 	if(b0 == 0x0d) {
 		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
 		FILE *f = fopen(name, "r");
 		if(f && fseek(f, offset, SEEK_SET) != -1 && fread(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Loaded %d bytes, at %04x from %s\n", length, addr, name);
-			evaluxn(u, devfile->vector);
+			evaluxn(u, mempeek16(u, devfile->addr));
 		}
 	} else if(b0 == 0x0f) {
 		Uint16 addr = (m[ptr + 8 + 6] << 8) + b1;
@@ -234,7 +234,7 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		if(f && fseek(f, offset, SEEK_SET) != -1 && fwrite(&m[addr], length, 1, f)) {
 			fclose(f);
 			printf("Saved %d bytes, at %04x from %s\n", length, addr, name);
-			evaluxn(u, devfile->vector);
+			evaluxn(u, mempeek16(u, devfile->addr));
 		}
 	}
 	return b1;
@@ -293,9 +293,8 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 Uint8
 system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
-	Uint8 *m = u->ram.dat;
-	m[PAGE_DEVICE + b0] = b1;
-	getcolors(&ppu, &m[PAGE_DEVICE + 0x0008]);
+	u->ram.dat[ptr + b0] = b1;
+	getcolors(&ppu, &u->ram.dat[ptr + 0x0008]);
 	reqdraw = 1;
 	(void)ptr;
 	return b1;
@@ -315,7 +314,7 @@ ppnil(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 int
 start(Uxn *u)
 {
-	inituxn(u, 0x0200);
+	evaluxn(u, 0x0200);
 	redraw(ppu.output, u);
 	while(1) {
 		SDL_Event event;
@@ -333,14 +332,14 @@ start(Uxn *u)
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
-				evaluxn(u, devctrl->vector);
+				evaluxn(u, mempeek16(u, devctrl->addr));
 				u->ram.dat[devctrl->addr + 3] = 0;
 				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION:
 				domouse(u, &event);
-				evaluxn(u, devmouse->vector);
+				evaluxn(u, mempeek16(u, devmouse->addr));
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
@@ -348,7 +347,7 @@ start(Uxn *u)
 				break;
 			}
 		}
-		evaluxn(u, devscreen->vector);
+		evaluxn(u, mempeek16(u, devscreen->addr));
 		SDL_UnlockAudioDevice(audio_id);
 		if(reqdraw)
 			redraw(ppu.output, u);

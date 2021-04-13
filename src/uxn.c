@@ -152,17 +152,6 @@ evaluxn(Uxn *u, Uint16 vec)
 }
 
 int
-inituxn(Uxn *u, Uint16 vec)
-{
-	Uint8 i = 0;
-	if(!evaluxn(u, vec))
-		return 0;
-	for(i = 0; i < 0x10; ++i)
-		u->dev[i].vector = mempeek16(u, u->dev[i].addr);
-	return 1;
-}
-
-int
 bootuxn(Uxn *u)
 {
 	size_t i;

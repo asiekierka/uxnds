@@ -8,7 +8,7 @@
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 |0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
-|0170 ;File { pad 8 name 2 length 2 load 2 save 2 }
+|0170 ;File { vector 2 pad 6 name 2 length 2 load 2 save 2 }
 
 ( program )
 
@@ -16,22 +16,29 @@
 
 	( theme ) #ac52 =System.r #a362 =System.g #b253 =System.b
 	( vectors ) ,on-mouse =Mouse.vector
+	( vectors ) ,on-transfer =File.vector
 
 	( load )
 	
 	#0000 #0000 #0100 #0100 #2c ,pict_large ,draw-picture JSR2
 
-	( load ) ,filepath =File.name #4000 =File.length ,img =File.load
-	( draw ) #0080 #0020 #0100 #0100 #41 ,img ,draw-chr JSR2
 
 	#0128 #0010 #0080 #0080 #2e ,pict_medium ,draw-picture JSR2
 	#0020 #00d0 #0020 #0020 #25 ,pict_small ,draw-picture JSR2
 
 	#0010 #0010 #0020 #0010 #25 ,dvd_icn ,draw-picture JSR2
 
+	( load ) ,filepath =File.name #4000 =File.length ,img =File.load
+
 BRK
 
-@on-mouse 
+@on-transfer ( -> )
+
+	( draw ) #0080 #0020 #0100 #0100 #41 ,img ,draw-chr JSR2
+
+BRK
+
+@on-mouse ( -> )
 
 	( clear last cursor )
 	,clear_icn =Screen.addr 
