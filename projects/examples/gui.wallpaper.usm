@@ -1,0 +1,65 @@
+;scroll { x 2 y 2 wait 1 }
+
+( devices )
+
+|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
+|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
+|0130 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
+|0140 ;Controller { vector 2 button 1 key 1 }
+|0160 ;Mouse { vector 2 x 2 y 2 state 1 chord 1 }
+|0170 ;File { vector 2 pad 6 name 2 length 2 load 2 save 2 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
+
+|0200 @RESET
+    #90ff =System.r #9000 =System.g #900f =System.b
+    #08e0 ~Screen.width #0001 SFT2 SUB2 =scroll.x
+    #09b0 =scroll.y
+    ,frame =Screen.vector
+    #30 =scroll.wait
+    BRK
+
+@frame
+    #ffff
+    $loop
+    DUP2 ^row JSR
+    #0001 ADD2
+    DUP2 ~Screen.height LTH2 ^$loop JNZ
+    POP2
+    ~scroll.wait ^$noscroll JNZ
+    ~scroll.y #0001 ADD2 =scroll.y
+    BRK
+
+    $noscroll
+    ~scroll.wait #01 SUB =scroll.wait
+    BRK
+
+@row ( y* -- )
+    DUP2 =Screen.y
+    ~scroll.y ADD2
+
+    ~Screen.width
+    $loop
+    #0001 SUB2
+    OVR2 OVR2 ~scroll.x ADD2 EOR2 DUP2 #0013 DIV2 #0013 MUL2 SUB2
+    DUP #00 EQU ^$draw JNZ
+    DUP #05 EQU ^$draw JNZ
+    POP2
+    $rest
+    DUP2 ORA ^$loop JNZ
+    POP2 POP2
+    JMP2r
+
+    #15 =Screen.color
+    JMP2r
+
+    $draw
+    OVR2 =Screen.x
+    #05 ADD =Screen.color
+    ~Screen.y
+    DUP2 #0001 ADD2 =Screen.y
+    #00 =Screen.color
+    =Screen.y
+    POP
+    ^$rest JMP
+
