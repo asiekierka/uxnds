@@ -12,26 +12,29 @@
 )
 
 %RTN { JMP2r }
+%++ { #01 ADD } %-- { #01 SUB }
 %8+ { #0008 ADD2 }
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %MOD { DUP2 DIV MUL SUB }
 
-%GRID-CELLS { #2000 }
-%GRID-LOCKS { #3000 }
-%GRID-TYPES { #4000 }
+%DATA-CELLS { #2000 }
+%DATA-LOCKS { #3000 }
+%DATA-TYPES { #4000 }
 
-%GET-OFFSET {
-	#00 SWP #00 ~grid.width MUL2 ROT #00 SWP ADD2
-} ( x y -- offset* )
-%GET-INDEX { 
-	GET-OFFSET GRID-CELLS ADD2 
-} ( x y -- index* )
-%SET-CELL { 
-	ROT ROT GET-INDEX POK2 
-} ( x y char -- )
-%GET-CELL { 
-	GET-INDEX PEK2 
-} ( x y -- char )
+%GET-CHAR { #24 MOD #00 SWP ,b36clc ADD2 PEK2 } ( b36 -- char )
+%GET-VALUE { #20 SUB #00 SWP ,values ADD2 PEK2 } ( char -- b36 )
+
+%GET-INDEX { #00 SWP #00 ~grid.width MUL2 ROT #00 SWP ADD2 } ( x y -- index )
+%GET-CELL { GET-INDEX DATA-CELLS ADD2 PEK2 } ( x y -- char )
+%SET-CELL { ROT ROT GET-INDEX DATA-CELLS ADD2 POK2 } ( x y char -- )
+%GET-TYPE { GET-INDEX DATA-TYPES ADD2 PEK2 } ( x y -- type )
+%SET-TYPE { ROT ROT GET-INDEX DATA-TYPES ADD2 POK2 } ( x y type -- )
+%GET-LOCK { GET-INDEX DATA-TYPES ADD2 PEK2 } ( x y -- type )
+%SET-LOCK { ROT ROT GET-INDEX DATA-TYPES ADD2 POK2 } ( x y type -- )
+%GET-PORT { } ( x y lock -- char )
+%SET-PORT { } ( x y char -- )
+
+%GET-CELL-VALUE { GET-CELL GET-VALUE } ( x y -- b36 )
 
 ( variables )
 
@@ -68,11 +71,11 @@ BRK
 
 @on-frame
 
-	~timer #01 ADD DUP =timer
+	~timer ++ DUP =timer
 
 	( skip ) #08 EQU ^$tick JNZ BRK $tick
 
-	~timer.frame #01 ADD =timer.frame
+	~timer.frame ++ =timer.frame
 
 	,run JSR2
 
@@ -91,20 +94,20 @@ BRK
 	~Controller.button #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
 			~selection.y1 #00 EQU ^$no-up JNZ
-			~selection.y1 #01 SUB =selection.y1 
-			~selection.y2 #01 SUB =selection.y2 $no-up
+			~selection.y1 -- =selection.y1 
+			~selection.y2 -- =selection.y2 $no-up
 		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
-			~selection.y1 ~grid.height #01 SUB EQU ^$no-down JNZ
-			~selection.y1 #01 ADD =selection.y1 
-			~selection.y2 #01 ADD =selection.y2 $no-down
+			~selection.y1 ~grid.height -- EQU ^$no-down JNZ
+			~selection.y1 ++ =selection.y1 
+			~selection.y2 ++ =selection.y2 $no-down
 		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
 			~selection.x1 #00 EQU ^$no-left JNZ
-			~selection.x1 #01 SUB =selection.x1 
-			~selection.x2 #01 SUB =selection.x2 $no-left
+			~selection.x1 -- =selection.x1 
+			~selection.x2 -- =selection.x2 $no-left
 		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
-			~selection.x1 ~grid.width #01 SUB EQU ^$no-right JNZ
-			~selection.x1 #01 ADD =selection.x1 
-			~selection.x2 #01 ADD =selection.x2 $no-right
+			~selection.x1 ~grid.width -- EQU ^$no-right JNZ
+			~selection.x1 ++ =selection.x1 
+			~selection.x2 ++ =selection.x2 $no-right
 	POP
 
 	~Controller.key #08 NEQ ^$no-backspace JNZ
@@ -149,10 +152,10 @@ BRK
 		$hor
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
 			#2e SET-CELL
-			( incr )    SWP #01 ADD SWP
+			( incr )    SWP ++ SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
-		( incr ) SWP #01 ADD SWP
+		( incr ) SWP ++ SWP
 		DUP2 LTH ^$ver JNZ
 	POP2
 
@@ -160,39 +163,28 @@ BRK
 
 RTN
 
+( operations )
+
+@get-bang ( x y -- bang )
+RTN
+
+( old )
+
 @is-selected ( x y -- flag )
 	
 	~selection.x1 ~selection.y1 EQU2
 
 RTN
 
-@set-lock ( x y flag -- )
+@get-port ( x y lock -- value )
 	
-	ROT ROT GET-OFFSET GRID-LOCKS ADD2 POK2
-
-RTN
-
-@get-lock ( x y -- flag )
-	
-	GET-OFFSET GRID-LOCKS ADD2 PEK2
-
-RTN
-
-@get-cell-value ( char -- value )
-	
-	#00 SWP ,values ADD2 PEK2
-
-RTN
-
-@get-value-char ( value -- char )
-	
-	#24 MOD #00 SWP ,b36clc ADD2 PEK2
-	
-RTN
-
-@get-value ( x y -- value )
-	
-	GET-CELL #20 SUB ,get-cell-value JSR2
+	(
+	DUP #01 NEQ ^$no-lock JNZ
+		DUP2 #01 SET-LOCK
+	$no-lock
+	STH DUP2 #02 #02 STHr MUL ADD ,set-type JSR2
+	GET-CELL
+	)
 
 RTN
 
@@ -217,11 +209,11 @@ RTN
 @op-a ( x y char -- )
 
 	POP
-	( get left ) DUP2 SWP #01 SUB SWP ,get-value JSR2 STH
-	( get right ) DUP2 SWP #01 ADD SWP ,get-value JSR2 STH
-	( incr y ) #01 ADD 
+	( get left ) DUP2 SWP -- SWP GET-CELL-VALUE STH
+	( get right ) DUP2 SWP ++ SWP GET-CELL-VALUE STH
+	( incr y ) ++ 
 	( get result ) ADDr STHr
-	,get-value-char JSR2 
+	GET-CHAR 
 	SET-CELL
 
 RTN
@@ -229,11 +221,12 @@ RTN
 @op-b ( x y char -- )
 	
 	POP
-	( get left ) DUP2 SWP #01 SUB SWP ,get-value JSR2 STH
-	( get right ) DUP2 SWP #01 ADD SWP ,get-value JSR2 STH
-	( incr y ) #01 ADD 
+	( get left ) DUP2 SWP -- SWP GET-CELL-VALUE STH
+	( get right ) DUP2 SWP ++ SWP GET-CELL-VALUE STH
+	( incr y ) ++ 
 	( get result ) SUBr STHr 
-	,get-value-char JSR2 
+	DUP =Console.byte
+	GET-CHAR 
 	SET-CELL
 
 RTN
@@ -241,7 +234,7 @@ RTN
 @op-c ( x y char -- )
 	
 	POP
-	#01 ADD
+	++
 	#30 ~timer.frame #08 MOD ADD SET-CELL
 
 RTN
@@ -314,12 +307,12 @@ RTN
 		#2a SET-CELL POP STHr RTN 
 	$not-edge
 	( collide )
-	DUP2 #01 SUB GET-CELL #2e EQU ^$not-collide JNZ
+	DUP2 -- GET-CELL #2e EQU ^$not-collide JNZ
 		#2a SET-CELL POP STHr RTN
 	$not-collide
 	( move )
 	DUP2 STHr
-	SWP #01 SUB SWP SET-CELL	
+	SWP -- SWP SET-CELL	
 	#2e SET-CELL
 	
 RTN
@@ -352,7 +345,7 @@ RTN
 	
 	STH 
 	( clear ) DUP2 #2e SET-CELL
-	( move ) #01 ADD DUP2 #01 ,set-lock JSR2
+	( move ) ++ DUP2 #01 SET-LOCK
 	STHr SET-CELL
 	
 RTN
@@ -383,12 +376,12 @@ RTN
 		#2a SET-CELL POP STHr RTN 
 	$not-edge
 	( collide )
-	DUP2 SWP #01 SUB SWP GET-CELL #2e EQU ^$not-collide JNZ
+	DUP2 SWP -- SWP GET-CELL #2e EQU ^$not-collide JNZ
 		#2a SET-CELL POP STHr RTN
 	$not-collide
 	( move )
 	DUP2 
-	SWP #01 SUB SWP STHr SET-CELL	
+	SWP -- SWP STHr SET-CELL	
 	#2e SET-CELL
 	
 RTN
@@ -426,37 +419,24 @@ RTN
 	$not-dot
 
 	( skip locked )
-	ROT ROT DUP2 ,get-lock JSR2 #00 EQU ^$not-locked JNZ
+	ROT ROT DUP2 GET-LOCK #00 EQU ^$not-locked JNZ
 		POP POP2 RTN 
 	$not-locked
 	ROT
 
-	( A ) DUP #41 EQU ,op-a JNZ2
-	( B ) DUP #42 EQU ,op-b JNZ2
-	( C ) DUP #43 EQU ,op-c JNZ2
-	( D ) DUP #44 EQU ,op-d JNZ2
-	( E ) DUP #45 EQU ,op-e JNZ2
-	( F ) DUP #46 EQU ,op-f JNZ2
-	( G ) DUP #47 EQU ,op-g JNZ2
-	( H ) DUP #48 EQU ,op-h JNZ2
-	( I ) DUP #49 EQU ,op-i JNZ2
-	( J ) DUP #4a EQU ,op-j JNZ2
-	( K ) DUP #4b EQU ,op-k JNZ2
-	( L ) DUP #4c EQU ,op-l JNZ2
-	( M ) DUP #4d EQU ,op-m JNZ2
-	( N ) DUP #4e EQU ,op-n JNZ2 ( done. )
-	( O ) DUP #4f EQU ,op-o JNZ2
-	( P ) DUP #50 EQU ,op-p JNZ2
-	( Q ) DUP #51 EQU ,op-q JNZ2
-	( R ) DUP #52 EQU ,op-r JNZ2
-	( S ) DUP #53 EQU ,op-s JNZ2
-	( T ) DUP #54 EQU ,op-t JNZ2
-	( U ) DUP #55 EQU ,op-u JNZ2
-	( V ) DUP #56 EQU ,op-v JNZ2
-	( W ) DUP #57 EQU ,op-w JNZ2 ( done. )
-	( X ) DUP #58 EQU ,op-x JNZ2
-	( Y ) DUP #59 EQU ,op-y JNZ2
-	( Z ) DUP #5a EQU ,op-z JNZ2
+	( A ) DUP #41 EQU ,op-a JNZ2 ( B ) DUP #42 EQU ,op-b JNZ2
+	( C ) DUP #43 EQU ,op-c JNZ2 ( D ) DUP #44 EQU ,op-d JNZ2
+	( E ) DUP #45 EQU ,op-e JNZ2 ( F ) DUP #46 EQU ,op-f JNZ2
+	( G ) DUP #47 EQU ,op-g JNZ2 ( H ) DUP #48 EQU ,op-h JNZ2
+	( I ) DUP #49 EQU ,op-i JNZ2 ( J ) DUP #4a EQU ,op-j JNZ2
+	( K ) DUP #4b EQU ,op-k JNZ2 ( L ) DUP #4c EQU ,op-l JNZ2
+	( M ) DUP #4d EQU ,op-m JNZ2 ( N ) DUP #4e EQU ,op-n JNZ2 
+	( O ) DUP #4f EQU ,op-o JNZ2 ( P ) DUP #50 EQU ,op-p JNZ2
+	( Q ) DUP #51 EQU ,op-q JNZ2 ( R ) DUP #52 EQU ,op-r JNZ2
+	( S ) DUP #53 EQU ,op-s JNZ2 ( T ) DUP #54 EQU ,op-t JNZ2
+	( U ) DUP #55 EQU ,op-u JNZ2 ( V ) DUP #56 EQU ,op-v JNZ2
+	( W ) DUP #57 EQU ,op-w JNZ2 ( X ) DUP #58 EQU ,op-x JNZ2
+	( Y ) DUP #59 EQU ,op-y JNZ2 ( Z ) DUP #5a EQU ,op-z JNZ2
 	( * ) DUP #2a EQU ,op-bang JNZ2
 	POP POP2
 
@@ -469,11 +449,11 @@ RTN
 		#00 ~grid.width
 		$hor
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
-			( unlock ) #00 ,set-lock JSR2
-			( incr ) SWP #01 ADD SWP
+			( unlock ) #00 SET-LOCK
+			( incr ) SWP ++ SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
-		( incr ) SWP #01 ADD SWP
+		( incr ) SWP ++ SWP
 		DUP2 LTH ^$ver JNZ
 	POP2
 
@@ -489,10 +469,10 @@ RTN
 		$hor
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
 			DUP2 GET-CELL ,run-char JSR2
-			( incr )    SWP #01 ADD SWP
+			( incr )    SWP ++ SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
-		( incr ) SWP #01 ADD SWP
+		( incr ) SWP ++ SWP
 		DUP2 LTH ^$ver JNZ
 	POP2
 	,redraw JSR2
@@ -506,19 +486,19 @@ RTN
 	( Positionx )
 	#0000 =Screen.x
 	~selection.x1 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 	#0008 =Screen.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 
 	( Positiony )
 	#0010 =Screen.x
 	~selection.y1 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 	#0018 =Screen.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 
 	#0020 =Screen.x
@@ -528,10 +508,10 @@ RTN
 	( Frame )
 	#0030 =Screen.x
 	~timer.frame 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 	#0038 =Screen.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 
 	#0040 =Screen.x
@@ -541,10 +521,10 @@ RTN
 	( Speed )
 	#0050 =Screen.x
 	~timer.speed 
-		DUP #04 SFT ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 	#0058 =Screen.x
-		#0f AND ,get-value-char JSR2 #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
+		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr
 	#22 =Screen.color
 
 	( TODO: Signal VU )
@@ -569,10 +549,10 @@ RTN
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr 
 			( sprite )  DUP2 ,get-cell-sprite JSR2 =Screen.addr
 			( draw )    ,is-selected JSR2 #0d MUL #21 ADD =Screen.color
-			( incr )    SWP #01 ADD SWP
+			( incr )    SWP ++ SWP
 			DUP2 LTH ^$hor JNZ
 		POP2
-		( incr ) SWP #01 ADD SWP
+		( incr ) SWP ++ SWP
 		DUP2 LTH ^$ver JNZ
 	POP2
 

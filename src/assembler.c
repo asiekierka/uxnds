@@ -270,7 +270,7 @@ walktoken(char *w)
 	case ',': return 3;                                                       /* lit2 addr-hb addr-lb */
 	case '.': return 2;                                                       /* addr-hb addr-lb */
 	case '^': return 2;                                                       /* Relative jump: lit addr-offset */
-	case '#': return (slen(w + 1) == 2 ? 2 : 3);
+	case '#': return (slen(w + 1) == 4 ? 3 : 2);
 	}
 	if((m = findmacro(w))) {
 		int i, res = 0;
@@ -332,10 +332,12 @@ parsetoken(char *w)
 		pushshort(findlabeladdr(w + 1), 1);
 		l->refs++;
 		return 1;
-	} else if(w[0] == '#' && sihx(w + 1)) {
-		if(slen(w + 1) == 2)
+	} else if(w[0] == '#') {
+		if(slen(w + 1) == 1)
+			pushbyte((Uint8)w[1], 1);
+		if(sihx(w + 1) && slen(w + 1) == 2)
 			pushbyte(shex(w + 1), 1);
-		else if(slen(w + 1) == 4)
+		else if(sihx(w + 1) && slen(w + 1) == 4)
 			pushshort(shex(w + 1), 1);
 		else
 			return 0;
