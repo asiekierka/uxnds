@@ -29,7 +29,8 @@ typedef struct {
 
 typedef struct {
 	WaveformGenerator wv[2];
-	Sint8 volume[2], playing;
+	Sint8 volume[2];
+	Uint8 playing, impl;
 } Note;
 
 typedef struct {
@@ -40,4 +41,4 @@ typedef struct {
 } Apu;
 
 void apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples);
-void apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch);
+void apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch, Uint8 impl);

@@ -120,7 +120,7 @@ BRK
 
 @play ( pitch -- )
 
-	=Audio.pitch
+	#80 ORA =Audio.pitch
 	,triangle-wave =Audio.wave
 	~track.active =Audio.play
 
@@ -190,7 +190,7 @@ BRK
 	DUP #ff NEQ ^$skip1 JNZ
 		POP ^$listen2 JMP
 	$skip1
-	#00 SWP ,notes ADD2 PEK2 =Audio.pitch
+	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
 	~volume.ch1 =Audio.volume
 	,square-wave =Audio.wave
 	#00 =Audio.play
@@ -200,7 +200,7 @@ BRK
 	DUP #ff NEQ ^$skip2 JNZ
 		POP ^$listen3 JMP
 	$skip2
-	#00 SWP ,notes ADD2 PEK2 =Audio.pitch
+	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
 	~volume.ch2 =Audio.volume
 	,square-wave =Audio.wave
 	#01 =Audio.play
@@ -210,7 +210,7 @@ BRK
 	DUP #ff NEQ ^$skip3 JNZ
 		POP ^$end JMP
 	$skip3
-	#00 SWP ,notes ADD2 PEK2 =Audio.pitch
+	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
 	~volume.ch3 =Audio.volume
 	,triangle-wave =Audio.wave
 	#02 =Audio.play

@@ -78,10 +78,12 @@ apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples)
 }
 
 void
-apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch)
+apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch, Uint8 impl)
 {
 	int i;
+	if(pitch >= 108 || impl == 0) return;
 	note->playing = 1;
+	note->impl = impl;
 	for(i = 0; i < 2; ++i) {
 		note->volume[i] = 0xf & (volume >> 4 * (1 - i));
 		note->wv[i].count = note->wv[i].period = 0;

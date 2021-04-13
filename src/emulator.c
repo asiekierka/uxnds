@@ -247,7 +247,7 @@ audio_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	if(b0 == 0xa) {
 		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
 		while(b1 >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
-		apu_play_note(&apu.notes[b1], (m[0x0] << 8) + m[0x1], (m[0x2] << 8) + m[0x3], m[0x8], m[0x9]);
+		apu_play_note(&apu.notes[b1], (m[0x0] << 8) + m[0x1], (m[0x2] << 8) + m[0x3], m[0x8], m[0x9] & 0x7f, m[0x9] > 0x7f);
 	} else if(b0 == 0xe && apu.queue != NULL) {
 		if(apu.queue->n == apu.queue->sz) {
 			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
