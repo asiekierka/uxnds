@@ -13,7 +13,7 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned int Uint32;
 typedef signed int Sint32;
 
-#define SAMPLE_FREQUENCY 48000
+#define SAMPLE_FREQUENCY 44100
 
 typedef struct {
 	Uint16 *dat;
