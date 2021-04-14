@@ -219,23 +219,25 @@ file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	Uint8 *m = u->ram.dat;
 	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
 	Uint16 length = mempeek16(u, ptr + 8 + 2);
-	Uint16 offset = mempeek16(u, ptr + 2);
+	Uint16 offset = mempeek16(u, ptr + 4);
 	if(b0 == 0x0d) {
 		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
 		FILE *f = fopen(name, "r");
-		if(f && fseek(f, offset, SEEK_SET) != -1 && fread(&m[addr], length, 1, f)) {
+		if(f && fseek(f, offset, SEEK_SET) != -1 && (length = fread(&m[addr], 1, length, f))) {
 			fclose(f);
 			printf("Loaded %d bytes, at %04x from %s\n", length, addr, name);
-			evaluxn(u, mempeek16(u, devfile->addr));
-		}
+		} else
+			length = 0;
+		mempoke16(u, ptr + 2, length);
 	} else if(b0 == 0x0f) {
 		Uint16 addr = (m[ptr + 8 + 6] << 8) + b1;
 		FILE *f = fopen(name, (m[ptr + 2] & 0x1) ? "a" : "w");
-		if(f && fseek(f, offset, SEEK_SET) != -1 && fwrite(&m[addr], length, 1, f)) {
+		if(f && fseek(f, offset, SEEK_SET) != -1 && (length = fwrite(&m[addr], 1, length, f))) {
 			fclose(f);
 			printf("Saved %d bytes, at %04x from %s\n", length, addr, name);
-			evaluxn(u, mempeek16(u, devfile->addr));
-		}
+		} else
+			length = 0;
+		mempoke16(u, ptr + 2, length);
 	}
 	return b1;
 }
