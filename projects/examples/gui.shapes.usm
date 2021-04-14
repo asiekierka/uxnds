@@ -6,10 +6,15 @@
 %8+  { #0008 ADD2 }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 
-;pict { x 2 y 2 width 2 height 2 color 1 addr 2 }
+%SIZE-TO-RECT {
+	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2 
+} ( x y w h -- x1 y1 x2 y2 )
+
+( draw requirements )
+;color { byte 1 }
+
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
-;color { byte 1 }
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
@@ -20,43 +25,20 @@
 
 |0200
 	
-	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
-	
-	#0010 #0020 #0040 #0060 #01 ,fill-rect-fast JSR2
-	#0020 #0030 #0050 #0070 #02 ,fill-rect-fast JSR2
-	#0030 #0040 #0060 #0080 #03 ,fill-rect-fast JSR2
-	#0070 #0020 #00a0 #0060 #01 ,line-rect-slow JSR2
-	#0080 #0030 #00b0 #0070 #02 ,line-rect-slow JSR2
-	#0090 #0040 #00c0 #0080 #03 ,line-rect-slow JSR2
+	( theme ) #f03f =System.r #f03f =System.g #003f =System.b
 
-	#0000 #0080 #0020 #0020 #21 ,pict_small ,draw-picture JSR2
-	#0010 #0088 #0020 #0020 #22 ,pict_small ,draw-picture JSR2
-	#0020 #0090 #0020 #0020 #23 ,pict_small ,draw-picture JSR2
-	#0030 #0098 #0020 #0020 #24 ,pict_small ,draw-picture JSR2
+	( background ) ,checker_icn #23 ,cover-pattern JSR2
 
-	#0020 #0020 #0070 #0080 #01 ,draw-line JSR2
-	#0020 #0080 #0070 #0030 #02 ,draw-line JSR2
-	#00a0 #0020 #0050 #00b0 #03 ,draw-line JSR2
-	#00b0 #0090 #0030 #0010 #01 ,draw-line JSR2
-
-	#0040 #0040 #0030 #01 ,draw-circle JSR2
-	#0070 #0030 #0040 #02 ,draw-circle JSR2
-	#0050 #0080 #0050 #03 ,draw-circle JSR2
-
-	( benchmark )
-	#0000 #0000 #0008 #000f #01 ,fill-rect-fast JSR2
-	#0008 #0000 #0010 #000f #02 ,fill-rect-medium JSR2
-	#0010 #0000 #0018 #000f #03 ,fill-rect-slow JSR2
-
-	( #0000 #0010 #0008 #001f #01 ,line-rect-fast JSR2 )
-	#0008 #0010 #000f #001f #02 ,line-rect-medium JSR2
-	#0010 #0010 #0017 #001f #03 ,line-rect-slow JSR2
+	#0010 #0030 #0020 #0020 SIZE-TO-RECT #01 ,line-slow JSR2
+	#0070 #0040 #0010 #01 ,draw-circle JSR2
+	#0038 #0030 #0020 #0020 SIZE-TO-RECT #01 ,line-rect JSR2
+	#0038 #0058 #0020 #0020 SIZE-TO-RECT #01 ,fill-rect JSR2
 	
 BRK
 
-@draw-line ( x1 y1 x2 y2 color )
+@line-slow ( x1 y1 x2 y2 color -- )
 	
-	( load ) =color =line.y0 =line.x0 =line.y =line.x
+	( load ) =color -- =line.y0 -- =line.x0 =line.y =line.x
 	~line.x0 ~line.x SUB2 ABS2 =line.dx
 	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
 	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
@@ -80,43 +62,29 @@ BRK
 
 RTN
 
-@line-rect-medium ( x1 y1 x2 y2 color -- )
+@line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color DUP2 ++ STH2 =rect.y2 =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	( load ) =color DUP2 STH2 -- =rect.y2 -- =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
 	STH2r STH2r
 	$ver
 		( save ) OVR2 =Screen.y
-		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color ~rect.x2 =Screen.x =Screen.color
+		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
+		( draw ) ~rect.x2 =Screen.x =Screen.color
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 LTH2 ^$ver JNZ
 	POP2 POP2
-	~rect.x1 ++ ~rect.x2 --
+	~rect.x1 ~rect.x2
 	$hor
 		( save ) OVR2 =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color ~rect.y2 =Screen.y =Screen.color
+		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
+		( draw ) ~rect.y2 =Screen.y =Screen.color
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 ++ LTH2 ^$hor JNZ
 	POP2 POP2
-RTN
-
-@line-rect-slow ( x1 y1 x2 y2 color -- )
-
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor
-		( incr ) ~Screen.x ++ =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
-		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-	~rect.y1 =Screen.y
-	$ver
-		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
-		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
 
 RTN
 
-@fill-rect-fast ( x1 y1 x2 y2 color -- )
+@fill-rect ( x1 y1 x2 y2 color -- )
 	
 	=color
 	( x1 x2 y1 y2 ) ROT2 SWP2
@@ -135,67 +103,20 @@ RTN
 
 RTN
 
-@fill-rect-medium ( x1 y1 x2 y2 color -- )
-
-	( load ) =color SWP2 =rect.x2 ROT2 =rect.x1
-	$ver
-		( save ) OVR2 =Screen.y
-		~rect.x1 ~rect.x2
-		$hor
-			( save ) OVR2 =Screen.x
-			( draw ) ~color =Screen.color
-			( incr ) SWP2 ++ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
-		POP2 POP2
-		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
-	POP2 POP2
-
-RTN
-
-@fill-rect-slow ( x1 y1 x2 y2 color -- )
-
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$ver
-		~rect.x1 =Screen.x
-		$hor
-			( draw ) ~color =Screen.color
-			( incr ) ~Screen.x ++ =Screen.x
-			~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 LTH2 ^$ver JNZ
-
-RTN
-
-@draw-picture ( x y width height color addr )
-	
-	( load ) DUP2 =Screen.addr =pict.addr =pict.color =pict.height =pict.width DUP2 =Screen.y =pict.y =pict.x
-	$ver
-		~pict.x =Screen.x 
-		$hor
-			( draw ) ~pict.color =Screen.color
-			( incr ) ~Screen.x 8+ =Screen.x
-			( incr ) ~Screen.addr 8+ =Screen.addr
-		~Screen.x ~pict.width ~pict.x ADD2 LTH2 ^$hor JNZ
-		( incr ) ~Screen.y 8+ =Screen.y
-	~Screen.y ~pict.height ~pict.y ADD2 LTH2 ^$ver JNZ
-
-RTN
-
-@draw-circle ( xc yc r color )
+@draw-circle ( xc yc r color -- )
 
 	( load ) =color =circle.r =circle.yc =circle.xc
 	#0000 =circle.x ~circle.r =circle.y
-	~circle.r #0002 MUL2 #0003 SUB2 =circle.d
+	~circle.r #0002 MUL2 =circle.d
 	( draw ) ,$seg JSR2
 	$loop
 		( incr ) ~circle.x ++ =circle.x
-		~circle.d #0000 ++ LTS2 ^$else JNZ
+		~circle.d #0001 LTS2 ^$else JNZ
 			( decr ) ~circle.y -- =circle.y
-			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 #000a ADD2 =circle.d
+			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 =circle.d
 			,$end JMP2
 		$else
-			~circle.x #0004 MUL2 ~circle.d ADD2 #0006 ADD2 =circle.d
+			~circle.x #0004 MUL2 ~circle.d ADD2 =circle.d
 		$end
 		( draw ) ,$seg JSR2
 		~circle.y ~circle.x -- GTS2 ^$loop JNZ
@@ -212,14 +133,23 @@ RTN
 
 RTN
 
-@pict_small [
+@cover-pattern ( addr color -- )
+	
+	( load ) =color =Screen.addr
+	#0000 ~Screen.height
+	$ver
+		( save ) OVR2 =Screen.y
+		#0000 ~Screen.width
+		$hor
+			( save ) OVR2 =Screen.x
+			( draw ) ~color =Screen.color
+			( incr ) SWP2 8+ SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2
+		( incr ) SWP2 8+ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
 
-	ff80 8080 8080 8088 ffff fffc f8f9 f1f4
-	ffff 0010 c721 2120 ffff 3f0f 0717 c343
-	8888 8080 8080 8080 f0f1 f2f5 f2f1 f0f4
-	1208 804c 9212 4c00 7303 0343 1b1b fbfb
-	8080 8f83 8383 8393 f0f3 f1f0 e4c0 80ff
-	00c7 c7c6 4606 00ff c3d3 c307 870f 3fff
-	8f83 8383 8383 83ff fff7 fdff c0e2 f1ff
-	7fef bfff 07af 5fff ffff ffff ffff ffff
-]
+RTN
+
+@checker_icn [ f0f0 f0f0 0f0f 0f0f ]
