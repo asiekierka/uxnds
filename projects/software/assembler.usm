@@ -1,5 +1,5 @@
 ;tree { search-key 2 max-key-len 1 }
-;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 heap 2 addr 2 subtree 2 vartmp 2 }
+;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 heap 2 addr 2 subtree 2 vartmp 2 field 2 }
 
 %HCF { #0000 DIV }
 %SHORT_FLAG { #20 }
@@ -281,11 +281,25 @@
 
 @lookup-label ( string-ptr* -- address* node-type if found
                             OR false-address* 00 if not found )
-	( FIXME deal with dotted labels )
+	DUP2
+	$loop
+	DUP2 #0001 ADD2 SWP2 PEK2
+	DUP #2e EQU ^$dotted JNZ
+	^$loop JNZ
+	DUP2 EOR2 ( faster than POP2 #0000 )
+	=assembler.field
+
+	$main
 	DUP2 ,label-tree SWP2 #ff ,traverse-tree JSR2
 	^$not-found JNZ
 
 	SWP2 POP2
+	~assembler.field #0000 EQU2 ^$end JNZ
+	DUP2 PEK2 #80 LTH ^$not-found JNZ
+	#0003 ADD2 ~assembler.field #ff ,traverse-tree JSR2
+	^$not-found JNZ
+
+	$end
 	DUP2 #0001 ADD2 LDR2 SWP2 PEK2
 	JMP2r
 
@@ -297,6 +311,11 @@
 	~assembler.addr #8765 ADD2
 	#00
 	JMP2r
+
+	$dotted
+	DUP OVR2 =assembler.field
+	EOR ROT ROT #0001 SUB2 POK2
+	^$main JMP
 
 @write-byte ( byte -- )
 	( FIXME ) =Console.byte
