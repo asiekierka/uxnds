@@ -834,21 +834,22 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color )
-
-	( load ) =color SWP2 =rect.x2 ROT2 =rect.x1
+@fill-rect ( x1 y1 x2 y2 color -- )
+	
+	=color
+	( x1 x2 y1 y2 ) ROT2 SWP2
 	$ver
 		( save ) OVR2 =Screen.y
-		~rect.x1 ~rect.x2
+		STH2 STH2 OVR2 OVR2 
 		$hor
 			( save ) OVR2 =Screen.x
 			( draw ) ~color =Screen.color
 			( incr ) SWP2 ++ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
-		POP2 POP2
+			OVR2 OVR2 LTS2 ^$hor JNZ
+		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
-	POP2 POP2
+		OVR2 OVR2 LTS2 ^$ver JNZ
+	POP2 POP2 POP2 POP2
 
 RTN
 
