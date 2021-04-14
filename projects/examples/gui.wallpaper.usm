@@ -11,7 +11,7 @@
 |0170 ;File { vector 2 pad 6 name 2 length 2 load 2 save 2 }
 |01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
 
-|0200 @RESET
+|0200
     #90ff =System.r #9000 =System.g #900f =System.b
     #08e0 ~Screen.width #0001 SFT2 SUB2 =scroll.x
     #09b0 =scroll.y
@@ -19,7 +19,7 @@
     #30 =scroll.wait
     BRK
 
-@frame
+@frame ( -> )
     #ffff
     $loop
     DUP2 ^row JSR

@@ -534,45 +534,37 @@ RTN
 @patternize ( -- )
 
 	~brush.patt #00 NEQ ^$noplain JNZ
-		#01 RTN
-	$noplain
+		#01 RTN $noplain
 
 	~brush.patt #01 NEQ ^$notone1 JNZ
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0001 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0001 AND2 #0000 EQU2 
 		#0101 EQU2
-		RTN
-	$notone1
+		RTN $notone1
 
 	~brush.patt #02 NEQ ^$notone2 JNZ
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 
 		#0101 EQU2
-		RTN
-	$notone2
+		RTN $notone2
 
 	~brush.patt #03 NEQ ^$notone3 JNZ
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0005 AND2 #0000 EQU2 
 		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0005 AND2 #0000 EQU2 
 		#0101 EQU2
-		RTN
-	$notone3
+		RTN $notone3
 
 	~brush.patt #04 NEQ ^$notone4 JNZ
-		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 RTN
-	$notone4
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 ADD2 #0003 AND2 #0000 EQU2 RTN $notone4
 
 	~brush.patt #05 NEQ ^$notone5 JNZ
-		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 RTN
-	$notone5
+		~pt0.x #00 ~px.x ADD2 ~pt0.y #00 ~px.y ADD2 SUB2 #0003 AND2 #0000 EQU2 RTN $notone5
 
 	~brush.patt #06 NEQ ^$notone6 JNZ
-		~pt0.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN
-	$notone6
+		~pt0.x #00 ~px.x ADD2 #0001 AND2 SWP POP RTN $notone6
 
 	~brush.patt #07 NEQ ^$notone7 JNZ
-		~pt0.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN
-	$notone7
+		~pt0.y #00 ~px.y ADD2 #0001 AND2 SWP POP RTN $notone7
 
 	#00
 
@@ -842,17 +834,21 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color -- )
+@fill-rect ( x1 y1 x2 y2 color )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
+	( load ) =color SWP2 =rect.x2 ROT2 =rect.x1
 	$ver
-		~rect.x1 =Screen.x
+		( save ) OVR2 =Screen.y
+		~rect.x1 ~rect.x2
 		$hor
+			( save ) OVR2 =Screen.x
 			( draw ) ~color =Screen.color
-			( incr ) ~Screen.x ++ =Screen.x
-			~Screen.x ~rect.x2 NEQ2 ^$hor JNZ
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 NEQ2 ^$ver JNZ
+			( incr ) SWP2 ++ SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
 
 RTN
 

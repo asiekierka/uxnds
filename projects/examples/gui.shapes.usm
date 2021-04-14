@@ -13,6 +13,7 @@
 ;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
 
 ( program )
@@ -21,12 +22,12 @@
 	
 	( theme ) #13fd =System.r #1ef3 =System.g #1bf2 =System.b
 	
-	#0010 #0020 #0040 #0060 #01 ,fill-rect JSR2
-	#0020 #0030 #0050 #0070 #02 ,fill-rect JSR2
-	#0030 #0040 #0060 #0080 #03 ,fill-rect JSR2
-	#0070 #0020 #00a0 #0060 #01 ,line-rect JSR2
-	#0080 #0030 #00b0 #0070 #02 ,line-rect JSR2
-	#0090 #0040 #00c0 #0080 #03 ,line-rect JSR2
+	#0010 #0020 #0040 #0060 #01 ,fill-rect-fast JSR2
+	#0020 #0030 #0050 #0070 #02 ,fill-rect-fast JSR2
+	#0030 #0040 #0060 #0080 #03 ,fill-rect-fast JSR2
+	#0070 #0020 #00a0 #0060 #01 ,line-rect-slow JSR2
+	#0080 #0030 #00b0 #0070 #02 ,line-rect-slow JSR2
+	#0090 #0040 #00c0 #0080 #03 ,line-rect-slow JSR2
 
 	#0000 #0080 #0020 #0020 #21 ,pict_small ,draw-picture JSR2
 	#0010 #0088 #0020 #0020 #22 ,pict_small ,draw-picture JSR2
@@ -41,6 +42,15 @@
 	#0040 #0040 #0030 #01 ,draw-circle JSR2
 	#0070 #0030 #0040 #02 ,draw-circle JSR2
 	#0050 #0080 #0050 #03 ,draw-circle JSR2
+
+	( benchmark )
+	#0000 #0000 #0008 #000f #01 ,fill-rect-fast JSR2
+	#0008 #0000 #0010 #000f #02 ,fill-rect-medium JSR2
+	#0010 #0000 #0018 #000f #03 ,fill-rect-slow JSR2
+
+	( #0000 #0010 #0008 #001f #01 ,line-rect-fast JSR2 )
+	#0008 #0010 #000f #001f #02 ,line-rect-medium JSR2
+	#0010 #0010 #0017 #001f #03 ,line-rect-slow JSR2
 	
 BRK
 
@@ -70,7 +80,26 @@ BRK
 
 RTN
 
-@line-rect ( x1 y1 x2 y2 color )
+@line-rect-medium ( x1 y1 x2 y2 color -- )
+
+	( load ) =color DUP2 ++ STH2 =rect.y2 =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	STH2r STH2r
+	$ver
+		( save ) OVR2 =Screen.y
+		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color ~rect.x2 =Screen.x =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
+	~rect.x1 ++ ~rect.x2 --
+	$hor
+		( save ) OVR2 =Screen.x
+		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color ~rect.y2 =Screen.y =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 ++ LTH2 ^$hor JNZ
+	POP2 POP2
+RTN
+
+@line-rect-slow ( x1 y1 x2 y2 color -- )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$hor
@@ -87,7 +116,44 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color )
+@fill-rect-fast ( x1 y1 x2 y2 color -- )
+	
+	=color
+	( x1 x2 y1 y2 ) ROT2 SWP2
+	$ver
+		( save ) OVR2 =Screen.y
+		STH2 STH2 OVR2 OVR2 
+		$hor
+			( save ) OVR2 =Screen.x
+			( draw ) ~color =Screen.color
+			( incr ) SWP2 ++ SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2 STH2r STH2r
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2 POP2 POP2
+
+RTN
+
+@fill-rect-medium ( x1 y1 x2 y2 color -- )
+
+	( load ) =color SWP2 =rect.x2 ROT2 =rect.x1
+	$ver
+		( save ) OVR2 =Screen.y
+		~rect.x1 ~rect.x2
+		$hor
+			( save ) OVR2 =Screen.x
+			( draw ) ~color =Screen.color
+			( incr ) SWP2 ++ SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
+
+RTN
+
+@fill-rect-slow ( x1 y1 x2 y2 color -- )
 
 	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
 	$ver
@@ -124,7 +190,7 @@ RTN
 	( draw ) ,$seg JSR2
 	$loop
 		( incr ) ~circle.x ++ =circle.x
-		~circle.d #0000 #0001 ADD2 LTS2 ^$else JNZ
+		~circle.d #0000 ++ LTS2 ^$else JNZ
 			( decr ) ~circle.y -- =circle.y
 			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 #000a ADD2 =circle.d
 			,$end JMP2
@@ -132,7 +198,7 @@ RTN
 			~circle.x #0004 MUL2 ~circle.d ADD2 #0006 ADD2 =circle.d
 		$end
 		( draw ) ,$seg JSR2
-		~circle.y ~circle.x #0001 SUB2 GTS2 ^$loop JNZ
+		~circle.y ~circle.x -- GTS2 ^$loop JNZ
 	RTN
 	$seg
 		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color

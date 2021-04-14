@@ -28,7 +28,7 @@
 
 ( program )
 
-|0200 @RESET
+|0200
 
 	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
 	( vectors ) ,on-mouse =Mouse.vector
@@ -274,17 +274,22 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color -- )
-
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
+@fill-rect ( x1 y1 x2 y2 color )
+	
+	=color
+	( x1 x2 y1 y2 ) ROT2 SWP2
 	$ver
-		~rect.x1 =Screen.x
+		( save ) OVR2 =Screen.y
+		STH2 STH2 OVR2 OVR2 
 		$hor
+			( save ) OVR2 =Screen.x
 			( draw ) ~color =Screen.color
-			( incr ) ~Screen.x ++ =Screen.x
-			~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 LTH2 ^$ver JNZ
+			( incr ) SWP2 #0001 ADD2 SWP2
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2 STH2r STH2r
+		( incr ) SWP2 #0001 ADD2 SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2 POP2 POP2
 
 RTN
 
