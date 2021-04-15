@@ -304,7 +304,7 @@ RTN
 		~bankview.x DUP2 #0080 ADD2
 		$hor 
 			( save ) OVR2 =Screen.x
-			( draw ) #21 ~Screen.addr ~tileview.addr EQU2 #06 MUL ADD ~bankview.depth #2e MUL ADD =Screen.color
+			( draw ) #21 ~Screen.addr ~tileview.addr EQU2 #08 MUL ADD ~bankview.depth #20 MUL ADD =Screen.color
 			( incr ) SWP2 8+ SWP2
 			( incr ) ~Screen.addr 8+ #00 ~bankview.depth #0008 MUL2 ADD2 =Screen.addr
 			OVR2 OVR2 LTH2 ^$hor JNZ
