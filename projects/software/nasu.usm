@@ -5,24 +5,43 @@
 	left-click  - add pixel
 	right-click  - remove pixel
 	1 2 3  - select brush
+
+	TODO:
+		Color selector, RGB sliders
+		Blend selector
 )
 
 %RTN   { JMP2r }
 %STEP8 { #0033 SFT2 }
 
-%++ { #0001 ADD2 }
+%++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0001 SFT2 } %2* { #0010 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 %SFL { #40 SFT SFT }
 %MOD { DUP2 DIV MUL SUB }
 
+%SIZE-TO-RECT {
+	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2 
+} ( x y w h -- x1 y1 x2 y2 )
+
+%SET-RECT {
+	DUP2 ROT2 SWP2 #0006 ADD2 STR2
+	DUP2 ROT2 SWP2 #0004 ADD2 STR2
+	DUP2 ROT2 SWP2 #0002 ADD2 STR2
+	DUP2 ROT2 SWP2 STR2
+	POP2
+} ( x1 y1 x2 y2 addr -- )
+
 %BANK { #2000 }
 
 ( variables )
 
-;bankview { x 2 y 2 mode 1 addr 2 depth 1 }
+;settings { blending 1 depth 1 }
+
+;bankview { x 2 y 2 mode 1 addr 2 }
 ;tileview { x 2 y 2 addr 2 }
+;blendview { x1 2 y1 2 x2 2 y2 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;mouse { x 2 y 2 }
 ;color { byte 1 }
@@ -50,16 +69,21 @@
 	( vectors ) ,on-transfer =File.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
-	~Screen.height 2/ #003f SUB2 =bankview.y 
+	~Screen.height 2/ #002f SUB2 =bankview.y 
 	BANK =bankview.addr
 
 	~Screen.width 2/ #0002 ADD2 =tileview.x 
-	~Screen.height 2/ #003f SUB2 =tileview.y 
+	~Screen.height 2/ #002f SUB2 =tileview.y 
 	BANK #0448 ADD2 =tileview.addr
+
+	~Screen.width 2/ #0061 ADD2 ~Screen.height 2/ #0068 SUB2 #0020 #0020 SIZE-TO-RECT ,blendview SET-RECT
+
+	#01 =settings.blending
 
 	,filepath1 =File.name #0800 =File.length BANK =File.load
 	,filepath2 =File.name #0800 =File.length BANK #0800 ADD2 =File.load
 	,filepath3 =File.name #1000 =File.length BANK #1000 ADD2 =File.load
+	,filepath4 =File.name #1000 =File.length BANK #2000 ADD2 =File.load
 
 	,redraw JSR2
 
@@ -112,11 +136,16 @@ BRK
 				( save ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.save
 			$no-save-click
 			~Mouse.x ~bankview.x SUB2 8/ #0005 NEQ2 ^$no-toggle-depth JNZ
-				( toggle ) ~bankview.depth #00 EQU =bankview.depth
+				( toggle ) ~settings.depth #00 EQU =settings.depth
 			$no-toggle-depth
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
 		$no-toolbar-click
+
+		( blendbiew )
+		~Mouse.x DUP2 ~blendview.x1 GTH2 ROT ROT ~blendview.x2 LTH2 #0101 EQU2
+		~Mouse.y DUP2 ~blendview.y1 GTH2 ROT ROT ~blendview.y2 LTH2 #0101 EQU2
+		#0101 EQU2 ,on-touch-blendview JNZ2
 
 		( bankview )
 
@@ -208,6 +237,16 @@ BRK
 
 BRK
 
+@on-touch-blendview ( -> )
+
+	~Mouse.x ~blendview.x1 SUB2 8/ SWP POP
+	~Mouse.y ~blendview.y1 SUB2 8/ SWP POP #04 MUL ADD
+	=settings.blending
+	( release ) #00 =Mouse.state
+	,redraw JSR2
+
+BRK 
+
 @op_shiftup
 	
 	~tileview.addr PEK2
@@ -240,6 +279,7 @@ RTN
 	
 	,draw-bankview JSR2
 	,draw-tileview JSR2
+	,draw-blendview JSR2
 
 RTN
 
@@ -258,7 +298,7 @@ RTN
 	~bankview.y #0010 SUB2 =Screen.y
 
 	~bankview.x #0028 ADD2 =Screen.x
-	,depth_icn #00 ~bankview.depth 8* ADD2 =Screen.addr
+	,depth_icn #00 ~settings.depth 8* ADD2 =Screen.addr
 	#23 =Screen.color
 
 	~bankview.x #0068 ADD2 =Screen.x
@@ -295,8 +335,6 @@ RTN
 		( incr ) ~i #01 ADD =i
 		~i #10 LTH ^$guides JNZ
 
-	( body )
-
 	( load ) ~bankview.addr =Screen.addr
 	~bankview.y DUP2 #0080 ADD2
 	$ver
@@ -304,9 +342,12 @@ RTN
 		~bankview.x DUP2 #0080 ADD2
 		$hor 
 			( save ) OVR2 =Screen.x
-			( draw ) #21 ~Screen.addr ~tileview.addr EQU2 #08 MUL ADD ~bankview.depth #20 MUL ADD =Screen.color
+			( get selected ) ~Screen.addr ~tileview.addr EQU2
+			( get blending ) ~settings.blending
+			( get depth ) ~settings.depth #20 MUL
+			( draw ) #20 ADD ADD ADD =Screen.color
 			( incr ) SWP2 8+ SWP2
-			( incr ) ~Screen.addr 8+ #00 ~bankview.depth #0008 MUL2 ADD2 =Screen.addr
+			( incr ) ~Screen.addr 8+ #00 ~settings.depth #0008 MUL2 ADD2 =Screen.addr
 			OVR2 OVR2 LTH2 ^$hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
@@ -434,6 +475,23 @@ RTN
 
 RTN
 
+@draw-blendview ( -- )
+
+	~blendview.x1 #0002 SUB2 ~blendview.y1 #0002 SUB2 ~blendview.x2 ++ ~blendview.y2 ++ #03 ,line-rect JSR2
+
+	~tileview.addr =Screen.addr
+	#00 #10
+	$loop
+		OVR #04 MOD #00 SWP #0008 MUL2 ~blendview.x1 ADD2 =Screen.x
+		OVR #04 DIV #00 SWP #0008 MUL2 ~blendview.y1 ADD2 =Screen.y
+		#20 =Screen.color
+		OVR #20 ADD ~settings.depth #20 MUL ADD =Screen.color
+		SWP #01 ADD SWP
+		DUP2 LTH ^$loop JNZ
+	POP2	
+
+RTN
+
 @draw-cursor
 
 	( clear last cursor )
@@ -513,6 +571,7 @@ RTN
 @filepath1     [ projects/fonts/specter8.bit 00 ]
 @filepath2     [ projects/pictures/cibo.bit 00 ]
 @filepath3     [ projects/pictures/zerotwo10x10.chr 00 ]
+@filepath4     [ projects/fonts/katahira8.bit 00 ]
 
 @font_hex ( 0-F ) 
 [

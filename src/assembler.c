@@ -11,6 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
+#define WORDLENMAX 32
+#define MACROMAX 64
 #define OFFSET 0x0200
 
 typedef unsigned char Uint8;
@@ -19,17 +21,17 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 typedef struct {
-	char name[64], items[16][64];
+	char name[WORDLENMAX], items[MACROMAX][WORDLENMAX];
 	Uint8 len, refs;
 } Macro;
 
 typedef struct {
-	char name[64];
+	char name[WORDLENMAX];
 	unsigned int size;
 } Map;
 
 typedef struct {
-	char name[64];
+	char name[WORDLENMAX];
 	Uint8 refs, maps;
 	Uint16 addr, len;
 	Map map[16];
@@ -203,6 +205,10 @@ makemacro(char *name, FILE *f)
 	while(fscanf(f, "%s", word)) {
 		if(word[0] == '{') continue;
 		if(word[0] == '}') break;
+		if(m->len > MACROMAX)
+			return error("Macro too large", name);
+		if(slen(word) >= WORDLENMAX)
+			return error("Word too long", name);
 		scpy(word, m->items[m->len++], 64);
 	}
 	printf("New macro: %s(%d items)\n", m->name, m->len);
