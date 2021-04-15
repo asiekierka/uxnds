@@ -8,7 +8,6 @@
 )
 
 %RTN   { JMP2r }
-%RTN?  { #00 EQU #02 JNZ STH2r JMP2 }
 %STEP8 { #0033 SFT2 }
 
 %++ { #0001 ADD2 }
@@ -16,10 +15,13 @@
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8- { #0008 SUB2 } %8+ { #0008 ADD2 }
 %SFL { #40 SFT SFT }
+%MOD { DUP2 DIV MUL SUB }
+
+%BANK { #2000 }
 
 ( variables )
 
-;bankview { x 2 y 2 mode 1 addr 2 }
+;bankview { x 2 y 2 mode 1 addr 2 depth 1 }
 ;tileview { x 2 y 2 addr 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;mouse { x 2 y 2 }
@@ -42,21 +44,22 @@
 
 |0200
 
-	( theme ) #e0fc =System.r #30cc =System.g #30ac =System.b
+	( theme ) #0efc =System.r #03cc =System.g #03ac =System.b
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-mouse =Mouse.vector
 	( vectors ) ,on-transfer =File.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
 	~Screen.height 2/ #003f SUB2 =bankview.y 
-	,bank =bankview.addr
+	BANK =bankview.addr
 
 	~Screen.width 2/ #0002 ADD2 =tileview.x 
 	~Screen.height 2/ #003f SUB2 =tileview.y 
-	,bank #0448 ADD2 =tileview.addr
+	BANK #0448 ADD2 =tileview.addr
 
-	,filepath1 =File.name #0800 =File.length ,bank =File.load
-	,filepath2 =File.name #0800 =File.length ,bank #0800 ADD2 =File.load
+	,filepath1 =File.name #0800 =File.length BANK =File.load
+	,filepath2 =File.name #0800 =File.length BANK #0800 ADD2 =File.load
+	,filepath3 =File.name #1000 =File.length BANK #1000 ADD2 =File.load
 
 	,redraw JSR2
 
@@ -101,19 +104,18 @@ BRK
 			~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 ^$no-brush-click JNZ
 			~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 ^$no-brush-click JNZ
 				( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
-				( release ) #00 =Mouse.state
-				,redraw JSR2 ,$click-end JMP2
 			$no-brush-click
 			~Mouse.x ~tileview.x SUB2 8/ #000e NEQ2 ^$no-load-click JNZ
 				( load ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.load
-				( release ) #00 =Mouse.state
-				,redraw JSR2 ,$click-end JMP2
 			$no-load-click
 			~Mouse.x ~tileview.x SUB2 8/ #000f NEQ2 ^$no-save-click JNZ
 				( save ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.save
+			$no-save-click
+			~Mouse.x ~bankview.x SUB2 8/ #0005 NEQ2 ^$no-toggle-depth JNZ
+				( toggle ) ~bankview.depth #00 EQU =bankview.depth
+			$no-toggle-depth
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
-			$no-save-click
 		$no-toolbar-click
 
 		( bankview )
@@ -253,8 +255,13 @@ RTN
 
 	( toolbar )
 
-	~bankview.x #0068 ADD2 =Screen.x
 	~bankview.y #0010 SUB2 =Screen.y
+
+	~bankview.x #0028 ADD2 =Screen.x
+	,depth_icn #00 ~bankview.depth 8* ADD2 =Screen.addr
+	#23 =Screen.color
+
+	~bankview.x #0068 ADD2 =Screen.x
 	,tool_selector =Screen.addr
 	#21 ~bankview.mode #00 EQU ADD =Screen.color
 
@@ -290,23 +297,21 @@ RTN
 
 	( body )
 
-	~bankview.x =Screen.x ~bankview.y =Screen.y
-	#00 =pt.x #00 =pt.y ~bankview.addr =Screen.addr
+	( load ) ~bankview.addr =Screen.addr
+	~bankview.y DUP2 #0080 ADD2
 	$ver
-		#00 =pt.x
-		~bankview.x =Screen.x
-		$hor
-			( draw ) #21
-				~Screen.addr ~tileview.addr LTH2 
-				~Screen.addr ~tileview.addr #0018 ADD2 GTH2 
-				#0000 EQU2 #06 MUL ADD =Screen.color
-			( incr ) ~Screen.x 8+ =Screen.x
-			( incr ) ~Screen.addr 8+ =Screen.addr
-			( incr ) ~pt.x #01 ADD =pt.x
-			~pt.x #10 LTH ,$hor JNZ2
-		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~Screen.y 8+ =Screen.y
-		~pt.y #10 LTH ,$ver JNZ2
+		( save ) OVR2 =Screen.y
+		~bankview.x DUP2 #0080 ADD2
+		$hor 
+			( save ) OVR2 =Screen.x
+			( draw ) #21 ~Screen.addr ~tileview.addr EQU2 #06 MUL ADD ~bankview.depth #2e MUL ADD =Screen.color
+			( incr ) SWP2 8+ SWP2
+			( incr ) ~Screen.addr 8+ #00 ~bankview.depth #0008 MUL2 ADD2 =Screen.addr
+			OVR2 OVR2 LTH2 ^$hor JNZ
+		POP2 POP2
+		( incr ) SWP2 8+ SWP2
+		OVR2 OVR2 LTH2 ^$ver JNZ
+	POP2 POP2
 
 RTN
 
@@ -431,11 +436,6 @@ RTN
 
 @draw-cursor
 
-	~mouse.x ~Mouse.x NEQ2
-	~mouse.y ~Mouse.y NEQ2
-
-	#0000 EQU2 RTN? ( Return if unchanged )
-
 	( clear last cursor )
 	~mouse.x =Screen.x
 	~mouse.y =Screen.y
@@ -450,7 +450,7 @@ RTN
 	~mouse.x =Screen.x
 	~mouse.y =Screen.y
 	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =Screen.addr
-	#32 =Screen.color
+	#32 ~Mouse.state #00 NEQ ADD =Screen.color
 
 RTN
 
@@ -473,34 +473,46 @@ RTN
 
 ( Utils )
 
-@line-rect ( x1 y1 x2 y2 color )
+@line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor
-		( incr ) ~Screen.x ++ =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
-		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-	~rect.y1 =Screen.y
+	( load ) =color DUP2 STH2 =rect.y2 =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	STH2r STH2r
 	$ver
-		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
-		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
+		( save ) OVR2 =Screen.y
+		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
+		( draw ) ~rect.x2 =Screen.x =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTS2 ^$ver JNZ
+	POP2 POP2
+	~rect.x1 ~rect.x2
+	$hor
+		( save ) OVR2 =Screen.x
+		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
+		( draw ) ~rect.y2 =Screen.y =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 ++ LTS2 ^$hor JNZ
+	POP2 POP2
 
 RTN
 
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
 @tool_hand     [ 4040 4070 f8f8 f870 ]
 @tool_eraser   [ 2050 b87c 3e1c 0800 ]
-@blank_icn     [ 0000 0000 0000 0000 ]
-@cell1_icn     [ 7cfe fefe fefe 7c00 ]
+@blank_icn     [
+	0000 0000 0000 0000
+	7cfe fefe fefe 7c00
+]
+@depth_icn [
+	00fe 8282 fe82 82fe
+	00fe 9292 fe92 92fe
+]
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
 @moveup_icn    [ 0010 387c fe10 1000 ]
 @movedown_icn  [ 0010 1010 fe7c 3810 ]
 @filepath1     [ projects/fonts/specter8.bit 00 ]
 @filepath2     [ projects/pictures/cibo.bit 00 ]
+@filepath3     [ projects/pictures/zerotwo10x10.chr 00 ]
 
 @font_hex ( 0-F ) 
 [
@@ -513,5 +525,3 @@ RTN
 	007c 8280 8080 827c 00fc 8282 8282 82fc 
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]
-
-|2000 @bank [ ]	

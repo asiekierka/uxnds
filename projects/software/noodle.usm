@@ -14,7 +14,6 @@
 )
 
 %RTN   { JMP2r }
-%RTN? { #00 EQU #02 JNZ STH2r JMP2 }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 %CLN2r { DUP2 STH2 }
 %STEP8 { #0033 SFT2 }
@@ -68,7 +67,6 @@
 	( vectors ) ,on-screen =Screen.vector
 	( vectors ) ,on-button =Controller.vector
 	( vectors ) ,on-mouse =Mouse.vector
-	( vectors ) ,on-transfer =File.vector
 
 	~theme.r0 =System.r ~theme.g0 =System.g ~theme.b0 =System.b
 
@@ -93,13 +91,6 @@
 
 	( load default file )
 	,path.name ,load-file JSR2
-
-BRK
-
-@on-transfer ( -> )
-	
-	,draw-canvas JSR2
-	( release ) #00 =Mouse.state
 
 BRK
 
@@ -365,7 +356,6 @@ BRK
 	~Screen.height #0002 DIV2 ~canvas.h 8* 2/ SUB2 =canvas.y1
 
 	,fit-canvas JSR2
-
 	,draw-foreground JSR2
 
 RTN
@@ -409,19 +399,6 @@ RTN
 
 	( clear panes )
 	,redraw JSR2
-
-RTN
-
-@load-file ( path -- )
-
-	=File.name FILESIZE =File.length ,data =File.load
-	~File.name ,path.name ,strcpy JSR2
-
-RTN
-
-@save-file ( path -- )
-
-	=File.name FILESIZE =File.length ,data =File.save
 
 RTN
 
@@ -600,6 +577,22 @@ RTN
 
 RTN
 
+( file )
+
+@load-file ( path -- )
+
+	=File.name FILESIZE =File.length ,data =File.load
+	~File.name ,path.name ,strcpy JSR2
+	,draw-canvas JSR2
+
+RTN
+
+@save-file ( path -- )
+
+	=File.name FILESIZE =File.length ,data =File.save
+
+RTN
+
 ( Drawing )
 
 @redraw ( -- )
@@ -649,13 +642,6 @@ RTN
 RTN
 
 @draw-cursor ( -- )
-
-	~cursor.x ~Mouse.x NEQ2
-	~cursor.y ~Mouse.y NEQ2
-	#0000 EQU2 
-	~Mouse.state 
-	#00 NEQ 
-	#0101 EQU2 RTN? ( Return if unchanged )
 
 	,blank_icn =Screen.addr
 	( clear brush size )
@@ -819,18 +805,23 @@ RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor
-		( incr ) ~Screen.x ++ =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
-		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 NEQ2 ^$hor JNZ
-	~rect.y1 =Screen.y
+	( load ) =color DUP2 STH2 =rect.y2 =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	STH2r STH2r
 	$ver
-		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
-		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ NEQ2 ^$ver JNZ
+		( save ) OVR2 =Screen.y
+		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
+		( draw ) ~rect.x2 =Screen.x =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTS2 ^$ver JNZ
+	POP2 POP2
+	~rect.x1 ~rect.x2
+	$hor
+		( save ) OVR2 =Screen.x
+		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
+		( draw ) ~rect.y2 =Screen.y =Screen.color
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 ++ LTS2 ^$hor JNZ
+	POP2 POP2
 
 RTN
 

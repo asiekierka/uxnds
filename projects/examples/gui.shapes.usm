@@ -71,7 +71,7 @@ RTN
 		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
 		( draw ) ~rect.x2 =Screen.x =Screen.color
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTS2 ^$ver JNZ
 	POP2 POP2
 	~rect.x1 ~rect.x2
 	$hor
@@ -79,7 +79,7 @@ RTN
 		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
 		( draw ) ~rect.y2 =Screen.y =Screen.color
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 ++ LTH2 ^$hor JNZ
+		OVR2 OVR2 ++ LTS2 ^$hor JNZ
 	POP2 POP2
 
 RTN
@@ -95,10 +95,10 @@ RTN
 			( save ) OVR2 =Screen.x
 			( draw ) ~color =Screen.color
 			( incr ) SWP2 ++ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTS2 ^$hor JNZ
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTS2 ^$ver JNZ
 	POP2 POP2 POP2 POP2
 
 RTN

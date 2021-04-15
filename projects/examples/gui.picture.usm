@@ -23,7 +23,7 @@
 	( load ) ,icn1_path =File.name #1800 =File.length ,image =File.load
 	( draw ) #0008 #0008 #0100 #00c0 #27 ,image ,draw-icn JSR2
 
-	( load ) ,icn2_path =File.name #1800 =File.length ,image =File.load
+	( load ) ,icn2_path =File.name #0800 =File.length ,image =File.load
 	( draw ) #0010 #0078 #0080 #0080 #27 ,image ,draw-icn JSR2
 
 	( load ) ,chr1_path =File.name #4000 =File.length ,image =File.load
