@@ -115,7 +115,7 @@ init(Uxn *u)
 	as.format = AUDIO_S16;
 	as.channels = 2;
 	as.callback = audio_callback;
-	as.samples = 2048;
+	as.samples = 512;
 	as.userdata = u;
 	audio_id = SDL_OpenAudioDevice(NULL, 0, &as, NULL, 0);
 	if(!audio_id)
