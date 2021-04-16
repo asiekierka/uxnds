@@ -2,13 +2,13 @@
 	app/nasu : spritesheet editor
 
 	arrows - move selection
+	ctrl+arrows - change page
 	left-click  - add pixel
 	right-click  - remove pixel
 	1 2 3  - select brush
 
 	TODO:
 		Color selector, RGB sliders
-		Blend selector
 )
 
 %RTN   { JMP2r }
@@ -37,9 +37,9 @@
 
 ( variables )
 
-;settings { blending 1 depth 1 }
+;settings { blending 1 depth 1 page 2 }
 
-;bankview { x 2 y 2 mode 1 addr 2 }
+;bankview { x 2 y 2 mode 1 addr 2 selection 1 }
 ;tileview { x 2 y 2 addr 2 }
 ;blendview { x1 2 y1 2 x2 2 y2 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
@@ -70,7 +70,7 @@
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
 	~Screen.height 2/ #002f SUB2 =bankview.y 
-	BANK =bankview.addr
+	BANK =settings.page
 
 	~Screen.width 2/ #0002 ADD2 =tileview.x 
 	~Screen.height 2/ #002f SUB2 =tileview.y 
@@ -97,28 +97,46 @@ BRK
 
 @on-button ( -> )
 	
-	~Controller.button
-	DUP #10 EQU ^$no-ctrl-up JNZ
-		~tileview.addr #0080 ADD2 =tileview.addr $no-ctrl-up
-	DUP #20 EQU ^$no-ctrl-down JNZ
-		~tileview.addr #0080 SUB2 =tileview.addr $no-ctrl-down
-	DUP #40 EQU ^$no-ctrl-left JNZ
-		~tileview.addr 8+ =tileview.addr $no-ctrl-left
-	DUP #80 EQU ^$no-ctrl-right JNZ
-		~tileview.addr 8- =tileview.addr $no-ctrl-right
-	POP
-	~tileview.addr #0800 DIV2 #0800 MUL2 =bankview.addr
+	( arrow button )
+	~Controller.button #00 EQU ,$no-button JNZ2
 
-	~Controller.key #31 LTH ^$skip JNZ
-	~Controller.key #33 GTH ^$skip JNZ
-	( select ) ~Controller.key #31 SUB =bankview.mode
-	$skip
-	,redraw JSR2
+		~Controller.button #11 NEQ ^$no-pageup JNZ ~settings.page 
+			#0800 SUB2 =settings.page ,redraw JSR2 BRK $no-pageup
+		~Controller.button #21 NEQ ^$no-pagedown JNZ ~settings.page 
+			#0800 ADD2 =settings.page ,redraw JSR2 BRK $no-pagedown
+
+		~Controller.button #f0 AND
+		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
+			( move ) ~bankview.selection #10 SUB =bankview.selection $no-up
+		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
+			( move ) ~bankview.selection #10 ADD =bankview.selection $no-down
+		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
+			( move ) ~bankview.selection #01 SUB =bankview.selection $no-left
+		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
+			( move ) ~bankview.selection #01 ADD =bankview.selection $no-right
+		POP
+		~bankview.selection ,select-tile JSR2
+
+	$no-button
+
+	~Controller.key #00 EQU ^$no-key JNZ
+		~Controller.key #31 LTH ^$no-number JNZ
+		~Controller.key #33 GTH ^$no-number JNZ
+		( select ) ~Controller.key #31 SUB =bankview.mode
+			,redraw JSR2
+		$no-number
+		~Controller.key #20 NEQ ^$no-space JNZ
+			~settings.depth #00 EQU =settings.depth
+			,redraw JSR2
+		$no-space
+	$no-key
 
 BRK
 
 @on-mouse ( -> )
 	
+	,draw-cursor JSR2
+
 	~Mouse.state #00 EQU ,$click-end JNZ2
 
 		( toolbar )
@@ -130,10 +148,10 @@ BRK
 				( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
 			$no-brush-click
 			~Mouse.x ~tileview.x SUB2 8/ #000e NEQ2 ^$no-load-click JNZ
-				( load ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.load
+				( load ) ,filepath1  =File.name #0800 =File.length ~settings.page =File.load
 			$no-load-click
 			~Mouse.x ~tileview.x SUB2 8/ #000f NEQ2 ^$no-save-click JNZ
-				( save ) ,filepath1  =File.name #0800 =File.length ~bankview.addr =File.save
+				( save ) ,filepath1  =File.name #0800 =File.length ~settings.page =File.save
 			$no-save-click
 			~Mouse.x ~bankview.x SUB2 8/ #0005 NEQ2 ^$no-toggle-depth JNZ
 				( toggle ) ~settings.depth #00 EQU =settings.depth
@@ -148,43 +166,9 @@ BRK
 		#0101 EQU2 ,on-touch-blendview JNZ2
 
 		( bankview )
-
 		~Mouse.x ~bankview.x GTH2 ~Mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
 		~Mouse.y ~bankview.y GTH2 ~Mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
-		#0101 NEQ2 ,$no-bank-click JNZ2
-
-			~bankview.mode #01 NEQ ^$not-copy-mode JNZ
-				#00 =i
-				$copy-loop
-					( load ) ~tileview.addr ~i ADD PEK2 
-					( get touch addr )
-					~Mouse.x ~bankview.x SUB2 STEP8 
-					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-					~bankview.addr ADD2 #00 ~i ADD2 POK2
-					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^$copy-loop JNZ
-				,redraw JSR2 ,$click-end JMP2
-			$not-copy-mode
-
-			~bankview.mode #02 NEQ ^$not-erase-mode JNZ
-				#00 =i
-				$erase-loop
-					#00 
-					( get touch addr )
-					~Mouse.x ~bankview.x SUB2 STEP8 
-					~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-					~bankview.addr ADD2 #00 ~i ADD2 POK2
-					( incr ) ~i #01 ADD =i
-					~i #08 LTH ^$erase-loop JNZ
-				,redraw JSR2 ,$click-end JMP2
-			$not-erase-mode
-
-			~Mouse.x ~bankview.x SUB2 STEP8 
-			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-			~bankview.addr ADD2 =tileview.addr
-			,redraw JSR2 ,$click-end JMP2
-
-		$no-bank-click
+		#0101 EQU2 ,on-touch-bankview JNZ2
 
 		( tileview )
 
@@ -233,7 +217,44 @@ BRK
 
 	$click-end
 
-	,draw-cursor JSR2
+BRK
+
+@on-touch-bankview ( -> )
+	
+	~bankview.mode #01 NEQ ^$not-copy-mode JNZ
+		#00 =i
+		$copy-loop
+			( load ) ~tileview.addr ~i ADD PEK2 
+			( get touch addr )
+			~Mouse.x ~bankview.x SUB2 STEP8 
+			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
+			( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
+			~settings.page ADD2 #00 ~i ADD2 POK2
+			( incr ) ~i #01 ADD =i
+			~i #08 LTH ^$copy-loop JNZ
+		,redraw JSR2 BRK
+	$not-copy-mode
+
+	~bankview.mode #02 NEQ ^$not-erase-mode JNZ
+		#00 =i
+		$erase-loop
+			#00 
+			( get touch addr )
+			~Mouse.x ~bankview.x SUB2 STEP8 
+			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
+			( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
+			~settings.page ADD2 #00 ~i ADD2 POK2
+			( incr ) ~i #01 ADD =i
+			~i #08 LTH ^$erase-loop JNZ
+		,redraw JSR2 BRK
+	$not-erase-mode
+
+	( select )
+
+	~Mouse.x ~bankview.x SUB2 8/ SWP POP
+	~Mouse.y ~bankview.y SUB2 8/ SWP POP #40 SFT ADD
+	DUP =bankview.selection
+	,select-tile JSR2
 
 BRK
 
@@ -246,6 +267,17 @@ BRK
 	,redraw JSR2
 
 BRK 
+
+@select-tile ( pos -- )
+
+	( x y ) DUP #0f AND SWP #04 SFT
+	( y ) #10 MOD #10 MUL #00 SWP 8* 
+	( x ) ROT #10 MOD #00 SWP 8* ADD2 
+	( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
+	( offset ) ~settings.page ADD2 =tileview.addr
+	,redraw JSR2
+
+RTN
 
 @op_shiftup
 	
@@ -291,7 +323,7 @@ RTN
 
 	~bankview.x =Screen.x
 	~bankview.y #0010 SUB2 =Screen.y
-	~bankview.addr ,draw-short JSR2
+	~settings.page ,draw-short JSR2
 
 	( toolbar )
 
@@ -335,7 +367,9 @@ RTN
 		( incr ) ~i #01 ADD =i
 		~i #10 LTH ^$guides JNZ
 
-	( load ) ~bankview.addr =Screen.addr
+	( draw page )
+
+	( load ) ~settings.page =Screen.addr
 	~bankview.y DUP2 #0080 ADD2
 	$ver
 		( save ) OVR2 =Screen.y
@@ -417,11 +451,7 @@ RTN
 	#00 =i
 	$bytes
 		~tileview.x #0088 ADD2 =Screen.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
-		( draw ) #22 =Screen.color
-		~Screen.x 8+ =Screen.x
-		,font_hex #00 ~tileview.addr #00 ~i ADD2 PEK2 #0f AND #08 MUL ADD2 =Screen.addr
-		( draw ) #22 =Screen.color
+		~tileview.addr #00 ~i ADD2 PEK2 ,draw-byte JSR2
 		( incr ) ~i #01 ADD =i
 		( incr ) ~Screen.y 8+ =Screen.y
 	~i #08 LTH ,$bytes JNZ2
@@ -488,7 +518,14 @@ RTN
 		OVR #20 ADD ~settings.depth #20 MUL ADD =Screen.color
 		SWP #01 ADD SWP
 		DUP2 LTH ^$loop JNZ
-	POP2	
+	POP2
+
+	~blendview.x1 =Screen.x
+	~blendview.y1 #0010 SUB2 =Screen.y
+
+	( get blending ) ~settings.blending
+	( get depth ) ~settings.depth #20 MUL
+	( draw ) #20 ADD ADD ,draw-byte JSR2
 
 RTN
 
@@ -512,7 +549,18 @@ RTN
 
 RTN
 
-@draw-short ( short )
+@draw-byte ( byte -- )
+	
+	STH
+	,font_hex #00 DUPr STHr #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~Screen.x 8+ =Screen.x
+	,font_hex #00 STHr #0f AND #08 MUL ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+
+RTN
+
+@draw-short ( short -- )
 
 	=addr
 	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
