@@ -11,7 +11,7 @@
 ;counts { failed 2 passed 2 unknown 2 }
 ;number { started 1 }
 
-|0100 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
 |01F0 .RESET .FRAME .ERROR ( vectors )
 
 %PASS? { ,result JMP2 BRK2r LITr EOR2 DUP }
