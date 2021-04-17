@@ -8,7 +8,8 @@
 	1 2 3  - select brush
 
 	TODO:
-		Color selector, RGB sliders
+		Save/load/rename
+		Select paint color for 2-bit mode
 )
 
 %RTN   { JMP2r }
@@ -41,6 +42,7 @@
 
 ;bankview { x 2 y 2 mode 1 addr 2 selection 1 }
 ;tileview { x 2 y 2 addr 2 }
+;colorview { x1 2 y1 2 x2 2 y2 2 }
 ;blendview { x1 2 y1 2 x2 2 y2 2 }
 ;rect { x1 2 y1 2 x2 2 y2 2 }
 ;mouse { x 2 y 2 }
@@ -69,14 +71,15 @@
 	( vectors ) ,on-transfer =File.vector
 
 	~Screen.width 2/ #008a SUB2 =bankview.x 
-	~Screen.height 2/ #002f SUB2 =bankview.y 
+	~Screen.height 2/ #003f SUB2 =bankview.y 
 	BANK =settings.page
 
 	~Screen.width 2/ #0002 ADD2 =tileview.x 
-	~Screen.height 2/ #002f SUB2 =tileview.y 
+	~Screen.height 2/ #003f SUB2 =tileview.y 
 	BANK #0448 ADD2 =tileview.addr
 
-	~Screen.width 2/ #0061 ADD2 ~Screen.height 2/ #0068 SUB2 #0020 #0020 SIZE-TO-RECT ,blendview SET-RECT
+	~Screen.width 2/ #0002 ADD2 ~Screen.height 2/ #0048 ADD2 #0020 #0020 SIZE-TO-RECT ,colorview SET-RECT
+	~Screen.width 2/ #0061 ADD2 ~Screen.height 2/ #0048 ADD2 #0020 #0020 SIZE-TO-RECT ,blendview SET-RECT
 
 	#01 =settings.blending
 
@@ -84,6 +87,7 @@
 	,filepath2 =File.name #0800 =File.length BANK #0800 ADD2 =File.load
 	,filepath3 =File.name #1000 =File.length BANK #1000 ADD2 =File.load
 	,filepath4 =File.name #1000 =File.length BANK #2000 ADD2 =File.load
+	,filepath5 =File.name #1000 =File.length BANK #2800 ADD2 =File.load
 
 	,redraw JSR2
 
@@ -126,7 +130,7 @@ BRK
 			,redraw JSR2
 		$no-number
 		~Controller.key #20 NEQ ^$no-space JNZ
-			~settings.depth #00 EQU =settings.depth
+			,toggle-depth JSR2
 			,redraw JSR2
 		$no-space
 	$no-key
@@ -154,7 +158,7 @@ BRK
 				( save ) ,filepath1  =File.name #0800 =File.length ~settings.page =File.save
 			$no-save-click
 			~Mouse.x ~bankview.x SUB2 8/ #0005 NEQ2 ^$no-toggle-depth JNZ
-				( toggle ) ~settings.depth #00 EQU =settings.depth
+				,toggle-depth JSR2
 			$no-toggle-depth
 				( release ) #00 =Mouse.state
 				,redraw JSR2 ,$click-end JMP2
@@ -164,6 +168,11 @@ BRK
 		~Mouse.x DUP2 ~blendview.x1 GTH2 ROT ROT ~blendview.x2 LTH2 #0101 EQU2
 		~Mouse.y DUP2 ~blendview.y1 GTH2 ROT ROT ~blendview.y2 LTH2 #0101 EQU2
 		#0101 EQU2 ,on-touch-blendview JNZ2
+
+		( bankview )
+		~Mouse.x DUP2 ~colorview.x1 GTH2 ROT ROT ~colorview.x2 LTH2 #0101 EQU2
+		~Mouse.y DUP2 ~colorview.y1 GTH2 ROT ROT ~colorview.y2 LTH2 #0101 EQU2
+		#0101 EQU2 ,on-touch-colorview JNZ2
 
 		( bankview )
 		~Mouse.x ~bankview.x GTH2 ~Mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
@@ -268,6 +277,42 @@ BRK
 
 BRK 
 
+@on-touch-colorview ( -> )
+	
+	( channel ) ~Mouse.y ~colorview.y1 SUB2 8/ SWP POP STH
+	( rgb ) ~Mouse.x ~colorview.x1 SUB2 8/ SWP POP
+	DUP #01 NEQ ^$no-red JNZ
+		DUPr STHr ,System.r ,set-color JSR2 $no-red
+	DUP #02 NEQ ^$no-green JNZ 
+		DUPr STHr ,System.g ,set-color JSR2 $no-green
+	DUP #03 NEQ ^$no-blue JNZ 
+		DUPr STHr ,System.b ,set-color JSR2 $no-blue
+	POP POPr
+	( release ) #00 =Mouse.state
+	,redraw JSR2
+
+BRK
+
+@set-color ( color rgb -- )
+	
+	STH2
+	DUP #00 NEQ ^$no-red0 JNZ
+		DUP2r STH2r PEK2 DUP #04 SFT #01 ADD ~Mouse.state #10 EQU #fe MUL ADD #40 SFT SWP #0f AND ADD DUP2r STH2r POK2
+		$no-red0
+	DUP #01 NEQ ^$no-red1 JNZ
+		DUP2r STH2r PEK2 DUP #0f AND #01 ADD ~Mouse.state #10 EQU #fe MUL ADD #0f AND SWP #f0 AND ADD DUP2r STH2r POK2
+		$no-red1
+	DUP #02 NEQ ^$no-red2 JNZ
+		DUP2r STH2r #0001 ADD2 PEK2 DUP #04 SFT #01 ADD ~Mouse.state #10 EQU #fe MUL ADD #40 SFT SWP #0f AND ADD DUP2r STH2r #0001 ADD2 POK2
+		$no-red2
+	DUP #03 NEQ ^$no-red3 JNZ
+		DUP2r STH2r #0001 ADD2 PEK2 DUP #0f AND #01 ADD ~Mouse.state #10 EQU #fe MUL ADD #0f AND SWP #f0 AND ADD DUP2r STH2r #0001 ADD2 POK2
+		$no-red3
+	POP
+	POP2r
+
+RTN
+
 @select-tile ( pos -- )
 
 	( x y ) DUP #0f AND SWP #04 SFT
@@ -276,6 +321,14 @@ BRK
 	( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
 	( offset ) ~settings.page ADD2 =tileview.addr
 	,redraw JSR2
+
+RTN
+
+@toggle-depth ( -- )
+	
+	~bankview.selection
+	~settings.depth #00 EQU =settings.depth
+	,select-tile JSR2
 
 RTN
 
@@ -312,6 +365,7 @@ RTN
 	,draw-bankview JSR2
 	,draw-tileview JSR2
 	,draw-blendview JSR2
+	,draw-colorview JSR2
 
 RTN
 
@@ -330,7 +384,7 @@ RTN
 	~bankview.y #0010 SUB2 =Screen.y
 
 	~bankview.x #0028 ADD2 =Screen.x
-	,depth_icn #00 ~settings.depth 8* ADD2 =Screen.addr
+	,depth_icns #00 ~settings.depth 8* ADD2 =Screen.addr
 	#23 =Screen.color
 
 	~bankview.x #0068 ADD2 =Screen.x
@@ -507,8 +561,6 @@ RTN
 
 @draw-blendview ( -- )
 
-	~blendview.x1 #0002 SUB2 ~blendview.y1 #0002 SUB2 ~blendview.x2 ++ ~blendview.y2 ++ #03 ,line-rect JSR2
-
 	~tileview.addr =Screen.addr
 	#00 #10
 	$loop
@@ -520,12 +572,53 @@ RTN
 		DUP2 LTH ^$loop JNZ
 	POP2
 
-	~blendview.x1 =Screen.x
-	~blendview.y1 #0010 SUB2 =Screen.y
+	~blendview.x1 #0019 SUB2 =Screen.x
+	~blendview.y1 #0018 ADD2 =Screen.y
 
 	( get blending ) ~settings.blending
 	( get depth ) ~settings.depth #20 MUL
 	( draw ) #20 ADD ADD ,draw-byte JSR2
+
+RTN
+
+@draw-colorview ( -- )
+	
+	~colorview.y1 #18 ADD =Screen.y
+	~colorview.x1 #08 ADD =Screen.x
+	~System.r ,draw-color-code JSR2
+	~colorview.y1 #18 ADD =Screen.y
+	~colorview.x1 #10 ADD =Screen.x
+	~System.g ,draw-color-code JSR2
+	~colorview.y1 #18 ADD =Screen.y
+	~colorview.x1 #18 ADD =Screen.x
+	~System.b ,draw-color-code JSR2	
+
+	~colorview.x1 =Screen.x
+	,full_icn =Screen.addr
+
+	#00 #04
+	$loop
+		OVR ~colorview.y1 ROT #00 SWP #0008 MUL2 ADD2 =Screen.y
+		OVR #20 ADD =Screen.color
+		SWP #01 ADD SWP
+		DUP2 LTH ^$loop JNZ
+	POP2
+
+RTN
+
+@draw-color-code ( color* -- )
+	
+	DUP ,font_hex ROT #0f AND #08 MUL #00 SWP ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~colorview.y1 #10 ADD =Screen.y
+	,font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~colorview.y1 #08 ADD =Screen.y
+	DUP ,font_hex ROT #0f AND #08 MUL #00 SWP ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
+	~colorview.y1 =Screen.y
+	,font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 =Screen.addr
+	( draw ) #22 =Screen.color
 
 RTN
 
@@ -601,6 +694,7 @@ RTN
 
 RTN
 
+@full_icn      [ 0038 7cfe fefe 7c38 ]
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
 @tool_hand     [ 4040 4070 f8f8 f870 ]
 @tool_eraser   [ 2050 b87c 3e1c 0800 ]
@@ -608,10 +702,12 @@ RTN
 	0000 0000 0000 0000
 	7cfe fefe fefe 7c00
 ]
-@depth_icn [
+
+@depth_icns [
 	00fe 8282 fe82 82fe
 	00fe 9292 fe92 92fe
 ]
+
 @load_icn      [ feaa d6aa d4aa f400 ]
 @save_icn      [ fe82 8282 848a f400 ]
 @moveup_icn    [ 0010 387c fe10 1000 ]
@@ -620,6 +716,7 @@ RTN
 @filepath2     [ projects/pictures/cibo.bit 00 ]
 @filepath3     [ projects/pictures/zerotwo10x10.chr 00 ]
 @filepath4     [ projects/fonts/katahira8.bit 00 ]
+@filepath5     [ projects/pictures/daria10x10.chr 00 ]
 
 @font_hex ( 0-F ) 
 [
