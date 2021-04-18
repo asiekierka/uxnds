@@ -1,5 +1,5 @@
 ;tree { search-key 2 max-key-len 1 }
-;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 heap 2 addr 2 subtree 2 vartmp 2 field 2 }
+;assembler { pass 1 state 1 token 2 scope-len 1 scope 80 heap 2 addr 2 subtree 2 field_size 2 var_size 2 field 2 }
 
 %HCF { #0000 DIV }
 %SHORT_FLAG { #20 }
@@ -22,19 +22,34 @@
 
 @RESET
 	,assembler-heap-start =assembler.heap
-	#0070 =assembler.addr
 
-	,$read-filename =File.name
-	#1000 =File.length
-	#f000 =File.load
-
-	#f000 #1000 ^assemble-chunk JSR
+	,$read-filename ^assemble-file JSR
 	HCF
 
-	$read-filename [ etc/assembler-test.usm 00 ]
+	HCF
 
-@assemble-chunk ( ptr* len* -- 00 if EOF found in chunk
-                            OR assembled-up-to-ptr* 01 if reached end of chunk )
+	$read-filename [ projects/software/noodle.usm 00 ]
+
+@assemble-file ( filename-ptr* -- )
+	#0000
+
+	$loop
+	OVR2 =File.name
+	DUP2 =File.offset
+	#0600 =File.length
+	#f000 DUP2 DUP2 =File.load
+	~File.success DUP2 #0000 EQU2 ^$end JNZ
+	^assemble-chunk JSR
+	SUB2 SUB2
+	^$loop JMP
+
+	$end
+	POP2 POP2 POP2 POP2 POP2
+	JMP2r
+
+@assemble-chunk ( ptr* len* -- assembled-up-to-ptr*  )
+	( FIXME we still return on seeing 00 in source code,
+	while assemble-file is now binary safe )
 	OVR2 ADD2 STH2
 	#0001 SUB2
 
@@ -49,14 +64,14 @@
 	DUP2 OVR2r STH2r LTS2 ^$valid JNZ
 	SWP2r POP2r POP2
 	STH2r #0001 ADD2
-	#01 JMP2r
+	JMP2r
 
 	$valid
 	DUP2 PEK2 #00 OVR2 POK2
 	STH2r #0001 ADD2 ^assemble-token JSR
 	^$per-token JNZ
 
-	POP2 POP2r #00 JMP2r
+	POP2r JMP2r
 
 @assemble-macro ( macro-ptr* -- )
 	DUP2 ,strlen JSR2 DUP2 #0000 EQU2 ^$end JNZ
@@ -507,7 +522,7 @@
 	JMP2r
 
 @normal-]   [ 0000 ]    [ 0000 ]    [ 5d ]
-	( this is spurious, but ignore it anyway )
+	~assembler.state #df AND =assembler.state
 	JMP2r
 
 @data-]    .normal-(   [ 0000 ]    [ 5d ]
@@ -638,6 +653,7 @@
 @normal-;   [ 0000 ]    [ 0000 ]    [ 3b ]
 	#80 ~assembler.token ,label-tree ,add-label JSR2
 	~assembler.heap #0000 OVR2 STR2
+	DUP2 #0003 SUB2 =assembler.var_size
 	DUP2 =assembler.subtree
 	#0002 ADD2 =assembler.heap
 
@@ -657,7 +673,7 @@
 
 @variable-name
 	#00 ~assembler.token ~assembler.subtree ,add-label JSR2
-	~assembler.heap #0003 SUB2 =assembler.vartmp
+	~assembler.heap #0003 SUB2 =assembler.field_size
 	~assembler.state #f7 AND =assembler.state
 	JMP2r
 
@@ -668,8 +684,11 @@
 	JMP2r
 
 	$valid
+	$no-var-size
 	DUP #02 GTH ^$end JNZ
-	DUP ~assembler.vartmp POK2
+	DUP ~assembler.field_size POK2
+	~assembler.var_size #0000 EQU2 ^$end JNZ
+	DUP #80 EOR ~assembler.var_size POK2
 	^$end JMP
 
 	$loop
@@ -679,6 +698,7 @@
 	DUP ^$loop JNZ
 	POP
 	~assembler.state #0c ORA =assembler.state
+	#0000 =assembler.var_size
 	JMP2r
 
 (
