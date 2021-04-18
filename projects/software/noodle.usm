@@ -844,7 +844,7 @@ RTN
 
 RTN
 
-@draw-label ( addr -- )
+@draw-label ( addr color -- )
 	
 	=color 
 	$loop
