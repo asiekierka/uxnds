@@ -4,7 +4,7 @@
 
 ( devices )
 
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
 
 ( program )
 

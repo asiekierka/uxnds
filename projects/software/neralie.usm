@@ -12,9 +12,9 @@
 ;mul { ahi 1 alo 1 bhi 1 blo 1 }
 
 |0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { pad 8 char 1 byte 1 short 2 }
+|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
 |0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 pad 4 refresh 1 }
+|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
 
 ( program )
 
