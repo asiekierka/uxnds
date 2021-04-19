@@ -49,7 +49,7 @@ Program p;
 /* clang-format off */
 
 char ops[][4] = {
-	"BRK", "NOP", "LIT", "POP", "DUP", "SWP", "OVR", "ROT",
+	"BRK", "LIT", "NOP", "POP", "DUP", "SWP", "OVR", "ROT",
 	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "---", "---",
 	"PEK", "POK", "LDR", "STR", "JMP", "JNZ", "JSR", "STH",
 	"ADD", "SUB", "MUL", "DIV", "AND", "ORA", "EOR", "SFT"
@@ -71,14 +71,14 @@ char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) &
 void
 pushbyte(Uint8 b, int lit)
 {
-	if(lit) pushbyte(0x02, 0);
+	if(lit) pushbyte(0x01, 0);
 	p.data[p.ptr++] = b;
 }
 
 void
 pushshort(Uint16 s, int lit)
 {
-	if(lit) pushbyte(0x22, 0);
+	if(lit) pushbyte(0x21, 0);
 	pushbyte((s >> 8) & 0xff, 0);
 	pushbyte(s & 0xff, 0);
 }
@@ -88,7 +88,7 @@ pushtext(char *s, int lit)
 {
 	int i = 0;
 	char c;
-	if(lit) pushbyte(0x22, 0);
+	if(lit) pushbyte(0x21, 0);
 	while((c = s[i++])) pushbyte(c, 0);
 }
 
