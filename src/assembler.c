@@ -301,8 +301,7 @@ parsetoken(char *w)
 			return 0;
 		}
 		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
-		l->refs++;
-		return 1;
+		return ++l->refs;
 	} else if(w[0] == '=' && (l = findlabel(w + 1))) {
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
 			return error("Invalid store helper", w);
@@ -313,8 +312,7 @@ parsetoken(char *w)
 			pushshort(findlabeladdr(w + 1), 1);
 			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "POK2"), 0);
 		}
-		l->refs++;
-		return 1;
+		return ++l->refs;
 	} else if(w[0] == '~' && (l = findlabel(w + 1))) {
 		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
 			return error("Invalid load helper", w);
@@ -325,18 +323,15 @@ parsetoken(char *w)
 			pushshort(findlabeladdr(w + 1), 1);
 			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "PEK2"), 0);
 		}
-		l->refs++;
-		return 1;
-	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
-		pushbyte(op, 0);
-		return 1;
+		return ++l->refs;
 	} else if(w[0] == '.' && (l = findlabel(w + 1))) {
 		pushshort(findlabeladdr(w + 1), 0);
-		l->refs++;
-		return 1;
+		return ++l->refs;
 	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
 		pushshort(findlabeladdr(w + 1), 1);
-		l->refs++;
+		return ++l->refs;
+	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
+		pushbyte(op, 0);
 		return 1;
 	} else if(w[0] == '#') {
 		if(slen(w + 1) == 1)
@@ -425,9 +420,8 @@ pass2(FILE *f)
 			scpy(w + 1, scope, 64);
 			continue;
 		}
-		if(w[1] == '$') {
+		if(w[1] == '$')
 			scpy(sublabel(subw, scope, w + 2), w + 1, 64);
-		}
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
 			if(slen(w) == 4 && sihx(w))
@@ -436,9 +430,8 @@ pass2(FILE *f)
 				pushbyte(shex(w), 0);
 			else
 				pushtext(w, 0);
-		} else if(!parsetoken(w)) {
+		} else if(!parsetoken(w))
 			return error("Unknown label in second pass", w);
-		}
 	}
 	return 1;
 }
@@ -460,18 +453,12 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	if(argc < 3) {
-		error("Input", "Missing");
-		return 1;
-	}
-	if(!(f = fopen(argv[1], "r"))) {
-		error("Open", "Failed");
-		return 1;
-	}
-	if(!pass1(f) || !pass2(f)) {
-		error("Assembly", "Failed");
-		return 1;
-	}
+	if(argc < 3)
+		return !error("Input", "Missing");
+	if(!(f = fopen(argv[1], "r")))
+		return !error("Open", "Failed");
+	if(!pass1(f) || !pass2(f))
+		return !error("Assembly", "Failed");
 	fwrite(p.data + OFFSET, p.ptr - OFFSET, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
