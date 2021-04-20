@@ -18,7 +18,7 @@ typedef signed short Sint16;
 
 #define PAGE_DEVICE 0x0100
 #define PAGE_PROGRAM 0x0200
-#define LOAD_OFFSET 0x0000
+#define LOAD_OFFSET 0x0200
 
 typedef struct {
 	Uint8 ptr, error;

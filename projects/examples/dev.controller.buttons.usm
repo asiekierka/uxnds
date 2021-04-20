@@ -18,11 +18,24 @@
 	&pad    0000 
 			0000 
 			0000
-	&r      0000 
-	&g      0000 
-	&b      0000 
+	&r      0daf 
+	&g      02ff 
+	&b      035f 
 	&end    
 ]
+
+|0110 @Console [
+	&pad    0000
+			0000
+			0000
+			0000
+	&char   00 
+	&byte   00 
+	&short  0000 
+	&string 0000
+	&end
+]
+
 |0120 @Screen [
 	&vector 0000 
 	&width  0000 
@@ -34,6 +47,7 @@
 	&color  00 
 	&end    
 ]
+
 |0140 @Controller [
 	&vector 0000 
 	&button 00 
@@ -42,51 +56,64 @@
 ]
 
 |0200
+	
+	( theme ) 
+	#0daf ,System/r STR2 
+	#02ff ,System/g STR2 
+	#035f ,System/b STR2
 
-	( theme ) #0daf =System/r #02ff =System/g #035f =System/b
-	( vectors ) ,on-frame =Screen/vector
+	( vectors ) 
+	,on-frame ,Screen/vector STR2
 	
 	( set origin )
-	~Screen/width 2/ =Screen/x 
-	~Screen/height 2/ =Screen/y
-	,default_icn =Screen/addr
-	#31 =Screen/color
-	#2a =slime/color
+	,Screen/width LDR2 2/ ,Screen/x STR2
+	,Screen/height LDR2 2/ ,Screen/y STR2
+	,default_icn ,Screen/addr STR2
+	#31 ,Screen/color POK2
+	#2a ,slime/color POK2
 
 BRK
 
 @on-frame
 
-	#2a =slime/color
-	,default_icn =Screen/addr
+	#2a ,slime/color POK2
+	,default_icn ,Screen/addr STR2
 
 	( hold ctrl key to change slime color )
 
-	~Controller/button #0f AND
-		DUP #01 NEQ ^$no-ctrl JNZ #25 =slime/color $no-ctrl
-		DUP #02 NEQ ^$no-alt JNZ #2f =slime/color $no-alt
+	,Controller/button PEK2 #0f AND
+		DUP #01 NEQ ^&no-ctrl JNZ #25 ,slime/color POK2 &no-ctrl
+		DUP #02 NEQ ^&no-alt JNZ #2f ,slime/color POK2 &no-alt
 	POP
 
-	( clear ) #30 =Screen/color
+	( clear ) #30 ,Screen/color POK2
 
 	( detect movement )
-	~Controller/button #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
-			( move ) ~Screen/y -- =Screen/y ,up_icn =Screen/addr $no-up
-		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
-			( move ) ~Screen/y ++ =Screen/y ,down_icn =Screen/addr $no-down
-		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
-			( move ) ~Screen/x -- =Screen/x ,left_icn =Screen/addr $no-left
-		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
-			( move ) ~Screen/x ++ =Screen/x ,right_icn =Screen/addr $no-right
+	,Controller/button PEK2 #f0 AND
+		DUP #04 SFT #01 AND #01 NEQ ^&no-up JNZ 
+			( move ) 
+			,Screen/y LDR2 -- ,Screen/y STR2 
+			,up_icn ,Screen/addr STR2 &no-up
+		DUP #05 SFT #01 AND #01 NEQ ^&no-down JNZ 
+			( move ) 
+			,Screen/y LDR2 ++ ,Screen/y STR2 
+			,down_icn ,Screen/addr STR2 &no-down
+		DUP #06 SFT #01 AND #01 NEQ ^&no-left JNZ 
+			( move ) 
+			,Screen/x LDR2 -- ,Screen/x STR2 
+			,left_icn ,Screen/addr STR2 &no-left
+		DUP #07 SFT #01 AND #01 NEQ ^&no-right JNZ 
+			( move ) 
+			,Screen/x LDR2 ++ ,Screen/x STR2 
+			,right_icn ,Screen/addr STR2 &no-right
 	POP
 
 	( draw face )
-	#31 =Screen/color
+	#31 ,Screen/color POK2
 
 	( draw slime )
-	,slime_icn =Screen/addr
-	~slime/color =Screen/color
+	,slime_icn ,Screen/addr STR2
+	,slime/color PEK2 ,Screen/color POK2
 
 BRK
 

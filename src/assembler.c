@@ -13,6 +13,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define WORDLENMAX 32
 #define MACROMAX 64
+#define OFFSET 0x0200
 
 typedef unsigned char Uint8;
 typedef signed char Sint8;
@@ -26,14 +27,8 @@ typedef struct {
 
 typedef struct {
 	char name[WORDLENMAX];
-	unsigned int size;
-} Map;
-
-typedef struct {
-	char name[WORDLENMAX];
-	Uint8 refs, maps;
-	Uint16 addr, len;
-	Map map[16];
+	Uint8 refs;
+	Uint16 addr;
 } Label;
 
 typedef struct {
@@ -102,33 +97,13 @@ findmacro(char *name)
 }
 
 Label *
-findlabel(char *s)
+findlabel(char *name)
 {
-	int i, rng = scin(s, '.');
-	char name[64];
-	scpy(s, name, rng > 0 ? rng + 1 : 64);
+	int i;
 	for(i = 0; i < p.llen; ++i)
 		if(scmp(p.labels[i].name, name, 64))
 			return &p.labels[i];
 	return NULL;
-}
-
-Uint16
-findlabeladdr(char *s)
-{
-	int i, o = 0;
-	char *param;
-	Label *l = findlabel(s);
-	if(scin(s, '.') < 1)
-		return l->addr;
-	param = s + scin(s, '.') + 1;
-	for(i = 0; i < l->maps; ++i) {
-		if(scmp(l->map[i].name, param, 64))
-			return l->addr + o;
-		o += l->map[i].size;
-	}
-	printf("!!! Warning %s.%s\n", l->name, param);
-	return 0;
 }
 
 Uint8
@@ -194,7 +169,7 @@ makemacro(char *name, FILE *f)
 			return error("Word too long", name);
 		scpy(word, m->items[m->len++], 64);
 	}
-	printf("New macro: %s(%d items)\n", m->name, m->len);
+	printf("New macro: %s, %d items\n", m->name, m->len);
 	return 1;
 }
 
@@ -208,13 +183,6 @@ makelabel(char *name, Uint16 addr)
 		return error("Label name is hex number", name);
 	if(findopcode(name))
 		return error("Label name is invalid", name);
-	/* set length of last label */
-	if(p.llen) {
-		l = &p.labels[p.llen - 1];
-		l->len = addr - l->addr;
-		printf("    Set length of #%d \n", l->len);
-	}
-	/* make new label */
 	l = &p.labels[p.llen++];
 	l->addr = addr;
 	l->refs = 0;
@@ -242,11 +210,9 @@ walktoken(char *w)
 	if(findopcode(w) || scmp(w, "BRK", 4))
 		return 1;
 	switch(w[0]) {
-	case '=': return 4 - (findlabel(w + 1) && findlabeladdr(w + 1) < 0x0100); /* POK/STR helper (lit addr(1/2) str) */
-	case '~': return 4 - (findlabel(w + 1) && findlabeladdr(w + 1) < 0x0100); /* PEK/LDR helper (lit addr(1/2) ldr) */
-	case ',': return 3;                                                       /* lit2 addr-hb addr-lb */
-	case '.': return 2;                                                       /* addr-hb addr-lb */
-	case '^': return 2;                                                       /* Relative jump: lit addr-offset */
+	case ',': return 3; /* lit2 addr-hb addr-lb */
+	case '.': return 2; /* addr-hb addr-lb */
+	case '^': return 2; /* Relative jump: lit addr-offset */
 	case '#': return (slen(w + 1) == 4 ? 3 : 2);
 	}
 	if((m = findmacro(w))) {
@@ -273,33 +239,11 @@ parsetoken(char *w)
 		}
 		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
 		return ++l->refs;
-	} else if(w[0] == '=' && (l = findlabel(w + 1))) {
-		if(!l->len || l->len > 2)
-			return error("Invalid store helper", w);
-		if(findlabeladdr(w + 1) < 0x0100) {
-			pushbyte(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(l->len == 2 ? "STR" : "POK"), 0);
-		} else {
-			pushshort(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(l->len == 2 ? "STR2" : "POK2"), 0);
-		}
-		return ++l->refs;
-	} else if(w[0] == '~' && (l = findlabel(w + 1))) {
-		if(!l->len || l->len > 2)
-			return error("Invalid load helper", w);
-		if(findlabeladdr(w + 1) < 0x0100) {
-			pushbyte(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(l->len == 2 ? "LDR" : "PEK"), 0);
-		} else {
-			pushshort(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(l->len == 2 ? "LDR2" : "PEK2"), 0);
-		}
-		return ++l->refs;
 	} else if(w[0] == '.' && (l = findlabel(w + 1))) {
-		pushshort(findlabeladdr(w + 1), 0);
+		pushshort(l->addr, 0);
 		return ++l->refs;
 	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
-		pushshort(findlabeladdr(w + 1), 1);
+		pushshort(l->addr, 1);
 		return ++l->refs;
 	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
 		pushbyte(op, 0);
@@ -354,9 +298,6 @@ pass1(FILE *f)
 			if(!makelabel(w + 1, addr))
 				return error("Pass1 failed", w);
 			scpy(w + 1, scope, 64);
-		} else if(w[0] == '$') {
-			if(!makelabel(sublabel(subw, scope, w + 1), addr))
-				return error("Pass1 failed", w);
 		} else if(w[0] == '|') {
 			if(shex(w + 1) < addr)
 				return error("Memory Overwrite", w);
@@ -375,15 +316,10 @@ pass2(FILE *f)
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
-		if(w[0] == '$') continue;
 		if(w[0] == '%') continue;
 		if(w[0] == '&') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
-		if(w[0] == ';') {
-			p.ptr += findlabel(w + 1)->len;
-			continue;
-		}
 		if(w[0] == '|') {
 			p.ptr = shex(w + 1);
 			continue;
@@ -392,7 +328,7 @@ pass2(FILE *f)
 			scpy(w + 1, scope, 64);
 			continue;
 		}
-		if(w[1] == '$')
+		if(w[1] == '&')
 			scpy(sublabel(subw, scope, w + 2), w + 1, 64);
 		if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']') { continue; }
@@ -412,7 +348,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, p.ptr / 1000.0, p.llen, p.mlen);
+	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, (p.ptr - OFFSET) / 1000.0, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
@@ -431,7 +367,7 @@ main(int argc, char *argv[])
 		return !error("Open", "Failed");
 	if(!pass1(f) || !pass2(f))
 		return !error("Assembly", "Failed");
-	fwrite(p.data, p.ptr, 1, fopen(argv[2], "wb"));
+	fwrite(p.data + OFFSET, p.ptr - OFFSET, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
 	return 0;
