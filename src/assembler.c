@@ -11,7 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define TRIM 0x0200
+#define TRIM 0x0100
 
 typedef unsigned char Uint8;
 typedef signed char Sint8;

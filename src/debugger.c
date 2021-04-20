@@ -38,51 +38,44 @@ printstack(Stack *s)
 #pragma mark - Devices
 
 Uint8
-console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+console_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	Uint8 *m = u->ram.dat;
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
 	case 0x09: printf("0x%02x\n", b1); break;
-	case 0x0b: printf("0x%04x\n", (m[ptr + 0x0a] << 8) + b1); break;
+	case 0x0b: printf("0x%04x\n", (m[0x0a] << 8) + b1); break;
 	}
 	fflush(stdout);
-	(void)m;
-	(void)ptr;
+	(void)u;
 	(void)b0;
 	return b1;
 }
 
 Uint8
-file_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	Uint8 *m = u->ram.dat;
-	char *name = (char *)&m[(m[ptr + 8] << 8) + m[ptr + 8 + 1]];
-	Uint16 length = (m[ptr + 8 + 2] << 8) + m[ptr + 8 + 3];
-	Uint16 offset = (m[ptr + 0] << 8) + m[ptr + 1];
-	if(b0 == 0x0d) {
-		Uint16 addr = (m[ptr + 8 + 4] << 8) + b1;
-		FILE *f = fopen(name, "r");
-		if(f && fseek(f, offset, SEEK_SET) != -1 && fread(&m[addr], length, 1, f)) {
+	Uint8 read = b0 == 0xd;
+	if(read || b0 == 0xf) {
+		char *name = (char *)&u->ram.dat[genpeek16(m, 0x8)];
+		Uint16 result = 0, length = genpeek16(m, 0xa);
+		Uint16 offset = genpeek16(m, 0x4);
+		Uint16 addr = (m[b0 - 1] << 8) | b1;
+		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
+		if(f) {
+			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&m[addr], 1, length, f) : fwrite(&m[addr], 1, length, f)))
+				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
-			printf("Loaded %d bytes, at %04x from %s\n", length, addr, name);
 		}
-	} else if(b0 == 0x0f) {
-		Uint16 addr = (m[ptr + 8 + 6] << 8) + b1;
-		FILE *f = fopen(name, (m[ptr + 2] & 0x1) ? "a" : "w");
-		if(f && fseek(f, offset, SEEK_SET) != -1 && fwrite(&m[addr], length, 1, f)) {
-			fclose(f);
-			printf("Saved %d bytes, at %04x from %s\n", length, addr, name);
-		}
+		genpoke16(m, 0x2, result);
 	}
 	return b1;
 }
 
 Uint8
-ppnil(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+ppnil(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	(void)u;
-	(void)ptr;
+	(void)m;
 	(void)b0;
 	return b1;
 }

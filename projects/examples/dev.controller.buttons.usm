@@ -10,14 +10,7 @@
 
 @slime $1
 
-( devices )
-
-|0100 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
-|0110 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
-|0120 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
-|0140 @Controller [ &vector $2 &button $1 &key    $1 ]
-
-|0200
+|0100
 	
 	( theme ) 
 	#0daf .System/r IOW2 
@@ -84,3 +77,11 @@ BRK
 @left_icn    [ 3c7e ef1f 1fef 7e3c ]
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
 @slime_icn   [ 0000 183c 3c18 0000 ]
+
+( devices )
+
+|ff00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|ff10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
+|ff20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+|ff40 @Controller [ &vector $2 &button $1 &key    $1 ]
+

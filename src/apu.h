@@ -36,8 +36,8 @@ typedef struct {
 typedef struct {
 	Queue *queue;
 	Note *notes;
+	Uint8 *channel_ptr;
 	int n_notes;
-	Uint16 channel_addr;
 } Apu;
 
 void apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples);

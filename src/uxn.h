@@ -16,9 +16,15 @@ typedef signed char Sint8;
 typedef unsigned short Uint16;
 typedef signed short Sint16;
 
-#define PAGE_DEVICE 0x0100
-#define PAGE_PROGRAM 0x0200
-#define LOAD_OFFSET 0x0200
+#define PAGE_PROGRAM 0x0100
+#define LOAD_OFFSET 0x0100
+
+#define genpeek16(ptr, i) ((ptr[i] << 8) + ptr[i + 1])
+#define genpoke16(ptr, i, v) \
+	do { \
+		ptr[i] = v >> 8; \
+		ptr[i + 1] = v & 0xff; \
+	} while(0)
 
 typedef struct {
 	Uint8 ptr, error;
@@ -33,8 +39,8 @@ typedef struct {
 struct Uxn;
 
 typedef struct Device {
-	Uint16 addr;
-	Uint8 (*poke)(struct Uxn *, Uint16, Uint8, Uint8);
+	Uint8 addr, dat[16];
+	Uint8 (*poke)(struct Uxn *u, Uint8 *devmem, Uint8, Uint8);
 } Device;
 
 typedef struct Uxn {
@@ -49,4 +55,4 @@ int evaluxn(Uxn *u, Uint16 vec);
 void mempoke16(Uxn *u, Uint16 a, Uint16 b);
 Uint16 mempeek16(Uxn *u, Uint16 a);
 
-Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint16, Uint8, Uint8));
+Device *portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Uxn *, Uint8 *, Uint8, Uint8));

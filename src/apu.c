@@ -45,7 +45,7 @@ render_note(Apu *apu, Uxn *u, int note_i, Sint16 *samples, int n_samples)
 				if(apu->queue->i == apu->queue->n) {
 					apu->queue->i = apu->queue->n = 0;
 					if(!apu->queue->finishes) {
-						u->ram.dat[apu->channel_addr] = note_i;
+						*apu->channel_ptr = note_i;
 						evaluxn(u, wv->vector);
 					}
 				}
