@@ -30,7 +30,7 @@ contexts:
     # Special
 
     - match: '\&(\S+)\s?'
-      scope: string.control
+      scope: entity.name.type
       pop: true
     - match: '\=(\S+)\s?'
       scope: entity.name.type
@@ -38,14 +38,10 @@ contexts:
 
     # Pushing to stack
 
-    - match: '\^(\S+)\s?'
-      scope: keyword.control
-      pop: true
     - match: '\#(\S+)\s?'
       scope: keyword.control
       pop: true
     
-
     # Addressing
     - match: '\.(\S+)\s?'     # zero-page
       scope: variable.control
@@ -72,11 +68,4 @@ contexts:
       push:
         - meta_scope: comment.line
         - match: '\)'
-          pop: true
-
-    - match: '\['
-      scope: keyword
-      push:
-        - meta_scope: keyword.line
-        - match: '\]'
           pop: true

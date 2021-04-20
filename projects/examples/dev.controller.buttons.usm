@@ -9,26 +9,26 @@
 
 ( devices )
 
-|0100 @System     &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2
-|0110 @Console    &pad    $8 &char   $1 &byte   $1 &short $2 &string $2
-|0120 @Screen     &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 
-|0140 @Controller &vector $2 &button $1 &key    $1
+|0100 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|0110 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
+|0120 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+|0140 @Controller [ &vector $2 &button $1 &key    $1 ]
 
 |0200
 	
 	( theme ) 
-	#0daf ;System/r STR2 
-	#02ff ;System/g STR2 
-	#035f ;System/b STR2
+	#0daf .System/r IOW2 
+	#02ff .System/g IOW2 
+	#035f .System/b IOW2
 
 	( vectors ) 
-	;on-frame ;Screen/vector STR2
+	;on-frame .Screen/vector IOW2
 	
 	( set origin )
-	;Screen/width LDR2 2/ ;Screen/x STR2
-	;Screen/height LDR2 2/ ;Screen/y STR2
-	;default_icn ;Screen/addr STR2
-	#31 ;Screen/color POK2
+	.Screen/width IOR2 2/ .Screen/x IOW2
+	.Screen/height IOR2 2/ .Screen/y IOW2
+	;default_icn .Screen/addr IOW2
+	#31 .Screen/color IOW
 	#2a .slime POK
 
 BRK
@@ -36,43 +36,42 @@ BRK
 @on-frame
 
 	#2a .slime POK
-	;default_icn ;Screen/addr STR2
+	;default_icn .Screen/addr IOW2
 
 	( hold ctrl key to change slime color )
-
-	;Controller/button PEK2 #0f AND
+	.Controller/button IOR #0f AND
 		DUP #01 NEQ ,&no-ctrl JNZ #25 .slime POK &no-ctrl
 		DUP #02 NEQ ,&no-alt JNZ #2f .slime POK &no-alt
 	POP
 
-	( clear ) #30 ;Screen/color POK2
+	( clear ) #30 .Screen/color IOW
 
 	( detect movement )
-	;Controller/button PEK2 #f0 AND
+	.Controller/button IOR #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ 
 			( move ) 
-			;Screen/y LDR2 -- ;Screen/y STR2 
-			;up_icn ;Screen/addr STR2 &no-up
+			.Screen/y IOR2 -- .Screen/y IOW2 
+			;up_icn .Screen/addr IOW2 &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ 
 			( move ) 
-			;Screen/y LDR2 ++ ;Screen/y STR2 
-			;down_icn ;Screen/addr STR2 &no-down
+			.Screen/y IOR2 ++ .Screen/y IOW2 
+			;down_icn .Screen/addr IOW2 &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ 
 			( move ) 
-			;Screen/x LDR2 -- ;Screen/x STR2 
-			;left_icn ;Screen/addr STR2 &no-left
+			.Screen/x IOR2 -- .Screen/x IOW2 
+			;left_icn .Screen/addr IOW2 &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ 
 			( move ) 
-			;Screen/x LDR2 ++ ;Screen/x STR2 
-			;right_icn ;Screen/addr STR2 &no-right
+			.Screen/x IOR2 ++ .Screen/x IOW2 
+			;right_icn .Screen/addr IOW2 &no-right
 	POP
 
 	( draw face )
-	#31 ;Screen/color POK2
+	#31 .Screen/color IOW
 
 	( draw slime )
-	;slime_icn ;Screen/addr STR2
-	.slime PEK ;Screen/color POK2
+	;slime_icn .Screen/addr IOW2
+	.slime PEK .Screen/color IOW
 
 BRK
 

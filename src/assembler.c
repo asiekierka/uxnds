@@ -11,22 +11,19 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define WORDLENMAX 32
-#define MACROMAX 64
-#define OFFSET 0x0200
+#define TRIM 0x0200
 
 typedef unsigned char Uint8;
 typedef signed char Sint8;
 typedef unsigned short Uint16;
-typedef signed short Sint16;
 
 typedef struct {
-	char name[WORDLENMAX], items[MACROMAX][WORDLENMAX];
+	char name[64], items[64][64];
 	Uint8 len, refs;
 } Macro;
 
 typedef struct {
-	char name[WORDLENMAX];
+	char name[64];
 	Uint8 refs;
 	Uint16 addr;
 } Label;
@@ -44,7 +41,7 @@ Program p;
 
 char ops[][4] = {
 	"BRK", "LIT", "NOP", "POP", "DUP", "SWP", "OVR", "ROT",
-	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "---", "---",
+	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "IOR", "IOW",
 	"PEK", "POK", "LDR", "STR", "JMP", "JNZ", "JSR", "STH",
 	"ADD", "SUB", "MUL", "DIV", "AND", "ORA", "EOR", "SFT"
 };
@@ -163,9 +160,9 @@ makemacro(char *name, FILE *f)
 	while(fscanf(f, "%s", word)) {
 		if(word[0] == '{') continue;
 		if(word[0] == '}') break;
-		if(m->len > MACROMAX)
+		if(m->len > 64)
 			return error("Macro too large", name);
-		if(slen(word) >= WORDLENMAX)
+		if(slen(word) >= 64)
 			return error("Word too long", name);
 		scpy(word, m->items[m->len++], 64);
 	}
@@ -210,10 +207,13 @@ walktoken(char *w)
 	if(findopcode(w) || scmp(w, "BRK", 4))
 		return 1;
 	switch(w[0]) {
+	case '[': return 0;
+	case ']': return 0;
 	case '.': return 2; /* zero-page: LIT addr-lb */
-	case ';': return 3; /* absolute: LIT addr-hb addr-lb */
-	case ',': return 2; /* Relative jump: lit addr-offset */
-	case '#': return (slen(w + 1) == 4 ? 3 : 2);
+	case ',': return 2; /* relative:  LIT addr-rel */
+	case ';': return 3; /* absolute:  LIT addr-hb addr-lb */
+	case '$': return shex(w + 1);
+	case '#': return slen(w + 1) == 4 ? 3 : 2;
 	}
 	if((m = findmacro(w))) {
 		int i, res = 0;
@@ -227,10 +227,8 @@ walktoken(char *w)
 int
 parsetoken(char *w)
 {
-	Uint8 op = 0;
 	Label *l;
 	Macro *m;
-
 	if(w[0] == '.' && (l = findlabel(w + 1))) { /* zero-page */
 		pushbyte(l->addr, 1);
 		return ++l->refs;
@@ -243,8 +241,8 @@ parsetoken(char *w)
 	} else if(w[0] == ';' && (l = findlabel(w + 1))) { /* absolute */
 		pushshort(l->addr, 1);
 		return ++l->refs;
-	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
-		pushbyte(op, 0);
+	} else if(findopcode(w) || scmp(w, "BRK", 4)) {
+		pushbyte(findopcode(w), 0);
 		return 1;
 	} else if(w[0] == '#') {
 		if(slen(w + 1) == 1)
@@ -263,6 +261,12 @@ parsetoken(char *w)
 			if(!parsetoken(m->items[i]))
 				return 0;
 		return 1;
+	} else if(sihx(w)) {
+		if(slen(w) == 2)
+			pushbyte(shex(w), 0);
+		else if(slen(w) == 4)
+			pushshort(shex(w), 0);
+		return 1;
 	}
 	return 0;
 }
@@ -270,38 +274,28 @@ parsetoken(char *w)
 int
 pass1(FILE *f)
 {
-	int ccmnt = 0, cbits = 0;
+	int ccmnt = 0;
 	Uint16 addr = 0;
 	char w[64], scope[64], subw[64];
 	printf("Pass 1\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(w[0] == '&') {
-			if(!makelabel(sublabel(subw, scope, w + 1), addr))
-				return error("Pass1 failed", w);
-		} else if(skipblock(w, &cbits, '[', ']')) {
-			if(w[0] == '[' || w[0] == ']')
-				continue;
-			if(slen(w) == 4 && sihx(w))
-				addr += 2;
-			else if(slen(w) == 2 && sihx(w))
-				addr += 1;
-			else
-				addr += slen(w);
+		if(w[0] == '|') {
+			if(shex(w + 1) < addr)
+				return error("Memory Overwrite", w);
+			addr = shex(w + 1);
 		} else if(w[0] == '%') {
 			if(!makemacro(w + 1, f))
 				return error("Pass1 failed", w);
-			scpy(w + 1, scope, 64);
 		} else if(w[0] == '@') {
 			if(!makelabel(w + 1, addr))
 				return error("Pass1 failed", w);
 			scpy(w + 1, scope, 64);
-		} else if(w[0] == '|') {
-			if(shex(w + 1) < addr)
-				return error("Memory Overwrite", w);
-			addr = shex(w + 1);
-		} else if(w[0] == '$')
-			addr += shex(w + 1);
+		} else if(w[0] == '&') {
+			if(!makelabel(sublabel(subw, scope, w + 1), addr))
+				return error("Pass1 failed", w);
+		} else if(sihx(w))
+			addr += slen(w) / 2;
 		else
 			addr += walktoken(w);
 	}
@@ -312,37 +306,29 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, cbits = 0, ctemplate = 0;
+	int ccmnt = 0, ctemplate = 0;
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(w[0] == '%') continue;
 		if(w[0] == '&') continue;
+		if(w[0] == '[') continue;
+		if(w[0] == ']') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		if(w[0] == '|') {
 			p.ptr = shex(w + 1);
 			continue;
-		}
-		else if(w[0] == '$') {
+		} else if(w[0] == '$') {
 			p.ptr += shex(w + 1);
 			continue;
-		}
-		else if(w[0] == '@') {
+		} else if(w[0] == '@') {
 			scpy(w + 1, scope, 64);
 			continue;
 		}
 		if(w[1] == '&')
 			scpy(sublabel(subw, scope, w + 2), w + 1, 64);
-		if(skipblock(w, &cbits, '[', ']')) {
-			if(w[0] == '[' || w[0] == ']') { continue; }
-			if(slen(w) == 4 && sihx(w))
-				pushshort(shex(w), 0);
-			else if(slen(w) == 2 && sihx(w))
-				pushbyte(shex(w), 0);
-			else
-				pushtext(w, 0);
-		} else if(!parsetoken(w))
+		if(!parsetoken(w))
 			return error("Unknown label in second pass", w);
 	}
 	return 1;
@@ -352,7 +338,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, (p.ptr - OFFSET) / 1000.0, p.llen, p.mlen);
+	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, (p.ptr - TRIM) / 1000.0, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
@@ -371,7 +357,7 @@ main(int argc, char *argv[])
 		return !error("Open", "Failed");
 	if(!pass1(f) || !pass2(f))
 		return !error("Assembly", "Failed");
-	fwrite(p.data + OFFSET, p.ptr - OFFSET, 1, fopen(argv[2], "wb"));
+	fwrite(p.data + TRIM, p.ptr - TRIM, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
 	return 0;

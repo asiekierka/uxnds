@@ -182,6 +182,15 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 #pragma mark - Devices
 
 Uint8
+system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
+{
+	getcolors(&ppu, &u->ram.dat[ptr + 0x0008]);
+	reqdraw = 1;
+	(void)b0;
+	return b1;
+}
+
+Uint8
 console_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	Uint8 *m = u->ram.dat;
@@ -199,9 +208,9 @@ Uint8
 screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0x0e) {
-		Uint16 x = mempeek16(u, ptr + 8);
-		Uint16 y = mempeek16(u, ptr + 10);
-		Uint8 *addr = &u->ram.dat[mempeek16(u, ptr + 12)];
+		Uint16 x = mempeek16(u, devscreen->addr + 0x08);
+		Uint16 y = mempeek16(u, devscreen->addr + 0x0a);
+		Uint8 *addr = &u->ram.dat[mempeek16(u, devscreen->addr + 0x0c)];
 		Uint8 *layer = b1 >> 4 & 0x1 ? ppu.fg : ppu.bg;
 		switch(b1 >> 5) {
 		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
@@ -210,6 +219,7 @@ screen_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 		}
 		reqdraw = 1;
 	}
+	(void)ptr;
 	return b1;
 }
 
@@ -283,16 +293,6 @@ datetime_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
 	m[ptr + 9] = t->tm_yday & 0xff;
 	m[ptr + 10] = t->tm_isdst;
 	(void)b0;
-	return b1;
-}
-
-Uint8
-system_poke(Uxn *u, Uint16 ptr, Uint8 b0, Uint8 b1)
-{
-	u->ram.dat[ptr + b0] = b1;
-	getcolors(&ppu, &u->ram.dat[ptr + 0x0008]);
-	reqdraw = 1;
-	(void)ptr;
 	return b1;
 }
 
