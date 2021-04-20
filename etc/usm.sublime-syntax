@@ -32,9 +32,6 @@ contexts:
     - match: '\&(\S+)\s?'
       scope: entity.name.type
       pop: true
-    - match: '\=(\S+)\s?'
-      scope: entity.name.type
-      pop: true
 
     # Pushing to stack
 
@@ -51,6 +48,13 @@ contexts:
       pop: true
     - match: '\;(\S+)\s?'     # absolute
       scope: keyword.control
+      pop: true
+
+    - match: '\[\s?'
+      scope: comment
+      pop: true
+    - match: '\]\s?'
+      scope: comment
       pop: true
 
 

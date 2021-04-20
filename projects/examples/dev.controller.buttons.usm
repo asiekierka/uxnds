@@ -3,6 +3,9 @@
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %2/ { #0002 DIV2 }
 
+%=>SC/ADDR { .Screen/addr IOW2 }
+%->SC/COLR { .Screen/color IOW }
+
 ( variables )
 
 @slime $1
@@ -27,8 +30,8 @@
 	( set origin )
 	.Screen/width IOR2 2/ .Screen/x IOW2
 	.Screen/height IOR2 2/ .Screen/y IOW2
-	;default_icn .Screen/addr IOW2
-	#31 .Screen/color IOW
+	;default_icn =>SC/ADDR
+	#31 ->SC/COLR
 	#2a .slime POK
 
 BRK
@@ -36,7 +39,7 @@ BRK
 @on-frame
 
 	#2a .slime POK
-	;default_icn .Screen/addr IOW2
+	;default_icn =>SC/ADDR
 
 	( hold ctrl key to change slime color )
 	.Controller/button IOR #0f AND
@@ -44,34 +47,34 @@ BRK
 		DUP #02 NEQ ,&no-alt JNZ #2f .slime POK &no-alt
 	POP
 
-	( clear ) #30 .Screen/color IOW
+	( clear ) #30 ->SC/COLR
 
 	( detect movement )
 	.Controller/button IOR #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ 
 			( move ) 
 			.Screen/y IOR2 -- .Screen/y IOW2 
-			;up_icn .Screen/addr IOW2 &no-up
+			;up_icn =>SC/ADDR &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ 
 			( move ) 
 			.Screen/y IOR2 ++ .Screen/y IOW2 
-			;down_icn .Screen/addr IOW2 &no-down
+			;down_icn =>SC/ADDR &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ 
 			( move ) 
 			.Screen/x IOR2 -- .Screen/x IOW2 
-			;left_icn .Screen/addr IOW2 &no-left
+			;left_icn =>SC/ADDR &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ 
 			( move ) 
 			.Screen/x IOR2 ++ .Screen/x IOW2 
-			;right_icn .Screen/addr IOW2 &no-right
+			;right_icn =>SC/ADDR &no-right
 	POP
 
 	( draw face )
-	#31 .Screen/color IOW
+	#31 ->SC/COLR
 
 	( draw slime )
-	;slime_icn .Screen/addr IOW2
-	.slime PEK .Screen/color IOW
+	;slime_icn =>SC/ADDR
+	.slime PEK ->SC/COLR
 
 BRK
 
