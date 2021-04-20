@@ -13,7 +13,6 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define WORDLENMAX 32
 #define MACROMAX 64
-#define OFFSET 0x0200
 
 typedef unsigned char Uint8;
 typedef signed char Sint8;
@@ -133,22 +132,6 @@ findlabeladdr(char *s)
 }
 
 Uint8
-findlabellen(char *s)
-{
-	int i;
-	char *param;
-	Label *l = findlabel(s);
-	if(scin(s, '.') < 1)
-		return l->map[0].size;
-	param = s + scin(s, '.') + 1;
-	for(i = 0; i < l->maps; ++i)
-		if(scmp(l->map[i].name, param, 64))
-			return l->map[i].size;
-	printf("!!! Warning %s.%s\n", l->name, param);
-	return 0;
-}
-
-Uint8
 findopcode(char *s)
 {
 	int i;
@@ -175,7 +158,7 @@ char *
 sublabel(char *src, char *scope, char *name)
 {
 	scpy(scope, src, 64);
-	scpy("-", src + slen(src), 64);
+	scpy("/", src + slen(src), 64);
 	scpy(name, src + slen(src), 64);
 	return src;
 }
@@ -225,30 +208,18 @@ makelabel(char *name, Uint16 addr)
 		return error("Label name is hex number", name);
 	if(findopcode(name))
 		return error("Label name is invalid", name);
+	/* set length of last label */
+	if(p.llen) {
+		l = &p.labels[p.llen - 1];
+		l->len = addr - l->addr;
+		printf("    Set length of #%d \n", l->len);
+	}
+	/* make new label */
 	l = &p.labels[p.llen++];
 	l->addr = addr;
 	l->refs = 0;
 	scpy(name, l->name, 64);
 	printf("New label: %s, at 0x%04x\n", l->name, l->addr);
-	return 1;
-}
-
-int
-makevariable(char *name, Uint16 *addr, FILE *f)
-{
-	Label *l;
-	char word[64];
-	if(!makelabel(name, *addr))
-		return error("Could not create variable", name);
-	l = findlabel(name);
-	while(fscanf(f, "%s", word)) {
-		if(word[0] == '{') continue;
-		if(word[0] == '}') break;
-		scpy(word, l->map[l->maps].name, 64);
-		fscanf(f, "%02x", &l->map[l->maps].size);
-		*addr += l->map[l->maps].size;
-		l->len += l->map[l->maps++].size;
-	}
 	return 1;
 }
 
@@ -303,25 +274,25 @@ parsetoken(char *w)
 		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
 		return ++l->refs;
 	} else if(w[0] == '=' && (l = findlabel(w + 1))) {
-		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+		if(!l->len || l->len > 2)
 			return error("Invalid store helper", w);
 		if(findlabeladdr(w + 1) < 0x0100) {
 			pushbyte(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR" : "POK"), 0);
+			pushbyte(findopcode(l->len == 2 ? "STR" : "POK"), 0);
 		} else {
 			pushshort(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "STR2" : "POK2"), 0);
+			pushbyte(findopcode(l->len == 2 ? "STR2" : "POK2"), 0);
 		}
 		return ++l->refs;
 	} else if(w[0] == '~' && (l = findlabel(w + 1))) {
-		if(!findlabellen(w + 1) || findlabellen(w + 1) > 2)
+		if(!l->len || l->len > 2)
 			return error("Invalid load helper", w);
 		if(findlabeladdr(w + 1) < 0x0100) {
 			pushbyte(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR" : "PEK"), 0);
+			pushbyte(findopcode(l->len == 2 ? "LDR" : "PEK"), 0);
 		} else {
 			pushshort(findlabeladdr(w + 1), 1);
-			pushbyte(findopcode(findlabellen(w + 1) == 2 ? "LDR2" : "PEK2"), 0);
+			pushbyte(findopcode(l->len == 2 ? "LDR2" : "PEK2"), 0);
 		}
 		return ++l->refs;
 	} else if(w[0] == '.' && (l = findlabel(w + 1))) {
@@ -363,7 +334,10 @@ pass1(FILE *f)
 	printf("Pass 1\n");
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(skipblock(w, &cbits, '[', ']')) {
+		if(w[0] == '&') {
+			if(!makelabel(sublabel(subw, scope, w + 1), addr))
+				return error("Pass1 failed", w);
+		} else if(skipblock(w, &cbits, '[', ']')) {
 			if(w[0] == '[' || w[0] == ']')
 				continue;
 			if(slen(w) == 4 && sihx(w))
@@ -382,9 +356,6 @@ pass1(FILE *f)
 			scpy(w + 1, scope, 64);
 		} else if(w[0] == '$') {
 			if(!makelabel(sublabel(subw, scope, w + 1), addr))
-				return error("Pass1 failed", w);
-		} else if(w[0] == ';') {
-			if(!makevariable(w + 1, &addr, f))
 				return error("Pass1 failed", w);
 		} else if(w[0] == '|') {
 			if(shex(w + 1) < addr)
@@ -406,6 +377,7 @@ pass2(FILE *f)
 	while(fscanf(f, "%s", w) == 1) {
 		if(w[0] == '$') continue;
 		if(w[0] == '%') continue;
+		if(w[0] == '&') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		if(w[0] == ';') {
@@ -440,7 +412,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, (p.ptr - OFFSET) / 1000.0, p.llen, p.mlen);
+	printf("Assembled %s(%0.2fkb), %d labels, %d macros.\n\n", filename, p.ptr / 1000.0, p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
@@ -459,7 +431,7 @@ main(int argc, char *argv[])
 		return !error("Open", "Failed");
 	if(!pass1(f) || !pass2(f))
 		return !error("Assembly", "Failed");
-	fwrite(p.data + OFFSET, p.ptr - OFFSET, 1, fopen(argv[2], "wb"));
+	fwrite(p.data, p.ptr, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
 	return 0;
