@@ -22,35 +22,34 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
 Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 ```
+( Dev/Console )
+
 %RTN { JMP2r }
 
 ( devices )
 
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 }
+|0110 @Console    [ &pad $8 &char $1 ]
 
 ( program )
 
 |0200
 	
-	,text1 ,print-label JSR2
-	,text2 ,print-label JSR2
-	#ab =Console.byte
-	#cdef =Console.short
-
+	;hello-word ;print JSR2
+	
 BRK
 
-@print-label ( text )
+@print ( addr -- )
 	
-	$loop
-		( send ) DUP2 PEK2 =Console.char
+	&loop
+		( send ) DUP2 PEK2 .Console/char IOW
 		( incr ) #0001 ADD2
-		( loop ) DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( loop ) DUP2 PEK2 #00 NEQ ,&loop JNZ
 	POP2
 
-RTN    
+RTN
 
-@text1 [ Welcome 20 to 20 UxnVM 0a00 ]
-@text2 [ Hello 20 World 0a00 ] 
+@hello-word [ 48 65 6c 6c 6f 20 57 6f 72 6c 64 21 ]
+
 ```
 
 ## TODOs
