@@ -210,9 +210,9 @@ walktoken(char *w)
 	if(findopcode(w) || scmp(w, "BRK", 4))
 		return 1;
 	switch(w[0]) {
-	case ',': return 3; /* lit2 addr-hb addr-lb */
-	case '.': return 2; /* addr-hb addr-lb */
-	case '^': return 2; /* Relative jump: lit addr-offset */
+	case '.': return 2; /* zero-page: LIT addr-lb */
+	case ';': return 3; /* absolute: LIT addr-hb addr-lb */
+	case ',': return 2; /* Relative jump: lit addr-offset */
 	case '#': return (slen(w + 1) == 4 ? 3 : 2);
 	}
 	if((m = findmacro(w))) {
@@ -231,18 +231,16 @@ parsetoken(char *w)
 	Label *l;
 	Macro *m;
 
-	if(w[0] == '^' && (l = findlabel(w + 1))) {
-		int off = l->addr - p.ptr - 3;
-		if(off < -126 || off > 126) {
-			printf("Address %s is too far(%d).\n", w, off);
-			return 0;
-		}
-		pushbyte((Sint8)(l->addr - p.ptr - 3), 1);
-		return ++l->refs;
-	} else if(w[0] == '.' && (l = findlabel(w + 1))) {
-		pushshort(l->addr, 0);
+	if(w[0] == '.' && (l = findlabel(w + 1))) { /* zero-page */
+		pushbyte(l->addr, 1);
 		return ++l->refs;
 	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
+		int off = l->addr - p.ptr - 3;
+		if(off < -126 || off > 126)
+			return error("Address is too far", w);
+		pushbyte((Sint8)off, 1);
+		return ++l->refs;
+	} else if(w[0] == ';' && (l = findlabel(w + 1))) { /* absolute */
 		pushshort(l->addr, 1);
 		return ++l->refs;
 	} else if((op = findopcode(w)) || scmp(w, "BRK", 4)) {
@@ -302,7 +300,9 @@ pass1(FILE *f)
 			if(shex(w + 1) < addr)
 				return error("Memory Overwrite", w);
 			addr = shex(w + 1);
-		} else
+		} else if(w[0] == '$')
+			addr += shex(w + 1);
+		else
 			addr += walktoken(w);
 	}
 	rewind(f);
@@ -324,7 +324,11 @@ pass2(FILE *f)
 			p.ptr = shex(w + 1);
 			continue;
 		}
-		if(w[0] == '@') {
+		else if(w[0] == '$') {
+			p.ptr += shex(w + 1);
+			continue;
+		}
+		else if(w[0] == '@') {
 			scpy(w + 1, scope, 64);
 			continue;
 		}

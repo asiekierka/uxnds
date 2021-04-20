@@ -18,26 +18,19 @@ contexts:
     - match: '\|(\S+)\s?'
       scope: variable.control
       pop: true
-    # variables
-    - match: '\;(\S+)\s?'
-      scope: string.control
+    - match: '\$(\S+)\s?'
+      scope: variable.control
       pop: true
     # constants
     - match: '\:(\S+)\s?'
       scope: string.control
       pop: true
     # structs
-    - match: '\&(\S+)\s?'
-      scope: string.control
-      pop: true
-    - match: '\$(\S+)\s?'
-      scope: string.control
-      pop: true
 
     # Special
 
-    - match: '\~(\S+)\s?'
-      scope: entity.name.type
+    - match: '\&(\S+)\s?'
+      scope: string.control
       pop: true
     - match: '\=(\S+)\s?'
       scope: entity.name.type
@@ -45,18 +38,25 @@ contexts:
 
     # Pushing to stack
 
-    - match: '\,(\S+)\s?'
-      scope: keyword.control
-      pop: true
-    - match: '\.(\S+)\s?'
-      scope: keyword.control
-      pop: true
     - match: '\^(\S+)\s?'
       scope: keyword.control
       pop: true
     - match: '\#(\S+)\s?'
       scope: keyword.control
       pop: true
+    
+
+    # Addressing
+    - match: '\.(\S+)\s?'     # zero-page
+      scope: variable.control
+      pop: true
+    - match: '\,(\S+)\s?'     # relative
+      scope: entity.name.type
+      pop: true
+    - match: '\;(\S+)\s?'     # absolute
+      scope: keyword.control
+      pop: true
+
 
       # Blocks
 
