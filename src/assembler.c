@@ -212,6 +212,7 @@ walktoken(char *w)
 	case ']': return 0;
 	case '.': return 2; /* zero-page: LIT addr-lb */
 	case ',': return 2; /* relative:  LIT addr-rel */
+	case ':': return 2; /* absolute:      addr-hb addr-lb */
 	case ';': return 3; /* absolute:  LIT addr-hb addr-lb */
 	case '$': return shex(w + 1);
 	case '#': return slen(w + 1) == 4 ? 3 : 2;
@@ -238,6 +239,9 @@ parsetoken(char *w)
 		if(off < -126 || off > 126)
 			return error("Address is too far", w);
 		pushbyte((Sint8)off, 1);
+		return ++l->refs;
+	} else if(w[0] == ':' && (l = findlabel(w + 1))) { /* absolute */
+		pushshort(l->addr, 0);
 		return ++l->refs;
 	} else if(w[0] == ';' && (l = findlabel(w + 1))) { /* absolute */
 		pushshort(l->addr, 1);
