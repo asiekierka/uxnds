@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
 	Uint8 data[256 * 256], llen, mlen;
-	Uint16 ptr;
+	Uint16 ptr, length;
 	Label labels[256];
 	Macro macros[256];
 } Program;
@@ -64,6 +64,7 @@ pushbyte(Uint8 b, int lit)
 {
 	if(lit) pushbyte(0x01, 0);
 	p.data[p.ptr++] = b;
+	p.length = p.ptr;
 }
 
 void
@@ -338,7 +339,7 @@ void
 cleanup(char *filename)
 {
 	int i;
-	printf("Assembled %s(%d bytes), %d labels, %d macros.\n\n", filename, (p.ptr - TRIM), p.llen, p.mlen);
+	printf("Assembled %s(%d bytes), %d labels, %d macros.\n\n", filename, (p.length - TRIM), p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
 		if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
@@ -357,7 +358,7 @@ main(int argc, char *argv[])
 		return !error("Open", "Failed");
 	if(!pass1(f) || !pass2(f))
 		return !error("Assembly", "Failed");
-	fwrite(p.data + TRIM, p.ptr - TRIM, 1, fopen(argv[2], "wb"));
+	fwrite(p.data + TRIM, p.length - TRIM, 1, fopen(argv[2], "wb"));
 	fclose(f);
 	cleanup(argv[2]);
 	return 0;
