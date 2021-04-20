@@ -255,7 +255,7 @@ audio_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
 		}
 		if(apu.queue->is_envelope)
-			apu.queue->dat[apu.queue->n++] = (m[0xb] << 7) + (m[0xc] >> 1);
+			apu.queue->dat[apu.queue->n++] = genpeek16(m, 0xb) >> 1;
 		else
 			apu.queue->dat[apu.queue->n++] = genpeek16(m, 0xb) + 0x8000;
 		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
@@ -280,16 +280,14 @@ datetime_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
 	t->tm_year += 1900;
-	m[0x0] = (t->tm_year & 0xff00) >> 8;
-	m[0x1] = t->tm_year & 0xff;
+	genpoke16(m, 0x0, t->tm_year);
 	m[0x2] = t->tm_mon;
 	m[0x3] = t->tm_mday;
 	m[0x4] = t->tm_hour;
 	m[0x5] = t->tm_min;
 	m[0x6] = t->tm_sec;
 	m[0x7] = t->tm_wday;
-	m[0x8] = (t->tm_yday & 0xff00) >> 8;
-	m[0x9] = t->tm_yday & 0xff;
+	genpoke16(m, 0x08, t->tm_yday);
 	m[0xa] = t->tm_isdst;
 	(void)u;
 	(void)b0;
