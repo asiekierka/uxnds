@@ -233,7 +233,7 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 		Uint16 addr = (m[b0 - 1] << 8) | b1;
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&m[addr], 1, length, f) : fwrite(&m[addr], 1, length, f)))
+			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&u->ram.dat[addr], 1, length, f) : fwrite(&u->ram.dat[addr], 1, length, f)))
 				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
 		}
