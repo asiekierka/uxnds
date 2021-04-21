@@ -38,7 +38,7 @@ printstack(Stack *s)
 #pragma mark - Devices
 
 Uint8
-console_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+console_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
@@ -46,17 +46,17 @@ console_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 	case 0x0b: printf("0x%04x\n", (m[0x0a] << 8) + b1); break;
 	}
 	fflush(stdout);
-	(void)u;
+	(void)d;
 	(void)b0;
 	return b1;
 }
 
 Uint8
-file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+file_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
-		char *name = (char *)&u->ram.dat[mempeek16(m, 0x8)];
+		char *name = (char *)&d->mem[mempeek16(m, 0x8)];
 		Uint16 result = 0, length = mempeek16(m, 0xa);
 		Uint16 offset = mempeek16(m, 0x4);
 		Uint16 addr = (m[b0 - 1] << 8) | b1;
@@ -72,9 +72,9 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-ppnil(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+ppnil(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	(void)u;
+	(void)d;
 	(void)m;
 	(void)b0;
 	return b1;

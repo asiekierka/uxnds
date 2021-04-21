@@ -182,35 +182,35 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 #pragma mark - Devices
 
 Uint8
-system_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+system_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	putcolors(&ppu, &m[0x8]);
 	reqdraw = 1;
-	(void)u;
+	(void)d;
 	(void)b0;
 	return b1;
 }
 
 Uint8
-console_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+console_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
 	case 0x8: printf("%c", b1); break;
 	case 0x9: printf("0x%02x\n", b1); break;
 	case 0xb: printf("0x%04x\n", (m[0xa] << 8) + b1); break;
-	case 0xd: printf("%s\n", &u->ram.dat[(m[0xc] << 8) + b1]); break;
+	case 0xd: printf("%s\n", &d->mem[(m[0xc] << 8) + b1]); break;
 	}
 	fflush(stdout);
 	return b1;
 }
 
 Uint8
-screen_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+screen_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0xe) {
 		Uint16 x = mempeek16(m, 0x8);
 		Uint16 y = mempeek16(m, 0xa);
-		Uint8 *addr = &u->ram.dat[mempeek16(m, 0xc)];
+		Uint8 *addr = &d->mem[mempeek16(m, 0xc)];
 		Uint8 *layer = b1 >> 4 & 0x1 ? ppu.fg : ppu.bg;
 		switch(b1 >> 5) {
 		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
@@ -223,27 +223,32 @@ screen_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+file_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
+	/* TODO: Figure out why fwrite doesn't work with d->mem
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
-		char *name = (char *)&u->ram.dat[mempeek16(m, 0x8)];
+		char *name = (char *)&d->mem[mempeek16(m, 0x8)];
 		Uint16 result = 0, length = mempeek16(m, 0xa);
 		Uint16 offset = mempeek16(m, 0x4);
 		Uint16 addr = (m[b0 - 1] << 8) | b1;
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&u->ram.dat[addr], 1, length, f) : fwrite(&u->ram.dat[addr], 1, length, f)))
+			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f)))
 				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
 		}
 		mempoke16(m, 0x2, result);
 	}
+	*/
+	(void)d;
+	(void)m;
+	(void)b0;
 	return b1;
 }
 
 static Uint8
-audio_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+audio_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0xa) {
 		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
@@ -261,21 +266,12 @@ audio_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
 	} else if(b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;
-	(void)u;
+	(void)d;
 	return b1;
 }
 
 Uint8
-midi_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
-{
-	(void)u;
-	(void)m;
-	printf("midi - %02x,%02x\n", b0, b1);
-	return b1;
-}
-
-Uint8
-datetime_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+datetime_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
@@ -289,15 +285,15 @@ datetime_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 	m[0x7] = t->tm_wday;
 	mempoke16(m, 0x08, t->tm_yday);
 	m[0xa] = t->tm_isdst;
-	(void)u;
+	(void)d;
 	(void)b0;
 	return b1;
 }
 
 Uint8
-ppnil(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
+ppnil(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	(void)u;
+	(void)d;
 	(void)m;
 	(void)b0;
 	return b1;
