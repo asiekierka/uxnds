@@ -21,7 +21,7 @@ Uint8  pop8(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->d
 Uint8  peek8(Stack *s, Uint8 a) { if (s->ptr < a + 1) s->error = 1; return s->dat[s->ptr - a - 1]; }
 void   mempoke8(Uxn *u, Uint16 a, Uint8 b) { u->ram.dat[a] = b; }
 Uint8  mempeek8(Uxn *u, Uint16 a) { return u->ram.dat[a]; }
-void   devpoke8(Uxn *u, Uint8 a, Uint8 b) { Device *dev = &u->dev[a >> 4]; dev->dat[a & 0xf] = dev->poke(u, dev->dat, a & 0x0f, b); }
+void   devpoke8(Uxn *u, Uint8 a, Uint8 b) { Device *dev = &u->dev[a >> 4]; dev->dat[a & 0xf] = b; dev->poke(u, dev->dat, a & 0x0f, b); }
 Uint8  devpeek8(Uxn *u, Uint8 a) { return u->dev[a >> 4].dat[a & 0xf]; }
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }

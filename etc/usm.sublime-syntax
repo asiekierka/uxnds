@@ -22,9 +22,6 @@ contexts:
       scope: variable.control
       pop: true
     # constants
-    - match: '\:(\S+)\s?'
-      scope: string.control
-      pop: true
     # structs
 
     # Special
@@ -47,6 +44,9 @@ contexts:
       scope: entity.name.type
       pop: true
     - match: '\;(\S+)\s?'     # absolute
+      scope: keyword.control
+      pop: true
+    - match: '\:(\S+)\s?'     # raw
       scope: keyword.control
       pop: true
 

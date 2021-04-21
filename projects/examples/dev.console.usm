@@ -25,4 +25,3 @@ RTN
 ( devices )
 
 |ff10 @Console    [ &pad $8 &char $1 ]
-

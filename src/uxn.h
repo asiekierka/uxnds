@@ -17,7 +17,6 @@ typedef unsigned short Uint16;
 typedef signed short Sint16;
 
 #define PAGE_PROGRAM 0x0100
-#define LOAD_OFFSET 0x0100
 
 #define genpeek16(ptr, i) ((ptr[i] << 8) + ptr[i + 1])
 #define genpoke16(ptr, i, v) \
