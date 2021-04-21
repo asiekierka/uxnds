@@ -1,56 +1,64 @@
-( Dev/Keys )
+( dev/controller/keys )
 
 %RTN { JMP2r }
 %8+  { #0008 ADD2 }
 %8*  { #0030 SFT2 }
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 key 1 }
+( devices )
 
-( program )
+|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+|40 @Controller [ &vector $2 &button $1 &key    $1 ]
 
-|0200
+( variables )
 
-	( theme ) #0f73 =System.r #0fe3 =System.g #0fc3 =System.b
-	( vectors ) ,on-button =Controller.vector
-	,draw-cursor JSR2
+|0000
+
+@slime $1
+
+|0100
+
+	( theme ) 
+	#0f73 .System/r IOW2 
+	#0fe3 .System/g IOW2 
+	#0fc3 .System/b IOW2
+
+	( vectors ) ;on-button .Controller/vector IOW2
+
+	;draw-cursor JSR2
 	
 BRK
 
 @on-button
 	
-	~Controller.key #00 NEQ ^$skip JNZ BRK $skip  
+	.Controller/key IOR #00 NEQ ,&skip JNZ BRK &skip  
 
-	~Controller.key #0d NEQ ^$no-return JNZ 
-		#20 =Screen.color
-		#0000 =Screen.x
-		( incr ) ~Screen.y 8+ =Screen.y
-		,draw-cursor JSR2
+	.Controller/key IOR #0d NEQ ,&no-return JNZ 
+		( draw ) #20 .Screen/color IOW
+		( reset ) #0000 .Screen/x IOW2
+		( incr ) .Screen/y IOR2 8+ .Screen/y IOW2
+		;draw-cursor JSR2
 		BRK
-	$no-return
+	&no-return
 
-	~Controller.key =Console.char
+	;font #00 .Controller/key IOR 8* ADD2 .Screen/addr IOW2
+	( draw ) #21 .Screen/color IOW
+	( incr ) .Screen/x IOR2 8+ .Screen/x IOW2
 
-	,cursor_icn =Screen.addr
-	,font #00 ~Controller.key 8* ADD2 =Screen.addr
-	( draw ) #21 =Screen.color
-	~Screen.x 8+ =Screen.x
-	,draw-cursor JSR2
+	;draw-cursor JSR2
 
 BRK
 
 @draw-cursor
 	
-	,cursor_icn =Screen.addr #22 =Screen.color
+	;cursor .Screen/addr IOW2 #22 .Screen/color IOW
 
 RTN
 
-@cursor_icn [ ffff ffff ffff ffff ]
+@cursor 
+	ffff ffff ffff ffff
 
 @font ( spectrum-zx font ) 
-[
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
 	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
@@ -83,4 +91,3 @@ RTN
 	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
-]

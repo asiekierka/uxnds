@@ -1,15 +1,14 @@
-( Dev/Controller )
+( dev/controller/buttons )
 
-%++ { #0001 ADD2 } %-- { #0001 SUB2 }
-%2/ { #0002 DIV2 }
-
-%=>SC/ADDR { .Screen/addr IOW2 }
+%=>SC/ADDR { .Screen/addr IOW2 } 
 %->SC/COLR { .Screen/color IOW }
+%++ { #0001 ADD2 } 
+%-- { #0001 SUB2 }
+%2/ { #0002 DIV2 }
 
 ( devices )
 
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
 |40 @Controller [ &vector $2 &button $1 &key    $1 ]
 
@@ -32,6 +31,7 @@
 	( set origin )
 	.Screen/width IOR2 2/ .Screen/x IOW2
 	.Screen/height IOR2 2/ .Screen/y IOW2
+
 	;default_icn =>SC/ADDR
 	#31 ->SC/COLR
 	#2a .slime POK
