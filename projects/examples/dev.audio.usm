@@ -9,7 +9,7 @@
 )
 
 @timer $1
-@song [ &note $1 ]
+@progress $1
 
 ( devices )
 
@@ -38,7 +38,7 @@ BRK
 	( skip ) .timer PEK #10 NEQ ;silence JNZ2
 
 	( get note )
-	;melody #00 .song/note PEK ADD2 GET ( -- note )
+	;melody #00 .progress PEK ADD2 GET ( -- note )
 
 	( play note )
 	DUP #80 ORA .Audio/pitch DEO ( -- note ) ( OR note with #80 and set the audio pitch to it. )
@@ -49,11 +49,11 @@ BRK
 
 	( draw note )
 	#00 SWP #0004 MUL2 #0100 SUB2 .Screen/y DEO2 ( calculate the y position of a dot. TODO make this not upside down )
-	#00 .song/note PEK #0008 MUL2 .Screen/x DEO2 ( calculate the x position of a dot )
+	#00 .progress PEK #0008 MUL2 .Screen/x DEO2 ( calculate the x position of a dot )
 	;dot .Screen/addr DEO2 ( set the sprite for a dot )
 	#21  .Screen/color DEO ( draw a dot )
 
-	( incr ) .song/note PEK #01 ADD #20 MOD .song/note POK
+	( incr ) .progress PEK #01 ADD #20 MOD .progress POK
 
 	#00 .timer POK
 
@@ -86,7 +86,7 @@ BRK
 
 BRK
 
-( song data. note ff is used for a rest. )
+( song data, #ff is used for a rest )
 
 @melody [ 
 	54 52 54 4f 4b 4f 48 ff
@@ -95,6 +95,6 @@ BRK
 	56 52 54 52 54 50 54 ff
 ] 
 
-( dot sprite for on-screen )
+( dot sprite )
 	 
 @dot [ 003c 7eff 7e3c 0000 ] 
