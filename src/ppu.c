@@ -111,14 +111,14 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 }
 
 void
-getcolors(Ppu *p, Uint8 *addr)
+putcolors(Ppu *p, Uint16 rr, Uint16 gg, Uint16 bb)
 {
 	int i;
 	for(i = 0; i < 4; ++i) {
 		Uint8
-			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
+			r = ((rr >> (1 - i / 2) * 8) >> (!(i % 2) << 2)) & 0x0f,
+			g = ((gg >> (1 - i / 2) * 8) >> (!(i % 2) << 2)) & 0x0f,
+			b = ((bb >> (1 - i / 2) * 8) >> (!(i % 2) << 2)) & 0x0f;
 		p->colors[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
 	}
 }
