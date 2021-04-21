@@ -40,18 +40,18 @@ BRK
 	
 	( clear last cursor )
 	;clear .Screen/addr IOW2 
-	.pointer/x LDR .Screen/x IOW2 
-	.pointer/y LDR .Screen/y IOW2 
+	.pointer/x PEK2 .Screen/x IOW2 
+	.pointer/y PEK2 .Screen/y IOW2 
 	#30 .Screen/color IOW
 
 	( record pointer positions )
-	.Mouse/x IOR2 .pointer/x STR 
-	.Mouse/y IOR2 .pointer/y STR
+	.Mouse/x IOR2 .pointer/x POK2 
+	.Mouse/y IOR2 .pointer/y POK2
 
 	( draw new cursor )
 	;cursor .Screen/addr IOW2 
-	.pointer/x LDR .Screen/x IOW2 
-	.pointer/y LDR .Screen/y IOW2 
+	.pointer/x PEK2 .Screen/x IOW2 
+	.pointer/y PEK2 .Screen/y IOW2 
 
 	( colorize on state )
 	.Mouse/state IOR #00 NEQ
