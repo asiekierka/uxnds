@@ -54,22 +54,20 @@ console_poke(Device *d, Uint8 b0, Uint8 b1)
 Uint8
 file_poke(Device *d, Uint8 b0, Uint8 b1)
 {
-	/*
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
-		char *name = (char *)&d->mem[mempeek16(m, 0x8)];
-		Uint16 result = 0, length = mempeek16(m, 0xa);
-		Uint16 offset = mempeek16(m, 0x4);
-		Uint16 addr = (m[b0 - 1] << 8) | b1;
+		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
+		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
+		Uint16 offset = mempeek16(d->dat, 0x4);
+		Uint16 addr = (d->dat[b0 - 1] << 8) | b1;
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&m[addr], 1, length, f) : fwrite(&m[addr], 1, length, f)))
+			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f)))
 				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
 		}
-		mempoke16(m, 0x2, result);
+		mempoke16(d->dat, 0x2, result);
 	}
-	*/
 	return b1;
 }
 
