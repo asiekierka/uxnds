@@ -3,7 +3,7 @@
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
 |20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
 
-|0100
+|0000
 
 @dvd [ &x $2 &y $2 &dx $1 &dy $1 ]
 

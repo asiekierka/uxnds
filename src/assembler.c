@@ -233,6 +233,8 @@ parsetoken(char *w)
 	Label *l;
 	Macro *m;
 	if(w[0] == '.' && (l = findlabel(w + 1))) { /* zero-page */
+		if(l->addr > 0xff)
+			return error("Address is not in zero page", w);
 		pushbyte(l->addr, 1);
 		return ++l->refs;
 	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
