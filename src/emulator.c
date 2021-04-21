@@ -184,7 +184,7 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 Uint8
 system_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	putcolors(&ppu, genpeek16(m, 0x8), genpeek16(m, 0xa), genpeek16(m, 0xc));
+	getcolors(&ppu, &m[0x8]);
 	printf("%02x%02x %02x%02x %02x%02x\n", m[0x8], m[0x9], m[0xa], m[0xb], m[0xc], m[0xd]);
 	reqdraw = 1;
 	(void)u;
