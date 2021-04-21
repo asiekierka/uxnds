@@ -44,10 +44,16 @@ clear(Ppu *p)
 }
 
 void
-drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
+putcolors(Ppu *p, Uint8 *addr)
 {
-	if(x >= p->pad && x <= p->width - p->pad - 1 && y >= p->pad && y <= p->height - p->pad - 1)
-		p->output[y * p->width + x] = p->colors[color];
+	int i;
+	for(i = 0; i < 4; ++i) {
+		Uint8
+			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
+			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
+			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
+		p->colors[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
+	}
 }
 
 void
@@ -91,6 +97,15 @@ putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 		}
 }
 
+/* output */
+
+void
+drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
+{
+	if(x >= p->pad && x <= p->width - p->pad - 1 && y >= p->pad && y <= p->height - p->pad - 1)
+		p->output[y * p->width + x] = p->colors[color];
+}
+
 void
 drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 {
@@ -111,20 +126,7 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 }
 
 void
-getcolors(Ppu *p, Uint8 *addr)
-{
-	int i;
-	for(i = 0; i < 4; ++i) {
-		Uint8
-			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		p->colors[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
-	}
-}
-
-void
-drawppu(Ppu *p)
+draw(Ppu *p)
 {
 	Uint16 x, y;
 	for(y = 0; y < p->ver; ++y)

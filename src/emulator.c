@@ -49,7 +49,7 @@ audio_callback(void *u, Uint8 *stream, int len)
 void
 redraw(Uint32 *dst, Uxn *u)
 {
-	drawppu(&ppu);
+	draw(&ppu);
 	if(debug)
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
 	SDL_UpdateTexture(gTexture, NULL, dst, ppu.width * sizeof(Uint32));
@@ -130,8 +130,8 @@ domouse(SDL_Event *event)
 	Uint8 flag = 0x00;
 	Uint16 x = clamp(event->motion.x / zoom - ppu.pad, 0, ppu.hor * 8 - 1);
 	Uint16 y = clamp(event->motion.y / zoom - ppu.pad, 0, ppu.ver * 8 - 1);
-	genpoke16(devmouse->dat, 0x2, x);
-	genpoke16(devmouse->dat, 0x4, y);
+	mempoke16(devmouse->dat, 0x2, x);
+	mempoke16(devmouse->dat, 0x4, y);
 	devmouse->dat[7] = 0x00;
 	switch(event->button.button) {
 	case SDL_BUTTON_LEFT: flag = 0x01; break;
@@ -184,8 +184,7 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 Uint8
 system_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
-	getcolors(&ppu, &m[0x8]);
-	printf("%02x%02x %02x%02x %02x%02x\n", m[0x8], m[0x9], m[0xa], m[0xb], m[0xc], m[0xd]);
+	putcolors(&ppu, &m[0x8]);
 	reqdraw = 1;
 	(void)u;
 	(void)b0;
@@ -209,9 +208,9 @@ Uint8
 screen_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0xe) {
-		Uint16 x = genpeek16(m, 0x8);
-		Uint16 y = genpeek16(m, 0xa);
-		Uint8 *addr = &u->ram.dat[genpeek16(m, 0xc)];
+		Uint16 x = mempeek16(m, 0x8);
+		Uint16 y = mempeek16(m, 0xa);
+		Uint8 *addr = &u->ram.dat[mempeek16(m, 0xc)];
 		Uint8 *layer = b1 >> 4 & 0x1 ? ppu.fg : ppu.bg;
 		switch(b1 >> 5) {
 		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
@@ -228,9 +227,9 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
-		char *name = (char *)&u->ram.dat[genpeek16(m, 0x8)];
-		Uint16 result = 0, length = genpeek16(m, 0xa);
-		Uint16 offset = genpeek16(m, 0x4);
+		char *name = (char *)&u->ram.dat[mempeek16(m, 0x8)];
+		Uint16 result = 0, length = mempeek16(m, 0xa);
+		Uint16 offset = mempeek16(m, 0x4);
 		Uint16 addr = (m[b0 - 1] << 8) | b1;
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
@@ -238,7 +237,7 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
 		}
-		genpoke16(m, 0x2, result);
+		mempoke16(m, 0x2, result);
 	}
 	return b1;
 }
@@ -249,16 +248,16 @@ audio_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 	if(b0 == 0xa) {
 		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
 		while(b1 >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
-		apu_play_note(&apu.notes[b1], genpeek16(m, 0x0), genpeek16(m, 0x2), m[0x8], m[0x9] & 0x7f, m[0x9] > 0x7f);
+		apu_play_note(&apu.notes[b1], mempeek16(m, 0x0), mempeek16(m, 0x2), m[0x8], m[0x9] & 0x7f, m[0x9] > 0x7f);
 	} else if(b0 == 0xe && apu.queue != NULL) {
 		if(apu.queue->n == apu.queue->sz) {
 			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
 			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
 		}
 		if(apu.queue->is_envelope)
-			apu.queue->dat[apu.queue->n++] = genpeek16(m, 0xb) >> 1;
+			apu.queue->dat[apu.queue->n++] = mempeek16(m, 0xb) >> 1;
 		else
-			apu.queue->dat[apu.queue->n++] = genpeek16(m, 0xb) + 0x8000;
+			apu.queue->dat[apu.queue->n++] = mempeek16(m, 0xb) + 0x8000;
 		apu.queue->dat[apu.queue->n++] = (m[0xd] << 8) + b1;
 	} else if(b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;
@@ -281,14 +280,14 @@ datetime_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
 	t->tm_year += 1900;
-	genpoke16(m, 0x0, t->tm_year);
+	mempoke16(m, 0x0, t->tm_year);
 	m[0x2] = t->tm_mon;
 	m[0x3] = t->tm_mday;
 	m[0x4] = t->tm_hour;
 	m[0x5] = t->tm_min;
 	m[0x6] = t->tm_sec;
 	m[0x7] = t->tm_wday;
-	genpoke16(m, 0x08, t->tm_yday);
+	mempoke16(m, 0x08, t->tm_yday);
 	m[0xa] = t->tm_isdst;
 	(void)u;
 	(void)b0;
@@ -327,14 +326,14 @@ start(Uxn *u)
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
-				evaluxn(u, genpeek16(devctrl->dat, 0));
+				evaluxn(u, mempeek16(devctrl->dat, 0));
 				devctrl->dat[3] = 0;
 				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION:
 				domouse(&event);
-				evaluxn(u, genpeek16(devmouse->dat, 0));
+				evaluxn(u, mempeek16(devmouse->dat, 0));
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
@@ -342,7 +341,7 @@ start(Uxn *u)
 				break;
 			}
 		}
-		evaluxn(u, genpeek16(devscreen->dat, 0));
+		evaluxn(u, mempeek16(devscreen->dat, 0));
 		SDL_UnlockAudioDevice(audio_id);
 		if(reqdraw)
 			redraw(ppu.output, u);
@@ -387,8 +386,8 @@ main(int argc, char **argv)
 	apu.channel_ptr = &devapu->dat[0xa];
 
 	/* Write screen size to dev/screen */
-	genpoke16(devscreen->dat, 2, ppu.hor * 8);
-	genpoke16(devscreen->dat, 4, ppu.ver * 8);
+	mempoke16(devscreen->dat, 2, ppu.hor * 8);
+	mempoke16(devscreen->dat, 4, ppu.ver * 8);
 
 	start(&u);
 	quit();

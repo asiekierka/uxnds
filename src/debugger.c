@@ -56,9 +56,9 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 {
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
-		char *name = (char *)&u->ram.dat[genpeek16(m, 0x8)];
-		Uint16 result = 0, length = genpeek16(m, 0xa);
-		Uint16 offset = genpeek16(m, 0x4);
+		char *name = (char *)&u->ram.dat[mempeek16(m, 0x8)];
+		Uint16 result = 0, length = mempeek16(m, 0xa);
+		Uint16 offset = mempeek16(m, 0x4);
 		Uint16 addr = (m[b0 - 1] << 8) | b1;
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
@@ -66,7 +66,7 @@ file_poke(Uxn *u, Uint8 *m, Uint8 b0, Uint8 b1)
 				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", length, addr, name);
 			fclose(f);
 		}
-		genpoke16(m, 0x2, result);
+		mempoke16(m, 0x2, result);
 	}
 	return b1;
 }
