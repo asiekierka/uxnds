@@ -286,8 +286,6 @@ pass1(FILE *f)
 	while(fscanf(f, "%s", w) == 1) {
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(w[0] == '|') {
-			if(shex(w + 1) < addr)
-				return error("Memory Overwrite", w);
 			addr = shex(w + 1);
 		} else if(w[0] == '%') {
 			if(!makemacro(w + 1, f))
@@ -322,6 +320,8 @@ pass2(FILE *f)
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
 		if(skipblock(w, &ctemplate, '{', '}')) continue;
 		if(w[0] == '|') {
+			if(p.length && shex(w + 1) < p.ptr)
+				return error("Memory Overwrite", w);
 			p.ptr = shex(w + 1);
 			continue;
 		} else if(w[0] == '$') {

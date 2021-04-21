@@ -16,6 +16,19 @@
 
 %MEMORY { #1000 }
 
+( devices )
+
+|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+|40 @Controller [ &vector $2 &button $1 &key    $1 ]
+|60 @Mouse      [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+|70 @File       [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
+
+( variables )
+
+|0000
+
 @loadbtn [ &x $2 &y $2 ]
 @output [ &x $2 &y $2 ]
 @pointer [ &x $2 &y $2 ]
@@ -192,11 +205,3 @@ RTN
 	0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-( devices )
-
-|ff00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
-|ff10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
-|ff20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
-|ff40 @Controller [ &vector $2 &button $1 &key    $1 ]
-|ff60 @Mouse      [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
-|ff70 @File       [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]

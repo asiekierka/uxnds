@@ -6,7 +6,16 @@
 %=>SC/ADDR { .Screen/addr IOW2 }
 %->SC/COLR { .Screen/color IOW }
 
+( devices )
+
+|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+|40 @Controller [ &vector $2 &button $1 &key    $1 ]
+
 ( variables )
+
+|0000
 
 @slime $1
 
@@ -78,9 +87,3 @@ BRK
 @right_icn   [ 3c7e f7f8 f8f7 7e3c ]
 @slime_icn   [ 0000 183c 3c18 0000 ]
 
-( devices )
-
-|ff00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
-|ff10 @Console    [ &pad    $8 &char   $1 &byte   $1 &short $2 &string $2 ]
-|ff20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
-|ff40 @Controller [ &vector $2 &button $1 &key    $1 ]
