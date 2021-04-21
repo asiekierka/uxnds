@@ -1,0 +1,74 @@
+( GUI Animation )
+
+|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
+
+|0100
+
+@dvd [ &x $2 &y $2 &dx $1 &dy $1 ]
+
+( program )
+
+|0100 ( -> )
+	
+	( theme ) 
+	#4cfd .System/r DEO2 
+	#4cf3 .System/g DEO2 
+	#dcf2 .System/b DEO2
+
+	( vectors )
+	;on-frame .Screen/vector DEO2
+
+	( starting position )
+	.Screen/width DEI2 #0002 DIV2 .dvd/x POK2
+	.Screen/height DEI2 #0002 DIV2 .dvd/y POK2
+
+	#21 ;draw-dvd JSR2
+	
+BRK
+
+@on-frame ( -> )
+
+	( clear ) #20 ;draw-dvd JSR2
+	( hit-right ) .dvd/x PEK2 .Screen/width DEI2 #0020 SUB2 EQU2
+	( hit-left ) .dvd/x PEK2 #0000 EQU2 
+	#0000 EQU2 ,&no-flipx JNZ 
+		.dvd/dx PEK #00 EQU .dvd/dx POK &no-flipx
+	( hit-bottom ) .dvd/y PEK2 .Screen/height DEI2 #0010 SUB2 EQU2
+	( hit-top ) .dvd/y PEK2 #0000 EQU2 
+	#0000 EQU2 ,&no-flipy JNZ 
+		.dvd/dy PEK #00 EQU .dvd/dy POK &no-flipy
+	( incr ) .dvd/x PEK2 #0001 #00 .dvd/dx PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/x POK2
+	( incr ) .dvd/y PEK2 #0001 #00 .dvd/dy PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/y POK2
+	( draw ) #21 ;draw-dvd JSR2
+
+BRK
+
+@draw-dvd ( color -- )
+	
+	( stash color ) STH 
+	;dvd_icn .Screen/addr DEO2
+	.dvd/y PEK2 .dvd/y PEK2 #0010 ADD2
+	&ver
+		OVR2 .Screen/y DEO2
+		.dvd/x PEK2 .dvd/x PEK2 #0020 ADD2
+		&hor
+			OVR2 .Screen/x DEO2
+			( draw ) DUPr STHr .Screen/color DEO
+			( next ) .Screen/addr DEI2 #0008 ADD2 .Screen/addr DEO2
+			( incr ) SWP2 #0008 ADD2 SWP2
+			OVR2 OVR2 LTH2 ,&hor JNZ
+		POP2 POP2
+		( incr ) SWP2 #0008 ADD2 SWP2
+		OVR2 OVR2 LTH2 ,&ver JNZ
+	POP2 POP2
+	( destroy color ) POPr
+
+JMP2r
+
+@dvd_icn [
+	001f 3f38 3838 787f 00fe fe7e 7777 e3c3
+	000f 1f3b 7b77 e7c7 00fc fe8f 8707 0efc
+	7f00 000f ff7f 0700 0301 00ff f0f8 ff00
+	8700 00ff 7f7f ff00 f000 00e0 fcfc 8000
+]
