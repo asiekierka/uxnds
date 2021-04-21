@@ -21,7 +21,7 @@ Uint8  pop8(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->d
 Uint8  peek8(Stack *s, Uint8 a) { if (s->ptr < a + 1) s->error = 1; return s->dat[s->ptr - a - 1]; }
 void   mempoke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
 Uint8  mempeek8(Uint8 *m, Uint16 a) { return m[a]; }
-void   devpoke8(Device *d, Uint8 a, Uint8 b) { d->dat[a & 0xf] = b; d->poke(d, d->dat, a & 0x0f, b); }
+void   devpoke8(Device *d, Uint8 a, Uint8 b) { d->dat[a & 0xf] = b; d->poke(d, a & 0x0f, b); }
 Uint8  devpeek8(Device *d, Uint8 a) { return d->dat[a & 0xf]; }
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
@@ -179,7 +179,7 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Device *d, Uint8 *devmem, Uint8 b0, Uint8 b1))
+portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Device *d, Uint8 b0, Uint8 b1))
 {
 	Device *d = &u->dev[id];
 	d->addr = id * 0x10;

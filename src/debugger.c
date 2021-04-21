@@ -38,12 +38,12 @@ printstack(Stack *s)
 #pragma mark - Devices
 
 Uint8
-console_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
+console_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
 	case 0x09: printf("0x%02x\n", b1); break;
-	case 0x0b: printf("0x%04x\n", (m[0x0a] << 8) + b1); break;
+	case 0x0b: printf("0x%04x\n", (d->dat[0x0a] << 8) + b1); break;
 	}
 	fflush(stdout);
 	(void)d;
@@ -52,8 +52,9 @@ console_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 }
 
 Uint8
-file_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
+file_poke(Device *d, Uint8 b0, Uint8 b1)
 {
+	/*
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
 		char *name = (char *)&d->mem[mempeek16(m, 0x8)];
@@ -68,14 +69,14 @@ file_poke(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
 		}
 		mempoke16(m, 0x2, result);
 	}
+	*/
 	return b1;
 }
 
 Uint8
-ppnil(Device *d, Uint8 *m, Uint8 b0, Uint8 b1)
+ppnil(Device *d, Uint8 b0, Uint8 b1)
 {
 	(void)d;
-	(void)m;
 	(void)b0;
 	return b1;
 }
