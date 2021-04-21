@@ -17,11 +17,11 @@ BRK
 @print ( addr -- )
 	
 	&loop
-		( send ) DUP2 GET .Console/char IOW
+		( send ) DUP2 GET .Console/char DEO
 		( incr ) #0001 ADD2
 		( loop ) DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
-@hello-word [ 48 65 6c 6c 6f 20 57 6f 72 6c 64 21 ]
+@hello-word "hello 20 "World!

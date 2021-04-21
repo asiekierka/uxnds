@@ -15,11 +15,11 @@
 |0100 ( -> )
 
 	( theme ) 
-	#0f73 .System/r IOW2 
-	#0fe3 .System/g IOW2 
-	#0fc3 .System/b IOW2
+	#0f73 .System/r DEO2 
+	#0fe3 .System/g DEO2 
+	#0fc3 .System/b DEO2
 
-	( vectors ) ;on-button .Controller/vector IOW2
+	( vectors ) ;on-button .Controller/vector DEO2
 
 	;draw-cursor JSR2
 	
@@ -27,19 +27,19 @@ BRK
 
 @on-button ( -> )
 	
-	.Controller/key IOR #00 NEQ ,&skip JNZ BRK &skip  
+	.Controller/key DEI #00 NEQ ,&skip JNZ BRK &skip  
 
-	.Controller/key IOR #0d NEQ ,&no-return JNZ 
-		( draw ) #20 .Screen/color IOW
-		( reset ) #0000 .Screen/x IOW2
-		( incr ) .Screen/y IOR2 8+ .Screen/y IOW2
+	.Controller/key DEI #0d NEQ ,&no-return JNZ 
+		( draw ) #20 .Screen/color DEO
+		( reset ) #0000 .Screen/x DEO2
+		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
 		;draw-cursor JSR2
 		BRK
 	&no-return
 
-	;font #00 .Controller/key IOR 8* ADD2 .Screen/addr IOW2
-	( draw ) #21 .Screen/color IOW
-	( incr ) .Screen/x IOR2 8+ .Screen/x IOW2
+	;font #00 .Controller/key DEI 8* ADD2 .Screen/addr DEO2
+	( draw ) #21 .Screen/color DEO
+	( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 
 	;draw-cursor JSR2
 
@@ -47,7 +47,7 @@ BRK
 
 @draw-cursor ( -- )
 	
-	;cursor .Screen/addr IOW2 #22 .Screen/color IOW
+	;cursor .Screen/addr DEO2 #22 .Screen/color DEO
 
 RTN
 

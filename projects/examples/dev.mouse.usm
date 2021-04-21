@@ -22,11 +22,11 @@
 |0100 ( -> )
 
 	( theme ) 
-	#03fd .System/r IOW2 
-	#0ef3 .System/g IOW2 
-	#0bf2 .System/b IOW2
+	#03fd .System/r DEO2 
+	#0ef3 .System/g DEO2 
+	#0bf2 .System/b DEO2
 
-	( vectors ) ;on-mouse .Mouse/vector IOW2
+	( vectors ) ;on-mouse .Mouse/vector DEO2
 
 BRK
 
@@ -39,23 +39,23 @@ BRK
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear .Screen/addr IOW2 
-	.pointer/x PEK2 .Screen/x IOW2 
-	.pointer/y PEK2 .Screen/y IOW2 
-	#30 .Screen/color IOW
+	;clear .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+	#30 .Screen/color DEO
 
 	( record pointer positions )
-	.Mouse/x IOR2 .pointer/x POK2 
-	.Mouse/y IOR2 .pointer/y POK2
+	.Mouse/x DEI2 .pointer/x POK2 
+	.Mouse/y DEI2 .pointer/y POK2
 
 	( draw new cursor )
-	;cursor .Screen/addr IOW2 
-	.pointer/x PEK2 .Screen/x IOW2 
-	.pointer/y PEK2 .Screen/y IOW2 
+	;cursor .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
 
 	( colorize on state )
-	.Mouse/state IOR #00 NEQ
-	#31 ADD .Screen/color IOW
+	.Mouse/state DEI #00 NEQ
+	#31 ADD .Screen/color DEO
 
 RTN
 

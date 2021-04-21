@@ -1,7 +1,7 @@
 ( dev/controller/buttons )
 
-%=>SC/ADDR { .Screen/addr IOW2 } 
-%->SC/COLR { .Screen/color IOW }
+%=>SC/ADDR { .Screen/addr DEO2 } 
+%->SC/COLR { .Screen/color DEO }
 %++ { #0001 ADD2 } 
 %-- { #0001 SUB2 }
 %2/ { #0002 DIV2 }
@@ -23,16 +23,16 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#0daf .System/r IOW2 
-	#02ff .System/g IOW2 
-	#035f .System/b IOW2
+	#0daf .System/r DEO2 
+	#02ff .System/g DEO2 
+	#035f .System/b DEO2
 
 	( vectors ) 
-	;on-frame .Screen/vector IOW2
+	;on-frame .Screen/vector DEO2
 	
 	( set origin )
-	.Screen/width IOR2 2/ .Screen/x IOW2
-	.Screen/height IOR2 2/ .Screen/y IOW2
+	.Screen/width DEI2 2/ .Screen/x DEO2
+	.Screen/height DEI2 2/ .Screen/y DEO2
 
 	;default_icn =>SC/ADDR
 	#31 ->SC/COLR
@@ -46,7 +46,7 @@ BRK
 	;default_icn =>SC/ADDR
 
 	( hold ctrl key to change slime color )
-	.Controller/button IOR #0f AND
+	.Controller/button DEI #0f AND
 		DUP #01 NEQ ,&no-ctrl JNZ #25 .slime POK &no-ctrl
 		DUP #02 NEQ ,&no-alt JNZ #2f .slime POK &no-alt
 	POP
@@ -54,22 +54,22 @@ BRK
 	( clear ) #30 ->SC/COLR
 
 	( detect movement )
-	.Controller/button IOR #f0 AND
+	.Controller/button DEI #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ 
 			( move ) 
-			.Screen/y IOR2 -- .Screen/y IOW2 
+			.Screen/y DEI2 -- .Screen/y DEO2 
 			;up_icn =>SC/ADDR &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ 
 			( move ) 
-			.Screen/y IOR2 ++ .Screen/y IOW2 
+			.Screen/y DEI2 ++ .Screen/y DEO2 
 			;down_icn =>SC/ADDR &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ 
 			( move ) 
-			.Screen/x IOR2 -- .Screen/x IOW2 
+			.Screen/x DEI2 -- .Screen/x DEO2 
 			;left_icn =>SC/ADDR &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ 
 			( move ) 
-			.Screen/x IOR2 ++ .Screen/x IOW2 
+			.Screen/x DEI2 ++ .Screen/x DEO2 
 			;right_icn =>SC/ADDR &no-right
 	POP
 

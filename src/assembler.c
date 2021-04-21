@@ -41,7 +41,7 @@ Program p;
 
 char ops[][4] = {
 	"BRK", "LIT", "NOP", "POP", "DUP", "SWP", "OVR", "ROT",
-	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "IOR", "IOW",
+	"EQU", "NEQ", "GTH", "LTH", "GTS", "LTS", "DEI", "DEO",
 	"PEK", "POK", "GET", "PUT", "JMP", "JNZ", "JSR", "STH",
 	"ADD", "SUB", "MUL", "DIV", "AND", "ORA", "EOR", "SFT"
 };
@@ -76,11 +76,10 @@ pushshort(Uint16 s, int lit)
 }
 
 void
-pushtext(char *s, int lit)
+pushword(char *s)
 {
 	int i = 0;
 	char c;
-	if(lit) pushbyte(0x21, 0);
 	while((c = s[i++])) pushbyte(c, 0);
 }
 
@@ -210,12 +209,14 @@ walktoken(char *w)
 	switch(w[0]) {
 	case '[': return 0;
 	case ']': return 0;
+	case '\'': return 1;
 	case '.': return 2; /* zero-page: LIT addr-lb */
 	case ',': return 2; /* relative:  LIT addr-rel */
 	case ':': return 2; /* absolute:      addr-hb addr-lb */
 	case ';': return 3; /* absolute:  LIT addr-hb addr-lb */
 	case '$': return shex(w + 1);
 	case '#': return slen(w + 1) == 4 ? 3 : 2;
+	case '"': return slen(w + 1);
 	}
 	if((m = findmacro(w))) {
 		int i, res = 0;
@@ -248,6 +249,12 @@ parsetoken(char *w)
 		return ++l->refs;
 	} else if(findopcode(w) || scmp(w, "BRK", 4)) {
 		pushbyte(findopcode(w), 0);
+		return 1;
+	} else if(w[0] == '"') {
+		pushword(w + 1);
+		return 1;
+	} else if(w[0] == '\'') {
+		pushbyte((Uint8)w[1], 0);
 		return 1;
 	} else if(w[0] == '#') {
 		if(slen(w + 1) == 1)
