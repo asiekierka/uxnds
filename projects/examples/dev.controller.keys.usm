@@ -10,13 +10,9 @@
 |20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
 |40 @Controller [ &vector $2 &button $1 &key    $1 ]
 
-( variables )
+( init )
 
-|0000
-
-@slime $1
-
-|0100
+|0100 ( -> )
 
 	( theme ) 
 	#0f73 .System/r IOW2 
@@ -29,7 +25,7 @@
 	
 BRK
 
-@on-button
+@on-button ( -> )
 	
 	.Controller/key IOR #00 NEQ ,&skip JNZ BRK &skip  
 
@@ -49,14 +45,13 @@ BRK
 
 BRK
 
-@draw-cursor
+@draw-cursor ( -- )
 	
 	;cursor .Screen/addr IOW2 #22 .Screen/color IOW
 
 RTN
 
-@cursor 
-	ffff ffff ffff ffff
+@cursor [ ffff ffff ffff ffff ]
 
 @font ( spectrum-zx font ) 
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000

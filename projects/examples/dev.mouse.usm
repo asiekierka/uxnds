@@ -1,0 +1,63 @@
+( dev/mouse )
+
+%RTN { JMP2r }
+%8+  { #0008 ADD2 }
+%++  { #0001 ADD2 }
+%--  { #0001 SUB2 }
+
+( devices )
+
+|00 @System     [ &vector $2 &pad     $6 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char    $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width   $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
+|40 @Controller [ &vector $2 &button  $1 &key    $1 ]
+|60 @Mouse      [ &vector $2 &x       $2 &y      $2 &state $1 &chord $1 ]
+
+|0000
+
+@pointer [ &x $2 &y $2 ]
+
+( program )
+
+|0100 ( -> )
+
+	( theme ) 
+	#03fd .System/r IOW2 
+	#0ef3 .System/g IOW2 
+	#0bf2 .System/b IOW2
+
+	( vectors ) ;on-mouse .Mouse/vector IOW2
+
+BRK
+
+@on-mouse ( -> )
+
+	;draw-cursor JSR2
+
+BRK 
+
+@draw-cursor ( -- )
+	
+	( clear last cursor )
+	;clear .Screen/addr IOW2 
+	.pointer/x LDR .Screen/x IOW2 
+	.pointer/y LDR .Screen/y IOW2 
+	#30 .Screen/color IOW
+
+	( record pointer positions )
+	.Mouse/x IOR2 .pointer/x STR 
+	.Mouse/y IOR2 .pointer/y STR
+
+	( draw new cursor )
+	;cursor .Screen/addr IOW2 
+	.pointer/x LDR .Screen/x IOW2 
+	.pointer/y LDR .Screen/y IOW2 
+
+	( colorize on state )
+	.Mouse/state IOR #00 NEQ
+	#31 ADD .Screen/color IOW
+
+RTN
+
+@clear   [ 0000 0000 0000 0000 ]
+@cursor  [ 80c0 e0f0 f8e0 1000 ]

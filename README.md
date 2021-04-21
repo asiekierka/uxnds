@@ -22,11 +22,17 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
 Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 ```
+( dev/console )
+
 %RTN { JMP2r }
 
-( program )
+( devices )
 
-|0100
+|10 @Console    [ &pad $8 &char $1 ]
+
+( init )
+
+|0100 ( -> )
 	
 	;hello-word ;print JSR2
 	
@@ -43,10 +49,6 @@ BRK
 RTN
 
 @hello-word [ 48 65 6c 6c 6f 20 57 6f 72 6c 64 21 ]
-
-( devices )
-
-|ff10 @Console    [ &pad $8 &char $1 ]
 ```
 
 ## TODOs

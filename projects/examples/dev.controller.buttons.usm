@@ -10,7 +10,7 @@
 
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
 |20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y $2 &addr $2 &color $1 ]
-|40 @Controller [ &vector $2 &button $1 &key    $1 ]
+|40 @Controller [ &vector $2 &button $1 &key    $1 ] 
 
 ( variables )
 
@@ -18,7 +18,9 @@
 
 @slime $1
 
-|0100
+( init )
+
+|0100 ( -> )
 	
 	( theme ) 
 	#0daf .System/r IOW2 
@@ -38,7 +40,7 @@
 
 BRK
 
-@on-frame
+@on-frame ( -> )
 
 	#2a .slime POK
 	;default_icn =>SC/ADDR
