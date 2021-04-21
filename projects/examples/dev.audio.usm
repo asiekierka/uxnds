@@ -1,0 +1,100 @@
+( dev/audio )
+
+%MOD { DUP2 DIV MUL SUB }
+
+(
+	position in track, 
+	frame: counter for current frame, 
+	only playing every few frames 
+)
+
+@timer $1
+@song [ &note $1 ]
+
+( devices )
+
+|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y    $2 &addr  $2 &color $1 ]
+|30 @Audio     	[ &wave $2   &env    $2 &pad    $4 &vol   $1 &pitch  $1 &play $1 &value $2 &delay $2 &finish $1 ]
+
+|0100 ( -> )
+	
+	( set color pallete )
+	#0fff DUP2 DUP2 
+	.System/r DEO2 
+	.System/g DEO2 
+	.System/b DEO2 
+
+	;on-frame .Screen/vector DEO2 ( run on-frame every 1/60th of a second )
+	#ff .Audio/vol DEO            ( set volume to max )
+	;saw .Audio/wave DEO2         ( set waveform to saw for audio engine )
+	;env .Audio/env DEO2          ( set envelope for audio engine )
+
+BRK
+
+@on-frame ( -> )
+
+	( incr ) .timer PEK #01 ADD .timer POK 
+	( skip ) .timer PEK #10 NEQ ;silence JNZ2
+
+	( get note )
+	;melody #00 .song/note PEK ADD2 GET ( -- note )
+
+	( play note )
+	DUP #80 ORA .Audio/pitch DEO ( -- note ) ( OR note with #80 and set the audio pitch to it. )
+	#01 .Audio/play DEO ( play the note )
+
+	( erase last note )
+	#20  .Screen/color DEO ( draw a dot )
+
+	( draw note )
+	#00 SWP #0004 MUL2 #0100 SUB2 .Screen/y DEO2 ( calculate the y position of a dot. TODO make this not upside down )
+	#00 .song/note PEK #0008 MUL2 .Screen/x DEO2 ( calculate the x position of a dot )
+	;dot .Screen/addr DEO2 ( set the sprite for a dot )
+	#21  .Screen/color DEO ( draw a dot )
+
+	( incr ) .song/note PEK #01 ADD #20 MOD .song/note POK
+
+	#00 .timer POK
+
+BRK
+
+@silence ( -> )
+
+BRK
+
+( defines a sawtooth wave. )
+
+@saw ( -> )
+
+	#6000 .Audio/value DEO2
+	#0000 .Audio/delay DEO2 ( move to volume #600 after 0 delay )
+	#0000 .Audio/value DEO2
+	#ffff .Audio/delay DEO2 ( reach volume 0 after the whole note. Interpolated linearly )
+
+BRK
+
+( defines an envelope )
+
+@env ( -> )
+
+	#ffff .Audio/value DEO2
+	#1000 .Audio/delay DEO2 ( move pretty quickly to volume #ffff (maximum) ) 
+	#0000 .Audio/value DEO2
+	#4000 .Audio/delay DEO2 ( interpolating linearly, move to #0000 after a delay of #4000 where #8000 is half a second )
+	#00   .Audio/finish DEO ( end the envelope )
+
+BRK
+
+( song data. note ff is used for a rest. )
+
+@melody [ 
+	54 52 54 4f 4b 4f 48 ff
+	54 52 54 4f 4b 4f 48 ff
+	54 56 57 56 57 54 56 54 
+	56 52 54 52 54 50 54 ff
+] 
+
+( dot sprite for on-screen )
+	 
+@dot [ 003c 7eff 7e3c 0000 ] 
