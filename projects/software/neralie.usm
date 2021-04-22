@@ -1,0 +1,301 @@
+(
+	app/neralie : clock with arvelie date
+
+	TODO
+		- Implement higher resolution time rather than counting fps
+)
+
+( devices )
+
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|a0 @DateTime [ &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 &refresh $1 ]
+
+( variables )
+
+|0000
+
+@fps [ &current $1 &next $1 &second $1 ]
+@number [ &started $1 &count $1 ]
+@lines [ &x1 $2 &x2 $2 &y1 $2 &y2 $2 &addr $1 ]
+@neralie [ &n0123 $2 &n4 $1 &n5 $1 &n6 $1 &n7 $1 &n8 $1 &n9 $1 &color $1 &x $2 &y $2 &w $2 &h $2 ]
+@mul [ &ahi $1 &alo $1 &bhi $1 &blo $1 ]
+
+( program )
+
+|0100
+
+	( theme )  #03fd .System/r DEO2 #0ef3 .System/g DEO2 #0bf2 .System/b DEO2
+	( vectors )  ;on-screen .Screen/vector DEO2
+	#01 .fps/current POK
+
+	#000c
+	DUP2 .lines/x1 POK2
+	DUP2 .lines/y1 POK2
+	DUP2 .Screen/width DEI2 SWP2 SUB2 #0001 SUB2 .lines/x2 POK2
+	     .Screen/height DEI2 SWP2 SUB2 .lines/y2 POK2
+
+	#02 .neralie/color POK
+	.lines/x1 PEK2 .lines/x2 PEK2
+	OVR2 OVR2 .lines/y1 PEK2 ;h JSR2
+	          .lines/y2 PEK2 ;h JSR2
+	.lines/y1 PEK2 #0001 SUB2 .lines/y2 PEK2 #0001 ADD2
+	OVR2 OVR2 .lines/x1 PEK2 ;v JSR2
+	          .lines/x2 PEK2 ;v JSR2
+
+@on-screen
+	;update-fps JSR2
+	#00 .neralie/color POK
+	;neralie-lines JSR2
+	;neralie-calc JSR2
+	#02 .neralie/color POK
+	;arvelie-text JSR2
+	;neralie-text JSR2
+	;neralie-lines JSR2
+	BRK
+
+	#22 .Screen/color DEO
+	#0000 #00 .number/count PEK DUP2 ;h JSR2
+	.number/count PEK #01 ADD .number/count POK
+
+@neralie-calc ( -- )
+	( add up fractions of a pulse, store tenths in n6 )
+	#0120 #00 .DateTime/hour DEI MUL2
+	#00c0 #00 .DateTime/minute DEI MUL2 ADD2
+	#00f8 #00 .DateTime/second DEI MUL2 ADD2
+	#0271 #00 .fps/next PEK MUL2 #00 .fps/current PEK DIV2 #0008 MUL2 ADD2
+	#01b0 ;modf JSR2 SWP2 #0017 MUL2 #03e8 DIV2 .neralie/n6 POK POP
+
+	( add up units and tens of pulses, store in n5 and n4 )
+	#0042 #00 .DateTime/hour DEI MUL2 ADD2
+	#005e #00 .DateTime/minute DEI MUL2 ADD2
+	#000b #00 .DateTime/second DEI MUL2 ADD2
+	#000a ;modf JSR2 SWP2 .neralie/n5 POK POP
+	#000a ;modf JSR2 SWP2 .neralie/n4 POK POP
+
+	( add up hundreds of pulses + 10 x beats, store in n0123 )
+	#01a0 #00 .DateTime/hour DEI MUL2 ADD2
+	#0006 #00 .DateTime/minute DEI MUL2 ADD2 .neralie/n0123 POK2
+
+	JMP2r
+
+@arvelie-text ( -- )
+	.Screen/width DEI2 #0002 DIV2 #0034 SUB2 .Screen/x DEO2
+	.Screen/height DEI2 #0008 SUB2 .Screen/y DEO2
+	.DateTime/year DEI2 #07d6 SUB2
+	#000a ;modf JSR2 ;digit JSR2
+	                 ;digit JSR2
+	.DateTime/doty DEI2
+	#000e ;modf JSR2 ,letter JSR
+	#000a ;modf JSR2 ,digit JSR
+	                 ,digit JSR
+	JMP2r
+
+@neralie-text ( -- )
+	.Screen/width DEI2 #0002 DIV2 #0004 SUB2 .Screen/x DEO2
+	.neralie/n0123 PEK2
+	#03e8 ;modf JSR2 ,digit JSR
+	#0064 ;modf JSR2 ,digit JSR
+	#000a ;modf JSR2 ,digit JSR
+	           #000b ,digit JSR ( the colon )
+	                 ,digit JSR
+	#00 .neralie/n4 PEK  ,digit JSR
+	#00 .neralie/n5 PEK  ,digit JSR
+	JMP2r
+
+@letter ( index* -- )
+	#0008 MUL2 ;font-letters ADD2 .Screen/addr DEO2
+	,digit/middle JMP
+
+@digit ( index* -- )
+	#0008 MUL2 ;font-numbers ADD2 .Screen/addr DEO2
+	&middle
+	.neralie/color PEK #20 ADD .Screen/color DEO
+	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+	JMP2r
+
+@neralie-lines ( -- )
+	.lines/x2 PEK2 .lines/x1 PEK2 DUP2 .neralie/x POK2 SUB2 .neralie/w POK2
+	.lines/y2 PEK2 .lines/y1 PEK2 DUP2 .neralie/y POK2 SUB2 .neralie/h POK2
+
+	;neralie/n4 SWP POP .neralie/n0123 PEK2
+	DUP2 ;&h JSR2
+	;&next JSR2 #0001 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ,digit JSR
+	DUP2 ;&v JSR2
+	#04 ;v/spacing PUT
+	.lines/y1 PEK2 #0003 SUB2 .neralie/y PEK2 .neralie/x PEK2 ;v JSR2
+	#01 ;v/spacing PUT
+	,&next JSR #0001 .Screen/y DEO2 .neralie/x PEK2 #0003 SUB2 .Screen/x DEO2 ;digit JSR2
+	DUP2 ,&h JSR
+	,&next JSR .Screen/width DEI2 #0009 SUB2 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ;digit JSR2
+	DUP2 ,&v JSR
+	,&next JSR POP2
+	DUP2 ,&h JSR
+	,&next JSR POP2
+	DUP2 ,&v JSR
+	POP2 POP
+	JMP2r
+
+	&next ( digit-addr number* -- next-digit-addr next-number* prev-digit* )
+	#03e8 ;modf JSR2 STH2 #000a MUL2
+	ROT DUP STH #01 ADD ROT ROT
+	#00 STHr PEK ADD2
+	STH2r
+	JMP2r
+
+	&h ( number* -- )
+	,scale JSR
+	.neralie/h PEK2 ;mul2hi JSR2
+	DUP2 #0000 NEQ2 #02 JNZ POP2 JMP2r
+	DUP2 .neralie/y PEK2 ADD2 .neralie/y POK2
+	.neralie/h PEK2 SWP2 SUB2 .neralie/h POK2
+	.neralie/x PEK2 DUP2 .neralie/w PEK2 ADD2 .neralie/y PEK2 ,h JMP
+
+	&v ( number* -- )
+	,scale JSR
+	.neralie/w PEK2 ;mul2hi JSR2
+	DUP2 #0000 NEQ2 #02 JNZ POP2 JMP2r
+	DUP2 .neralie/x PEK2 ADD2 .neralie/x POK2
+	.neralie/w PEK2 SWP2 SUB2 .neralie/w POK2
+	.neralie/y PEK2 DUP2 .neralie/h PEK2 ADD2 .neralie/x PEK2 ,v JMP
+
+@scale ( 0..10000* -- 0..65535* )
+	DUP2 #8db8 ;mul2hi JSR2
+	SWP2 #0006 MUL2 ADD2
+	JMP2r
+
+@h ( x1* x2* y* -- )
+	.Screen/y DEO2
+	.Screen/x .lines/addr POK
+	,v/draw-line JMP
+
+@v ( y1* y2* x* -- )
+	.Screen/x DEO2
+	.Screen/y .lines/addr POK
+
+	&draw-line ( v1* v2* -- )
+	OVR2 OVR2 LTH2 #01 JNZ SWP2
+	STH2
+
+	&loop
+	LIT2 [ 00 ] &spacing [ 01 ] ADD2
+	DUP2 DUP2r STH2r LTH2 ,&keep-going JNZ
+	POP2 POP2r
+	JMP2r
+
+	&keep-going
+	DUP2 .lines/addr PEK DEO2
+	.neralie/color PEK .Screen/color DEO
+	,&loop JMP
+
+@update-fps ( -- )
+	#00 .DateTime/refresh DEO
+	.fps/next PEK #01 ADD .fps/next POK
+	.DateTime/second DEI .fps/second PEK NEQ JMP JMP2r
+	.DateTime/second DEI .fps/second POK
+	.fps/next PEK .fps/current POK
+
+	( ~fps.next ^print-byte-decimal JSR
+	,strings-fps ^print-string JSR )
+
+	#00 .fps/next POK
+	JMP2r
+
+@print-string ( string* -- )
+	DUP2 GET DUP ,&not-end JNZ
+	POP POP2 JMP2r
+
+	&not-end
+	.Console/char DEO
+	#0001 ADD2 ,print-string JMP
+
+@print-byte-decimal ( byte -- )
+	#00 .number/started POK
+	#00 SWP
+	,print-short-decimal/byte-start JMP
+
+@print-short-decimal ( short* -- )
+	#00 .number/started POK
+	#2710 ,modf JSR ,&digit JSR
+	#03e8 ,modf JSR ,&digit JSR
+	&byte-start
+	#0064 ,modf JSR ,&digit JSR
+	#000a ,modf JSR ,&digit JSR
+	                ,&digit JSR
+	.number/started PEK ,&end JNZ
+	#30 .Console/char DEO
+	&end JMP2r
+
+	&digit
+	SWP POP
+	DUP .number/started PEK ORA #02 JNZ
+	POP JMP2r
+	#30 ADD .Console/char DEO
+	#01 .number/started POK
+	JMP2r
+
+@modf ( dividend* divisor* -- remainder* quotient* )
+	OVR2 OVR2 DIV2 DUP2 STH2 MUL2 SUB2 STH2r JMP2r
+
+@mul2hi ( a* b* -- product-top-16-bits* )
+	(
+		Multiplying two 16-bit numbers yields a 32-bit number.
+		MUL2 returns the lowest 16 bits, we want the highest.
+
+		We split each short into hi and lo bytes, then sum
+		the following multiplications:
+
+		31..24 23..16 15..08 07..00
+		{ ahi * bhi }
+		       { alo * bhi }
+		       { ahi * blo }
+		              { alo * blo }
+
+		Bits 07..00 can be ignored, but each sum in bits 23..16
+		can end up overflowing into bit 24.
+	)
+	
+	;mul/bhi PUT2 ;mul/ahi PUT2
+	#00
+		#00
+			#00 .mul/alo PEK #00 .mul/blo PEK MUL2
+		POP
+		#00 .mul/ahi PEK #00 .mul/blo PEK MUL2 ,&adc JSR
+		#00 .mul/alo PEK #00 .mul/bhi PEK MUL2 ,&adc JSR
+	POP
+	#00 .mul/ahi PEK #00 .mul/bhi PEK MUL2 ADD2
+	JMP2r
+
+	&adc ( 31..24 a* b* -- 31..24 sum* )
+	OVR2 ADD2 SWP2 OVR2
+	GTH2 ,&carry JNZ
+	JMP2r
+	&carry
+	ROT #01 ADD ROT ROT
+	JMP2r
+
+@strings
+	&fps [ 20 "fps 0a 00 ]
+
+@font-numbers
+[
+	7cc6 ced6 e6c6 7c00 1838 1818 1818 7e00 3c66 063c 6066 7e00
+	3c66 061c 0666 3c00 1c3c 6ccc fe0c 1e00 7e62 607c 0666 3c00
+	3c66 607c 6666 3c00 7e66 060c 1818 1800 3c66 663c 6666 3c00
+	3c66 663e 0666 3c00 7cc6 ced6 e6c6 7c00 0018 1800 1818 0000
+]
+
+@font-letters
+[
+	183c 6666 7e66 6600 fc66 667c 6666 fc00 3c66 c0c0 c066 3c00
+	f86c 6666 666c f800 fe62 6878 6862 fe00 fe62 6878 6860 f000
+	3c66 c0c0 ce66 3e00 6666 667e 6666 6600 7e18 1818 1818 7e00
+	1e0c 0c0c cccc 7800 e666 6c78 6c66 e600 f060 6060 6266 fe00
+	c6ee fefe d6c6 c600 c6e6 f6de cec6 c600 386c c6c6 c66c 3800
+	fc66 667c 6060 f000 386c c6c6 dacc 7600 fc66 667c 6c66 e600
+	3c66 603c 0666 3c00 7e5a 1818 1818 3c00 6666 6666 6666 3c00
+	6666 6666 663c 1800 c6c6 c6d6 feee c600 c66c 3838 6cc6 c600
+	6666 663c 1818 3c00 fec6 8c18 3266 fe00 0018 187e 1818 0000
+]
+
