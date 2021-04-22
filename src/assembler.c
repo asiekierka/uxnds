@@ -48,10 +48,12 @@ char ops[][4] = {
 
 int   scin(char *s, char c) { int i = 0; while(s[i]) if(s[i++] == c) return i - 1; return -1; } /* string char index */
 int   scmp(char *a, char *b, int len) { int i = 0; while(a[i] == b[i] && i < len) if(!a[i++]) return 1; return 0; } /* string compare */
-int   slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
 int   sihx(char *s) { int i = 0; char c; while((c = s[i++])) if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')) return 0; return 1; } /* string is hexadecimal */
+int   ssin(char *s, char *ss) { int a = 0, b = 0; while(s[a]) { if(s[a] == ss[b]) { if(!ss[b + 1]) return a - b; b++; } else b = 0; a++; } return -1; } /* string substring index */
 int   shex(char *s) { int n = 0, i = 0; char c; while((c = s[i++])) if(c >= '0' && c <= '9') n = n * 16 + (c - '0'); else if(c >= 'a' && c <= 'f') n = n * 16 + 10 + (c - 'a'); return n; } /* string to num */
+int   slen(char *s) { int i = 0; while(s[i] && s[++i]) ; return i; } /* string length */
 char *scpy(char *src, char *dst, int len) { int i = 0; while((dst[i] = src[i]) && i < len - 2) i++; dst[i + 1] = '\0'; return dst; } /* string copy */
+char *scat(char *dst, const char *src) { char *ptr = dst + slen(dst); while(*src) *ptr++ = *src++; *ptr = '\0'; return dst; } /* string cat */
 
 #pragma mark - Helpers
 
@@ -90,6 +92,10 @@ findmacro(char *name)
 	for(i = 0; i < p.mlen; ++i)
 		if(scmp(p.macros[i].name, name, 64))
 			return &p.macros[i];
+	/* look for templated */
+	for(i = 0; i < p.mlen; ++i)
+		if(p.macros[i].name[0] == '%' && ssin(name, p.macros[i].name + 1) != -1)
+			return &p.macros[i];
 	return NULL;
 }
 
@@ -124,6 +130,19 @@ findopcode(char *s)
 		return i;
 	}
 	return 0;
+}
+
+char *template(char *src, char *dst, char *w, Macro *m)
+{
+	char input[64];
+	if(scin(src, '%') == -1)
+		return src;
+	scpy(w, input, ssin(w, m->name + 1) + 1);
+	scpy(src, dst, scin(src, '%') + 1);
+	scat(dst, input);
+	scat(dst, src + scin(src, '%') + 1);
+	printf("  Templated %s, to %s\n", w, dst);
+	return dst;
 }
 
 char *
@@ -220,8 +239,9 @@ walktoken(char *w)
 	}
 	if((m = findmacro(w))) {
 		int i, res = 0;
+		char templated[64];
 		for(i = 0; i < m->len; ++i)
-			res += walktoken(m->items[i]);
+			res += walktoken(template(m->items[i], templated, w, m));
 		return res;
 	}
 	return error("Unknown label in first pass", w);
@@ -270,11 +290,12 @@ parsetoken(char *w)
 		return 1;
 	} else if((m = findmacro(w))) {
 		int i;
-		m->refs++;
-		for(i = 0; i < m->len; ++i)
-			if(!parsetoken(m->items[i]))
+		for(i = 0; i < m->len; ++i) {
+			char templated[64];
+			if(!parsetoken(template(m->items[i], templated, w, m)))
 				return 0;
-		return 1;
+		}
+		return ++m->refs;
 	} else if(sihx(w)) {
 		if(slen(w) == 2)
 			pushbyte(shex(w), 0);
