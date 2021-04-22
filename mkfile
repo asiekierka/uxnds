@@ -1,7 +1,7 @@
 </$objtype/mkfile
 
 TARG=assembler debugger emulator
-ROM=assembler left nasu neralie noodle orca
+ROM=`{ls -p projects/examples/*.usm | sed 's/\.usm//g'}
 CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
@@ -24,8 +24,8 @@ all:V: ${TARG:%=bin/%} ${ROM:%=bin/%.rom}
 	mk install &&
 	rm -r npe-master
 
-bin/%.rom: projects/software/%.usm bin/assembler
-	bin/assembler projects/software/$stem.usm $target
+bin/%.rom: projects/examples/%.usm bin/assembler
+	bin/assembler projects/examples/$stem.usm $target
 
 bin/assembler:Q: $O.assembler
 	mkdir -p bin && cp $prereq $target
