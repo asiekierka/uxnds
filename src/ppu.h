@@ -28,5 +28,5 @@ void putcolors(Ppu *p, Uint8 *addr);
 void putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);
 void puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color);
 void putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color);
-void draw(Ppu *p);
+void drawppu(Ppu *p);
 void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);

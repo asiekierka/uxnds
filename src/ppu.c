@@ -126,7 +126,7 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 }
 
 void
-draw(Ppu *p)
+drawppu(Ppu *p)
 {
 	Uint16 x, y;
 	for(y = 0; y < p->ver; ++y)

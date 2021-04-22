@@ -49,7 +49,7 @@ audio_callback(void *u, Uint8 *stream, int len)
 void
 redraw(Uint32 *dst, Uxn *u)
 {
-	draw(&ppu);
+	drawppu(&ppu);
 	if(debug)
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
 	SDL_UpdateTexture(gTexture, NULL, dst, ppu.width * sizeof(Uint32));
