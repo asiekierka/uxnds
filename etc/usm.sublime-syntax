@@ -26,10 +26,20 @@ contexts:
       scope: variable.control
       pop: true
     # constants
-    # structs
 
-    # Special
-
+    # templated
+    - match: '(\S+)\^\s?'
+      scope: storage.type
+      pop: true
+    - match: '(\S+)\=\s?'
+      scope:  constant.numeric
+      pop: true
+    - match: '(\S+)\?\s?'
+      scope: storage.type
+      pop: true
+    - match: '(\S+)\!\s?'
+      scope: constant.numeric
+      pop: true
 
     # Pushing to stack
 

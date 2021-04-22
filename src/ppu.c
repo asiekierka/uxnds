@@ -112,8 +112,8 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x20; ++i) { /* memory */
 		x = ((i % 8) * 3 + 1) * 8, y = (i / 8 + 1) * 8, b = stack[i];
-		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 2 + (ptr == i));
-		puticn(p, p->bg, x + 8, y, font[b & 0xf], 2 + (ptr == i));
+		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i) * 0x7);
+		puticn(p, p->bg, x + 8, y, font[b & 0xf], 1 + (ptr == i) * 0x7);
 	}
 	for(x = 0; x < 0x20; ++x) {
 		drawpixel(p, x, p->height / 2, 2);

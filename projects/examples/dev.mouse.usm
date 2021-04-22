@@ -6,6 +6,11 @@
 %-- { #0001 SUB2 }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 
+(
+%%^ { .% PEK } %%= { .% POK }
+%%? { .% DEI } %%! { .% DEO }
+)
+
 %%^ { .% PEK2 } %%= { .% POK2 }
 %%? { .% DEI2 } %%! { .% DEO2 }
 
@@ -28,11 +33,12 @@
 |0100 ( -> )
 
 	( theme ) 
-	#f0fd System/r! 
-	#f003 System/g! 
-	#f002 System/b!
+	#f0f0 System/r! 
+	#f00f System/g! 
+	#f000 System/b!
 
-	( vectors ) ;on-mouse Mouse/vector!
+	( vectors ) 
+	;on-mouse Mouse/vector!
 
 BRK
 
@@ -41,13 +47,10 @@ BRK
 	;draw-cursor JSR2
 
 	( on down )
-	.Mouse/state DEI #00 NEQ 
-	.pointer/state PEK #00 EQU
-	#0101 EQU2 ,on-mouse-down JNZ
+	.Mouse/state DEI #00 NEQ .pointer/state PEK #00 EQU #0101 EQU2 ,on-mouse-down JNZ
 
 	( on drag )
-	.Mouse/state DEI 
-	#00 NEQ ,on-mouse-drag JNZ
+	.Mouse/state DEI #00 NEQ ,on-mouse-drag JNZ
 
 	.Mouse/state DEI .pointer/state POK
 
@@ -58,6 +61,7 @@ BRK
 	( record start position )
 	Mouse/x? DUP2 pointer/x= pointer/lastx= 
 	Mouse/y? DUP2 pointer/y= pointer/lasty=
+
 	.Mouse/state DEI .pointer/state POK
 
 BRK
@@ -70,11 +74,12 @@ BRK
 	pointer/x^ 
 	pointer/y^ 
 	#01 ( add mouse state ) [ .Mouse/state DEI #10 EQU #02 MUL ADD ] 
-	;hairline JSR2
+	;draw-line JSR2
 
 	( record last position )
 	Mouse/x? pointer/lastx= 
 	Mouse/y? pointer/lasty=
+
 	.Mouse/state DEI .pointer/state POK
 
 BRK
@@ -102,7 +107,7 @@ BRK
 
 RTN
 
-@hairline ( x1 y1 x2 y2 color -- )
+@draw-line ( x1 y1 x2 y2 color -- )
 	
 	( load ) .color POK line/y0= line/x0= line/y= line/x=
 	line/x0^ line/x^ SUB2 ABS2 line/dx=
@@ -111,7 +116,11 @@ RTN
 	#ffff #00 line/y^ line/y0^ LTS2 #0002 MUL2 ADD2 line/sy= 
 	line/dx^ line/dy^ ADD2 line/e1=
 	&loop
-		line/x^ Screen/x! line/y^ Screen/y! .color PEK .Screen/color DEO
+		( draw ) 
+		line/x^ Screen/x! 
+		line/y^ Screen/y! 
+		.color PEK 
+		.Screen/color DEO
 		line/x^ line/x0^ EQU2 line/y^ line/y0^ EQU2 #0101 EQU2 ,&end JNZ
 		line/e1^ #0002 MUL2 line/e2=
 		line/e2^ line/dy^ LTS2 ,&skipy JNZ
