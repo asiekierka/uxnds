@@ -1,12 +1,13 @@
 ( dev/mouse )
 
 %RTN { JMP2r }
-%8+  { #0008 ADD2 }
-%++  { #0001 ADD2 }
-%--  { #0001 SUB2 }
+%8+ { #0008 ADD2 }
+%++ { #0001 ADD2 }
+%-- { #0001 SUB2 }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 
-%%->x { .%/x PEK2 }
+%%^ { .% PEK2 } %%= { .% POK2 }
+%%? { .% DEI2 } %%! { .% DEO2 }
 
 ( devices )
 
@@ -19,7 +20,6 @@
 |0000
 
 @line    [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
-
 @pointer [ &x $2 &y $2 &lastx $2 &lasty $2 &state $1 ]
 @color $1
 
@@ -28,11 +28,11 @@
 |0100 ( -> )
 
 	( theme ) 
-	#f0fd .System/r DEO2 
-	#f003 .System/g DEO2 
-	#f002 .System/b DEO2
+	#f0fd System/r! 
+	#f003 System/g! 
+	#f002 System/b!
 
-	( vectors ) ;on-mouse .Mouse/vector DEO2
+	( vectors ) ;on-mouse Mouse/vector!
 
 BRK
 
@@ -56,27 +56,25 @@ BRK
 @on-mouse-down ( -> )
 
 	( record start position )
-	.Mouse/x DEI2 DUP2 .pointer/x POK2 .pointer/lastx POK2 
-	.Mouse/y DEI2 DUP2 .pointer/y POK2 .pointer/lasty POK2
+	Mouse/x? DUP2 pointer/x= pointer/lastx= 
+	Mouse/y? DUP2 pointer/y= pointer/lasty=
 	.Mouse/state DEI .pointer/state POK
-	
-	pointer->x .Console/short DEO2
 
 BRK
 
 @on-mouse-drag ( -> )
 	
 	( draw line )
-	.pointer/lastx PEK2 
-	.pointer/lasty PEK2 
-	.pointer/x PEK2 
-	.pointer/y PEK2 
+	pointer/lastx^ 
+	pointer/lasty^ 
+	pointer/x^ 
+	pointer/y^ 
 	#01 ( add mouse state ) [ .Mouse/state DEI #10 EQU #02 MUL ADD ] 
 	;hairline JSR2
 
 	( record last position )
-	.Mouse/x DEI2 .pointer/lastx POK2 
-	.Mouse/y DEI2 .pointer/lasty POK2
+	Mouse/x? pointer/lastx= 
+	Mouse/y? pointer/lasty=
 	.Mouse/state DEI .pointer/state POK
 
 BRK
@@ -84,19 +82,19 @@ BRK
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear .Screen/addr DEO2 
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	;clear Screen/addr! 
+	pointer/x^ Screen/x! 
+	pointer/y^ Screen/y! 
 	#30 .Screen/color DEO
 
 	( record pointer positions )
-	.Mouse/x DEI2 .pointer/x POK2 
-	.Mouse/y DEI2 .pointer/y POK2
+	Mouse/x? pointer/x= 
+	Mouse/y? pointer/y=
 
 	( draw new cursor )
-	;cursor .Screen/addr DEO2 
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	;cursor Screen/addr! 
+	pointer/x^ Screen/x! 
+	pointer/y^ Screen/y! 
 
 	( colorize on state )
 	.Mouse/state DEI #00 NEQ
@@ -106,28 +104,28 @@ RTN
 
 @hairline ( x1 y1 x2 y2 color -- )
 	
-	( load ) .color POK .line/y0 POK2 .line/x0 POK2 .line/y POK2 .line/x POK2
-	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
-	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
-	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2 
-	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2 
-	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	( load ) .color POK line/y0= line/x0= line/y= line/x=
+	line/x0^ line/x^ SUB2 ABS2 line/dx=
+	line/y0^ line/y^ SUB2 ABS2 #0000 SWP2 SUB2 line/dy=
+	#ffff #00 line/x^ line/x0^ LTS2 #0002 MUL2 ADD2 line/sx= 
+	#ffff #00 line/y^ line/y0^ LTS2 #0002 MUL2 ADD2 line/sy= 
+	line/dx^ line/dy^ ADD2 line/e1=
 	&loop
-		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
-		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
-		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
-			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
-			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
+		line/x^ Screen/x! line/y^ Screen/y! .color PEK .Screen/color DEO
+		line/x^ line/x0^ EQU2 line/y^ line/y0^ EQU2 #0101 EQU2 ,&end JNZ
+		line/e1^ #0002 MUL2 line/e2=
+		line/e2^ line/dy^ LTS2 ,&skipy JNZ
+			line/e1^ line/dy^ ADD2 line/e1=
+			line/x^ line/sx^ ADD2 line/x=
 		&skipy
-		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JNZ
-			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
-			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
+		line/e2^ line/dx^ GTS2 ,&skipx JNZ
+			line/e1^ line/dx^ ADD2 line/e1=
+			line/y^ line/sy^ ADD2 line/y=
 		&skipx
 		,&loop JMP
 	&end
 
 RTN
 
-@clear   [ 0000 0000 0000 0000 ]
-@cursor  [ 80c0 e0f0 f8e0 1000 ]
+@clear [ 0000 0000 0000 0000 ]
+@cursor [ 80c0 e0f0 f8e0 1000 ]
