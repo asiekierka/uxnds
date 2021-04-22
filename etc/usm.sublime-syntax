@@ -14,6 +14,10 @@ contexts:
     - match: '\@(\S+)\s?'
       scope: string.control
       pop: true
+      
+    - match: '\&(\S+)\s?'
+      scope: string.control
+      pop: true
     # jump
     - match: '\|(\S+)\s?'
       scope: variable.control
@@ -26,14 +30,14 @@ contexts:
 
     # Special
 
-    - match: '\&(\S+)\s?'
-      scope: entity.name.type
-      pop: true
 
     # Pushing to stack
 
     - match: '\#(\S+)\s?'
       scope: keyword.control
+      pop: true
+    - match: '\"(\S+)\s?'
+      scope: entity.control
       pop: true
     
     # Addressing

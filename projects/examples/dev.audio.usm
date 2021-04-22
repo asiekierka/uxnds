@@ -20,10 +20,9 @@
 |0100 ( -> )
 	
 	( set color pallete )
-	#0fff DUP2 DUP2 
-	.System/r DEO2 
-	.System/g DEO2 
-	.System/b DEO2 
+	#00ff .System/r DEO2 
+	#0f0f .System/g DEO2 
+	#0ff0 .System/b DEO2 
 
 	;on-frame .Screen/vector DEO2 ( run on-frame every 1/60th of a second )
 	#ff .Audio/vol DEO            ( set volume to max )
@@ -35,7 +34,7 @@ BRK
 @on-frame ( -> )
 
 	( incr ) .timer PEK #01 ADD .timer POK 
-	( skip ) .timer PEK #10 NEQ ;silence JNZ2
+	( skip ) .timer PEK #10 EQU ,&play-note JNZ BRK &play-note
 
 	( get note )
 	;melody #00 .progress PEK ADD2 GET ( -- note )
