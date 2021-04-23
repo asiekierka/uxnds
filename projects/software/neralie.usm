@@ -5,6 +5,10 @@
 		- Implement higher resolution time rather than counting fps
 )
 
+%h { .DateTime/hour   DEI }
+%m { .DateTime/minute DEI }
+%s { .DateTime/second DEI }
+
 ( devices )
 
 |00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
@@ -61,22 +65,22 @@
 
 @neralie-calc ( -- )
 	( add up fractions of a pulse, store tenths in n6 )
-	#0120 #00 .DateTime/hour DEI MUL2
-	#00c0 #00 .DateTime/minute DEI MUL2 ADD2
-	#00f8 #00 .DateTime/second DEI MUL2 ADD2
+	#0120 #00 h MUL2
+	#00c0 #00 m MUL2 ADD2
+	#00f8 #00 s MUL2 ADD2
 	#0271 #00 .fps/next PEK MUL2 #00 .fps/current PEK DIV2 #0008 MUL2 ADD2
 	#01b0 ;modf JSR2 SWP2 #0017 MUL2 #03e8 DIV2 .neralie/n6 POK POP
 
 	( add up units and tens of pulses, store in n5 and n4 )
-	#0042 #00 .DateTime/hour DEI MUL2 ADD2
-	#005e #00 .DateTime/minute DEI MUL2 ADD2
-	#000b #00 .DateTime/second DEI MUL2 ADD2
+	#0042 #00 h MUL2 ADD2
+	#005e #00 m MUL2 ADD2
+	#000b #00 s MUL2 ADD2
 	#000a ;modf JSR2 SWP2 .neralie/n5 POK POP
 	#000a ;modf JSR2 SWP2 .neralie/n4 POK POP
 
 	( add up hundreds of pulses + 10 x beats, store in n0123 )
-	#01a0 #00 .DateTime/hour DEI MUL2 ADD2
-	#0006 #00 .DateTime/minute DEI MUL2 ADD2 .neralie/n0123 POK2
+	#01a0 #00 h MUL2 ADD2
+	#0006 #00 m MUL2 ADD2 .neralie/n0123 POK2
 
 	JMP2r
 
@@ -192,8 +196,8 @@
 @update-fps ( -- )
 	#00 .DateTime/refresh DEO
 	.fps/next PEK #01 ADD .fps/next POK
-	.DateTime/second DEI .fps/second PEK NEQ JMP JMP2r
-	.DateTime/second DEI .fps/second POK
+	s .fps/second PEK NEQ JMP JMP2r
+	s .fps/second POK
 	.fps/next PEK .fps/current POK
 
 	( ~fps.next ^print-byte-decimal JSR
