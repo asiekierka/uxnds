@@ -1,7 +1,7 @@
 </$objtype/mkfile
 
 TARG=assembler debugger emulator
-ROM=`{ls -p projects/examples/*.usm | sed 's/\.usm//g'}
+ROM=`{ls -p projects/examples/*.usm | grep -v blank.usm | sed 's/\.usm//g'}
 CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
