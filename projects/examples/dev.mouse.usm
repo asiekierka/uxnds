@@ -1,12 +1,7 @@
 ( dev/mouse )
 
 %RTN { JMP2r }
-%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
-
-%%^! { .% DEI }  %%~! { .% DEO }
-%%*! { .% DEI2 } %%=! { .% DEO2 }
-%%^  { .% PEK }  %%~  { .% POK }
-%%*  { .% PEK2 } %%=  { .% POK2 }
+%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }.
 
 ( devices )
 
@@ -25,11 +20,11 @@
 |0100 ( -> )
 
 	( theme ) 
-	#f0f0 System/r=! 
-	#f00f System/g=! 
-	#f000 System/b=!
+	#f0f0 .System/r DEO2 
+	#f00f .System/g DEO2 
+	#f000 .System/b DEO2
 	( vectors ) 
-	;on-mouse Mouse/vector=!
+	;on-mouse .Mouse/vector DEO2
 
 BRK
 
@@ -37,79 +32,79 @@ BRK
 
 	;draw-cursor JSR2
 	( on down )
-	Mouse/state^! #00 NEQ pointer/state^ #00 EQU #0101 EQU2 ,on-mouse-down JNZ
+	.Mouse/state DEI #00 NEQ .pointer/state PEK #00 EQU #0101 EQU2 ,on-mouse-down JNZ
 	( on drag )
-	Mouse/state^! #00 NEQ ,on-mouse-drag JNZ
-	Mouse/state^! pointer/state~
+	.Mouse/state DEI #00 NEQ ,on-mouse-drag JNZ
+	.Mouse/state DEI .pointer/state POK
 
 BRK 
 
 @on-mouse-down ( -> )
 
 	( record start position )
-	Mouse/x*! DUP2 pointer/x= pointer/lastx= 
-	Mouse/y*! DUP2 pointer/y= pointer/lasty=
-	Mouse/state^! pointer/state~
+	.Mouse/x DEI2 DUP2 .pointer/x POK2 .pointer/lastx POK2 
+	.Mouse/y DEI2 DUP2 .pointer/y POK2 .pointer/lasty POK2
+	.Mouse/state DEI .pointer/state POK
 
 BRK
 
 @on-mouse-drag ( -> )
 	
 	( draw line )
-	pointer/lastx* 
-	pointer/lasty* 
-	pointer/x* 
-	pointer/y* 
-	#01 [ Mouse/state^! #10 EQU #02 MUL ADD ] 
+	.pointer/lastx PEK2 
+	.pointer/lasty PEK2 
+	.pointer/x PEK2 
+	.pointer/y PEK2 
+	#01 [ .Mouse/state DEI #10 EQU #02 MUL ADD ] 
 	;draw-line JSR2
 	( record last position )
-	Mouse/x*! pointer/lastx= 
-	Mouse/y*! pointer/lasty=
-	Mouse/state^! pointer/state~
+	.Mouse/x DEI2 .pointer/lastx POK2 
+	.Mouse/y DEI2 .pointer/lasty POK2
+	.Mouse/state DEI .pointer/state POK
 
 BRK
 
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear Screen/addr=! 
-	pointer/x* Screen/x=! 
-	pointer/y* Screen/y=! 
-	#30 Screen/color~!
+	;clear .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+	#30 .Screen/color DEO
 	( record pointer positions )
-	Mouse/x*! pointer/x= 
-	Mouse/y*! pointer/y=
+	.Mouse/x DEI2 .pointer/x POK2 
+	.Mouse/y DEI2 .pointer/y POK2
 	( draw new cursor )
-	;cursor Screen/addr=! 
-	pointer/x* Screen/x=! 
-	pointer/y* Screen/y=! 
+	;cursor .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
 	( colorize on state )
-	#31 [ Mouse/state^! #00 NEQ ] ADD Screen/color~!
+	#31 [ .Mouse/state DEI #00 NEQ ] ADD .Screen/color DEO
 
 RTN
 
 @draw-line ( x1 y1 x2 y2 color -- )
 	
-	( load ) color~ line/y0= line/x0= line/y= line/x=
-	line/x0* line/x* SUB2 ABS2 line/dx=
-	line/y0* line/y* SUB2 ABS2 #0000 SWP2 SUB2 line/dy=
-	#ffff #00 line/x* line/x0* LTS2 #0002 MUL2 ADD2 line/sx= 
-	#ffff #00 line/y* line/y0* LTS2 #0002 MUL2 ADD2 line/sy= 
-	line/dx* line/dy* ADD2 line/e1=
+	( load ) .color POK .line/y0 POK2 .line/x0 POK2 .line/y POK2 .line/x POK2
+	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
+	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
+	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2 
+	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2 
+	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
 	&loop
 		( draw ) 
-		line/x* Screen/x=! 
-		line/y* Screen/y=! 
-		color^ Screen/color~!
-		line/x* line/x0* EQU2 line/y* line/y0* EQU2 #0101 EQU2 ,&end JNZ
-		line/e1* #0002 MUL2 line/e2=
-		line/e2* line/dy* LTS2 ,&skipy JNZ
-			line/e1* line/dy* ADD2 line/e1=
-			line/x* line/sx* ADD2 line/x=
+		.line/x PEK2 .Screen/x DEO2 
+		.line/y PEK2 .Screen/y DEO2 
+		.color PEK .Screen/color DEO
+		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
+		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
+			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
 		&skipy
-		line/e2* line/dx* GTS2 ,&skipx JNZ
-			line/e1* line/dx* ADD2 line/e1=
-			line/y* line/sy* ADD2 line/y=
+		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JNZ
+			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
+			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
 		&skipx
 		,&loop JMP
 	&end

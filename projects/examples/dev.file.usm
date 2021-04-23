@@ -3,11 +3,6 @@
 %8+ { #0008 ADD2 }
 %MEMORY { #1000 }
 
-%%^! { .% DEI }  %%~! { .% DEO }
-%%*! { .% DEI2 } %%=! { .% DEO2 }
-%%^  { .% PEK }  %%~  { .% POK }
-%%*  { .% PEK2 } %%=  { .% POK2 }
-
 ( devices )
 
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
@@ -24,46 +19,46 @@
 |0100 ( -> )
 
 	( theme )
-	#0efc System/r=!
-	#03cc System/g=!
-	#03ac System/b=!
+	#0efc .System/r DEO2
+	#03cc .System/g DEO2
+	#03ac .System/b DEO2
 
 	( load file )
-	#1000    File/length=!
-	;srcpath File/name=!
-	MEMORY   File/load=!
+	#1000    .File/length DEO2
+	;srcpath .File/name DEO2
+	MEMORY   .File/load DEO2
 
-	File/success*! #0000 NEQ2 ;on-success JNZ2
+	.File/success DEI2 #0000 NEQ2 ;on-success JNZ2
 
-	;failedtxt Console/string=!
+	;failedtxt .Console/string DEO2
 
 BRK
 
 @on-success ( -> )
 	
-	;successtxt Console/string=!
+	;successtxt .Console/string DEO2
 
 	( draw image )
-	MEMORY Screen/addr=!
+	MEMORY .Screen/addr DEO2
 	#0000 #0080
 	&ver
-		( save ) OVR2 Screen/y=!
+		( save ) OVR2 .Screen/y DEO2
 		#0000 #0080
 		&hor
-			( save ) OVR2 Screen/x=!
-			( draw ) #41 Screen/color~!
-			( incr ) Screen/addr*! #0010 ADD2 Screen/addr=!
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) #41 .Screen/color DEO
+			( incr ) .Screen/addr DEI2 #0010 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
 		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
-
+	
 	( save file )
-	#1000    File/length=!
-	;dstpath File/name=!
-	MEMORY   File/save=!
+	#1000    .File/length DEO2
+	;dstpath .File/name DEO2
+	MEMORY   .File/save DEO2
 
 BRK
 

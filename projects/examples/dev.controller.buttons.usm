@@ -4,11 +4,6 @@
 %-- { #0001 SUB2 }
 %2/ { #0002 DIV2 }
 
-%%^! { .% DEI }  %%~! { .% DEO }
-%%*! { .% DEI2 } %%=! { .% DEO2 }
-%%^  { .% PEK }  %%~  { .% POK }
-%%*  { .% PEK2 } %%=  { .% POK2 }
-
 ( devices )
 
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
@@ -26,62 +21,62 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#0daf System/r=! 
-	#02ff System/g=! 
-	#035f System/b=!
+	#0daf .System/r DEO2 
+	#02ff .System/g DEO2 
+	#035f .System/b DEO2
 
 	( vectors ) 
-	;on-frame Screen/vector=!
+	;on-frame .Screen/vector DEO2
 	
 	( set origin )
-	Screen/width*! 2/ Screen/x=!
-	Screen/height*! 2/ Screen/y=!
+	.Screen/width DEI2 2/ .Screen/x DEO2
+	.Screen/height DEI2 2/ .Screen/y DEO2
 
-	;default_icn Screen/addr=!
-	#31 Screen/color~!
-	#2a slime~
+	;default_icn .Screen/addr DEO2
+	#31 .Screen/color DEO
+	#2a .slime POK
 
 BRK
 
 @on-frame ( -> )
 
-	#2a slime~
-	;default_icn Screen/addr=!
+	#2a .slime POK
+	;default_icn .Screen/addr DEO2
 
 	( hold ctrl key to change slime color )
-	Controller/button^! #0f AND
-		DUP #01 NEQ ,&no-ctrl JNZ #25 slime~ &no-ctrl
-		DUP #02 NEQ ,&no-alt JNZ #2f slime~ &no-alt
+	.Controller/button DEI #0f AND
+		DUP #01 NEQ ,&no-ctrl JNZ #25 .slime POK &no-ctrl
+		DUP #02 NEQ ,&no-alt JNZ #2f .slime POK &no-alt
 	POP
 
-	( clear ) #30 Screen/color~!
+	( clear ) #30 .Screen/color DEO
 
 	( detect movement )
-	Controller/button^! #f0 AND
+	.Controller/button DEI #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ 
 			( move ) 
-			Screen/y*! -- Screen/y=! 
-			;up_icn Screen/addr=! &no-up
+			.Screen/y DEI2 -- .Screen/y DEO2 
+			;up_icn .Screen/addr DEO2 &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ 
 			( move ) 
-			Screen/y*! ++ Screen/y=! 
-			;down_icn Screen/addr=! &no-down
+			.Screen/y DEI2 ++ .Screen/y DEO2 
+			;down_icn .Screen/addr DEO2 &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ 
 			( move ) 
-			Screen/x*! -- Screen/x=! 
-			;left_icn Screen/addr=! &no-left
+			.Screen/x DEI2 -- .Screen/x DEO2 
+			;left_icn .Screen/addr DEO2 &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ 
 			( move ) 
-			Screen/x*! ++ Screen/x=! 
-			;right_icn Screen/addr=! &no-right
+			.Screen/x DEI2 ++ .Screen/x DEO2 
+			;right_icn .Screen/addr DEO2 &no-right
 	POP
 
 	( draw face )
-	#31 Screen/color~!
+	#31 .Screen/color DEO
 
 	( draw slime )
-	;slime_icn Screen/addr=!
-	slime^ Screen/color~!
+	;slime_icn .Screen/addr DEO2
+	.slime PEK .Screen/color DEO
 
 BRK
 

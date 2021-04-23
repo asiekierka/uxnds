@@ -2,11 +2,6 @@
 
 %MOD { DUP2 DIV MUL SUB }
 
-%%^! { .% DEI }  %%~! { .% DEO }
-%%*! { .% DEI2 } %%=! { .% DEO2 }
-%%^  { .% PEK }  %%~  { .% POK }
-%%*  { .% PEK2 } %%=  { .% POK2 }
-
 @timer    $1
 @progress $1
 
@@ -19,41 +14,41 @@
 |0100 ( -> )
 	
 	( set color pallete )
-	#00ff System/r=! 
-	#0f0f System/g=! 
-	#0ff0 System/b=! 
+	#00ff .System/r DEO2 
+	#0f0f .System/g DEO2 
+	#0ff0 .System/b DEO2 
 
-	;on-frame Screen/vector=! ( run on-frame every 1/60th of a second )
-	#ff Audio/vol~!            ( set volume to max )
-	;saw Audio/wave=!         ( set waveform to saw for audio engine )
-	;env Audio/env=!          ( set envelope for audio engine )
+	;on-frame .Screen/vector DEO2 ( run on-frame every 1/60th of a second )
+	#ff .Audio/vol DEO            ( set volume to max )
+	;saw .Audio/wave DEO2         ( set waveform to saw for audio engine )
+	;env .Audio/env DEO2          ( set envelope for audio engine )
 
 BRK
 
 @on-frame ( -> )
 
-	( incr ) timer^ #01 ADD timer~ 
-	( skip ) timer^ #10 EQU ,&play-note JNZ BRK &play-note
+	( incr ) .timer PEK #01 ADD .timer POK 
+	( skip ) .timer PEK #10 EQU ,&play-note JNZ BRK &play-note
 
 	( get note )
-	;melody #00 progress^ ADD2 GET 
+	;melody #00 .progress PEK ADD2 GET 
 
 	( play note )
-	DUP #80 ORA Audio/pitch~!
-	#01 Audio/play~!
+	DUP #80 ORA .Audio/pitch DEO
+	#01 .Audio/play DEO
 
 	( erase last note )
-	#20  Screen/color~!
+	#20  .Screen/color DEO
 
 	( draw note )
-	#00 SWP #0004 MUL2 #0100 SUB2 Screen/y=!
-	#00 progress^ #0008 MUL2 Screen/x=!
-	;dot Screen/addr=!
-	#21 Screen/color~!
+	#00 SWP #0004 MUL2 #0100 SUB2 .Screen/y DEO2
+	#00 .progress PEK #0008 MUL2 .Screen/x DEO2
+	;dot .Screen/addr DEO2
+	#21 .Screen/color DEO
 
-	( incr ) progress^ #01 ADD #20 MOD progress~
+	( incr ) .progress PEK #01 ADD #20 MOD .progress POK
 
-	#00 timer~
+	#00 .timer POK
 
 BRK
 
@@ -65,10 +60,10 @@ BRK
 
 @saw ( -> )
 
-	#6000 Audio/value=!
-	#0000 Audio/delay=! ( move to volume #600 after 0 delay )
-	#0000 Audio/value=!
-	#ffff Audio/delay=! ( reach volume 0 after the whole note. Interpolated linearly )
+	#6000 .Audio/value DEO2
+	#0000 .Audio/delay DEO2 ( move to volume #600 after 0 delay )
+	#0000 .Audio/value DEO2
+	#ffff .Audio/delay DEO2 ( reach volume 0 after the whole note. Interpolated linearly )
 
 BRK
 
@@ -76,11 +71,11 @@ BRK
 
 @env ( -> )
 
-	#ffff Audio/value=!
-	#1000 Audio/delay=! ( move pretty quickly to volume #ffff (maximum) ) 
-	#0000 Audio/value=!
-	#4000 Audio/delay=! ( interpolating linearly, move to #0000 after a delay of #4000 where #8000 is half a second )
-	#00   Audio/finish~! ( end the envelope )
+	#ffff .Audio/value DEO2
+	#1000 .Audio/delay DEO2 ( move pretty quickly to volume #ffff (maximum) ) 
+	#0000 .Audio/value DEO2
+	#4000 .Audio/delay DEO2 ( interpolating linearly, move to #0000 after a delay of #4000 where #8000 is half a second )
+	#00   .Audio/finish DEO ( end the envelope )
 
 BRK
 

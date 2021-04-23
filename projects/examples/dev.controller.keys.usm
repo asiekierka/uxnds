@@ -4,11 +4,6 @@
 %8+  { #0008 ADD2 }
 %8*  { #0030 SFT2 }
 
-%%^! { .% DEI }  %%~! { .% DEO }
-%%*! { .% DEI2 } %%=! { .% DEO2 }
-%%^  { .% PEK }  %%~  { .% POK }
-%%*  { .% PEK2 } %%=  { .% POK2 }
-
 ( devices )
 
 |00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
@@ -20,36 +15,36 @@
 |0100 ( -> )
 
 	( theme ) 
-	#0f73 System/r=! 
-	#0fe3 System/g=! 
-	#0fc3 System/b=!
+	#0f73 .System/r DEO2 
+	#0fe3 .System/g DEO2 
+	#0fc3 .System/b DEO2
 	( vectors ) 
-	;on-button Controller/vector=!
+	;on-button .Controller/vector DEO2
 	;draw-cursor JSR2
 	
 BRK
 
 @on-button ( -> )
 	
-	Controller/key^! #00 NEQ ,&skip JNZ BRK &skip  
-	Controller/key^! #0d NEQ ,&no-return JNZ 
-		( draw ) #20 Screen/color~!
-		( reset ) #0000 Screen/x=!
-		( incr ) Screen/y*! 8+ Screen/y=!
+	.Controller/key DEI #00 NEQ ,&skip JNZ BRK &skip  
+	.Controller/key DEI #0d NEQ ,&no-return JNZ 
+		( draw ) #20 .Screen/color DEO
+		( reset ) #0000 .Screen/x DEO2
+		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
 		;draw-cursor JSR2
 		BRK
 	&no-return
-	;font #00 Controller/key^! 8* ADD2 Screen/addr=!
-	( draw ) #21 Screen/color~!
-	( incr ) Screen/x*! 8+ Screen/x=!
+	;font #00 .Controller/key DEI 8* ADD2 .Screen/addr DEO2
+	( draw ) #21 .Screen/color DEO
+	( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 	;draw-cursor JSR2
 
 BRK
 
 @draw-cursor ( -- )
 	
-	;cursor Screen/addr=! 
-	#22 Screen/color~!
+	;cursor .Screen/addr DEO2 
+	#22 .Screen/color DEO
 
 RTN
 
