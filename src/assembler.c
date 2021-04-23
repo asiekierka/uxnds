@@ -29,9 +29,9 @@ typedef struct {
 } Label;
 
 typedef struct {
-	Uint8 data[256 * 256], llen, mlen;
-	Uint16 ptr, length;
-	Label labels[256];
+	Uint8 data[256 * 256], mlen;
+	Uint16 ptr, length, llen;
+	Label labels[512];
 	Macro macros[256];
 } Program;
 
