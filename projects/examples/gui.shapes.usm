@@ -7,147 +7,153 @@
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 
 %SIZE-TO-RECT {
-	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2 
+	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2
 } ( x y w h -- x1 y1 x2 y2 )
 
+( devices )
+
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+
+( variables )
+
+|0000
+
 ( draw requirements )
-;color { byte 1 }
+@color [ &byte $1 ]
 
-;rect { x1 2 y1 2 x2 2 y2 2 }
-;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
-;circle { xc 2 yc 2 x 2 y 2 r 2 d 2 }
-
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
+@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@line [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
+@circle [ &xc $2 &yc $2 &x $2 &y $2 &r $2 &d $2 ]
 
 ( program )
 
-|0200
+|0100
 	
-	( theme ) #f03f =System.r #f03f =System.g #003f =System.b
+	( theme ) #f03f .System/r DEO2 #f03f .System/g DEO2 #003f .System/b DEO2
 
-	( background ) ,checker_icn #23 ,cover-pattern JSR2
+	( background ) ;checker_icn #23 ;cover-pattern JSR2
 
-	#0010 #0030 #0020 #0020 SIZE-TO-RECT #01 ,line-slow JSR2
-	#0070 #0040 #0010 #01 ,draw-circle JSR2
-	#0038 #0030 #0020 #0020 SIZE-TO-RECT #01 ,line-rect JSR2
-	#0038 #0058 #0020 #0020 SIZE-TO-RECT #01 ,fill-rect JSR2
+	#0010 #0030 #0020 #0020 SIZE-TO-RECT #01 ;line-slow JSR2
+	#0070 #0040 #0010 #01 ;draw-circle JSR2
+	#0038 #0030 #0020 #0020 SIZE-TO-RECT #01 ;line-rect JSR2
+	#0038 #0058 #0020 #0020 SIZE-TO-RECT #01 ;fill-rect JSR2
 	
 BRK
 
 @line-slow ( x1 y1 x2 y2 color -- )
 	
-	( load ) =color -- =line.y0 -- =line.x0 =line.y =line.x
-	~line.x0 ~line.x SUB2 ABS2 =line.dx
-	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
-	~line.dx ~line.dy ADD2 =line.e1
-	$loop
-		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
-		~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 ^$end JNZ
-		~line.e1 #0002 MUL2 =line.e2
-		~line.e2 ~line.dy LTS2 ^$skipy JNZ
-			~line.e1 ~line.dy ADD2 =line.e1
-			~line.x ~line.sx ADD2 =line.x
-		$skipy
-		~line.e2 ~line.dx GTS2 ^$skipx JNZ
-			~line.e1 ~line.dx ADD2 =line.e1
-			~line.y ~line.sy ADD2 =line.y
-		$skipx
-		,$loop JMP2
+	( load ) .color POK -- .line/y0 POK2 -- .line/x0 POK2 .line/y POK2 .line/x POK2
+	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
+	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
+	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
+	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
+	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	&loop
+		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
+		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
+			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
+		&skipy
+		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JNZ
+			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
+			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
+		&skipx
+		;&loop JMP2
 
-	$end
+	&end
 
 RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color DUP2 STH2 -- =rect.y2 -- =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	( load ) .color POK DUP2 STH2 -- .rect/y2 POK2 -- .rect/x2 POK2 DUP2 STH2 .rect/y1 POK2 .rect/x1 POK2
 	STH2r STH2r
-	$ver
-		( save ) OVR2 =Screen.y
-		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
-		( draw ) ~rect.x2 =Screen.x =Screen.color
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTS2 ^$ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JNZ
 	POP2 POP2
-	~rect.x1 ~rect.x2
-	$hor
-		( save ) OVR2 =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
-		( draw ) ~rect.y2 =Screen.y =Screen.color
+	.rect/x1 PEK2 .rect/x2 PEK2
+	&hor
+		( save ) OVR2 .Screen/x DEO2
+		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 ++ LTS2 ^$hor JNZ
+		OVR2 OVR2 ++ LTS2 ,&hor JNZ
 	POP2 POP2
 
 RTN
 
 @fill-rect ( x1 y1 x2 y2 color -- )
 	
-	=color
+	.color POK
 	( x1 x2 y1 y2 ) ROT2 SWP2
-	$ver
-		( save ) OVR2 =Screen.y
-		STH2 STH2 OVR2 OVR2 
-		$hor
-			( save ) OVR2 =Screen.x
-			( draw ) ~color =Screen.color
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		STH2 STH2 OVR2 OVR2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 ++ SWP2
-			OVR2 OVR2 LTS2 ^$hor JNZ
+			OVR2 OVR2 LTS2 ,&hor JNZ
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTS2 ^$ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JNZ
 	POP2 POP2 POP2 POP2
 
 RTN
 
 @draw-circle ( xc yc r color -- )
 
-	( load ) =color =circle.r =circle.yc =circle.xc
-	#0000 =circle.x ~circle.r =circle.y
-	~circle.r #0002 MUL2 =circle.d
-	( draw ) ,$seg JSR2
-	$loop
-		( incr ) ~circle.x ++ =circle.x
-		~circle.d #0001 LTS2 ^$else JNZ
-			( decr ) ~circle.y -- =circle.y
-			~circle.x ~circle.y SUB2 #0004 MUL2 ~circle.d ADD2 =circle.d
-			,$end JMP2
-		$else
-			~circle.x #0004 MUL2 ~circle.d ADD2 =circle.d
-		$end
-		( draw ) ,$seg JSR2
-		~circle.y ~circle.x -- GTS2 ^$loop JNZ
+	( load ) .color POK .circle/r POK2 .circle/yc POK2 .circle/xc POK2
+	#0000 .circle/x POK2 .circle/r PEK2 .circle/y POK2
+	.circle/r PEK2 #0002 MUL2 .circle/d POK2
+	( draw ) ;&seg JSR2
+	&loop
+		( incr ) .circle/x PEK2 ++ .circle/x POK2
+		.circle/d PEK2 #0001 LTS2 ,&else JNZ
+			( decr ) .circle/y PEK2 -- .circle/y POK2
+			.circle/x PEK2 .circle/y PEK2 SUB2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
+			;&end JMP2
+		&else
+			.circle/x PEK2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
+		&end
+		( draw ) ;&seg JSR2
+		.circle/y PEK2 .circle/x PEK2 -- GTS2 ,&loop JNZ
 	RTN
-	$seg
-		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.x SUB2 =Screen.x ~circle.yc ~circle.y ADD2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.x ADD2 =Screen.x ~circle.yc ~circle.y SUB2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.x SUB2 =Screen.x ~circle.yc ~circle.y SUB2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.y ADD2 =Screen.x ~circle.yc ~circle.x ADD2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.y SUB2 =Screen.x ~circle.yc ~circle.x ADD2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.y ADD2 =Screen.x ~circle.yc ~circle.x SUB2 =Screen.y ~color =Screen.color
-		~circle.xc ~circle.y SUB2 =Screen.x ~circle.yc ~circle.x SUB2 =Screen.y ~color =Screen.color
+	&seg
+		.circle/xc PEK2 .circle/x PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/x PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/x PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/x PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/y PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/y PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/y PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc PEK2 .circle/y PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
 
 RTN
 
 @cover-pattern ( addr color -- )
 	
-	( load ) =color =Screen.addr
-	#0000 ~Screen.height
-	$ver
-		( save ) OVR2 =Screen.y
-		#0000 ~Screen.width
-		$hor
-			( save ) OVR2 =Screen.x
-			( draw ) ~color =Screen.color
+	( load ) .color POK .Screen/addr DEO2
+	#0000 .Screen/height DEI2
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		#0000 .Screen/width DEI2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
 
 RTN

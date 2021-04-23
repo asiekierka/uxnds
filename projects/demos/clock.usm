@@ -2,142 +2,146 @@
 
 %RTN { JMP2r }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
-%SCALEX { #0002 DIV2 ~Screen.width #0002 DIV2 ADD2 #0040 SUB2 }
-%SCALEY { #0002 DIV2 ~Screen.height #0002 DIV2 ADD2 #0040 SUB2 }
+%SCALEX { #0002 DIV2 .Screen/width DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
+%SCALEY { #0002 DIV2 .Screen/height DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
 %12HOURS { DUP #0c GTH #0c MUL SUB }
 %MOD { DUP2 DIV MUL SUB }
 
-;current { second 1 }
-;needles { hx 2 hy 2 mx 2 my 2 sx 2 sy 2 }
-;line { x0 2 y0 2 x 2 y 2 sx 2 sy 2 dx 2 dy 2 e1 2 e2 2 }
-;color { byte 1 }
-
 ( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|01a0 ;DateTime { year 2 month 1 day 1 hour 1 minute 1 second 1 dotw 1 doty 2 isdst 1 refresh 1 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|a0 @DateTime [ &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 &refresh $1 ]
+
+( variables )
+
+|0000
+
+@current [ &second $1 ]
+@needles [ &hx $2 &hy $2 &mx $2 &my $2 &sx $2 &sy $2 ]
+@line [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
+@color [ &byte $1 ]
 
 ( program )
 
-|0200
+|0100
 	
-	( theme ) #0ff8 =System.r #0f08 =System.g #0f08 =System.b
-	( vectors ) ,on-frame =Screen.vector
+	( theme ) #0ff8 .System/r DEO2 #0f08 .System/g DEO2 #0f08 .System/b DEO2
+	( vectors ) ;on-frame .Screen/vector DEO2
 
 BRK
 
 @on-frame
 	
-	#00 =DateTime.refresh
+	#00 .DateTime/refresh DEO
 
 	( only draw once per second )
-	~DateTime.second ~current.second NEQ #01 JNZ BRK
-	~DateTime.second =current.second
+	.DateTime/second DEI .current/second PEK NEQ #01 JNZ BRK
+	.DateTime/second DEI .current/second POK
 
 	( clear )
-	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #00 ,draw-line JSR2
-	#0080 SCALEX #0080 SCALEY ~needles.mx ~needles.my #00 ,draw-line JSR2
-	#0080 SCALEX #0080 SCALEY ~needles.hx ~needles.hy #00 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/sx PEK2 .needles/sy PEK2 #00 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/mx PEK2 .needles/my PEK2 #00 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/hx PEK2 .needles/hy PEK2 #00 ;draw-line JSR2
 
 	( place )
-	#00 ~DateTime.second #0002 MUL2 ,table ADD2 LDR2
-		#00 SWP SCALEY =needles.sy 
-		#00 SWP SCALEX =needles.sx
-	#00 ~DateTime.minute #0002 MUL2 ,table ADD2 LDR2
-		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY =needles.my 
-		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX =needles.mx
-	#00 ~DateTime.hour 12HOURS #05 MUL #0002 MUL2 ,table ADD2 LDR2
-		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY =needles.hy 
-		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX =needles.hx
+	#00 .DateTime/second DEI #0002 MUL2 ;table ADD2 GET2
+		#00 SWP SCALEY .needles/sy POK2
+		#00 SWP SCALEX .needles/sx POK2
+	#00 .DateTime/minute DEI #0002 MUL2 ;table ADD2 GET2
+		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY .needles/my POK2
+		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX .needles/mx POK2
+	#00 .DateTime/hour DEI 12HOURS #05 MUL #0002 MUL2 ;table ADD2 GET2
+		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY .needles/hy POK2
+		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX .needles/hx POK2
 
 	( needles )
-	#0080 SCALEX #0080 SCALEY ~needles.sx ~needles.sy #02 ,draw-line JSR2
-	#0080 SCALEX #0080 SCALEY ~needles.mx ~needles.my #01 ,draw-line JSR2
-	#0080 SCALEX #0080 SCALEY ~needles.hx ~needles.hy #03 ,draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/sx PEK2 .needles/sy PEK2 #02 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/mx PEK2 .needles/my PEK2 #01 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/hx PEK2 .needles/hy PEK2 #03 ;draw-line JSR2
 
 	( circle )
-	#00 #3c 
-	$loop
-		( load ) OVR #00 SWP #0002 MUL2 ,table ADD2 LDR2 
-		#00 SWP SCALEY =Screen.y
-		#00 SWP SCALEX =Screen.x
-		OVR #0f MOD #00 EQU #01 ADD =Screen.color
+	#00 #3c
+	&loop
+		( load ) OVR #00 SWP #0002 MUL2 ;table ADD2 GET2
+		#00 SWP SCALEY .Screen/y DEO2
+		#00 SWP SCALEX .Screen/x DEO2
+		OVR #0f MOD #00 EQU #01 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ^$loop JNZ
+		DUP2 LTH ,&loop JNZ
 	POP2
 
 	( display )
-	~Screen.height #0002 DIV2 #0048 ADD2 =Screen.y
-	~Screen.width #0002 DIV2
-	DUP2 #0020 SUB2 =Screen.x 
-		,font_hex #00 ~DateTime.hour #0a DIV #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
-	DUP2 #0018 SUB2 =Screen.x 
-		,font_hex #00 ~DateTime.hour #0a MOD #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
-	DUP2 #0008 SUB2 =Screen.x 
-		,font_hex #00 ~DateTime.minute #0a DIV #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
-	DUP2 =Screen.x 
-		,font_hex #00 ~DateTime.minute #0a MOD #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
-	DUP2 #0010 ADD2 =Screen.x 
-		,font_hex #00 ~DateTime.second #0a DIV #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
-	DUP2 #0018 ADD2 =Screen.x 
-		,font_hex #00 ~DateTime.second #0a MOD #08 MUL ADD2 =Screen.addr 
-		#22 =Screen.color
+	.Screen/height DEI2 #0002 DIV2 #0048 ADD2 .Screen/y DEO2
+	.Screen/width DEI2 #0002 DIV2
+	DUP2 #0020 SUB2 .Screen/x DEO2
+		;font_hex #00 .DateTime/hour DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
+	DUP2 #0018 SUB2 .Screen/x DEO2
+		;font_hex #00 .DateTime/hour DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
+	DUP2 #0008 SUB2 .Screen/x DEO2
+		;font_hex #00 .DateTime/minute DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
+	DUP2 .Screen/x DEO2
+		;font_hex #00 .DateTime/minute DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
+	DUP2 #0010 ADD2 .Screen/x DEO2
+		;font_hex #00 .DateTime/second DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
+	DUP2 #0018 ADD2 .Screen/x DEO2
+		;font_hex #00 .DateTime/second DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		#22 .Screen/color DEO
 	POP2
 
 BRK
 
 @draw-line ( x1 y1 x2 y2 color -- )
 	
-	( load ) =color =line.y0 =line.x0 =line.y =line.x
-	~line.x0 ~line.x SUB2 ABS2 =line.dx
-	~line.y0 ~line.y SUB2 ABS2 #0000 SWP2 SUB2 =line.dy
-	#ffff #00 ~line.x ~line.x0 LTS2 #0002 MUL2 ADD2 =line.sx 
-	#ffff #00 ~line.y ~line.y0 LTS2 #0002 MUL2 ADD2 =line.sy 
-	~line.dx ~line.dy ADD2 =line.e1
-	$loop
-		~line.x =Screen.x ~line.y =Screen.y ~color =Screen.color
-		~line.x ~line.x0 EQU2 ~line.y ~line.y0 EQU2 #0101 EQU2 ^$end JNZ
-		~line.e1 #0002 MUL2 =line.e2
-		~line.e2 ~line.dy LTS2 ^$skipy JNZ
-			~line.e1 ~line.dy ADD2 =line.e1
-			~line.x ~line.sx ADD2 =line.x
-		$skipy
-		~line.e2 ~line.dx GTS2 ^$skipx JNZ
-			~line.e1 ~line.dx ADD2 =line.e1
-			~line.y ~line.sy ADD2 =line.y
-		$skipx
-		,$loop JMP2
+	( load ) .color POK .line/y0 POK2 .line/x0 POK2 .line/y POK2 .line/x POK2
+	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
+	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
+	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
+	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
+	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	&loop
+		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
+		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
+			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
+		&skipy
+		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JNZ
+			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
+			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
+		&skipx
+		;&loop JMP2
 
-	$end
+	&end
 
 RTN
 
 @table ( 60 positions on a circle in bytes )
 [
-	8000 8d00 9a02 a706 b40b c011 cb18 d520 
-	df2a e734 ee40 f44b f958 fd65 ff72 ff80 
-	ff8d fd9a f9a7 f4b4 eec0 e7cb dfd5 d5df 
-	cbe7 c0ee b4f4 a7f9 9afd 8dff 80ff 72ff 
-	65fd 58f9 4bf4 40ee 34e7 2adf 20d5 18cb 
-	11c0 0bb4 06a7 029a 008d 0080 0072 0265 
-	0658 0b4b 113f 1834 202a 2a20 3418 3f11 
+	8000 8d00 9a02 a706 b40b c011 cb18 d520
+	df2a e734 ee40 f44b f958 fd65 ff72 ff80
+	ff8d fd9a f9a7 f4b4 eec0 e7cb dfd5 d5df
+	cbe7 c0ee b4f4 a7f9 9afd 8dff 80ff 72ff
+	65fd 58f9 4bf4 40ee 34e7 2adf 20d5 18cb
+	11c0 0bb4 06a7 029a 008d 0080 0072 0265
+	0658 0b4b 113f 1834 202a 2a20 3418 3f11
 	4b0b 5806 6502 7200
 ]
 
-@font_hex ( 0-F ) 
+@font_hex ( 0-F )
 [
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
 	007c 8280 fc82 827c 007c 8202 1e02 0202
 	007c 8282 7c82 827c 007c 8282 7e02 827c
-	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
-	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]

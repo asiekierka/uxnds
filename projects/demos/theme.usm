@@ -7,331 +7,337 @@
 %STEP8 { #0033 SFT2 }
 %S2B { SWP POP }
 
-;center { x 2 y 2 }
-;color { byte 1 }
-;pointer { x 2 y 2 sprite 2 } 
-;rect { x1 2 y1 2 x2 2 y2 2 }
-;window { x1 2 y1 2 x2 2 y2 2 w 2 h 2 }
-;label { x 2 y 2 addr 2 }
-;slider { x1 2 y 2 x2 2 pos 2 }
-;selection { byte 1 }
-;addr { short 2 }
-;theme { 
-	r1 1 r2 1 r3 1 r4 1 
-	g1 1 g2 1 g3 1 g4 1 
-	b1 1 b2 1 b3 1 b4 1 
-}
+( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|60 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+
+( variables )
+
+|0000
+
+@center [ &x $2 &y $2 ]
+@color [ &byte $1 ]
+@pointer [ &x $2 &y $2 &sprite $2 ]
+@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@window [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 &w $2 &h $2 ]
+@label [ &x $2 &y $2 &addr $2 ]
+@slider [ &x1 $2 &y $2 &x2 $2 &pos $2 ]
+@selection [ &byte $1 ]
+@addr [ &byte $1 ]
+@theme [
+	&r1 $1 &r2 $1 &r3 $1 &r4 $1
+	&g1 $1 &g2 $1 &g3 $1 &g4 $1
+	&b1 $1 &b2 $1 &b3 $1 &b4 $1
+]
 
 ( program )
 
-|0200
+|0100
 
-	( theme ) #127f =System.r #34e7 =System.g #56c4 =System.b
-	( vectors ) ,on-mouse =Mouse.vector
+	( theme ) #127f .System/r DEO2 #34e7 .System/g DEO2 #56c4 .System/b DEO2
+	( vectors ) ;on-mouse .Mouse/vector DEO2
 	
-	#00b0 =window.w
-	#0050 =window.h
+	#00b0 .window/w POK2
+	#0050 .window/h POK2
 
 	( center window )
 
-	~Screen.width #0002 DIV2 ~window.w #0002 DIV2 SUB2 =window.x1
-	~Screen.height #0002 DIV2 ~window.h #0002 DIV2 SUB2 =window.y1
+	.Screen/width DEI2 #0002 DIV2 .window/w PEK2 #0002 DIV2 SUB2 .window/x1 POK2
+	.Screen/height DEI2 #0002 DIV2 .window/h PEK2 #0002 DIV2 SUB2 .window/y1 POK2
 
-	#01 =theme.r1 #02 =theme.g1 #03 =theme.b1 
-	#04 =theme.r2 #06 =theme.g2 #07 =theme.b2 
-	#0a =theme.r3 #09 =theme.g3 #08 =theme.b3 
-	#0c =theme.r4 #0b =theme.g4 #0d =theme.b4 
+	#01 .theme/r1 POK #02 .theme/g1 POK #03 .theme/b1 POK
+	#04 .theme/r2 POK #06 .theme/g2 POK #07 .theme/b2 POK
+	#0a .theme/r3 POK #09 .theme/g3 POK #08 .theme/b3 POK
+	#0c .theme/r4 POK #0b .theme/g4 POK #0d .theme/b4 POK
 
 	( find screen center )
-	~Screen.width #0002 DIV2 =center.x
-	~Screen.height #0002 DIV2 =center.y
+	.Screen/width DEI2 #0002 DIV2 .center/x POK2
+	.Screen/height DEI2 #0002 DIV2 .center/y POK2
 
-	,update-theme JSR2
-	,draw-background JSR2
-	,draw-window JSR2
+	;update-theme JSR2
+	;draw-background JSR2
+	;draw-window JSR2
 
 BRK
 
-@on-mouse 
+@on-mouse
 	
-	,draw-cursor JSR2
+	;draw-cursor JSR2
 
-	~Mouse.state #00 NEQ ,$no-skip JNZ2 BRK $no-skip
+	.Mouse/state DEI #00 NEQ ;&no-skip JNZ2 BRK &no-skip
 
-	~Mouse.y ~window.y1 SUB2 STEP8 
+	.Mouse/y DEI2 .window/y1 PEK2 SUB2 STEP8
 
-	DUP2 #0010 NEQ2 ^$no-touch-red JNZ
-		~Mouse.x ~window.x1 #0060 ADD2 LTH2 ^$no-touch-red JNZ
-		~Mouse.x ~window.x1 #009c ADD2 GTH2 ^$no-touch-red JNZ
-		( get new value ) ~Mouse.x ~window.x1 SUB2 #0060 SUB2 #0004 DIV2 S2B ,theme.r1 #00 ~selection ADD2 POK2
-	$no-touch-red
-	DUP2 #0020 NEQ2 ^$no-touch-green JNZ
-		~Mouse.x ~window.x1 #0060 ADD2 LTH2 ^$no-touch-green JNZ
-		~Mouse.x ~window.x1 #009c ADD2 GTH2 ^$no-touch-green JNZ
-		( get new value ) ~Mouse.x ~window.x1 SUB2 #0060 SUB2 #0004 DIV2 S2B ,theme.g1 #00 ~selection ADD2 POK2
-	$no-touch-green
-	DUP2 #0030 NEQ2 ^$no-touch-blue JNZ
-		~Mouse.x ~window.x1 #0060 ADD2 LTH2 ^$no-touch-blue JNZ
-		~Mouse.x ~window.x1 #009c ADD2 GTH2 ^$no-touch-blue JNZ
-		( get new value ) ~Mouse.x ~window.x1 SUB2 #0060 SUB2 #0004 DIV2 S2B ,theme.b1 #00 ~selection ADD2 POK2
-	$no-touch-blue
-	DUP2 #0040 NEQ2 ^$no-touch-radio JNZ
-		~Mouse.x ~window.x1 #0050 ADD2 LTH2 ^$no-touch-radio JNZ
-		~Mouse.x ~window.x1 #008c ADD2 GTH2 ^$no-touch-radio JNZ
-		~Mouse.x ~window.x1 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B =selection
-	$no-touch-radio
+	DUP2 #0010 NEQ2 ,&no-touch-red JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-red JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-red JNZ
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/r1 #00 .selection PEK ADD2 PUT
+	&no-touch-red
+	DUP2 #0020 NEQ2 ,&no-touch-green JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-green JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-green JNZ
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/g1 #00 .selection PEK ADD2 PUT
+	&no-touch-green
+	DUP2 #0030 NEQ2 ,&no-touch-blue JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-blue JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-blue JNZ
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/b1 #00 .selection PEK ADD2 PUT
+	&no-touch-blue
+	DUP2 #0040 NEQ2 ,&no-touch-radio JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #0050 ADD2 LTH2 ,&no-touch-radio JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 #008c ADD2 GTH2 ,&no-touch-radio JNZ
+		.Mouse/x DEI2 .window/x1 PEK2 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B .selection POK
+	&no-touch-radio
 
 	POP2
 
-	,update-theme JSR2
-	,draw-window JSR2 
+	;update-theme JSR2
+	;draw-window JSR2
 
-BRK 
+BRK
 
 @update-theme
 
-	#0108 PEK2 #0f AND ~theme.r1 #40 SFT ADD #0108 POK2
-	#010a PEK2 #0f AND ~theme.g1 #40 SFT ADD #010a POK2
-	#010c PEK2 #0f AND ~theme.b1 #40 SFT ADD #010c POK2
-	#0108 PEK2 #f0 AND ~theme.r2 ADD #0108 POK2
-	#010a PEK2 #f0 AND ~theme.g2 ADD #010a POK2
-	#010c PEK2 #f0 AND ~theme.b2 ADD #010c POK2
-	#0109 PEK2 #0f AND ~theme.r3 #40 SFT ADD #0109 POK2
-	#010b PEK2 #0f AND ~theme.g3 #40 SFT ADD #010b POK2
-	#010d PEK2 #0f AND ~theme.b3 #40 SFT ADD #010d POK2
-	#0109 PEK2 #f0 AND ~theme.r4 ADD #0109 POK2
-	#010b PEK2 #f0 AND ~theme.g4 ADD #010b POK2
-	#010d PEK2 #f0 AND ~theme.b4 ADD #010d POK2
+	#08 DEI #0f AND .theme/r1 PEK #40 SFT ADD #08 DEO
+	#0a DEI #0f AND .theme/g1 PEK #40 SFT ADD #0a DEO
+	#0c DEI #0f AND .theme/b1 PEK #40 SFT ADD #0c DEO
+	#08 DEI #f0 AND .theme/r2 PEK ADD #08 DEO
+	#0a DEI #f0 AND .theme/g2 PEK ADD #0a DEO
+	#0c DEI #f0 AND .theme/b2 PEK ADD #0c DEO
+	#09 DEI #0f AND .theme/r3 PEK #40 SFT ADD #09 DEO
+	#0b DEI #0f AND .theme/g3 PEK #40 SFT ADD #0b DEO
+	#0d DEI #0f AND .theme/b3 PEK #40 SFT ADD #0d DEO
+	#09 DEI #f0 AND .theme/r4 PEK ADD #09 DEO
+	#0b DEI #f0 AND .theme/g4 PEK ADD #0b DEO
+	#0d DEI #f0 AND .theme/b4 PEK ADD #0d DEO
 
 RTN
 
 @draw-background
 	
 	( draw hor line )
-	#0000 =Screen.x ~center.y =Screen.y
-	#0000 ~Screen.width ( from/to )
-	$draw-hor
-		( draw ) #01 =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor JNZ
+	#0000 .Screen/x DEO2 .center/y PEK2 .Screen/y DEO2
+	#0000 .Screen/width DEI2 ( from/to )
+	&draw-hor
+		( draw ) #01 .Screen/color DEO
+		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
+		OVR2 OVR2 LTH2 ,&draw-hor JNZ
 	POP2 POP2
 
 	( draw ver line )
-	~center.x =Screen.x #0000 =Screen.y
-	#0000 ~Screen.height ( from/to )
-	$draw-ver
-		( draw ) #02 =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver JNZ
+	.center/x PEK2 .Screen/x DEO2 #0000 .Screen/y DEO2
+	#0000 .Screen/height DEI2 ( from/to )
+	&draw-ver
+		( draw ) #02 .Screen/color DEO
+		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
+		OVR2 OVR2 LTH2 ,&draw-ver JNZ
 	POP2 POP2
 
 	( draw blending modes )
-	,preview_icn =Screen.addr
-	#0010 =Screen.y 
+	;preview_icn .Screen/addr DEO2
+	#0010 .Screen/y DEO2
 	#00 #08
-	$draw-pixel1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-pixel1 JNZ
+	&draw-pixel1
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-pixel1 JNZ
 	POP POP
-	#0018 =Screen.y
+	#0018 .Screen/y DEO2
 	#00 #08
-	$draw-pixel2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR #08 ADD =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-pixel2 JNZ
+	&draw-pixel2
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR #08 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-pixel2 JNZ
 	POP POP
-	#0020 =Screen.y 
+	#0020 .Screen/y DEO2
 	#00 #08
-	$draw-icn1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR #20 ADD =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-icn1 JNZ
+	&draw-icn1
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR #20 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-icn1 JNZ
 	POP POP
-	#0028 =Screen.y
+	#0028 .Screen/y DEO2
 	#00 #08
-	$draw-icn2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR #28 ADD =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-icn2 JNZ
+	&draw-icn2
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR #28 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-icn2 JNZ
 	POP POP
-	#0030 =Screen.y 
+	#0030 .Screen/y DEO2
 	#00 #08
-	$draw-chr1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR #40 ADD =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-chr1 JNZ
+	&draw-chr1
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR #40 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-chr1 JNZ
 	POP POP
-	#0038 =Screen.y
+	#0038 .Screen/y DEO2
 	#00 #08
-	$draw-chr2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 =Screen.x
-		( draw ) OVR #48 ADD =Screen.color
-		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ^$draw-chr2 JNZ
+	&draw-chr2
+		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( draw ) OVR #48 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&draw-chr2 JNZ
 	POP POP
 
 RTN
 
 @draw-window
 	
-	~window.x1 ~window.w ADD2 =window.x2
-	~window.y1 ~window.h ADD2 =window.y2
-	~window.x1 ~window.y1 ~window.x2 ~window.y2 #02 ,fill-rect JSR2
-	~window.x1 ~window.y1 ~window.x2 ~window.y2 #01 ,line-rect JSR2
-	~window.x1 #0002 SUB2 ~window.y1 #0002 SUB2 ~window.x2 #0002 ADD2 ~window.y2 #0002 ADD2 #01 ,line-rect JSR2
+	.window/x1 PEK2 .window/w PEK2 ADD2 .window/x2 POK2
+	.window/y1 PEK2 .window/h PEK2 ADD2 .window/y2 POK2
+	.window/x1 PEK2 .window/y1 PEK2 .window/x2 PEK2 .window/y2 PEK2 #02 ;fill-rect JSR2
+	.window/x1 PEK2 .window/y1 PEK2 .window/x2 PEK2 .window/y2 PEK2 #01 ;line-rect JSR2
+	.window/x1 PEK2 #0002 SUB2 .window/y1 PEK2 #0002 SUB2 .window/x2 PEK2 #0002 ADD2 .window/y2 PEK2 #0002 ADD2 #01 ;line-rect JSR2
 
-	~window.x1 #0008 ADD2 ~window.y1 #0010 ADD2 #25 ,red_txt ,draw-label JSR2
-	~window.x1 #0038 ADD2 ~window.y1 #0010 ADD2 #28 ,System.r ,draw-byte JSR2
-	~window.x1 #0048 ADD2 ~window.y1 #0010 ADD2 #28 ,System.r #0001 ADD2 ,draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0010 ADD2 #25 ;red_txt ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0010 ADD2 #28 .System/r ;draw-byte JSR2
+	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0010 ADD2 #28 .System/r #01 ADD ;draw-byte JSR2
 
-	~window.x1 #0008 ADD2 ~window.y1 #0020 ADD2 #25 ,green_txt ,draw-label JSR2
-	~window.x1 #0038 ADD2 ~window.y1 #0020 ADD2 #28 ,System.g ,draw-byte JSR2
-	~window.x1 #0048 ADD2 ~window.y1 #0020 ADD2 #28 ,System.g #0001 ADD2 ,draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0020 ADD2 #25 ;green_txt ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0020 ADD2 #28 .System/g ;draw-byte JSR2
+	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0020 ADD2 #28 .System/g #01 ADD ;draw-byte JSR2
 
-	~window.x1 #0008 ADD2 ~window.y1 #0030 ADD2 #25 ,blue_txt ,draw-label JSR2
-	~window.x1 #0038 ADD2 ~window.y1 #0030 ADD2 #28 ,System.b ,draw-byte JSR2
-	~window.x1 #0048 ADD2 ~window.y1 #0030 ADD2 #28 ,System.b #0001 ADD2 ,draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0030 ADD2 #25 ;blue_txt ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0030 ADD2 #28 .System/b ;draw-byte JSR2
+	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0030 ADD2 #28 .System/b #01 ADD ;draw-byte JSR2
 
-	~window.x1 #0060 ADD2 ~window.y1 #0010 ADD2 ~window.x1 #0090 ADD2 #00 ,theme.r1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
-	~window.x1 #0060 ADD2 ~window.y1 #0020 ADD2 ~window.x1 #0090 ADD2 #00 ,theme.g1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
-	~window.x1 #0060 ADD2 ~window.y1 #0030 ADD2 ~window.x1 #0090 ADD2 #00 ,theme.b1 ~selection ADD PEK2 #0004 MUL2 #01 ,draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0010 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/r1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0020 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/g1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0030 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/b1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
 
-	~window.x1 #0050 ADD2 =Screen.x
-	~window.y1 #0040 ADD2 =Screen.y
-	,radio_icns #00 ~selection #00 EQU #0008 MUL2 ADD2 =Screen.addr
-	#25 =Screen.color
+	.window/x1 PEK2 #0050 ADD2 .Screen/x DEO2
+	.window/y1 PEK2 #0040 ADD2 .Screen/y DEO2
+	;radio_icns #00 .selection PEK #00 EQU #0008 MUL2 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
 
-	~window.x1 #0060 ADD2 =Screen.x
-	~window.y1 #0040 ADD2 =Screen.y
-	,radio_icns #00 ~selection #01 EQU #0008 MUL2 ADD2 =Screen.addr
-	#25 =Screen.color
+	.window/x1 PEK2 #0060 ADD2 .Screen/x DEO2
+	.window/y1 PEK2 #0040 ADD2 .Screen/y DEO2
+	;radio_icns #00 .selection PEK #01 EQU #0008 MUL2 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
 
-	~window.x1 #0070 ADD2 =Screen.x
-	~window.y1 #0040 ADD2 =Screen.y
-	,radio_icns #00 ~selection #02 EQU #0008 MUL2 ADD2 =Screen.addr
-	#25 =Screen.color
+	.window/x1 PEK2 #0070 ADD2 .Screen/x DEO2
+	.window/y1 PEK2 #0040 ADD2 .Screen/y DEO2
+	;radio_icns #00 .selection PEK #02 EQU #0008 MUL2 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
 
-	~window.x1 #0080 ADD2 =Screen.x
-	~window.y1 #0040 ADD2 =Screen.y
-	,radio_icns #00 ~selection #03 EQU #0008 MUL2 ADD2 =Screen.addr
-	#25 =Screen.color
+	.window/x1 PEK2 #0080 ADD2 .Screen/x DEO2
+	.window/y1 PEK2 #0040 ADD2 .Screen/y DEO2
+	;radio_icns #00 .selection PEK #03 EQU #0008 MUL2 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
 
 RTN
 
 @draw-cursor ( -- )
 
 	( clear last cursor )
-	,clear_icn =Screen.addr 
-	~pointer.x =Screen.x 
-	~pointer.y =Screen.y 
-	#30 =Screen.color
+	;clear_icn .Screen/addr DEO2
+	.pointer/x PEK2 .Screen/x DEO2
+	.pointer/y PEK2 .Screen/y DEO2
+	#30 .Screen/color DEO
 
 	( record pointer positions )
-	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+	.Mouse/x DEI2 .pointer/x POK2 .Mouse/y DEI2 .pointer/y POK2
 
 	( draw new cursor )
-	,pointer_icn =Screen.addr 
-	~pointer.x =Screen.x 
-	~pointer.y =Screen.y 
-	#33 ~Mouse.state #00 NEQ #02 MUL SUB =Screen.color
+	;pointer_icn .Screen/addr DEO2
+	.pointer/x PEK2 .Screen/x DEO2
+	.pointer/y PEK2 .Screen/y DEO2
+	#33 .Mouse/state DEI #00 NEQ #02 MUL SUB .Screen/color DEO
 
 RTN
 
 @draw-slider ( x1 y x2 pos color -- )
 	
-	( load ) =color =slider.pos =slider.x2 =slider.y =slider.x1
+	( load ) .color POK .slider/pos POK2 .slider/x2 POK2 .slider/y POK2 .slider/x1 POK2
 
-	~slider.x1 =Screen.x
-	~slider.y =Screen.y
-	,halftone_icn =Screen.addr
+	.slider/x1 PEK2 .Screen/x DEO2
+	.slider/y PEK2 .Screen/y DEO2
+	;halftone_icn .Screen/addr DEO2
 
-	,slidera_icn =Screen.addr
-	( draw ) #25 =Screen.color
-	,sliderb_icn =Screen.addr
+	;slidera_icn .Screen/addr DEO2
+	( draw ) #25 .Screen/color DEO
+	;sliderb_icn .Screen/addr DEO2
 
-	$loop
-		( incr ) ~Screen.x 8+ =Screen.x
-		( draw ) #25 =Screen.color
-		~Screen.x ~slider.x2 #0008 ADD2 LTH2 ^$loop JNZ
+	&loop
+		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+		( draw ) #25 .Screen/color DEO
+		.Screen/x DEI2 .slider/x2 PEK2 #0008 ADD2 LTH2 ,&loop JNZ
 
-	( incr ) ~Screen.x #0004 ADD2 =Screen.x
-	,sliderc_icn =Screen.addr
-	( draw ) #25 =Screen.color
+	( incr ) .Screen/x DEI2 #0004 ADD2 .Screen/x DEO2
+	;sliderc_icn .Screen/addr DEO2
+	( draw ) #25 .Screen/color DEO
 
-	~slider.x1 ~slider.pos ADD2 =Screen.x
-	,sliderd_icn =Screen.addr
-	( draw ) #2a =Screen.color
+	.slider/x1 PEK2 .slider/pos PEK2 ADD2 .Screen/x DEO2
+	;sliderd_icn .Screen/addr DEO2
+	( draw ) #2a .Screen/color DEO
 
 RTN
 
 @fill-rect ( x1 y1 x2 y2 color )
 	
-	=color
+	.color POK
 	( x1 x2 y1 y2 ) ROT2 SWP2
-	$ver
-		( save ) OVR2 =Screen.y
-		STH2 STH2 OVR2 OVR2 
-		$hor
-			( save ) OVR2 =Screen.x
-			( draw ) ~color =Screen.color
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		STH2 STH2 OVR2 OVR2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 #0001 ADD2 SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 #0001 ADD2 SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2 POP2 POP2
 
 RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor
-		( incr ) ~Screen.x ++ =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
-		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-	~rect.y1 =Screen.y
-	$ver
-		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
-		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
+	( load ) .color POK .rect/y2 POK2 .rect/x2 POK2 DUP2 .Screen/y DEO2 .rect/y1 POK2 DUP2 .Screen/x DEO2 .rect/x1 POK2
+	&hor
+		( incr ) .Screen/x DEI2 ++ .Screen/x DEO2
+		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JNZ
+	.rect/y1 PEK2 .Screen/y DEO2
+	&ver
+		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
+		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
+		( incr ) .Screen/y DEI2 ++ .Screen/y DEO2
+		.Screen/y DEI2 .rect/y2 PEK2 ++ LTH2 ,&ver JNZ
 
 RTN
 
 @draw-label ( x y color addr -- )
 	
-	( load ) =label.addr =color =Screen.y =Screen.x ~label.addr
-	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr ~color =Screen.color
+	( load ) .label/addr POK2 .color POK .Screen/y DEO2 .Screen/x DEO2 .label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .color PEK .Screen/color DEO
 		( incr ) ++
-		( incr ) ~Screen.x 8+ =Screen.x
-		DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
 @draw-byte ( x y color addr -- )
 
-	=addr STH
-	=Screen.y
-	=Screen.x
-	,font_hex #00 ~addr PEK2 #04 SFT #0008 MUL2 ADD2 =Screen.addr
-	STHr DUP STH =Screen.color
-	,font_hex #00 ~addr PEK2 #0f AND #0008 MUL2 ADD2 =Screen.addr
-	~Screen.x 8+ =Screen.x
-	STHr =Screen.color
+	.addr POK STH
+	.Screen/y DEO2
+	.Screen/x DEO2
+	;font_hex #00 .addr PEK DEI #04 SFT #0008 MUL2 ADD2 .Screen/addr DEO2
+	STHr DUP STH .Screen/color DEO
+	;font_hex #00 .addr PEK DEI #0f AND #0008 MUL2 ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	STHr .Screen/color DEO
 
 RTN
 
@@ -342,28 +348,28 @@ RTN
 @sliderb_icn  [ ffff ffff ffff ffff ]
 @sliderc_icn  [ fcfe ffff ffff fefc ]
 @sliderd_icn  [ 003c 7e7e 7e7e 3c00 ]
-@preview_icn     [ 183c 66db db66 3c18 0000 183c 3c18 0000 ]
-@radio_icns  
+@preview_icn  [ 183c 66db db66 3c18 0000 183c 3c18 0000 ]
+@radio_icns
 	[ 3c42 8181 8181 423c ]
 	[ 3c42 99bd bd99 423c ]
 
-@red_txt      [ Red 00 ]
-@green_txt    [ Green 00 ]
-@blue_txt     [ Blue 00 ]
+@red_txt   [ "Red 00 ]
+@green_txt [ "Green 00 ]
+@blue_txt  [ "Blue 00 ]
 
-@font_hex ( 0-F TODO: should pull from @font instead.. ) 
+@font_hex ( 0-F TODO: should pull from @font instead.. )
 [
 	003c 464a 5262 3c00 0018 0808 0808 1c00
 	003c 4202 3c40 7e00 003c 421c 0242 3c00
 	000c 1424 447e 0400 007e 407c 0242 3c00
 	003c 407c 4242 3c00 007e 0204 0810 1000
 	003c 423c 4242 3c00 003c 4242 3e02 3c00
-	003c 4242 7e42 4200 007c 427c 4242 7c00 
-	003c 4240 4042 3c00 007c 4242 4242 7c00 
+	003c 4242 7e42 4200 007c 427c 4242 7c00
+	003c 4240 4042 3c00 007c 4242 4242 7c00
 	007e 4078 4040 7e00 007e 4078 4040 4000
 ]
 
-@font ( spectrum-zx font ) 
+@font ( spectrum-zx font )
 [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000

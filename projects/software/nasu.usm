@@ -1,4 +1,4 @@
-( 
+(
 	app/nasu : spritesheet editor
 
 	arrows - move selection
@@ -12,7 +12,8 @@
 		Select paint color for 2-bit mode
 )
 
-%RTN   { JMP2r }
+
+%RTN { JMP2r }
 %STEP8 { #0033 SFT2 }
 
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
@@ -23,87 +24,89 @@
 %MOD { DUP2 DIV MUL SUB }
 
 %SIZE-TO-RECT {
-	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2 
+	STH2 STH2 OVR2 STH2r ADD2 OVR2 STH2r ADD2
 } ( x y w h -- x1 y1 x2 y2 )
 
 %SET-RECT {
-	DUP2 ROT2 SWP2 #0006 ADD2 STR2
-	DUP2 ROT2 SWP2 #0004 ADD2 STR2
-	DUP2 ROT2 SWP2 #0002 ADD2 STR2
-	DUP2 ROT2 SWP2 STR2
+	DUP2 ROT2 SWP2 #0006 ADD2 PUT2
+	DUP2 ROT2 SWP2 #0004 ADD2 PUT2
+	DUP2 ROT2 SWP2 #0002 ADD2 PUT2
+	DUP2 ROT2 SWP2 PUT2
 	POP2
 } ( x1 y1 x2 y2 addr -- )
 
 %BANK { #2000 }
 
-( variables )
-
-;settings { blending 1 depth 1 brush 1 page 2 }
-
-;frame { x1 2 y1 2 x2 2 y2 2 width 2 height 2 }
-;bankview { x 2 y 2 mode 1 selection 1 }
-;tileview { x 2 y 2 addr 2 }
-;colorview { x1 2 y1 2 x2 2 y2 2 }
-;blendview { x1 2 y1 2 x2 2 y2 2 }
-;dataview { x1 2 y1 2 x2 2 y2 2 }
-;rect { x1 2 y1 2 x2 2 y2 2 }
-;mouse { x 2 y 2 }
-;color { byte 1 }
-;i { byte 1 }
-;pt { x 1 y 1 }
-;addr { short 2 }
-;pos { x 2 y 2 }
-
 ( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0140 ;Controller { vector 2 button 1 key 1 }
-|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
-|0170 ;File { vector 2 success 2 offset 2 pad 2 name 2 length 2 load 2 save 2 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|40 @Controller [ &vector $2 &button $1 &key $1 ]
+|60 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+|70 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
+
+( variables )
+
+|0000
+
+@settings [ &blending $1 &depth $1 &brush $1 &page $2 ]
+
+@frame [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 &width $2 &height $2 ]
+@bankview [ &x $2 &y $2 &mode $1 &selection $1 ]
+@tileview [ &x $2 &y $2 &addr $2 ]
+@colorview [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@blendview [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@dataview [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@mouse [ &x $2 &y $2 ]
+@color [ &byte $1 ]
+@i [ &byte $1 ]
+@pt [ &x $1 &y $1 ]
+@addr [ &short $2 ]
+@pos [ &x $2 &y $2 ]
 
 ( program )
 
-|0200
+|0100
 
-	( theme ) #0efc =System.r #03cc =System.g #03ac =System.b
-	( vectors ) ,on-button =Controller.vector
-	( vectors ) ,on-mouse =Mouse.vector
-	( vectors ) ,on-transfer =File.vector
+	( theme ) #0efc .System/r DEO2 #03cc .System/g DEO2 #03ac .System/b DEO2
+	( vectors ) ;on-button .Controller/vector DEO2
+	( vectors ) ;on-mouse .Mouse/vector DEO2
+	( vectors ) ;on-transfer .File/vector DEO2
 
 	( set frame )
-	#0130 =frame.width
-	#00a8 =frame.height
-	#01 =settings.brush
+	#0130 .frame/width POK2
+	#00a8 .frame/height POK2
+	#01 .settings/brush POK
 
-	~Screen.width 2/ ~frame.width 2/ SUB2 
-	~Screen.height 2/ ~frame.height 2/ SUB2 #0010 ADD2
-	~frame.width ~frame.height
-	SIZE-TO-RECT ,frame SET-RECT
+	.Screen/width DEI2 2/ .frame/width PEK2 2/ SUB2
+	.Screen/height DEI2 2/ .frame/height PEK2 2/ SUB2 #0010 ADD2
+	.frame/width PEK2 .frame/height PEK2
+	SIZE-TO-RECT ;frame SET-RECT
 
-	~frame.x1 #0010 ADD2 =bankview.x 
-	~frame.y1 =bankview.y 
-	BANK =settings.page
+	.frame/x1 PEK2 #0010 ADD2 .bankview/x POK2
+	.frame/y1 PEK2 .bankview/y POK2
+	BANK .settings/page POK2
 
-	~frame.x2 #0098 SUB2 =tileview.x 
-	~frame.y1 =tileview.y 
-	BANK #0448 ADD2 =tileview.addr
+	.frame/x2 PEK2 #0098 SUB2 .tileview/x POK2
+	.frame/y1 PEK2 .tileview/y POK2
+	BANK #0448 ADD2 .tileview/addr POK2
 
-	~frame.x1 #0010 ADD2 ~frame.y2 #0020 SUB2 #0020 #0020 SIZE-TO-RECT ,blendview SET-RECT
-	~frame.x1 #0038 ADD2 ~frame.y2 #0020 SUB2 #0020 #0020 SIZE-TO-RECT ,colorview SET-RECT
-	~frame.x2 #0010 SUB2 ~frame.y1 #0010 #0080 SIZE-TO-RECT ,dataview SET-RECT
+	.frame/x1 PEK2 #0010 ADD2 .frame/y2 PEK2 #0020 SUB2 #0020 #0020 SIZE-TO-RECT ;blendview SET-RECT
+	.frame/x1 PEK2 #0038 ADD2 .frame/y2 PEK2 #0020 SUB2 #0020 #0020 SIZE-TO-RECT ;colorview SET-RECT
+	.frame/x2 PEK2 #0010 SUB2 .frame/y1 PEK2 #0010 #0080 SIZE-TO-RECT ;dataview SET-RECT
 
-	#01 =settings.blending
+	#01 .settings/blending POK
 
-	,filepath1 =File.name #0800 =File.length BANK =File.load
-	,filepath2 =File.name #0800 =File.length BANK #0800 ADD2 =File.load
-	,filepath3 =File.name #1000 =File.length BANK #1000 ADD2 =File.load
-	,filepath4 =File.name #1000 =File.length BANK #2000 ADD2 =File.load
-	,filepath5 =File.name #1000 =File.length BANK #2800 ADD2 =File.load
-	,filepath6 =File.name #1000 =File.length BANK #3800 ADD2 =File.load
+	;filepath1 .File/name DEO2 #0800 .File/length DEO2 BANK .File/load DEO2
+	;filepath2 .File/name DEO2 #0800 .File/length DEO2 BANK #0800 ADD2 .File/load DEO2
+	;filepath3 .File/name DEO2 #1000 .File/length DEO2 BANK #1000 ADD2 .File/load DEO2
+	;filepath4 .File/name DEO2 #1000 .File/length DEO2 BANK #2000 ADD2 .File/load DEO2
+	;filepath5 .File/name DEO2 #1000 .File/length DEO2 BANK #2800 ADD2 .File/load DEO2
+	;filepath6 .File/name DEO2 #1000 .File/length DEO2 BANK #3800 ADD2 .File/load DEO2
 
-	#40 DUP =bankview.selection ,select-tile JSR2
+	#40 DUP .bankview/selection POK ;select-tile JSR2
 
 	( ~frame.x1 ~frame.y1 ~frame.x2 ~frame.y2 #01 ,line-rect JSR2 )
 
@@ -111,221 +114,221 @@ BRK
 
 @on-transfer ( -> )
 	
-	,redraw JSR2
+	;redraw JSR2
 	
 BRK
 
 @on-button ( -> )
 	
 	( arrow button )
-	~Controller.button #00 EQU ,$no-button JNZ2
-		~Controller.button #11 NEQ ^$no-pageup JNZ ~settings.page 
-			#0800 SUB2 =settings.page ,redraw JSR2 BRK $no-pageup
-		~Controller.button #21 NEQ ^$no-pagedown JNZ ~settings.page 
-			#0800 ADD2 =settings.page ,redraw JSR2 BRK $no-pagedown
-		~Controller.button #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ^$no-up JNZ 
-			( move ) ~bankview.selection #10 SUB =bankview.selection $no-up
-		DUP #05 SFT #01 AND #01 NEQ ^$no-down JNZ 
-			( move ) ~bankview.selection #10 ADD =bankview.selection $no-down
-		DUP #06 SFT #01 AND #01 NEQ ^$no-left JNZ 
-			( move ) ~bankview.selection #01 SUB =bankview.selection $no-left
-		DUP #07 SFT #01 AND #01 NEQ ^$no-right JNZ 
-			( move ) ~bankview.selection #01 ADD =bankview.selection $no-right
+	.Controller/button DEI #00 EQU ;&no-button JNZ2
+		.Controller/button DEI #11 NEQ ,&no-pageup JNZ .settings/page PEK2
+			#0800 SUB2 .settings/page POK2 ;redraw JSR2 BRK &no-pageup
+		.Controller/button DEI #21 NEQ ,&no-pagedown JNZ .settings/page PEK2
+			#0800 ADD2 .settings/page POK2 ;redraw JSR2 BRK &no-pagedown
+		.Controller/button DEI #f0 AND
+		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ
+			( move ) .bankview/selection PEK #10 SUB .bankview/selection POK &no-up
+		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ
+			( move ) .bankview/selection PEK #10 ADD .bankview/selection POK &no-down
+		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ
+			( move ) .bankview/selection PEK #01 SUB .bankview/selection POK &no-left
+		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ
+			( move ) .bankview/selection PEK #01 ADD .bankview/selection POK &no-right
 		POP
-		~bankview.selection ,select-tile JSR2
-	$no-button
+		.bankview/selection PEK ;select-tile JSR2
+	&no-button
 
-	~Controller.key #00 EQU ^$no-key JNZ
-		~Controller.key #31 LTH ^$no-number JNZ
-		~Controller.key #33 GTH ^$no-number JNZ
-		( select ) ~Controller.key #31 SUB =bankview.mode
-			,redraw JSR2
-		$no-number
-		~Controller.key #20 NEQ ^$no-space JNZ
-			,toggle-depth JSR2
-			,redraw JSR2
-		$no-space
-	$no-key
+	.Controller/key DEI #00 EQU ,&no-key JNZ
+		.Controller/key DEI #31 LTH ,&no-number JNZ
+		.Controller/key DEI #33 GTH ,&no-number JNZ
+		( select ) .Controller/key DEI #31 SUB .bankview/mode POK
+			;redraw JSR2
+		&no-number
+		.Controller/key DEI #20 NEQ ,&no-space JNZ
+			;toggle-depth JSR2
+			;redraw JSR2
+		&no-space
+	&no-key
 
 BRK
 
 @on-mouse ( -> )
 	
-	,draw-cursor JSR2
+	;draw-cursor JSR2
 
-	~Mouse.state #00 NEQ ^$no-touch JNZ BRK $no-touch
+	.Mouse/state DEI #00 NEQ ,&no-touch JNZ BRK &no-touch
 
 	( toolbar )
-	~Mouse.y ~bankview.y #0010 SUB2 SUB2 8/ #0000 NEQ2 ,$no-toolbar-click JNZ2
+	.Mouse/y DEI2 .bankview/y PEK2 #0010 SUB2 SUB2 8/ #0000 NEQ2 ;&no-toolbar-click JNZ2
 		( brush )
-		~Mouse.x ~bankview.x SUB2 8/ #000d LTH2 ^$no-brush-click JNZ
-		~Mouse.x ~bankview.x SUB2 8/ #000f GTH2 ^$no-brush-click JNZ
-			( select ) ~mouse.x ~bankview.x SUB2 8/ #000d SUB2 SWP POP =bankview.mode
-		$no-brush-click
-		~Mouse.x ~bankview.x SUB2 8/ #0005 NEQ2 ^$no-toggle-depth JNZ
-			,toggle-depth JSR2
-		$no-toggle-depth
-			( release ) #00 =Mouse.state
-			,redraw JSR2 BRK
-	$no-toolbar-click
+		.Mouse/x DEI2 .bankview/x PEK2 SUB2 8/ #000d LTH2 ,&no-brush-click JNZ
+		.Mouse/x DEI2 .bankview/x PEK2 SUB2 8/ #000f GTH2 ,&no-brush-click JNZ
+			( select ) .mouse/x PEK2 .bankview/x PEK2 SUB2 8/ #000d SUB2 SWP POP .bankview/mode POK
+		&no-brush-click
+		.Mouse/x DEI2 .bankview/x PEK2 SUB2 8/ #0005 NEQ2 ,&no-toggle-depth JNZ
+			;toggle-depth JSR2
+		&no-toggle-depth
+			( release ) #00 .Mouse/state DEO
+			;redraw JSR2 BRK
+	&no-toolbar-click
 
 	( bankview )
-	~Mouse.x ~bankview.x GTH2 ~Mouse.x ~bankview.x #0080 ADD2 LTH2 #0101 EQU2
-	~Mouse.y ~bankview.y GTH2 ~Mouse.y ~bankview.y #0080 ADD2 LTH2 #0101 EQU2
-	#0101 EQU2 ,on-touch-bankview JNZ2
+	.Mouse/x DEI2 .bankview/x PEK2 GTH2 .Mouse/x DEI2 .bankview/x PEK2 #0080 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 .bankview/y PEK2 GTH2 .Mouse/y DEI2 .bankview/y PEK2 #0080 ADD2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-bankview JNZ2
 
 	( tileview )
-	~Mouse.x ~tileview.x GTH2 ~Mouse.x ~tileview.x #0080 ADD2 LTH2 #0101 EQU2
-	~Mouse.y ~tileview.y GTH2 ~Mouse.y ~tileview.y #0080 ADD2 LTH2 #0101 EQU2
-	#0101 EQU2 ,on-touch-tileview JNZ2
+	.Mouse/x DEI2 .tileview/x PEK2 GTH2 .Mouse/x DEI2 .tileview/x PEK2 #0080 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 .tileview/y PEK2 GTH2 .Mouse/y DEI2 .tileview/y PEK2 #0080 ADD2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-tileview JNZ2
 
 	( dataview )
-	~Mouse.x DUP2 ~dataview.x1 GTH2 ROT ROT ~dataview.x2 LTH2 #0101 EQU2
-	~Mouse.y DUP2 ~dataview.y1 GTH2 ROT ROT ~dataview.y2 LTH2 #0101 EQU2
-	#0101 EQU2 ,on-touch-dataview JNZ2
+	.Mouse/x DEI2 DUP2 .dataview/x1 PEK2 GTH2 ROT ROT .dataview/x2 PEK2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .dataview/y1 PEK2 GTH2 ROT ROT .dataview/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-dataview JNZ2
 
 	( blendbiew )
-	~Mouse.x DUP2 ~blendview.x1 GTH2 ROT ROT ~blendview.x2 LTH2 #0101 EQU2
-	~Mouse.y DUP2 ~blendview.y1 GTH2 ROT ROT ~blendview.y2 LTH2 #0101 EQU2
-	#0101 EQU2 ,on-touch-blendview JNZ2
+	.Mouse/x DEI2 DUP2 .blendview/x1 PEK2 GTH2 ROT ROT .blendview/x2 PEK2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .blendview/y1 PEK2 GTH2 ROT ROT .blendview/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-blendview JNZ2
 
 	( colorview )
-	~Mouse.x DUP2 ~colorview.x1 GTH2 ROT ROT ~colorview.x2 LTH2 #0101 EQU2
-	~Mouse.y DUP2 ~colorview.y1 GTH2 ROT ROT ~colorview.y2 LTH2 #0101 EQU2
-	#0101 EQU2 ,on-touch-colorview JNZ2
+	.Mouse/x DEI2 DUP2 .colorview/x1 PEK2 GTH2 ROT ROT .colorview/x2 PEK2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .colorview/y1 PEK2 GTH2 ROT ROT .colorview/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-colorview JNZ2
 
 BRK
 
 @on-touch-bankview ( -> )
 	
-	~bankview.mode #01 NEQ ^$not-copy-mode JNZ
-		#00 =i
-		$copy-loop
-			( load ) ~tileview.addr ~i ADD PEK2 
+	.bankview/mode PEK #01 NEQ ,&not-copy-mode JNZ
+		#00 .i POK
+		&copy-loop
+			( load ) .tileview/addr PEK2 .i PEK ADD GET
 			( get touch addr )
-			~Mouse.x ~bankview.x SUB2 STEP8 
-			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-			( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
-			~settings.page ADD2 #00 ~i ADD2 POK2
-			( incr ) ~i #01 ADD =i
-			~i #08 LTH ^$copy-loop JNZ
-		,redraw JSR2 BRK
-	$not-copy-mode
+			.Mouse/x DEI2 .bankview/x PEK2 SUB2 STEP8
+			.Mouse/y DEI2 .bankview/y PEK2 SUB2 STEP8 #0010 MUL2 ADD2
+			( 2-bit mode ) #00 .settings/depth PEK #01 ADD MUL2
+			.settings/page PEK2 ADD2 #00 .i PEK ADD2 PUT
+			( incr ) .i PEK #01 ADD .i POK
+			.i PEK #08 LTH ,&copy-loop JNZ
+		;redraw JSR2 BRK
+	&not-copy-mode
 
-	~bankview.mode #02 NEQ ^$not-erase-mode JNZ
-		#00 =i
-		$erase-loop
-			#00 
+	.bankview/mode PEK #02 NEQ ,&not-erase-mode JNZ
+		#00 .i POK
+		&erase-loop
+			#00
 			( get touch addr )
-			~Mouse.x ~bankview.x SUB2 STEP8 
-			~Mouse.y ~bankview.y SUB2 STEP8 #0010 MUL2 ADD2
-			( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
-			~settings.page ADD2 #00 ~i ADD2 POK2
-			( incr ) ~i #01 ADD =i
-			~i #08 LTH ^$erase-loop JNZ
-		,redraw JSR2 BRK
-	$not-erase-mode
+			.Mouse/x DEI2 .bankview/x PEK2 SUB2 STEP8
+			.Mouse/y DEI2 .bankview/y PEK2 SUB2 STEP8 #0010 MUL2 ADD2
+			( 2-bit mode ) #00 .settings/depth PEK #01 ADD MUL2
+			.settings/page PEK2 ADD2 #00 .i PEK ADD2 PUT
+			( incr ) .i PEK #01 ADD .i POK
+			.i PEK #08 LTH ,&erase-loop JNZ
+		;redraw JSR2 BRK
+	&not-erase-mode
 
 	( select )
 
-	~Mouse.x ~bankview.x SUB2 8/ SWP POP
-	~Mouse.y ~bankview.y SUB2 8/ SWP POP #40 SFT ADD
-	DUP =bankview.selection
-	,select-tile JSR2
+	.Mouse/x DEI2 .bankview/x PEK2 SUB2 8/ SWP POP
+	.Mouse/y DEI2 .bankview/y PEK2 SUB2 8/ SWP POP #40 SFT ADD
+	DUP .bankview/selection POK
+	;select-tile JSR2
 
 BRK
 
 @on-touch-tileview ( -> )
 	
-	~Mouse.x ~tileview.x SUB2 STEP8 #0040 DIV2 
-	~Mouse.y ~tileview.y SUB2 STEP8 #0040 DIV2 2* ADD2 
+	.Mouse/x DEI2 .tileview/x PEK2 SUB2 STEP8 #0040 DIV2
+	.Mouse/y DEI2 .tileview/y PEK2 SUB2 STEP8 #0040 DIV2 2* ADD2
 	8*
-	~tileview.addr ADD2 =addr ( addr offset )
-	~Mouse.x ~tileview.x SUB2 ~Mouse.x ~tileview.x SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.x
-	~Mouse.y ~tileview.y SUB2 ~Mouse.y ~tileview.y SUB2 #0040 DIV2 #0040 MUL2 SUB2 =pos.y
-	~Mouse.state #10 NEQ ^$no-erase-mode JNZ
-		( load ) ~addr ~pos.y 8/ ADD2 PEK2
-		( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
+	.tileview/addr PEK2 ADD2 .addr POK2 ( addr offset )
+	.Mouse/x DEI2 .tileview/x PEK2 SUB2 .Mouse/x DEI2 .tileview/x PEK2 SUB2 #0040 DIV2 #0040 MUL2 SUB2 .pos/x POK2
+	.Mouse/y DEI2 .tileview/y PEK2 SUB2 .Mouse/y DEI2 .tileview/y PEK2 SUB2 #0040 DIV2 #0040 MUL2 SUB2 .pos/y POK2
+	.Mouse/state DEI #10 NEQ ,&no-erase-mode JNZ
+		( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 GET
+		( mask ) #01 #07 .pos/x PEK2 8/ SWP POP SUB SFL
 		#ff EOR AND
-		( save ) ~addr ~pos.y 8/ ADD2 POK2
-		,redraw JSR2 BRK
-	$no-erase-mode
-	( load ) ~addr ~pos.y 8/ ADD2 PEK2
-	( mask ) #01 #07 ~pos.x 8/ SWP POP SUB SFL 
+		( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 PUT
+		;redraw JSR2 BRK
+	&no-erase-mode
+	( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 GET
+	( mask ) #01 #07 .pos/x PEK2 8/ SWP POP SUB SFL
 	ORA
-	( save ) ~addr ~pos.y 8/ ADD2 POK2
-	,redraw JSR2 
+	( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 PUT
+	;redraw JSR2
 
 BRK
 
 @on-touch-dataview ( -> )
 
-	~Mouse.y ~dataview.y1 SUB2 STEP8 SWP POP #60 EQU ^$skip JNZ BRK $skip
-	~Mouse.x ~dataview.x1 SUB2 #0008 DIV2 SWP POP
-	DUP #00 NEQ ^$no-move-up JNZ
-		,op_shiftup JSR2 
-		( release ) #00 =Mouse.state
-		,redraw JSR2 POP BRK $no-move-up
-	DUP #01 NEQ ^$no-move-down JNZ
-		,op_shiftdown JSR2 
-		( release ) #00 =Mouse.state
-		,redraw JSR2 POP BRK $no-move-down
+	.Mouse/y DEI2 .dataview/y1 PEK2 SUB2 STEP8 SWP POP #60 EQU ,&skip JNZ BRK &skip
+	.Mouse/x DEI2 .dataview/x1 PEK2 SUB2 #0008 DIV2 SWP POP
+	DUP #00 NEQ ,&no-move-up JNZ
+		;op_shiftup JSR2
+		( release ) #00 .Mouse/state DEO
+		;redraw JSR2 POP BRK &no-move-up
+	DUP #01 NEQ ,&no-move-down JNZ
+		;op_shiftdown JSR2
+		( release ) #00 .Mouse/state DEO
+		;redraw JSR2 POP BRK &no-move-down
 	POP
 
 BRK
 
 @on-touch-blendview ( -> )
 
-	~Mouse.x ~blendview.x1 SUB2 8/ SWP POP
-	~Mouse.y ~blendview.y1 SUB2 8/ SWP POP #04 MUL ADD
-	=settings.blending
-	( release ) #00 =Mouse.state
-	,redraw JSR2
+	.Mouse/x DEI2 .blendview/x1 PEK2 SUB2 8/ SWP POP
+	.Mouse/y DEI2 .blendview/y1 PEK2 SUB2 8/ SWP POP #04 MUL ADD
+	.settings/blending POK
+	( release ) #00 .Mouse/state DEO
+	;redraw JSR2
 
-BRK 
+BRK
 
 @on-touch-colorview ( -> )
 	
-	( channel ) ~Mouse.y ~colorview.y1 SUB2 8/ SWP POP STH
-	( rgb ) ~Mouse.x ~colorview.x1 SUB2 8/ SWP POP
-	DUP #00 NEQ ^$no-brush JNZ
-		DUPr STHr =settings.brush $no-brush
-	DUP #01 NEQ ^$no-red JNZ
-		DUPr STHr ,System.r ,set-color JSR2 $no-red
-	DUP #02 NEQ ^$no-green JNZ 
-		DUPr STHr ,System.g ,set-color JSR2 $no-green
-	DUP #03 NEQ ^$no-blue JNZ 
-		DUPr STHr ,System.b ,set-color JSR2 $no-blue
+	( channel ) .Mouse/y DEI2 .colorview/y1 PEK2 SUB2 8/ SWP POP STH
+	( rgb ) .Mouse/x DEI2 .colorview/x1 PEK2 SUB2 8/ SWP POP
+	DUP #00 NEQ ,&no-brush JNZ
+		DUPr STHr .settings/brush POK &no-brush
+	DUP #01 NEQ ,&no-red JNZ
+		DUPr STHr ;System/r ;set-color JSR2 &no-red
+	DUP #02 NEQ ,&no-green JNZ
+		DUPr STHr ;System/g ;set-color JSR2 &no-green
+	DUP #03 NEQ ,&no-blue JNZ
+		DUPr STHr ;System/b ;set-color JSR2 &no-blue
 	POP POPr
-	( release ) #00 =Mouse.state
-	,redraw JSR2
+	( release ) #00 .Mouse/state DEO
+	;redraw JSR2
 
 BRK
 
 @set-color ( color rgb -- )
 	
 	STH2
-	DUP #00 NEQ ^$no-red0 JNZ
-		DUP2r STH2r PEK2 DUP #04 SFT #01 ADD 
-		( add/sub ) ~Mouse.state #10 EQU #fe MUL ADD 
-		( resume ) #40 SFT SWP #0f AND ADD DUP2r STH2r POK2
-		$no-red0
-	DUP #01 NEQ ^$no-red1 JNZ
-		DUP2r STH2r PEK2 DUP #0f AND #01 ADD 
-		( add/sub ) ~Mouse.state #10 EQU #fe MUL ADD 
-		( resume ) #0f AND SWP #f0 AND ADD DUP2r STH2r POK2
-		$no-red1
-	DUP #02 NEQ ^$no-red2 JNZ
-		DUP2r STH2r #0001 ADD2 PEK2 DUP #04 SFT #01 ADD 
-		( add/sub ) ~Mouse.state #10 EQU #fe MUL ADD 
-		( resume ) #40 SFT SWP #0f AND ADD DUP2r STH2r #0001 ADD2 POK2
-		$no-red2
-	DUP #03 NEQ ^$no-red3 JNZ
-		DUP2r STH2r #0001 ADD2 PEK2 DUP #0f AND #01 ADD 
-		( add/sub ) ~Mouse.state #10 EQU #fe MUL ADD 
-		( resume ) #0f AND SWP #f0 AND ADD DUP2r STH2r #0001 ADD2 POK2
-		$no-red3
+	DUP #00 NEQ ,&no-red0 JNZ
+		DUP2r STH2r GET DUP #04 SFT #01 ADD
+		( add/sub ) .Mouse/state DEI #10 EQU #fe MUL ADD
+		( resume ) #40 SFT SWP #0f AND ADD DUP2r STH2r PUT
+		&no-red0
+	DUP #01 NEQ ,&no-red1 JNZ
+		DUP2r STH2r GET DUP #0f AND #01 ADD
+		( add/sub ) .Mouse/state DEI #10 EQU #fe MUL ADD
+		( resume ) #0f AND SWP #f0 AND ADD DUP2r STH2r PUT
+		&no-red1
+	DUP #02 NEQ ,&no-red2 JNZ
+		DUP2r STH2r #0001 ADD2 GET DUP #04 SFT #01 ADD
+		( add/sub ) .Mouse/state DEI #10 EQU #fe MUL ADD
+		( resume ) #40 SFT SWP #0f AND ADD DUP2r STH2r #0001 ADD2 PUT
+		&no-red2
+	DUP #03 NEQ ,&no-red3 JNZ
+		DUP2r STH2r #0001 ADD2 GET DUP #0f AND #01 ADD
+		( add/sub ) .Mouse/state DEI #10 EQU #fe MUL ADD
+		( resume ) #0f AND SWP #f0 AND ADD DUP2r STH2r #0001 ADD2 PUT
+		&no-red3
 	POP
 	POP2r
 
@@ -334,230 +337,230 @@ RTN
 @select-tile ( pos -- )
 
 	( x y ) DUP #0f AND SWP #04 SFT
-	( y ) #10 MOD #10 MUL #00 SWP 8* 
-	( x ) ROT #10 MOD #00 SWP 8* ADD2 
-	( 2-bit mode ) #00 ~settings.depth #01 ADD MUL2 
-	( offset ) ~settings.page ADD2 =tileview.addr
-	,redraw JSR2
+	( y ) #10 MOD #10 MUL #00 SWP 8*
+	( x ) ROT #10 MOD #00 SWP 8* ADD2
+	( 2-bit mode ) #00 .settings/depth PEK #01 ADD MUL2
+	( offset ) .settings/page PEK2 ADD2 .tileview/addr POK2
+	;redraw JSR2
 
 RTN
 
 @toggle-depth ( -- )
 	
-	~bankview.selection
-	~settings.depth #00 EQU =settings.depth
-	,select-tile JSR2
+	.bankview/selection PEK
+	.settings/depth PEK #00 EQU .settings/depth POK
+	;select-tile JSR2
 
 RTN
 
 @op_shiftup
 	
-	~tileview.addr PEK2
-	~tileview.addr #0001 ADD2 PEK2 ~tileview.addr POK2
-	~tileview.addr #0002 ADD2 PEK2 ~tileview.addr #0001 ADD2 POK2
-	~tileview.addr #0003 ADD2 PEK2 ~tileview.addr #0002 ADD2 POK2
-	~tileview.addr #0004 ADD2 PEK2 ~tileview.addr #0003 ADD2 POK2
-	~tileview.addr #0005 ADD2 PEK2 ~tileview.addr #0004 ADD2 POK2
-	~tileview.addr #0006 ADD2 PEK2 ~tileview.addr #0005 ADD2 POK2
-	~tileview.addr #0007 ADD2 PEK2 ~tileview.addr #0006 ADD2 POK2
-	~tileview.addr #0007 ADD2 POK2
+	.tileview/addr PEK2 GET
+	.tileview/addr PEK2 #0001 ADD2 GET .tileview/addr PEK2 PUT
+	.tileview/addr PEK2 #0002 ADD2 GET .tileview/addr PEK2 #0001 ADD2 PUT
+	.tileview/addr PEK2 #0003 ADD2 GET .tileview/addr PEK2 #0002 ADD2 PUT
+	.tileview/addr PEK2 #0004 ADD2 GET .tileview/addr PEK2 #0003 ADD2 PUT
+	.tileview/addr PEK2 #0005 ADD2 GET .tileview/addr PEK2 #0004 ADD2 PUT
+	.tileview/addr PEK2 #0006 ADD2 GET .tileview/addr PEK2 #0005 ADD2 PUT
+	.tileview/addr PEK2 #0007 ADD2 GET .tileview/addr PEK2 #0006 ADD2 PUT
+	.tileview/addr PEK2 #0007 ADD2 PUT
 
 RTN
 
 @op_shiftdown
 	
-	~tileview.addr #0007 ADD2 PEK2
-	~tileview.addr #0006 ADD2 PEK2 ~tileview.addr #0007 ADD2 POK2
-	~tileview.addr #0005 ADD2 PEK2 ~tileview.addr #0006 ADD2 POK2
-	~tileview.addr #0004 ADD2 PEK2 ~tileview.addr #0005 ADD2 POK2
-	~tileview.addr #0003 ADD2 PEK2 ~tileview.addr #0004 ADD2 POK2
-	~tileview.addr #0002 ADD2 PEK2 ~tileview.addr #0003 ADD2 POK2
-	~tileview.addr #0001 ADD2 PEK2 ~tileview.addr #0002 ADD2 POK2
-	~tileview.addr PEK2 ~tileview.addr #0001 ADD2 POK2
-	~tileview.addr POK2
+	.tileview/addr PEK2 #0007 ADD2 GET
+	.tileview/addr PEK2 #0006 ADD2 GET .tileview/addr PEK2 #0007 ADD2 PUT
+	.tileview/addr PEK2 #0005 ADD2 GET .tileview/addr PEK2 #0006 ADD2 PUT
+	.tileview/addr PEK2 #0004 ADD2 GET .tileview/addr PEK2 #0005 ADD2 PUT
+	.tileview/addr PEK2 #0003 ADD2 GET .tileview/addr PEK2 #0004 ADD2 PUT
+	.tileview/addr PEK2 #0002 ADD2 GET .tileview/addr PEK2 #0003 ADD2 PUT
+	.tileview/addr PEK2 #0001 ADD2 GET .tileview/addr PEK2 #0002 ADD2 PUT
+	.tileview/addr PEK2 GET .tileview/addr PEK2 #0001 ADD2 PUT
+	.tileview/addr PEK2 PUT
 
 RTN
 
 @redraw
 	
-	,draw-bankview JSR2
-	,draw-tileview JSR2
-	,draw-blendview JSR2
-	,draw-colorview JSR2
-	,draw-dataview JSR2
+	;draw-bankview JSR2
+	;draw-tileview JSR2
+	;draw-blendview JSR2
+	;draw-colorview JSR2
+	;draw-dataview JSR2
 
 RTN
 
 @draw-bankview
 	
-	~bankview.x #0002 SUB2 ~bankview.y #0002 SUB2 ~bankview.x #0081 ADD2 ~bankview.y #0081 ADD2 #03 ,line-rect JSR2
+	.bankview/x PEK2 #0002 SUB2 .bankview/y PEK2 #0002 SUB2 .bankview/x PEK2 #0081 ADD2 .bankview/y PEK2 #0081 ADD2 #03 ;line-rect JSR2
 
 	( position )
 
-	~bankview.x =Screen.x
-	~bankview.y #0010 SUB2 =Screen.y
-	~settings.page ,draw-short JSR2
+	.bankview/x PEK2 .Screen/x DEO2
+	.bankview/y PEK2 #0010 SUB2 .Screen/y DEO2
+	.settings/page PEK2 ;draw-short JSR2
 
 	( toolbar )
 
-	~bankview.y #0010 SUB2 =Screen.y
+	.bankview/y PEK2 #0010 SUB2 .Screen/y DEO2
 
-	~bankview.x #0028 ADD2 =Screen.x
-	,depth_icns #00 ~settings.depth 8* ADD2 =Screen.addr
-	#23 =Screen.color
+	.bankview/x PEK2 #0028 ADD2 .Screen/x DEO2
+	;depth_icns #00 .settings/depth PEK 8* ADD2 .Screen/addr DEO2
+	#23 .Screen/color DEO
 
-	~bankview.x #0068 ADD2 =Screen.x
-	,tool_selector =Screen.addr
-	#21 ~bankview.mode #00 EQU ADD =Screen.color
+	.bankview/x PEK2 #0068 ADD2 .Screen/x DEO2
+	;tool_selector .Screen/addr DEO2
+	#21 .bankview/mode PEK #00 EQU ADD .Screen/color DEO
 
-	~Screen.x 8+ =Screen.x
-	,tool_hand =Screen.addr
-	#21 ~bankview.mode #01 EQU ADD =Screen.color
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;tool_hand .Screen/addr DEO2
+	#21 .bankview/mode PEK #01 EQU ADD .Screen/color DEO
 
-	~Screen.x 8+ =Screen.x
-	,tool_eraser =Screen.addr
-	#21 ~bankview.mode #02 EQU ADD =Screen.color
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;tool_eraser .Screen/addr DEO2
+	#21 .bankview/mode PEK #02 EQU ADD .Screen/color DEO
 
 	( guides )
 
-	~bankview.x #0010 SUB2 =Screen.x
-	~bankview.y =Screen.y
-	,font_hex =Screen.addr
+	.bankview/x PEK2 #0010 SUB2 .Screen/x DEO2
+	.bankview/y PEK2 .Screen/y DEO2
+	;font_hex .Screen/addr DEO2
 	#00 #10
-	$guides
-		( draw ) OVR ~bankview.selection #04 SFT EQU #22 ADD =Screen.color 
-		~Screen.addr 8+ =Screen.addr
-		~Screen.y 8+ =Screen.y
+	&guides
+		( draw ) OVR .bankview/selection PEK #04 SFT EQU #22 ADD .Screen/color DEO
+		.Screen/addr DEI2 8+ .Screen/addr DEO2
+		.Screen/y DEI2 8+ .Screen/y DEO2
 		SWP #01 ADD SWP
-		DUP2 LTH ^$guides JNZ
+		DUP2 LTH ,&guides JNZ
 	POP2
 
 	( draw page )
 
-	( load ) ~settings.page =Screen.addr
-	~bankview.y DUP2 #0080 ADD2
-	$ver
-		( save ) OVR2 =Screen.y
-		~bankview.x DUP2 #0080 ADD2
-		$hor 
-			( save ) OVR2 =Screen.x
-			( get selected ) ~Screen.addr ~tileview.addr EQU2
-			( get blending ) ~settings.blending
-			( get depth ) ~settings.depth #20 MUL
-			( draw ) #20 ADD ADD ADD =Screen.color
+	( load ) .settings/page PEK2 .Screen/addr DEO2
+	.bankview/y PEK2 DUP2 #0080 ADD2
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		.bankview/x PEK2 DUP2 #0080 ADD2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( get selected ) .Screen/addr DEI2 .tileview/addr PEK2 EQU2
+			( get blending ) .settings/blending PEK
+			( get depth ) .settings/depth PEK #20 MUL
+			( draw ) #20 ADD ADD ADD .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
-			( incr ) ~Screen.addr 8+ #00 ~settings.depth #0008 MUL2 ADD2 =Screen.addr
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			( incr ) .Screen/addr DEI2 8+ #00 .settings/depth PEK #0008 MUL2 ADD2 .Screen/addr DEO2
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
 
 RTN
 
 @draw-tileview
 
-	~tileview.x #0002 SUB2 ~tileview.y #0002 SUB2 ~tileview.x #0080 ADD2 ~tileview.y #0081 ADD2 #03 ,line-rect JSR2
+	.tileview/x PEK2 #0002 SUB2 .tileview/y PEK2 #0002 SUB2 .tileview/x PEK2 #0080 ADD2 .tileview/y PEK2 #0081 ADD2 #03 ;line-rect JSR2
 
-	~tileview.x #0028 ADD2 =Screen.x
-	~tileview.y #0010 SUB2 =Screen.y
-	~tileview.addr =Screen.addr
+	.tileview/x PEK2 #0028 ADD2 .Screen/x DEO2
+	.tileview/y PEK2 #0010 SUB2 .Screen/y DEO2
+	.tileview/addr PEK2 .Screen/addr DEO2
 
-	( get blending ) ~settings.blending
-	( get depth ) ~settings.depth #20 MUL
-	( draw ) #20 ADD ADD =Screen.color
+	( get blending ) .settings/blending PEK
+	( get depth ) .settings/depth PEK #20 MUL
+	( draw ) #20 ADD ADD .Screen/color DEO
 
 	( position )
 
-	~tileview.x =Screen.x
-	~tileview.y #0010 SUB2 =Screen.y
-	~tileview.addr ,draw-short JSR2
+	.tileview/x PEK2 .Screen/x DEO2
+	.tileview/y PEK2 #0010 SUB2 .Screen/y DEO2
+	.tileview/addr PEK2 ;draw-short JSR2
 
 	( body )
 
-	~tileview.x =Screen.x
-	~tileview.y =Screen.y
-	~tileview.addr =tileview.addr
-	,draw-tileview-icn JSR2
+	.tileview/x PEK2 .Screen/x DEO2
+	.tileview/y PEK2 .Screen/y DEO2
+	.tileview/addr PEK2 .tileview/addr POK2
+	;draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =Screen.x
-	~tileview.y =Screen.y
-	~tileview.addr 8+ =tileview.addr
-	,draw-tileview-icn JSR2
+	.tileview/x PEK2 #0040 ADD2 .Screen/x DEO2
+	.tileview/y PEK2 .Screen/y DEO2
+	.tileview/addr PEK2 8+ .tileview/addr POK2
+	;draw-tileview-icn JSR2
 
-	~tileview.x =Screen.x
-	~tileview.y #0040 ADD2 =Screen.y
-	~tileview.addr 8+ =tileview.addr
-	,draw-tileview-icn JSR2
+	.tileview/x PEK2 .Screen/x DEO2
+	.tileview/y PEK2 #0040 ADD2 .Screen/y DEO2
+	.tileview/addr PEK2 8+ .tileview/addr POK2
+	;draw-tileview-icn JSR2
 
-	~tileview.x #0040 ADD2 =Screen.x
-	~tileview.y #0040 ADD2 =Screen.y
-	~tileview.addr 8+ =tileview.addr
-	,draw-tileview-icn JSR2
+	.tileview/x PEK2 #0040 ADD2 .Screen/x DEO2
+	.tileview/y PEK2 #0040 ADD2 .Screen/y DEO2
+	.tileview/addr PEK2 8+ .tileview/addr POK2
+	;draw-tileview-icn JSR2
 
 	( line hor )
-	~tileview.y #003f ADD2 =Screen.y
-	~tileview.x =Screen.x
-	$line-hor
-		( draw ) #03 =Screen.color
-		( incr ) ~Screen.x #0002 ADD2 =Screen.x
-	~Screen.x ~tileview.x #0082 ADD2 LTH2 ^$line-hor JNZ
+	.tileview/y PEK2 #003f ADD2 .Screen/y DEO2
+	.tileview/x PEK2 .Screen/x DEO2
+	&line-hor
+		( draw ) #03 .Screen/color DEO
+		( incr ) .Screen/x DEI2 #0002 ADD2 .Screen/x DEO2
+	.Screen/x DEI2 .tileview/x PEK2 #0082 ADD2 LTH2 ,&line-hor JNZ
 
 	( line ver )
-	~tileview.y =Screen.y
-	~tileview.x #003f ADD2 =Screen.x
-	$line-ver
-		( draw ) #03 =Screen.color
-		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-	~Screen.y ~tileview.y #0081 ADD2 LTH2 ^$line-ver JNZ
+	.tileview/y PEK2 .Screen/y DEO2
+	.tileview/x PEK2 #003f ADD2 .Screen/x DEO2
+	&line-ver
+		( draw ) #03 .Screen/color DEO
+		( incr ) .Screen/y DEI2 #0002 ADD2 .Screen/y DEO2
+	.Screen/y DEI2 .tileview/y PEK2 #0081 ADD2 LTH2 ,&line-ver JNZ
 
-	( rewind ) ~tileview.addr #0018 SUB2 =tileview.addr
+	( rewind ) .tileview/addr PEK2 #0018 SUB2 .tileview/addr POK2
 
 RTN
 
 @draw-tileview-icn
 
-	#00 =pt.x #00 =pt.y 
-	$ver
-		#00 =pt.x
-		$hor
+	#00 .pt/x POK #00 .pt/y POK
+	&ver
+		#00 .pt/x POK
+		&hor
 			( get bit )
-			,blank_icn #00
-			~tileview.addr #00 ~pt.y ADD2 PEK2 #07 ~pt.x SUB SFT #01 AND ( get bit )
-			8* ADD2 =Screen.addr ( add *8 )
-			( draw ) #21 =Screen.color
-			( incr ) ~Screen.x 8+ =Screen.x
-			( incr ) ~pt.x #01 ADD =pt.x
-			~pt.x #08 LTH ,$hor JNZ2
-		( incr ) ~Screen.y 8+ =Screen.y
-		( incr ) ~pt.y #01 ADD =pt.y
-		~Screen.x #0040 SUB2 =Screen.x
-		~pt.y #08 LTH ,$ver JNZ2
+			;blank_icn #00
+			.tileview/addr PEK2 #00 .pt/y PEK ADD2 GET #07 .pt/x PEK SUB SFT #01 AND ( get bit )
+			8* ADD2 .Screen/addr DEO2 ( add *8 )
+			( draw ) #21 .Screen/color DEO
+			( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+			( incr ) .pt/x PEK #01 ADD .pt/x POK
+			.pt/x PEK #08 LTH ;&hor JNZ2
+		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
+		( incr ) .pt/y PEK #01 ADD .pt/y POK
+		.Screen/x DEI2 #0040 SUB2 .Screen/x DEO2
+		.pt/y PEK #08 LTH ;&ver JNZ2
 
 RTN
 
 @draw-blendview ( -- )
 	
-	~blendview.x1 #0002 SUB2 ~blendview.y1 #0002 SUB2 ~blendview.x2 #0001 ADD2 ~blendview.y2 #0001 ADD2 #03 ,line-rect JSR2
+	.blendview/x1 PEK2 #0002 SUB2 .blendview/y1 PEK2 #0002 SUB2 .blendview/x2 PEK2 #0001 ADD2 .blendview/y2 PEK2 #0001 ADD2 #03 ;line-rect JSR2
 
-	~tileview.addr =Screen.addr
+	.tileview/addr PEK2 .Screen/addr DEO2
 	#00 #10
-	$loop
-		OVR #04 MOD #00 SWP #0008 MUL2 ~blendview.x1 ADD2 =Screen.x
-		OVR #04 DIV #00 SWP #0008 MUL2 ~blendview.y1 ADD2 =Screen.y
-		#20 =Screen.color
-		OVR #20 ADD ~settings.depth #20 MUL ADD =Screen.color
+	&loop
+		OVR #04 MOD #00 SWP #0008 MUL2 .blendview/x1 PEK2 ADD2 .Screen/x DEO2
+		OVR #04 DIV #00 SWP #0008 MUL2 .blendview/y1 PEK2 ADD2 .Screen/y DEO2
+		#20 .Screen/color DEO
+		OVR #20 ADD .settings/depth PEK #20 MUL ADD .Screen/color DEO
 		SWP #01 ADD SWP
-		DUP2 LTH ^$loop JNZ
+		DUP2 LTH ,&loop JNZ
 	POP2
 
-	~blendview.x1 #0002 SUB2 ~blendview.y2 #0001 ADD2 ~blendview.x1 #000e ADD2 ~blendview.y2 #0009 ADD2 #03 ,line-rect JSR2
-	~blendview.x1 #0001 SUB2 =Screen.x
-	~blendview.y2 #0001 ADD2 =Screen.y
+	.blendview/x1 PEK2 #0002 SUB2 .blendview/y2 PEK2 #0001 ADD2 .blendview/x1 PEK2 #000e ADD2 .blendview/y2 PEK2 #0009 ADD2 #03 ;line-rect JSR2
+	.blendview/x1 PEK2 #0001 SUB2 .Screen/x DEO2
+	.blendview/y2 PEK2 #0001 ADD2 .Screen/y DEO2
 
-	( get blending ) ~settings.blending
-	( get depth ) ~settings.depth #20 MUL
-	( draw ) #20 ADD ADD #2c ,draw-byte JSR2
+	( get blending ) .settings/blending PEK
+	( get depth ) .settings/depth PEK #20 MUL
+	( draw ) #20 ADD ADD #2c ;draw-byte JSR2
 
 RTN
 
@@ -565,130 +568,130 @@ RTN
 
 	( bytes )
 
-	~tileview.y #0018 ADD2 =Screen.y
-	#00 =i
-	$bytes
-		~tileview.x #0088 ADD2 =Screen.x
-		~tileview.addr #00 ~i ADD2 PEK2 #22 ,draw-byte JSR2
-		( incr ) ~i #01 ADD =i
-		( incr ) ~Screen.y 8+ =Screen.y
-	~i #08 LTH ,$bytes JNZ2
+	.tileview/y PEK2 #0018 ADD2 .Screen/y DEO2
+	#00 .i POK
+	&bytes
+		.tileview/x PEK2 #0088 ADD2 .Screen/x DEO2
+		.tileview/addr PEK2 #00 .i PEK ADD2 GET #22 ;draw-byte JSR2
+		( incr ) .i PEK #01 ADD .i POK
+		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
+	.i PEK #08 LTH ;&bytes JNZ2
 
 	( operations )
 
-	~Screen.y 8+ =Screen.y
-	,movedown_icn =Screen.addr
-	#21 =Screen.color
-	~Screen.x 8- =Screen.x
-	,moveup_icn =Screen.addr
-	#21 =Screen.color
+	.Screen/y DEI2 8+ .Screen/y DEO2
+	;movedown_icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+	.Screen/x DEI2 8- .Screen/x DEO2
+	;moveup_icn .Screen/addr DEO2
+	#21 .Screen/color DEO
 
 	( draw tiles 2x2 )
-	~tileview.y =Screen.y
-	#00 =pt.x #00 =pt.y ~tileview.addr =Screen.addr
+	.tileview/y PEK2 .Screen/y DEO2
+	#00 .pt/x POK #00 .pt/y POK .tileview/addr PEK2 .Screen/addr DEO2
 
-	$tiles-ver
-		#00 =pt.x
-		~tileview.x #0088 ADD2 =Screen.x
-		$tiles-hor
-			( draw ) #23 =Screen.color
-			( incr ) ~Screen.x 8+ =Screen.x
-			( incr ) ~Screen.addr 8+ =Screen.addr
-			( incr ) ~pt.x #01 ADD =pt.x
-			~pt.x #02 LTH ,$tiles-hor JNZ2
-		( incr ) ~pt.y #01 ADD =pt.y
-		( incr ) ~Screen.y 8+ =Screen.y
-		~pt.y #02 LTH ,$tiles-ver JNZ2
+	&tiles-ver
+		#00 .pt/x POK
+		.tileview/x PEK2 #0088 ADD2 .Screen/x DEO2
+		&tiles-hor
+			( draw ) #23 .Screen/color DEO
+			( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+			( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
+			( incr ) .pt/x PEK #01 ADD .pt/x POK
+			.pt/x PEK #02 LTH ;&tiles-hor JNZ2
+		( incr ) .pt/y PEK #01 ADD .pt/y POK
+		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
+		.pt/y PEK #02 LTH ;&tiles-ver JNZ2
 
 RTN
 
 @draw-colorview ( -- )
 	
-	~colorview.y1 #18 ADD =Screen.y
-	~colorview.x1 #08 ADD =Screen.x
-	~System.r ,draw-color-code JSR2
-	~colorview.y1 #18 ADD =Screen.y
-	~colorview.x1 #10 ADD =Screen.x
-	~System.g ,draw-color-code JSR2
-	~colorview.y1 #18 ADD =Screen.y
-	~colorview.x1 #18 ADD =Screen.x
-	~System.b ,draw-color-code JSR2	
+	.colorview/y1 PEK2 #18 ADD .Screen/y DEO2
+	.colorview/x1 PEK2 #08 ADD .Screen/x DEO2
+	.System/r DEI2 ;draw-color-code JSR2
+	.colorview/y1 PEK2 #18 ADD .Screen/y DEO2
+	.colorview/x1 PEK2 #10 ADD .Screen/x DEO2
+	.System/g DEI2 ;draw-color-code JSR2
+	.colorview/y1 PEK2 #18 ADD .Screen/y DEO2
+	.colorview/x1 PEK2 #18 ADD .Screen/x DEO2
+	.System/b DEI2 ;draw-color-code JSR2	
 
-	~colorview.x1 =Screen.x
-	,circle_icns =Screen.addr
+	.colorview/x1 PEK2 .Screen/x DEO2
+	;circle_icns .Screen/addr DEO2
 
 	#00 #04
-	$loop
-		OVR ~settings.brush EQU #00 SWP #0008 MUL2 ,circle_icns ADD2 =Screen.addr
-		OVR ~colorview.y1 ROT #00 SWP #0008 MUL2 ADD2 =Screen.y
-		OVR #20 ADD =Screen.color
+	&loop
+		OVR .settings/brush PEK EQU #00 SWP #0008 MUL2 ;circle_icns ADD2 .Screen/addr DEO2
+		OVR .colorview/y1 PEK2 ROT #00 SWP #0008 MUL2 ADD2 .Screen/y DEO2
+		OVR #20 ADD .Screen/color DEO
 		SWP #01 ADD SWP
-		DUP2 LTH ^$loop JNZ
+		DUP2 LTH ,&loop JNZ
 	POP2
 
 RTN
 
 @draw-color-code ( color* -- )
 	
-	DUP ,font_hex ROT #0f AND #08 MUL #00 SWP ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~colorview.y1 #10 ADD =Screen.y
-	,font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~colorview.y1 #08 ADD =Screen.y
-	DUP ,font_hex ROT #0f AND #08 MUL #00 SWP ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~colorview.y1 =Screen.y
-	,font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
+	DUP ;font_hex ROT #0f AND #08 MUL #00 SWP ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.colorview/y1 PEK2 #10 ADD .Screen/y DEO2
+	;font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.colorview/y1 PEK2 #08 ADD .Screen/y DEO2
+	DUP ;font_hex ROT #0f AND #08 MUL #00 SWP ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.colorview/y1 PEK2 .Screen/y DEO2
+	;font_hex ROT #04 SFT #08 MUL #00 SWP ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
 
 RTN
 
 @draw-cursor
 
 	( clear last cursor )
-	~mouse.x =Screen.x
-	~mouse.y =Screen.y
-	,blank_icn =Screen.addr
-	#30 =Screen.color
+	.mouse/x PEK2 .Screen/x DEO2
+	.mouse/y PEK2 .Screen/y DEO2
+	;blank_icn .Screen/addr DEO2
+	#30 .Screen/color DEO
 
 	( record mouse positions )
-	~Mouse.x =mouse.x 
-	~Mouse.y =mouse.y
+	.Mouse/x DEI2 .mouse/x POK2
+	.Mouse/y DEI2 .mouse/y POK2
 
 	( draw new cursor )
-	~mouse.x =Screen.x
-	~mouse.y =Screen.y
-	,tool_selector #00 ~bankview.mode #08 MUL ADD2 =Screen.addr
-	#32 ~Mouse.state #00 NEQ ADD =Screen.color
+	.mouse/x PEK2 .Screen/x DEO2
+	.mouse/y PEK2 .Screen/y DEO2
+	;tool_selector #00 .bankview/mode PEK #08 MUL ADD2 .Screen/addr DEO2
+	#32 .Mouse/state DEI #00 NEQ ADD .Screen/color DEO
 
 RTN
 
 @draw-byte ( byte color -- )
 	
-	=color STH
-	,font_hex #00 DUPr STHr #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
-	( draw ) ~color =Screen.color
-	~Screen.x 8+ =Screen.x
-	,font_hex #00 STHr #0f AND #08 MUL ADD2 =Screen.addr
-	( draw ) ~color =Screen.color
+	.color POK STH
+	;font_hex #00 DUPr STHr #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) .color PEK .Screen/color DEO
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;font_hex #00 STHr #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) .color PEK .Screen/color DEO
 
 RTN
 
 @draw-short ( short -- )
 
-	=addr
-	,font_hex #00 ,addr PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~Screen.x 8+ =Screen.x
-	,font_hex #00 ,addr PEK2 #0f AND #08 MUL ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~Screen.x 8+ =Screen.x
-	,font_hex #00 ,addr ++ PEK2 #f0 AND #04 SFT #08 MUL ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
-	~Screen.x 8+ =Screen.x
-	,font_hex #00 ,addr ++ PEK2 #0f AND #08 MUL ADD2 =Screen.addr
-	( draw ) #22 =Screen.color
+	.addr POK2
+	;font_hex #00 ;addr GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;font_hex #00 ;addr GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;font_hex #00 ;addr ++ GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	;font_hex #00 ;addr ++ GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	( draw ) #22 .Screen/color DEO
 
 RTN
 
@@ -696,27 +699,27 @@ RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) =color DUP2 STH2 =rect.y2 =rect.x2 DUP2 STH2 =rect.y1 =rect.x1
+	( load ) .color POK DUP2 STH2 .rect/y2 POK2 .rect/x2 POK2 DUP2 STH2 .rect/y1 POK2 .rect/x1 POK2
 	STH2r STH2r
-	$ver
-		( save ) OVR2 =Screen.y
-		( draw ) ~rect.x1 =Screen.x ~color DUP =Screen.color 
-		( draw ) ~rect.x2 =Screen.x =Screen.color
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTS2 ^$ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JNZ
 	POP2 POP2
-	~rect.x1 ~rect.x2
-	$hor
-		( save ) OVR2 =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color DUP =Screen.color 
-		( draw ) ~rect.y2 =Screen.y =Screen.color
+	.rect/x1 PEK2 .rect/x2 PEK2
+	&hor
+		( save ) OVR2 .Screen/x DEO2
+		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 ++ LTS2 ^$hor JNZ
+		OVR2 OVR2 ++ LTS2 ,&hor JNZ
 	POP2 POP2
 
 RTN
 
-@circle_icns 
+@circle_icns
 	[ 0038 7cfe fefe 7c38 ] ( full )
 	[ 0038 4482 8282 4438 ] ( line )
 @eye_icns
@@ -735,21 +738,21 @@ RTN
 	00fe 8282 fe82 82fe
 	00fe 9292 fe92 92fe
 ]
-@filepath1     [ projects/fonts/specter8.bit 00 ]
-@filepath2     [ projects/pictures/cibo.bit 00 ]
-@filepath3     [ projects/pictures/zerotwo10x10.chr 00 ]
-@filepath4     [ projects/fonts/katahira8.bit 00 ]
-@filepath5     [ projects/pictures/ako10x10.chr 00 ]
-@filepath6     [ projects/pictures/cyr4x4.chr 00 ]
+@filepath1     [ "projects/fonts/specter8.bit 00 ]
+@filepath2     [ "projects/pictures/cibo.bit 00 ]
+@filepath3     [ "projects/pictures/zerotwo10x10.chr 00 ]
+@filepath4     [ "projects/fonts/katahira8.bit 00 ]
+@filepath5     [ "projects/pictures/ako10x10.chr 00 ]
+@filepath6     [ "projects/pictures/cyr4x4.chr 00 ]
 
-@font_hex ( 0-F ) 
+@font_hex ( 0-F )
 [
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
 	007c 8280 fc82 827c 007c 8202 1e02 0202
 	007c 8282 7c82 827c 007c 8282 7e02 827c
-	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
-	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]

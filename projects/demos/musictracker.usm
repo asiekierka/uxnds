@@ -1,249 +1,249 @@
-( a blank file )
+( mini music tracker )
 
 %RTN { JMP2r }
 %8+ { #0008 ADD2 } %8- { #0008 SUB2 }
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
-%++  { #0001 ADD2 }
+%++ { #0001 ADD2 }
 %MOD { DUP2 DIV MUL SUB }
-%TRACK { ,track.ch1 #00 ~track.active #0020 MUL2 ADD2 }
-%SOUND { STH #00 =Audio.value STHr #00 =Audio.delay }
-%SOUND_FINISH { #00 =Audio.finish }
+%TRACK { ;track/ch1 #00 .track/active PEK #0020 MUL2 ADD2 }
+%SOUND { STH #00 .Audio/value DEO2 STHr #00 .Audio/delay DEO2 }
+%SOUND_FINISH { #00 .Audio/finish DEO }
 
 ( variables )
 
-;pointer { x 2 y 2 }
-;color { byte 1 }
-;rect { x1 2 y1 2 x2 2 y2 2 }
-;trkframe { x1 2 y1 2 x2 2 y2 2 }
-;chnframe { x1 2 y1 2 x2 2 y2 2 }
-;ctlframe { x1 2 y1 2 x2 2 y2 2 }
-;label { x 2 y 2 color 1 addr 2 }
-;knob { x 2 y 2 value 1 }
-;head { pos 1 }
-;track { active 1 ch1 20 ch2 20 ch3 20 ch4 20 }
-;adsr { ch1a 1 ch1d 1 ch1s 1 ch1r 1 ch2a 1 ch2d 1 ch2s 1 ch2r 1 ch3a 1 ch3d 1 ch3s 1 ch3r 1 ch4a 1 ch4d 1 ch4s 1 ch4r 1 }
-;volume { ch1 1 ch2 1 ch3 1 ch4 1 }
+@pointer [ &x $2 &y $2 ]
+@color [ &byte $1 ]
+@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@trkframe [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@chnframe [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@ctlframe [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@label [ &x $2 &y $2 &color $1 &addr $2 ]
+@knob [ &x $2 &y $2 &value $1 ]
+@head [ &pos $1 ]
+@track [ &active $1 &ch1 $20 &ch2 $20 &ch3 $20 &ch4 $20 ]
+@adsr [ &ch1a $1 &ch1d $1 &ch1s $1 &ch1r $1 &ch2a $1 &ch2d $1 &ch2s $1 &ch2r $1 &ch3a $1 &ch3d $1 &ch3s $1 &ch3r $1 &ch4a $1 &ch4d $1 &ch4s $1 &ch4r $1 ]
+@volume [ &ch1 $1 &ch2 $1 &ch3 $1 &ch4 $1 ]
 
 ( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0130 ;Audio { wave 2 envelope 2 pad 4 volume 1 pitch 1 play 1 value 2 delay 2 finish 1 }
-|0140 ;Controller { vector 2 button 1 key 1 }
-|0160 ;Mouse  { vector 2 x 2 y 2 state 1 chord 1 }
-|0170 ;File { vector 2 success 2 offset 2 pad 2 name 2 length 2 load 2 save 2 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|30 @Audio [ &wave $2 &envelope $2 &pad $4 &volume $1 &pitch $1 &play $1 &value $2 &delay $2 &finish $1 ]
+|40 @Controller [ &vector $2 &button $1 &key $1 ]
+|60 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+|70 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
 
 ( vectors )
 
-|0200
+|0100
 
-	( theme ) #e0fa =System.r #30fa =System.g #30fa =System.b
-	( vectors ) ,on-screen =Screen.vector
-	( vectors ) ,on-mouse =Mouse.vector
-	( vectors ) ,on-button =Controller.vector
+	( theme ) #e0fa .System/r DEO2 #30fa .System/g DEO2 #30fa .System/b DEO2
+	( vectors ) ;on-screen .Screen/vector DEO2
+	( vectors ) ;on-mouse .Mouse/vector DEO2
+	( vectors ) ;on-button .Controller/vector DEO2
 
-	~Screen.width #0002 DIV2 DUP2 #0080 SUB2 =trkframe.x1
-	 #0080 ADD2 =trkframe.x2
-	~Screen.height #0002 DIV2 DUP2 #0038 SUB2 #0010 SUB2 =trkframe.y1
-	 #0038 ADD2 #0010 SUB2 =trkframe.y2
+	.Screen/width DEI2 #0002 DIV2 DUP2 #0080 SUB2 .trkframe/x1 POK2
+	 #0080 ADD2 .trkframe/x2 POK2
+	.Screen/height DEI2 #0002 DIV2 DUP2 #0038 SUB2 #0010 SUB2 .trkframe/y1 POK2
+	 #0038 ADD2 #0010 SUB2 .trkframe/y2 POK2
 
-	~trkframe.x1 =chnframe.x1 ~trkframe.y2 =chnframe.y1
-	~chnframe.x1 #0030 ADD2 =chnframe.x2 ~chnframe.y1 #0030 ADD2 =chnframe.y2
+	.trkframe/x1 PEK2 .chnframe/x1 POK2 .trkframe/y2 PEK2 .chnframe/y1 POK2
+	.chnframe/x1 PEK2 #0030 ADD2 .chnframe/x2 POK2 .chnframe/y1 PEK2 #0030 ADD2 .chnframe/y2 POK2
 
-	~chnframe.x2 =ctlframe.x1 ~chnframe.y1 =ctlframe.y1
-	~trkframe.x2 =ctlframe.x2 ~chnframe.y2 =ctlframe.y2
+	.chnframe/x2 PEK2 .ctlframe/x1 POK2 .chnframe/y1 PEK2 .ctlframe/y1 POK2
+	.trkframe/x2 PEK2 .ctlframe/x2 POK2 .chnframe/y2 PEK2 .ctlframe/y2 POK2
 
 	( default settings )
-	,adsr-envelope =Audio.envelope
-	#00 =adsr.ch1a #40 =adsr.ch1d #80 =adsr.ch1s #c0 =adsr.ch1r #88 =volume.ch1
-	#10 =adsr.ch2a #50 =adsr.ch2d #90 =adsr.ch2s #d0 =adsr.ch2r #88 =volume.ch2
-	#20 =adsr.ch3a #60 =adsr.ch3d #a0 =adsr.ch3s #e0 =adsr.ch3r #88 =volume.ch3
+	;adsr-envelope .Audio/envelope DEO2
+	#00 .adsr/ch1a POK #40 .adsr/ch1d POK #80 .adsr/ch1s POK #c0 .adsr/ch1r POK #88 .volume/ch1 POK
+	#10 .adsr/ch2a POK #50 .adsr/ch2d POK #90 .adsr/ch2s POK #d0 .adsr/ch2r POK #88 .volume/ch2 POK
+	#20 .adsr/ch3a POK #60 .adsr/ch3d POK #a0 .adsr/ch3s POK #e0 .adsr/ch3r POK #88 .volume/ch3 POK
 
-	~volume.ch3 =Audio.volume
+	.volume/ch3 PEK .Audio/volume DEO
 
-	,draw-timeline JSR2
-	,draw-controls JSR2
-	,draw-channels JSR2
+	;draw-timeline JSR2
+	;draw-controls JSR2
+	;draw-channels JSR2
 
 BRK
 
 @on-screen ( -> )
 	
-	,move-head JSR2
-	~head.pos #08 MOD #00 NEQ ^$skip JNZ
-		,bang JSR2
-	$skip
+	;move-head JSR2
+	.head/pos PEK #08 MOD #00 NEQ ,&skip JNZ
+		;bang JSR2
+	&skip
 
 BRK
 
 @on-mouse ( -> )
 
-	~Mouse.state #00 EQU ,$click-end JNZ2
-		~Mouse.x ~trkframe.x1 GTH2 ~Mouse.x ~trkframe.x2 LTH2 #0101 EQU2
-		~Mouse.y ~trkframe.y1 GTH2 ~Mouse.y ~trkframe.y2 LTH2 #0101 EQU2
-		#0101 EQU2 ,touch-trk JNZ2
-		~Mouse.x ~chnframe.x1 GTH2 ~Mouse.x ~chnframe.x2 LTH2 #0101 EQU2
-		~Mouse.y ~chnframe.y1 8+ GTH2 ~Mouse.y ~chnframe.y2 8- LTH2 #0101 EQU2
-		#0101 EQU2 ,touch-chn JNZ2
-		~Mouse.x ~ctlframe.x1 GTH2 ~Mouse.x ~ctlframe.x2 LTH2 #0101 EQU2
-		~Mouse.y ~ctlframe.y1 8+ GTH2 ~Mouse.y ~ctlframe.y2 8- LTH2 #0101 EQU2
-		#0101 EQU2 ,touch-ctl JNZ2	
-	$click-end
+	.Mouse/state DEI #00 EQU ;&click-end JNZ2
+		.Mouse/x DEI2 .trkframe/x1 PEK2 GTH2 .Mouse/x DEI2 .trkframe/x2 PEK2 LTH2 #0101 EQU2
+		.Mouse/y DEI2 .trkframe/y1 PEK2 GTH2 .Mouse/y DEI2 .trkframe/y2 PEK2 LTH2 #0101 EQU2
+		#0101 EQU2 ;touch-trk JNZ2
+		.Mouse/x DEI2 .chnframe/x1 PEK2 GTH2 .Mouse/x DEI2 .chnframe/x2 PEK2 LTH2 #0101 EQU2
+		.Mouse/y DEI2 .chnframe/y1 PEK2 8+ GTH2 .Mouse/y DEI2 .chnframe/y2 PEK2 8- LTH2 #0101 EQU2
+		#0101 EQU2 ;touch-chn JNZ2
+		.Mouse/x DEI2 .ctlframe/x1 PEK2 GTH2 .Mouse/x DEI2 .ctlframe/x2 PEK2 LTH2 #0101 EQU2
+		.Mouse/y DEI2 .ctlframe/y1 PEK2 8+ GTH2 .Mouse/y DEI2 .ctlframe/y2 PEK2 8- LTH2 #0101 EQU2
+		#0101 EQU2 ;touch-ctl JNZ2	
+	&click-end
 
-	,draw-cursor JSR2
+	;draw-cursor JSR2
 
 BRK
 
 @on-button ( -> )
 
-	~Controller.key 
-	DUP #61 NEQ ^$no-c JNZ
-		,notes PEK2 ,play JSR2 $no-c
-	DUP #73 NEQ ^$no-d JNZ
-		,notes #0001 ADD2 PEK2 ,play JSR2 $no-d
-	DUP #64 NEQ ^$no-e JNZ
-		,notes #0002 ADD2 PEK2 ,play JSR2 $no-e
-	DUP #66 NEQ ^$no-f JNZ
-		,notes #0003 ADD2 PEK2 ,play JSR2 $no-f
-	DUP #67 NEQ ^$no-g JNZ
-		,notes #0004 ADD2 PEK2 ,play JSR2 $no-g
-	DUP #68 NEQ ^$no-a JNZ
-		,notes #0005 ADD2 PEK2 ,play JSR2 $no-a
-	DUP #6a NEQ ^$no-b JNZ
-		,notes #0006 ADD2 PEK2 ,play JSR2 $no-b
-	DUP #6b NEQ ^$no-c2 JNZ
-		,notes #0007 ADD2 PEK2 ,play JSR2 $no-c2
+	.Controller/key DEI
+	DUP #61 NEQ ,&no-c JNZ
+		;notes GET ;play JSR2 &no-c
+	DUP #73 NEQ ,&no-d JNZ
+		;notes #0001 ADD2 GET ;play JSR2 &no-d
+	DUP #64 NEQ ,&no-e JNZ
+		;notes #0002 ADD2 GET ;play JSR2 &no-e
+	DUP #66 NEQ ,&no-f JNZ
+		;notes #0003 ADD2 GET ;play JSR2 &no-f
+	DUP #67 NEQ ,&no-g JNZ
+		;notes #0004 ADD2 GET ;play JSR2 &no-g
+	DUP #68 NEQ ,&no-a JNZ
+		;notes #0005 ADD2 GET ;play JSR2 &no-a
+	DUP #6a NEQ ,&no-b JNZ
+		;notes #0006 ADD2 GET ;play JSR2 &no-b
+	DUP #6b NEQ ,&no-c2 JNZ
+		;notes #0007 ADD2 GET ;play JSR2 &no-c2
 	POP
 
 BRK
 
 @play ( pitch -- )
 
-	#80 ORA =Audio.pitch
-	,triangle-wave =Audio.wave
-	~track.active =Audio.play
+	#80 ORA .Audio/pitch DEO
+	;triangle-wave .Audio/wave DEO2
+	.track/active PEK .Audio/play DEO
 
 RTN
 
 @touch-trk ( -- )
 	
-	,clear-notes JSR2
+	;clear-notes JSR2
 	( get note )
-	#0e ~Mouse.y ~trkframe.y1 SUB2 SWP POP #08 DIV SUB
-	~Mouse.state #10 NEQ ^$no-erase JNZ POP #00 $no-erase
+	#0e .Mouse/y DEI2 .trkframe/y1 PEK2 SUB2 SWP POP #08 DIV SUB
+	.Mouse/state DEI #10 NEQ ,&no-erase JNZ POP #00 &no-erase
 	( edit note )
-	TRACK #00 ~Mouse.x ~trkframe.x1 SUB2 SWP POP #08 DIV ADD2 POK2
-	( release ) #00 =Mouse.state
-	,draw-notes JSR2
+	TRACK #00 .Mouse/x DEI2 .trkframe/x1 PEK2 SUB2 SWP POP #08 DIV ADD2 PUT
+	( release ) #00 .Mouse/state DEO
+	;draw-notes JSR2
 
 BRK
 
 @touch-chn ( -- )
 	
-	,clear-notes JSR2
-	( save ) ~Mouse.y ~chnframe.y1 SUB2 SWP POP #08 DIV #01 SUB =track.active
-	( release ) #00 =Mouse.state
-	,draw-channels JSR2
-	,draw-notes JSR2
-	,draw-controls JSR2
+	;clear-notes JSR2
+	( save ) .Mouse/y DEI2 .chnframe/y1 PEK2 SUB2 SWP POP #08 DIV #01 SUB .track/active POK
+	( release ) #00 .Mouse/state DEO
+	;draw-channels JSR2
+	;draw-notes JSR2
+	;draw-controls JSR2
 
 BRK
 
 @touch-ctl ( -- )
 	
-	~Mouse.x ~ctlframe.x1 SUB2 8- 8/ SWP POP #02 DIV
-	DUP #00 NEQ ^$no-a JNZ
-		,adsr #00 ~track.active #04 MUL ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD
-		,adsr #00 ~track.active #04 MUL ADD2 POK2 $no-a
-	DUP #01 NEQ ^$no-d JNZ
-		,adsr #00 ~track.active #04 MUL ADD2 #0001 ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD
-		,adsr #00 ~track.active #04 MUL ADD2 #0001 ADD2 POK2 $no-d
-	DUP #02 NEQ ^$no-s JNZ
-		,adsr #00 ~track.active #04 MUL ADD2 #0002 ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD
-		,adsr #00 ~track.active #04 MUL ADD2 #0002 ADD2 POK2 $no-s
-	DUP #03 NEQ ^$no-r JNZ
-		,adsr #00 ~track.active #04 MUL ADD2 #0003 ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD
-		,adsr #00 ~track.active #04 MUL ADD2 #0003 ADD2 POK2 $no-r
-	DUP #05 NEQ ^$no-left JNZ
-		,volume #00 ~track.active ADD2 PEK2
-		#10 ~Mouse.state #10 EQU #e0 MUL ADD ADD
-		,volume #00 ~track.active ADD2 POK2 $no-left
-	DUP #06 NEQ ^$no-right JNZ
-		,volume #00 ~track.active ADD2 PEK2
-		DUP #f0 AND STH #01 ~Mouse.state #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		,volume #00 ~track.active ADD2 POK2 $no-right
+	.Mouse/x DEI2 .ctlframe/x1 PEK2 SUB2 8- 8/ SWP POP #02 DIV
+	DUP #00 NEQ ,&no-a JNZ
+		;adsr #00 .track/active PEK #04 MUL ADD2 GET
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		;adsr #00 .track/active PEK #04 MUL ADD2 PUT &no-a
+	DUP #01 NEQ ,&no-d JNZ
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 GET
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 PUT &no-d
+	DUP #02 NEQ ,&no-s JNZ
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 GET
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 PUT &no-s
+	DUP #03 NEQ ,&no-r JNZ
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 GET
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 PUT &no-r
+	DUP #05 NEQ ,&no-left JNZ
+		;volume #00 .track/active PEK ADD2 GET
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		;volume #00 .track/active PEK ADD2 PUT &no-left
+	DUP #06 NEQ ,&no-right JNZ
+		;volume #00 .track/active PEK ADD2 GET
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		;volume #00 .track/active PEK ADD2 PUT &no-right
 	POP
-	( release ) #00 =Mouse.state
-	,draw-controls JSR2
+	( release ) #00 .Mouse/state DEO
+	;draw-controls JSR2
 
 BRK
 
 @bang ( -- )
 		
-	,track.ch1 #00 ~head.pos #08 DIV ADD2 PEK2 
+	;track/ch1 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
-	DUP #ff NEQ ^$skip1 JNZ
-		POP ^$listen2 JMP
-	$skip1
-	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
-	~volume.ch1 =Audio.volume
-	,square-wave =Audio.wave
-	#00 =Audio.play
-	$listen2
-	,track.ch2 #00 ~head.pos #08 DIV ADD2 PEK2 
+	DUP #ff NEQ ,&skip1 JNZ
+		POP ,&listen2 JMP
+	&skip1
+	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.volume/ch1 PEK .Audio/volume DEO
+	;square-wave .Audio/wave DEO2
+	#00 .Audio/play DEO
+	&listen2
+	;track/ch2 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
-	DUP #ff NEQ ^$skip2 JNZ
-		POP ^$listen3 JMP
-	$skip2
-	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
-	~volume.ch2 =Audio.volume
-	,square-wave =Audio.wave
-	#01 =Audio.play
-	$listen3
-	,track.ch3 #00 ~head.pos #08 DIV ADD2 PEK2 
+	DUP #ff NEQ ,&skip2 JNZ
+		POP ,&listen3 JMP
+	&skip2
+	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.volume/ch2 PEK .Audio/volume DEO
+	;square-wave .Audio/wave DEO2
+	#01 .Audio/play DEO
+	&listen3
+	;track/ch3 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
-	DUP #ff NEQ ^$skip3 JNZ
-		POP ^$end JMP
-	$skip3
-	#00 SWP ,notes ADD2 PEK2 #80 ORA =Audio.pitch
-	~volume.ch3 =Audio.volume
-	,triangle-wave =Audio.wave
-	#02 =Audio.play
-	$end
+	DUP #ff NEQ ,&skip3 JNZ
+		POP ,&end JMP
+	&skip3
+	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.volume/ch3 PEK .Audio/volume DEO
+	;triangle-wave .Audio/wave DEO2
+	#02 .Audio/play DEO
+	&end
 
 RTN
 
 @move-head ( -- )
 
 	( clear )
-	~trkframe.y1 8- =Screen.y
-	~trkframe.x1 #00 ~head.pos ADD2 =Screen.x
-	,head_icn =Screen.addr
-	#20 =Screen.color
-	( incr ) ~head.pos #01 ADD =head.pos
-	~trkframe.x1 #00 ~head.pos ADD2 =Screen.x
-	,head_icn =Screen.addr 
-	#21 ( if note ) TRACK #00 ~head.pos #08 DIV ADD2 PEK2 #00 NEQ ADD =Screen.color
+	.trkframe/y1 PEK2 8- .Screen/y DEO2
+	.trkframe/x1 PEK2 #00 .head/pos PEK ADD2 .Screen/x DEO2
+	;head_icn .Screen/addr DEO2
+	#20 .Screen/color DEO
+	( incr ) .head/pos PEK #01 ADD .head/pos POK
+	.trkframe/x1 PEK2 #00 .head/pos PEK ADD2 .Screen/x DEO2
+	;head_icn .Screen/addr DEO2
+	#21 ( if note ) TRACK #00 .head/pos PEK #08 DIV ADD2 GET #00 NEQ ADD .Screen/color DEO
 
 RTN
 
 @clear-notes ( -- )
 
 	#00 #20
-	$loop
-		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Screen.y
-		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Screen.x
-		STHr #00 EQU ^$skip JNZ
-			#20 =Screen.color
-		$skip
+	&loop
+		( load ) OVR #00 SWP TRACK ADD2 GET
+		DUP STH #00 SWP #0e SWP SUB 8* .trkframe/y1 PEK2 ADD2 .Screen/y DEO2
+		OVR #00 SWP 8* .trkframe/x1 PEK2 ADD2 .Screen/x DEO2
+		STHr #00 EQU ,&skip JNZ
+			#20 .Screen/color DEO
+		&skip
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ^$loop JNZ
+		DUP2 LTH ,&loop JNZ
 	POP2
 
 RTN
@@ -251,63 +251,63 @@ RTN
 @draw-notes ( -- )
 
 	#00 #20
-	$notes-loop
-		( load ) OVR #00 SWP TRACK ADD2 PEK2
-		DUP STH #00 SWP #0e SWP SUB 8* ~trkframe.y1 ADD2 =Screen.y
-		OVR #00 SWP 8* ~trkframe.x1 ADD2 =Screen.x
-		,note_icn =Screen.addr
-		STHr #00 EQU ^$skip JNZ
-			#25 =Screen.color
-		$skip
+	&notes-loop
+		( load ) OVR #00 SWP TRACK ADD2 GET
+		DUP STH #00 SWP #0e SWP SUB 8* .trkframe/y1 PEK2 ADD2 .Screen/y DEO2
+		OVR #00 SWP 8* .trkframe/x1 PEK2 ADD2 .Screen/x DEO2
+		;note_icn .Screen/addr DEO2
+		STHr #00 EQU ,&skip JNZ
+			#25 .Screen/color DEO
+		&skip
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ^$notes-loop JNZ
+		DUP2 LTH ,&notes-loop JNZ
 	POP2
-	,draw-bars JSR2
+	;draw-bars JSR2
 
 RTN
 
 @draw-bars ( -- )
 
-	~trkframe.x1 ~trkframe.y1 ~trkframe.x2 ~trkframe.y2 #01 ,line-rect JSR2
+	.trkframe/x1 PEK2 .trkframe/y1 PEK2 .trkframe/x2 PEK2 .trkframe/y2 PEK2 #01 ;line-rect JSR2
 
 	( grid )
-	~trkframe.y1 #0010 SUB2 =Screen.y
-	,font_hex =Screen.addr
-	#0000 #0100 
-	$loop 
-		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ^$skip JNZ
-			OVR2 ~trkframe.x1 ADD2 =Screen.x
-			~trkframe.y1 #0010 SUB2 =Screen.y
-			#22 =Screen.color
-			~Screen.addr 8+ =Screen.addr
-			OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ++ ~trkframe.y2 #01 ,line-vertical-dotted JSR2
-		$skip
-		OVR2 ~trkframe.x1 ADD2 ~trkframe.y1 ~trkframe.y2 #01 ,line-vertical-dotted JSR2
+	.trkframe/y1 PEK2 #0010 SUB2 .Screen/y DEO2
+	;font_hex .Screen/addr DEO2
+	#0000 #0100
+	&loop
+		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ,&skip JNZ
+			OVR2 .trkframe/x1 PEK2 ADD2 .Screen/x DEO2
+			.trkframe/y1 PEK2 #0010 SUB2 .Screen/y DEO2
+			#22 .Screen/color DEO
+			.Screen/addr DEI2 8+ .Screen/addr DEO2
+			OVR2 .trkframe/x1 PEK2 ADD2 .trkframe/y1 PEK2 ++ .trkframe/y2 PEK2 #01 ;line-vertical-dotted JSR2
+		&skip
+		OVR2 .trkframe/x1 PEK2 ADD2 .trkframe/y1 PEK2 .trkframe/y2 PEK2 #01 ;line-vertical-dotted JSR2
 		SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$loop JNZ
+		OVR2 OVR2 LTH2 ,&loop JNZ
 	POP2
 	POP2
 
-	~trkframe.x1 ~trkframe.x2 ~trkframe.y1 8- #0040 ADD2 #01 ,line-horizontal-dotted JSR2
+	.trkframe/x1 PEK2 .trkframe/x2 PEK2 .trkframe/y1 PEK2 8- #0040 ADD2 #01 ;line-horizontal-dotted JSR2
 
 RTN
 
 @draw-octave ( x y -- )
 
-	=Screen.y
-	=Screen.x
-	,octave_icn =Screen.addr
-	~Screen.y ~Screen.y #0038 ADD2
-	$loop
-		OVR2 =Screen.y
-		#21 =Screen.color
-		~Screen.addr 8+ =Screen.addr
-		~Screen.x 8+ =Screen.x
-		#21 =Screen.color
-		~Screen.addr 8+ =Screen.addr
-		~Screen.x 8- =Screen.x
+	.Screen/y DEO2
+	.Screen/x DEO2
+	;octave_icn .Screen/addr DEO2
+	.Screen/y DEI2 .Screen/y DEI2 #0038 ADD2
+	&loop
+		OVR2 .Screen/y DEO2
+		#21 .Screen/color DEO
+		.Screen/addr DEI2 8+ .Screen/addr DEO2
+		.Screen/x DEI2 8+ .Screen/x DEO2
+		#21 .Screen/color DEO
+		.Screen/addr DEI2 8+ .Screen/addr DEO2
+		.Screen/x DEI2 8- .Screen/x DEO2
 		SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$loop JNZ
+		OVR2 OVR2 LTH2 ,&loop JNZ
 	POP2
 	POP2
 
@@ -315,103 +315,103 @@ RTN
 
 @draw-octaves ( -- )
 	
-	~trkframe.x1 #0018 SUB2 DUP2 ~trkframe.y1 ,draw-octave JSR2
-	~trkframe.y1 #0038 ADD2 ,draw-octave JSR2
-	~trkframe.x1 #0028 SUB2 =Screen.x
-	~trkframe.y1 #0030 ADD2 =Screen.y
-	,font_hex #0028 ADD2 =Screen.addr
-	#23 =Screen.color 
-	~trkframe.x1 #0030 SUB2 =Screen.x
-	,font_hex #0060 ADD2 =Screen.addr
-	#23 =Screen.color 
-	~trkframe.x1 #0028 SUB2 =Screen.x
-	~trkframe.y1 #0068 ADD2 =Screen.y
-	,font_hex #0020 ADD2 =Screen.addr
-	#23 =Screen.color 
-	~trkframe.x1 #0030 SUB2 =Screen.x
-	,font_hex #0060 ADD2 =Screen.addr
-	#23 =Screen.color 
+	.trkframe/x1 PEK2 #0018 SUB2 DUP2 .trkframe/y1 PEK2 ;draw-octave JSR2
+	.trkframe/y1 PEK2 #0038 ADD2 ;draw-octave JSR2
+	.trkframe/x1 PEK2 #0028 SUB2 .Screen/x DEO2
+	.trkframe/y1 PEK2 #0030 ADD2 .Screen/y DEO2
+	;font_hex #0028 ADD2 .Screen/addr DEO2
+	#23 .Screen/color DEO
+	.trkframe/x1 PEK2 #0030 SUB2 .Screen/x DEO2
+	;font_hex #0060 ADD2 .Screen/addr DEO2
+	#23 .Screen/color DEO
+	.trkframe/x1 PEK2 #0028 SUB2 .Screen/x DEO2
+	.trkframe/y1 PEK2 #0068 ADD2 .Screen/y DEO2
+	;font_hex #0020 ADD2 .Screen/addr DEO2
+	#23 .Screen/color DEO
+	.trkframe/x1 PEK2 #0030 SUB2 .Screen/x DEO2
+	;font_hex #0060 ADD2 .Screen/addr DEO2
+	#23 .Screen/color DEO
 
 RTN
 
 @draw-timeline ( -- )
 
-	,draw-bars JSR2
-	,draw-octaves JSR2
+	;draw-bars JSR2
+	;draw-octaves JSR2
 
 RTN
 
 @draw-knob ( x* y* value -- )
 	
-	( load ) =knob.value =knob.y =knob.x
-	~knob.x =Screen.x
-	~knob.y =Screen.y ,knob_icns =Screen.addr #21 =Screen.color 
-	~knob.x 8+ =Screen.x ,knob_icns 8+ =Screen.addr #21 =Screen.color 
-	~knob.y 8+ =Screen.y ,knob_icns #0018 ADD2 =Screen.addr #21 =Screen.color 
-	~knob.x =Screen.x ,knob_icns #0010 ADD2 =Screen.addr #21 =Screen.color 
-	~knob.x #00 #00 ~knob.value ,knob_offsetx ADD2 PEK2 ADD2 =Screen.x
-	~knob.y #00 #00 ~knob.value ,knob_offsety ADD2 PEK2 ADD2 =Screen.y
-	,knob_icns #0020 ADD2 =Screen.addr
-	#25 =Screen.color 
-	~knob.x #0004 ADD2 =Screen.x
-	~knob.y #0010 ADD2 =Screen.y
-	,font_hex #00 ~knob.value #08 MUL ADD2 =Screen.addr
-	#21 =Screen.color 
+	( load ) .knob/value POK .knob/y POK2 .knob/x POK2
+	.knob/x PEK2 .Screen/x DEO2
+	.knob/y PEK2 .Screen/y DEO2 ;knob_icns .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 #00 #00 .knob/value PEK ;knob_offsetx ADD2 GET ADD2 .Screen/x DEO2
+	.knob/y PEK2 #00 #00 .knob/value PEK ;knob_offsety ADD2 GET ADD2 .Screen/y DEO2
+	;knob_icns #0020 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
+	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
+	.knob/y PEK2 #0010 ADD2 .Screen/y DEO2
+	;font_hex #00 .knob/value PEK #08 MUL ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
 
 RTN
 
 @draw-controls ( -- )
 	
-	~ctlframe.x1 ~ctlframe.y1 ~ctlframe.x2 ~ctlframe.y2 #01 ,line-rect JSR2
+	.ctlframe/x1 PEK2 .ctlframe/y1 PEK2 .ctlframe/x2 PEK2 .ctlframe/y2 PEK2 #01 ;line-rect JSR2
 	( env )
-	~ctlframe.x1 8+ ~ctlframe.y1 8+ #22 ,env_txt ,draw-label JSR2
-	~ctlframe.x1 8+ ~ctlframe.y1 #0010 ADD2 
-		,adsr #00 ~track.active #04 MUL ADD2 PEK2 #04 SFT
-		,draw-knob JSR2
-	~ctlframe.x1 #0018 ADD2 ~ctlframe.y1 #0010 ADD2
-		,adsr #00 ~track.active #04 MUL ADD2 #0001 ADD2 PEK2 #04 SFT
-		,draw-knob JSR2
-	~ctlframe.x1 #0028 ADD2 ~ctlframe.y1 #0010 ADD2
-		,adsr #00 ~track.active #04 MUL ADD2 #0002 ADD2 PEK2 #04 SFT
-		,draw-knob JSR2
-	~ctlframe.x1 #0038 ADD2 ~ctlframe.y1 #0010 ADD2 
-		,adsr #00 ~track.active #04 MUL ADD2 #0003 ADD2 PEK2 #04 SFT
-		,draw-knob JSR2
+	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 8+ #22 ;env_txt ;draw-label JSR2
+	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 #0010 ADD2
+		;adsr #00 .track/active PEK #04 MUL ADD2 GET #04 SFT
+		;draw-knob JSR2
+	.ctlframe/x1 PEK2 #0018 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 GET #04 SFT
+		;draw-knob JSR2
+	.ctlframe/x1 PEK2 #0028 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 GET #04 SFT
+		;draw-knob JSR2
+	.ctlframe/x1 PEK2 #0038 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 GET #04 SFT
+		;draw-knob JSR2
 	( vol )
-	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 8+ #22 ,vol_txt ,draw-label JSR2
-	~ctlframe.x1 #0058 ADD2 ~ctlframe.y1 #0010 ADD2
-		,volume #00 ~track.active ADD2 PEK2 #04 SFT
-	,draw-knob JSR2
-	~ctlframe.x1 #0068 ADD2 ~ctlframe.y1 #0010 ADD2 
-		,volume #00 ~track.active ADD2 PEK2 #0f AND
-	,draw-knob JSR2
+	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 8+ #22 ;vol_txt ;draw-label JSR2
+	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		;volume #00 .track/active PEK ADD2 GET #04 SFT
+	;draw-knob JSR2
+	.ctlframe/x1 PEK2 #0068 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		;volume #00 .track/active PEK ADD2 GET #0f AND
+	;draw-knob JSR2
 
 RTN
 
 @draw-channels
 	
-	~chnframe.x1 ~chnframe.y1 ~chnframe.x2 ~chnframe.y2 #01 ,line-rect JSR2
-	~chnframe.x1 8+ ~chnframe.y1 8+ #21 ~track.active #00 EQU #07 MUL ADD ,ch1_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0010 ADD2 #21 ~track.active #01 EQU #07 MUL ADD ,ch2_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0018 ADD2 #21 ~track.active #02 EQU #07 MUL ADD ,ch3_txt ,draw-label JSR2
-	~chnframe.x1 8+ ~chnframe.y1 #0020 ADD2 #21 ~track.active #03 EQU #07 MUL ADD ,ch4_txt ,draw-label JSR2
+	.chnframe/x1 PEK2 .chnframe/y1 PEK2 .chnframe/x2 PEK2 .chnframe/y2 PEK2 #01 ;line-rect JSR2
+	.chnframe/x1 PEK2 8+ .chnframe/y1 PEK2 8+ #21 .track/active PEK #00 EQU #07 MUL ADD ;ch1_txt ;draw-label JSR2
+	.chnframe/x1 PEK2 8+ .chnframe/y1 PEK2 #0010 ADD2 #21 .track/active PEK #01 EQU #07 MUL ADD ;ch2_txt ;draw-label JSR2
+	.chnframe/x1 PEK2 8+ .chnframe/y1 PEK2 #0018 ADD2 #21 .track/active PEK #02 EQU #07 MUL ADD ;ch3_txt ;draw-label JSR2
+	.chnframe/x1 PEK2 8+ .chnframe/y1 PEK2 #0020 ADD2 #21 .track/active PEK #03 EQU #07 MUL ADD ;ch4_txt ;draw-label JSR2
 
 RTN
 
 @draw-cursor ( -- )
 
 	( clear last cursor )
-	,clear_icn =Screen.addr 
-	~pointer.x =Screen.x 
-	~pointer.y =Screen.y 
-	#30 =Screen.color
+	;clear_icn .Screen/addr DEO2
+	.pointer/x PEK2 .Screen/x DEO2
+	.pointer/y PEK2 .Screen/y DEO2
+	#30 .Screen/color DEO
 	( record pointer positions )
-	~Mouse.x =pointer.x ~Mouse.y =pointer.y
+	.Mouse/x DEI2 .pointer/x POK2 .Mouse/y DEI2 .pointer/y POK2
 	( draw new cursor )
-	,cursor_icn =Screen.addr 
-	~pointer.x =Screen.x 
-	~pointer.y =Screen.y 
-	#32 ~Mouse.state #00 NEQ ADD =Screen.color
+	;cursor_icn .Screen/addr DEO2
+	.pointer/x PEK2 .Screen/x DEO2
+	.pointer/y PEK2 .Screen/y DEO2
+	#32 .Mouse/state DEI #00 NEQ ADD .Screen/color DEO
 
 RTN
 
@@ -419,61 +419,61 @@ RTN
 
 @draw-label ( x y color addr -- )
 	
-	( load ) =label.addr =label.color =Screen.y =Screen.x 
-	~label.addr
-	$loop
-		( draw ) DUP2 PEK2 #00 SWP 8* ,font ADD2 =Screen.addr ~label.color =Screen.color
+	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
+	.label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) ++
-		( incr ) ~Screen.x 8+ =Screen.x
-		DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
 @line-vertical-dotted ( x y0 y1 color -- )
 	
-	=color STH2 SWP2 =Screen.x STH2r OVR2 =Screen.y
-	$draw-ver
-		( draw ) ~color =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.y SWP2
-		OVR2 OVR2 LTH2 ^$draw-ver JNZ
+	.color POK STH2 SWP2 .Screen/x DEO2 STH2r OVR2 .Screen/y DEO2
+	&draw-ver
+		( draw ) .color PEK .Screen/color DEO
+		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
+		OVR2 OVR2 LTH2 ,&draw-ver JNZ
 	POP2 POP2
 
 RTN
 
 @line-horizontal-dotted ( x0 x1 y color -- )
 	
-	=color =Screen.y OVR2 =Screen.x
-	$draw-hor
-		( draw ) ~color =Screen.color
-		( incr ) SWP2 #0002 ADD2 DUP2 =Screen.x SWP2
-		OVR2 OVR2 LTH2 ^$draw-hor JNZ
+	.color POK .Screen/y DEO2 OVR2 .Screen/x DEO2
+	&draw-hor
+		( draw ) .color PEK .Screen/color DEO
+		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
+		OVR2 OVR2 LTH2 ,&draw-hor JNZ
 	POP2 POP2
 
 RTN
 
 @line-rect ( x1 y1 x2 y2 color )
 
-	( load ) =color =rect.y2 =rect.x2 DUP2 =Screen.y =rect.y1 DUP2 =Screen.x =rect.x1
-	$hor
-		( incr ) ~Screen.x ++ =Screen.x
-		( draw ) ~rect.y1 =Screen.y ~color =Screen.color
-		( draw ) ~rect.y2 =Screen.y ~color =Screen.color
-		~Screen.x ~rect.x2 LTH2 ^$hor JNZ
-	~rect.y1 =Screen.y
-	$ver
-		( draw ) ~rect.x1 =Screen.x ~color =Screen.color
-		( draw ) ~rect.x2 =Screen.x ~color =Screen.color
-		( incr ) ~Screen.y ++ =Screen.y
-		~Screen.y ~rect.y2 ++ LTH2 ^$ver JNZ
+	( load ) .color POK .rect/y2 POK2 .rect/x2 POK2 DUP2 .Screen/y DEO2 .rect/y1 POK2 DUP2 .Screen/x DEO2 .rect/x1 POK2
+	&hor
+		( incr ) .Screen/x DEI2 ++ .Screen/x DEO2
+		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JNZ
+	.rect/y1 PEK2 .Screen/y DEO2
+	&ver
+		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
+		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
+		( incr ) .Screen/y DEI2 ++ .Screen/y DEO2
+		.Screen/y DEI2 .rect/y2 PEK2 ++ LTH2 ,&ver JNZ
 
 RTN
 
 @adsr-envelope ( -- )
-	#ff ,adsr #00 ~Audio.play #04 MUL ADD2 PEK2 SOUND
-	#80 ,adsr #00 ~Audio.play #04 MUL ADD2 #0001 ADD2 PEK2 SOUND
-	#80 ,adsr #00 ~Audio.play #04 MUL ADD2 #0002 ADD2 PEK2 SOUND
-	#00 ,adsr #00 ~Audio.play #04 MUL ADD2 #0003 ADD2 PEK2 SOUND
+	#ff ;adsr #00 .Audio/play DEI #04 MUL ADD2 GET SOUND
+	#80 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0001 ADD2 GET SOUND
+	#80 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0002 ADD2 GET SOUND
+	#00 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0003 ADD2 GET SOUND
 	SOUND_FINISH
 	BRK
 
@@ -490,19 +490,19 @@ RTN
 	#8040 SOUND
 	BRK
 
-@ch1_txt [ CHN0 00 ]
-@ch2_txt [ CHN1 00 ]
-@ch3_txt [ CHN2 00 ]
-@ch4_txt [ ---- 00 ]
-@env_txt [ Envelope 00 ]
-@vol_txt [ Volume 00 ]
+@ch1_txt [ "CHN0 00 ]
+@ch2_txt [ "CHN1 00 ]
+@ch3_txt [ "CHN2 00 ]
+@ch4_txt [ "---- 00 ]
+@env_txt [ "Envelope 00 ]
+@vol_txt [ "Volume 00 ]
 
 @clear_icn   [ 0000 0000 0000 0000 ]
 @cursor_icn  [ 80c0 e0f0 f8e0 1000 ]
 @note_icn    [ 0000 1c3e 3e3e 1c00 ]
 @head_icn    [ 0018 1818 7e3c 1800 ]
 
-@notes [ 
+@notes [
 	3c 3e 40 41 43 45 47
 	48 4a 4c 4d 4f 51 53
 ]
@@ -516,20 +516,20 @@ RTN
 ]
 
 @octave_icn [
-	ff00 0000 fefe fffe 
-	ff01 0101 0102 fc00 
-	fffe fc00 fefe fffe 
-	ff01 0101 0102 fc00 
-	fffe fc00 fefe fffe 
-	ff01 0101 0102 fc00 
-	fffe fc00 0000 ff00 
-	ff01 0101 0102 fc00 
-	ff00 0000 fefe fffe 
-	ff01 0101 0102 fc00 
-	fffe fc00 fefe fffe 
-	ff01 0101 0102 fc00 
-	fffe fc00 0000 ff00 
-	ff01 0101 0102 fc00 
+	ff00 0000 fefe fffe
+	ff01 0101 0102 fc00
+	fffe fc00 fefe fffe
+	ff01 0101 0102 fc00
+	fffe fc00 fefe fffe
+	ff01 0101 0102 fc00
+	fffe fc00 0000 ff00
+	ff01 0101 0102 fc00
+	ff00 0000 fefe fffe
+	ff01 0101 0102 fc00
+	fffe fc00 fefe fffe
+	ff01 0101 0102 fc00
+	fffe fc00 0000 ff00
+	ff01 0101 0102 fc00
 ]
 
 @knob_offsetx [
@@ -542,19 +542,19 @@ RTN
 	00 00 01 02 03 05 06 07
 ]
 
-@font_hex ( 0-F ) 
+@font_hex ( 0-F )
 [
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
 	007c 8280 fc82 827c 007c 8202 1e02 0202
 	007c 8282 7c82 827c 007c 8282 7e02 827c
-	007c 8202 7e82 827e 00fc 8282 fc82 82fc 
-	007c 8280 8080 827c 00fc 8282 8282 82fc 
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]
 
-@font ( spectrum-zx font ) 
+@font ( spectrum-zx font )
 [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000

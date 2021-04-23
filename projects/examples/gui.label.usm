@@ -2,80 +2,86 @@
 
 %RTN { JMP2r }
 
-;label { x 2 y 2 color 1 addr 2 }
-;center { x 2 y 2 }
+( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+
+( variables )
+
+|0000
+
+@label [ &x $2 &y $2 &color $1 &addr $2 ]
+@center [ &x $2 &y $2 ]
 
 ( program )
 
-|0200
+|0100
 	
-	( theme ) #0f0f =System.r #0fff =System.g #0ff0 =System.b
+	( theme ) #0f0f .System/r DEO2 #0fff .System/g DEO2 #0ff0 .System/b DEO2
 	
-	,draw JSR2
+	;draw JSR2
 	
 BRK
 
 @draw ( -- )
 	
 	( find screen center )
-	~Screen.width #0002 DIV2 =center.x
-	~Screen.height #0002 DIV2 =center.y
+	.Screen/width DEI2 #0002 DIV2 .center/x POK2
+	.Screen/height DEI2 #0002 DIV2 .center/y POK2
 
 	( draw ver line )
-	~center.x =Screen.x #0000 =Screen.y
-	$draw-ver
-		( draw ) #02 =Screen.color
-		( incr ) ~Screen.y #0002 ADD2 =Screen.y
-		~Screen.y ~Screen.height LTH2 ^$draw-ver JNZ
+	.center/x PEK2 .Screen/x DEO2 #0000 .Screen/y DEO2
+	&draw-ver
+		( draw ) #02 .Screen/color DEO
+		( incr ) .Screen/y DEI2 #0002 ADD2 .Screen/y DEO2
+		.Screen/y DEI2 .Screen/height DEI2 LTH2 ,&draw-ver JNZ
 
-	~center.x ~center.y #0010 SUB2 #2c ,text1 ,draw-label-left JSR2
-	~center.x ~center.y #2c ,text2 ,draw-label-middle JSR2
-	~center.x ~center.y #0010 ADD2 #2c ,text3 ,draw-label-right JSR2
-	~center.x ~center.y #0020 ADD2 #2c ,text4 ,draw-label-middle JSR2
-	~center.x ~center.y #0030 ADD2 #2c ,text5 ,draw-label-middle JSR2
+	.center/x PEK2 .center/y PEK2 #0010 SUB2 #2c ;text1 ;draw-label-left JSR2
+	.center/x PEK2 .center/y PEK2 #2c ;text2 ;draw-label-middle JSR2
+	.center/x PEK2 .center/y PEK2 #0010 ADD2 #2c ;text3 ;draw-label-right JSR2
+	.center/x PEK2 .center/y PEK2 #0020 ADD2 #2c ;text4 ;draw-label-middle JSR2
+	.center/x PEK2 .center/y PEK2 #0030 ADD2 #2c ;text5 ;draw-label-middle JSR2
 
 RTN
 
 @draw-label-left ( x y color addr -- )
 	
-	( load ) =label.addr =label.color =Screen.y =Screen.x 
-	~label.addr
-	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr ~label.color =Screen.color
+	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
+	.label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) #0001 ADD2
-		( incr ) ~Screen.x #0008 ADD2 =Screen.x
-		DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
 @draw-label-middle ( x y color addr -- )
 	
-	( load ) =label.addr =label.color =Screen.y
-	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 =Screen.x 
-	~label.addr
-	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr ~label.color =Screen.color
+	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2
+	( align ) .label/addr PEK2 ;get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 .Screen/x DEO2
+	.label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) #0001 ADD2
-		( incr ) ~Screen.x #0008 ADD2 =Screen.x
-		DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
 @draw-label-right ( x y color addr -- )
 	
-	( load ) =label.addr =label.color =Screen.y
-	( align ) ~label.addr ,get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 =Screen.x 
-	~label.addr
-	$loop
-		( draw ) DUP2 PEK2 #00 SWP #0008 MUL2 ,font ADD2 =Screen.addr ~label.color =Screen.color
+	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2
+	( align ) .label/addr PEK2 ;get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 .Screen/x DEO2
+	.label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) #0001 ADD2
-		( incr ) ~Screen.x #0008 ADD2 =Screen.x
-		DUP2 PEK2 #00 NEQ ^$loop JNZ
+		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
@@ -83,14 +89,14 @@ RTN
 @get-text-length ( label* -- length )
 	
 	#0000 ( counter )
-	$loop
-		( incr ) #0001 ADD2 OVR2 OVR2 ADD2 
-		PEK2 #00 NEQ ^$loop JNZ
+	&loop
+		( incr ) #0001 ADD2 OVR2 OVR2 ADD2
+		GET #00 NEQ ,&loop JNZ
 	SWP2 POP2
 
 RTN
 
-@font ( spectrum-zx font ) 
+@font ( spectrum-zx font )
 [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
@@ -126,8 +132,8 @@ RTN
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
 
-@text1 [ Left 20 Aligned 00 ]
-@text2 [ Middle 20 Aligned 00 ]
-@text3 [ Right 20 Aligned 00 ]
-@text4 [ even 00 ]
-@text5 [ odd 00 ]
+@text1 [ "Left 20 "Aligned 00 ]
+@text2 [ "Middle 20 "Aligned 00 ]
+@text3 [ "Right 20 "Aligned 00 ]
+@text4 [ "even 00 ]
+@text5 [ "odd 00 ]

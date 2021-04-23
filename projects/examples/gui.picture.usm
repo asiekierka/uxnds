@@ -1,103 +1,109 @@
 ( GUI Picture )
 
 %RTN { JMP2r }
-%8+  { #0008 ADD2 }
+%8+ { #0008 ADD2 }
 
-;color { byte 1 }
-;position { x 2 y 2 }
-;size { width 2 height 2 }
+( devices )
 
-|0100 ;System { vector 2 pad 6 r 2 g 2 b 2 }
-|0110 ;Console { vector 2 pad 6 char 1 byte 1 short 2 string 2 }
-|0120 ;Screen { vector 2 width 2 height 2 pad 2 x 2 y 2 addr 2 color 1 }
-|0170 ;File { vector 2 success 2 offset 2 pad 2 name 2 length 2 load 2 save 2 }
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+|70 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
+
+( variables )
+
+|0000
+
+@color [ &byte $1 ]
+@position [ &x $2 &y $2 ]
+@size [ &width $2 &height $2 ]
 
 ( program )
 
-|0200
+|0100
 
-	( theme ) #037a =System.r #032a =System.g #052a =System.b
+	( theme ) #037a .System/r DEO2 #032a .System/g DEO2 #052a .System/b DEO2
 
-	( background ) ,checker_icn #22 ,cover-pattern JSR2
+	( background ) ;checker_icn #22 ;cover-pattern JSR2
 
-	( load ) ,icn1_path =File.name #1800 =File.length ,image =File.load
-	( draw ) #0008 #0008 #0100 #00c0 #27 ,image ,draw-icn JSR2
+	( load ) ;icn1_path .File/name DEO2 #1800 .File/length DEO2 ;image .File/load DEO2
+	( draw ) #0008 #0008 #0100 #00c0 #27 ;image ;draw-icn JSR2
 
-	( load ) ,icn2_path =File.name #0800 =File.length ,image =File.load
-	( draw ) #0010 #0078 #0080 #0080 #27 ,image ,draw-icn JSR2
+	( load ) ;icn2_path .File/name DEO2 #0800 .File/length DEO2 ;image .File/load DEO2
+	( draw ) #0010 #0078 #0080 #0080 #27 ;image ;draw-icn JSR2
 
-	( load ) ,chr1_path =File.name #4000 =File.length ,image =File.load
-	( draw ) #00a8 #0010 #0100 #0100 #4f ,image ,draw-chr JSR2
+	( load ) ;chr1_path .File/name DEO2 #4000 .File/length DEO2 ;image .File/load DEO2
+	( draw ) #00a8 #0010 #0100 #0100 #4f ;image ;draw-chr JSR2
 
-	( load ) ,chr2_path =File.name #0900 =File.length ,image =File.load
-	( draw ) #0088 #0088 #0060 #0060 #41 ,image ,draw-chr JSR2
+	( load ) ;chr2_path .File/name DEO2 #0900 .File/length DEO2 ;image .File/load DEO2
+	( draw ) #0088 #0088 #0060 #0060 #41 ;image ;draw-chr JSR2
 
 BRK
 
 @draw-icn ( x y width height color addr -- )
 	
-	( load ) =Screen.addr =color =size.height =size.width =position.y =position.x
-	#0000 ~size.height
-	$ver
-		( save ) OVR2 ~position.y ADD2 =Screen.y
-		#0000 ~size.width
-		$hor
-			( save ) OVR2 ~position.x ADD2 =Screen.x
-			( draw ) ~color =Screen.color
-			( incr ) ~Screen.addr 8+ =Screen.addr
+	( load ) .Screen/addr DEO2 .color POK .size/height POK2 .size/width POK2 .position/y POK2 .position/x POK2
+	#0000 .size/height PEK2
+	&ver
+		( save ) OVR2 .position/y PEK2 ADD2 .Screen/y DEO2
+		#0000 .size/width PEK2
+		&hor
+			( save ) OVR2 .position/x PEK2 ADD2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
+			( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
 
 RTN
 
 @draw-chr ( x y width height color addr -- )
 	
-	( load ) =Screen.addr =color =size.height =size.width =position.y =position.x
-	#0000 ~size.height
-	$ver
-		( save ) OVR2 ~position.y ADD2 =Screen.y
-		#0000 ~size.width
-		$hor
-			( save ) OVR2 ~position.x ADD2 =Screen.x
-			( draw ) ~color =Screen.color
-			( incr ) ~Screen.addr #0010 ADD2 =Screen.addr
+	( load ) .Screen/addr DEO2 .color POK .size/height POK2 .size/width POK2 .position/y POK2 .position/x POK2
+	#0000 .size/height PEK2
+	&ver
+		( save ) OVR2 .position/y PEK2 ADD2 .Screen/y DEO2
+		#0000 .size/width PEK2
+		&hor
+			( save ) OVR2 .position/x PEK2 ADD2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
+			( incr ) .Screen/addr DEI2 #0010 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
 
 RTN
 
 @cover-pattern ( addr color -- )
 	
-	( load ) =color =Screen.addr
-	#0000 ~Screen.height
-	$ver
-		( save ) OVR2 =Screen.y
-		#0000 ~Screen.width
-		$hor
-			( save ) OVR2 =Screen.x
-			( draw ) ~color =Screen.color
+	( load ) .color POK .Screen/addr DEO2
+	#0000 .Screen/height DEI2
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		#0000 .Screen/width DEI2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ^$hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ^$ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JNZ
 	POP2 POP2
 
 RTN
 
 @checker_icn [ f0f0 f0f0 0f0f 0f0f ]
 
-@icn1_path      [ projects/pictures/ergo100x0c0.bit 00 ]
-@icn2_path      [ projects/pictures/dafu80x80.bit 00 ]
-@chr1_path      [ projects/pictures/zerotwo2020.chr 00 ]
-@chr2_path      [ projects/pictures/felix0cx0c.chr 00 ]
+@icn1_path [ "projects/pictures/ergo100x0c0.bit 00 ]
+@icn2_path [ "projects/pictures/dafu80x80.bit 00 ]
+@chr1_path [ "projects/pictures/zerotwo2020.chr 00 ]
+@chr2_path [ "projects/pictures/felix0cx0c.chr 00 ]
 
 @image [ ]
