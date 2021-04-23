@@ -2,7 +2,7 @@
 	app/neralie : clock with arvelie date
 
 	TODO
-		- Implement higher resolution time rather than counting fps
+		- use splash screen when FPS calculation is unstable
 )
 
 %h { .DateTime/hour   DEI }
@@ -206,39 +206,6 @@
 	#00 .fps/next POK
 	JMP2r
 
-@print-string ( string* -- )
-	DUP2 GET DUP ,&not-end JNZ
-	POP POP2 JMP2r
-
-	&not-end
-	.Console/char DEO
-	#0001 ADD2 ,print-string JMP
-
-@print-byte-decimal ( byte -- )
-	#00 .number/started POK
-	#00 SWP
-	,print-short-decimal/byte-start JMP
-
-@print-short-decimal ( short* -- )
-	#00 .number/started POK
-	#2710 ,modf JSR ,&digit JSR
-	#03e8 ,modf JSR ,&digit JSR
-	&byte-start
-	#0064 ,modf JSR ,&digit JSR
-	#000a ,modf JSR ,&digit JSR
-	                ,&digit JSR
-	.number/started PEK ,&end JNZ
-	#30 .Console/char DEO
-	&end JMP2r
-
-	&digit
-	SWP POP
-	DUP .number/started PEK ORA #02 JNZ
-	POP JMP2r
-	#30 ADD .Console/char DEO
-	#01 .number/started POK
-	JMP2r
-
 @modf ( dividend* divisor* -- remainder* quotient* )
 	OVR2 OVR2 DIV2 DUP2 STH2 MUL2 SUB2 STH2r JMP2r
 
@@ -278,9 +245,6 @@
 	&carry
 	ROT #01 ADD ROT ROT
 	JMP2r
-
-@strings
-	&fps [ 20 "fps 0a 00 ]
 
 @font-numbers
 [
