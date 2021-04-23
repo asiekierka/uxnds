@@ -1,33 +1,37 @@
 ( Dev/Time )
 
-%RTN { JMP2r }
-%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
-%SCALEX { #0002 DIV2 .Screen/width DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
-%SCALEY { #0002 DIV2 .Screen/height DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
+%RTN     { JMP2r }
+%MOD     { DUP2 DIV MUL SUB }
+%ABS2    { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
+%SCALEX  { #0002 DIV2 .Screen/width DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
+%SCALEY  { #0002 DIV2 .Screen/height DEI2 #0002 DIV2 ADD2 #0040 SUB2 }
 %12HOURS { DUP #0c GTH #0c MUL SUB }
-%MOD { DUP2 DIV MUL SUB }
 
 ( devices )
 
-|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
-|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|a0 @DateTime [ &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 &refresh $1 ]
+|00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr $2 &color $1 ]
+|a0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 &refresh $1 ]
 
 ( variables )
 
 |0000
 
-@current [ &second $1 ]
+@color   $1
+@current $1
 @needles [ &hx $2 &hy $2 &mx $2 &my $2 &sx $2 &sy $2 ]
-@line [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
-@color [ &byte $1 ]
+@line    [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
 
 ( program )
 
 |0100
 	
-	( theme ) #0ff8 .System/r DEO2 #0f08 .System/g DEO2 #0f08 .System/b DEO2
-	( vectors ) ;on-frame .Screen/vector DEO2
+	( theme ) 
+	#0ff8 .System/r DEO2 
+	#0f08 .System/g DEO2 
+	#0f08 .System/b DEO2
+	( vectors ) 
+	;on-frame .Screen/vector DEO2
 
 BRK
 
@@ -36,8 +40,8 @@ BRK
 	#00 .DateTime/refresh DEO
 
 	( only draw once per second )
-	.DateTime/second DEI .current/second PEK NEQ #01 JNZ BRK
-	.DateTime/second DEI .current/second POK
+	.DateTime/second DEI .current PEK NEQ #01 JNZ [ BRK ]
+	.DateTime/second DEI .current POK
 
 	( clear )
 	#0080 SCALEX #0080 SCALEY .needles/sx PEK2 .needles/sy PEK2 #00 ;draw-line JSR2
@@ -71,7 +75,12 @@ BRK
 		DUP2 LTH ,&loop JNZ
 	POP2
 
-	( display )
+	;draw-display JSR2
+
+BRK
+
+@draw-display ( -- )
+
 	.Screen/height DEI2 #0002 DIV2 #0048 ADD2 .Screen/y DEO2
 	.Screen/width DEI2 #0002 DIV2
 	DUP2 #0020 SUB2 .Screen/x DEO2
@@ -94,7 +103,7 @@ BRK
 		#22 .Screen/color DEO
 	POP2
 
-BRK
+RTN
 
 @draw-line ( x1 y1 x2 y2 color -- )
 	
@@ -105,8 +114,11 @@ BRK
 	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
 	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
 	&loop
-		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		.line/x PEK2 .Screen/x DEO2 
+		.line/y PEK2 .Screen/y DEO2 
+		.color PEK .Screen/color DEO
+		[ .line/x PEK2 .line/x0 PEK2 EQU2 ] 
+		[ .line/y PEK2 .line/y0 PEK2 EQU2 ] #0101 EQU2 ,&end JNZ
 		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
 		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
 			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
@@ -117,7 +129,6 @@ BRK
 			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
 		&skipx
 		;&loop JMP2
-
 	&end
 
 RTN
