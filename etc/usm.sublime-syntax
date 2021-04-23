@@ -10,6 +10,34 @@ scope: source.usm
 
 contexts:
   main:
+
+    # get/set
+    - match: '\.(\S+)\sDEO2'
+      scope:  constant.numeric
+      pop: true
+    - match: '\.(\S+)\sDEO'
+      scope:  constant.numeric
+      pop: true
+    - match: '\.(\S+)\sPOK2'
+      scope:  constant.numeric
+      pop: true
+    - match: '\.(\S+)\sPOK'
+      scope:  constant.numeric
+      pop: true
+
+    - match: '\.(\S+)\sDEI2'
+      scope:  entity.name.type.typedef
+      pop: true
+    - match: '\.(\S+)\sDEI'
+      scope:  entity.name.type.typedef
+      pop: true
+    - match: '\.(\S+)\sPEK2'
+      scope:  entity.name.type.typedef
+      pop: true
+    - match: '\.(\S+)\sPEK'
+      scope:  entity.name.type.typedef
+      pop: true
+
     # label
     - match: '\@(\S+)\s?'
       scope: string.control
@@ -68,39 +96,3 @@ contexts:
         - meta_scope: comment.line
         - match: '\)'
           pop: true
-
-    # templated
-
-    - match: '(\S+)\^\!\s?'
-      scope: entity.name.type.typedef
-      pop: true
-    - match: '(\S+)\~\!\s?'
-      scope:  constant.numeric
-      pop: true
-    - match: '(\S+)\*\!\s?'
-      scope: entity.name.type.typedef
-      pop: true
-    - match: '(\S+)\=\!\s?'
-      scope:  constant.numeric
-      pop: true
-
-    - match: '(\S+)\^\s?'
-      scope: entity.name.type.typedef
-      pop: true
-    - match: '(\S+)\~\s?'
-      scope:  constant.numeric
-      pop: true
-    - match: '(\S+)\*\s?'
-      scope: entity.name.type.typedef
-      pop: true
-    - match: '(\S+)\=\s?'
-      scope:  constant.numeric
-      pop: true
-
-
-    - match: '(\S+)\?\s?'
-      scope: storage.type
-      pop: true
-    - match: '(\S+)\!\s?'
-      scope: constant.numeric
-      pop: true
