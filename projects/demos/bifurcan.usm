@@ -10,19 +10,17 @@
 ( devices )
 
 |00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr $2 &color $1 ]
-|60 @Mouse      [ &vector $2 &x       $2 &y      $2 &state $1 &chord $1 ]
+|60 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
 |a0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 &refresh $1 ]
 
 ( variables )
 
 |0000
 
-@last $1
-@color $1
+@last  $1
 @style $1
-@pointer [ &x  $2 &y  $2 ]
+@pointer [ &x $2 &y $2 ]
 @center  [ &x $2 &y $2 ]
 @anchor  [ &x $2 &y $2 ]
 
@@ -44,7 +42,7 @@
 	.Screen/height DEI2 2/ .center/y POK2
 
 	( background ) 
-	;tiles #21 ;cover-pattern JSR2
+	;tiles ;cover-pattern JSR2
 	;redraw JSR2
 
 BRK
@@ -66,10 +64,9 @@ BRK
 	;draw-cursor JSR2
 
 	.Mouse/state DEI #00 EQU ,&no-touch JNZ
-		.style PEK INC #03 MOD .style POK
-		.style PEK .Console/byte DEO
-		;tiles .style PEK #10 MUL TOS ADD2 #21 ;cover-pattern JSR2
-		;redraw JSR2
+		( incr ) .style PEK INC #03 MOD .style POK
+		( bg ) ;tiles .style PEK #10 MUL TOS ADD2 ;cover-pattern JSR2
+		( fg ) ;redraw JSR2
 		( release ) #00 .Mouse/state DEO
 	&no-touch
 
@@ -124,16 +121,16 @@ RTN
 
 RTN
 
-@cover-pattern ( addr color -- )
+@cover-pattern ( addr -- )
 	
-	( load ) .color POK .Screen/addr DEO2
+	( load ) .Screen/addr DEO2
 	#0000 .Screen/height DEI2
 	&ver
 		( save ) OVR2 .Screen/y DEO2
 		#0000 .Screen/width DEI2
 		&hor
 			( save ) OVR2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( draw ) #21 .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JNZ
 		POP2 POP2
