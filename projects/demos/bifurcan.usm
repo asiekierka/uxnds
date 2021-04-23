@@ -1,4 +1,7 @@
-( a blank file )
+( 
+	Bifurcan
+	Every second, the Labyrinth reorganize itself to display the time. 
+)
 
 %RTN { JMP2r }
 %8+ { #0008 ADD2 }
