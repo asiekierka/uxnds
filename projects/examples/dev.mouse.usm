@@ -1,31 +1,23 @@
 ( dev/mouse )
 
 %RTN { JMP2r }
-%8+ { #0008 ADD2 }
-%++ { #0001 ADD2 }
-%-- { #0001 SUB2 }
 %ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
 
-(
-%%^ { .% PEK } %%= { .% POK }
-%%? { .% DEI } %%! { .% DEO }
-)
-
-%%^ { .% PEK2 } %%= { .% POK2 }
-%%? { .% DEI2 } %%! { .% DEO2 }
+%%^! { .% DEI }  %%~! { .% DEO }
+%%*! { .% DEI2 } %%=! { .% DEO2 }
+%%^  { .% PEK }  %%~  { .% POK }
+%%*  { .% PEK2 } %%=  { .% POK2 }
 
 ( devices )
 
 |00 @System     [ &vector $2 &pad     $6 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char    $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width   $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
-|40 @Controller [ &vector $2 &button  $1 &key    $1 ]
 |60 @Mouse      [ &vector $2 &x       $2 &y      $2 &state $1 &chord $1 ]
 
 |0000
 
-@line    [ &x0 $2 &y0 $2 &x $2 &y $2 &sx $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
-@pointer [ &x $2 &y $2 &lastx $2 &lasty $2 &state $1 ]
+@line    [ &x0 $2 &y0 $2 &x     $2 &y     $2 &sx    $2 &sy $2 &dx $2 &dy $2 &e1 $2 &e2 $2 ]
+@pointer [ &x  $2 &y  $2 &lastx $2 &lasty $2 &state $1 ]
 @color $1
 
 ( program )
@@ -33,108 +25,96 @@
 |0100 ( -> )
 
 	( theme ) 
-	#f0f0 System/r! 
-	#f00f System/g! 
-	#f000 System/b!
-
+	#f0f0 System/r=! 
+	#f00f System/g=! 
+	#f000 System/b=!
 	( vectors ) 
-	;on-mouse Mouse/vector!
+	;on-mouse Mouse/vector=!
 
 BRK
 
 @on-mouse ( -> )
 
 	;draw-cursor JSR2
-
 	( on down )
-	.Mouse/state DEI #00 NEQ .pointer/state PEK #00 EQU #0101 EQU2 ,on-mouse-down JNZ
-
+	Mouse/state^! #00 NEQ pointer/state^ #00 EQU #0101 EQU2 ,on-mouse-down JNZ
 	( on drag )
-	.Mouse/state DEI #00 NEQ ,on-mouse-drag JNZ
-
-	.Mouse/state DEI .pointer/state POK
+	Mouse/state^! #00 NEQ ,on-mouse-drag JNZ
+	Mouse/state^! pointer/state~
 
 BRK 
 
 @on-mouse-down ( -> )
 
 	( record start position )
-	Mouse/x? DUP2 pointer/x= pointer/lastx= 
-	Mouse/y? DUP2 pointer/y= pointer/lasty=
-
-	.Mouse/state DEI .pointer/state POK
+	Mouse/x*! DUP2 pointer/x= pointer/lastx= 
+	Mouse/y*! DUP2 pointer/y= pointer/lasty=
+	Mouse/state^! pointer/state~
 
 BRK
 
 @on-mouse-drag ( -> )
 	
 	( draw line )
-	pointer/lastx^ 
-	pointer/lasty^ 
-	pointer/x^ 
-	pointer/y^ 
-	#01 ( add mouse state ) [ .Mouse/state DEI #10 EQU #02 MUL ADD ] 
+	pointer/lastx* 
+	pointer/lasty* 
+	pointer/x* 
+	pointer/y* 
+	#01 [ Mouse/state^! #10 EQU #02 MUL ADD ] 
 	;draw-line JSR2
-
 	( record last position )
-	Mouse/x? pointer/lastx= 
-	Mouse/y? pointer/lasty=
-
-	.Mouse/state DEI .pointer/state POK
+	Mouse/x*! pointer/lastx= 
+	Mouse/y*! pointer/lasty=
+	Mouse/state^! pointer/state~
 
 BRK
 
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear Screen/addr! 
-	pointer/x^ Screen/x! 
-	pointer/y^ Screen/y! 
-	#30 .Screen/color DEO
-
+	;clear Screen/addr=! 
+	pointer/x* Screen/x=! 
+	pointer/y* Screen/y=! 
+	#30 Screen/color~!
 	( record pointer positions )
-	Mouse/x? pointer/x= 
-	Mouse/y? pointer/y=
-
+	Mouse/x*! pointer/x= 
+	Mouse/y*! pointer/y=
 	( draw new cursor )
-	;cursor Screen/addr! 
-	pointer/x^ Screen/x! 
-	pointer/y^ Screen/y! 
-
+	;cursor Screen/addr=! 
+	pointer/x* Screen/x=! 
+	pointer/y* Screen/y=! 
 	( colorize on state )
-	.Mouse/state DEI #00 NEQ
-	#31 ADD .Screen/color DEO
+	#31 [ Mouse/state^! #00 NEQ ] ADD Screen/color~!
 
 RTN
 
 @draw-line ( x1 y1 x2 y2 color -- )
 	
-	( load ) .color POK line/y0= line/x0= line/y= line/x=
-	line/x0^ line/x^ SUB2 ABS2 line/dx=
-	line/y0^ line/y^ SUB2 ABS2 #0000 SWP2 SUB2 line/dy=
-	#ffff #00 line/x^ line/x0^ LTS2 #0002 MUL2 ADD2 line/sx= 
-	#ffff #00 line/y^ line/y0^ LTS2 #0002 MUL2 ADD2 line/sy= 
-	line/dx^ line/dy^ ADD2 line/e1=
+	( load ) color~ line/y0= line/x0= line/y= line/x=
+	line/x0* line/x* SUB2 ABS2 line/dx=
+	line/y0* line/y* SUB2 ABS2 #0000 SWP2 SUB2 line/dy=
+	#ffff #00 line/x* line/x0* LTS2 #0002 MUL2 ADD2 line/sx= 
+	#ffff #00 line/y* line/y0* LTS2 #0002 MUL2 ADD2 line/sy= 
+	line/dx* line/dy* ADD2 line/e1=
 	&loop
 		( draw ) 
-		line/x^ Screen/x! 
-		line/y^ Screen/y! 
-		.color PEK 
-		.Screen/color DEO
-		line/x^ line/x0^ EQU2 line/y^ line/y0^ EQU2 #0101 EQU2 ,&end JNZ
-		line/e1^ #0002 MUL2 line/e2=
-		line/e2^ line/dy^ LTS2 ,&skipy JNZ
-			line/e1^ line/dy^ ADD2 line/e1=
-			line/x^ line/sx^ ADD2 line/x=
+		line/x* Screen/x=! 
+		line/y* Screen/y=! 
+		color^ Screen/color~!
+		line/x* line/x0* EQU2 line/y* line/y0* EQU2 #0101 EQU2 ,&end JNZ
+		line/e1* #0002 MUL2 line/e2=
+		line/e2* line/dy* LTS2 ,&skipy JNZ
+			line/e1* line/dy* ADD2 line/e1=
+			line/x* line/sx* ADD2 line/x=
 		&skipy
-		line/e2^ line/dx^ GTS2 ,&skipx JNZ
-			line/e1^ line/dx^ ADD2 line/e1=
-			line/y^ line/sy^ ADD2 line/y=
+		line/e2* line/dx* GTS2 ,&skipx JNZ
+			line/e1* line/dx* ADD2 line/e1=
+			line/y* line/sy* ADD2 line/y=
 		&skipx
 		,&loop JMP
 	&end
 
 RTN
 
-@clear [ 0000 0000 0000 0000 ]
+@clear  [ 0000 0000 0000 0000 ]
 @cursor [ 80c0 e0f0 f8e0 1000 ]

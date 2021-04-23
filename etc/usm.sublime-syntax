@@ -10,52 +10,35 @@ scope: source.usm
 
 contexts:
   main:
-    # pointer
+    # label
     - match: '\@(\S+)\s?'
       scope: string.control
       pop: true
-      
+    # sublabel
     - match: '\&(\S+)\s?'
       scope: string.control
       pop: true
+
     # jump
     - match: '\|(\S+)\s?'
-      scope: variable.control
+      scope: entity.name.tag.structure.any
       pop: true
+    # pad
     - match: '\$(\S+)\s?'
-      scope: variable.control
-      pop: true
-    # constants
-
-    # templated
-    - match: '(\S+)\^\s?'
-      scope: storage.type
-      pop: true
-    - match: '(\S+)\=\s?'
-      scope:  constant.numeric
-      pop: true
-    - match: '(\S+)\?\s?'
-      scope: storage.type
-      pop: true
-    - match: '(\S+)\!\s?'
-      scope: constant.numeric
+      scope: entity.name.tag.structure.any
       pop: true
 
     # Pushing to stack
-
-    - match: '\#(\S+)\s?'
-      scope: keyword.control
-      pop: true
     - match: '\"(\S+)\s?'
-      scope: entity.control
+      scope: variable.parameter.option
       pop: true
     
     # Addressing
     - match: '\.(\S+)\s?'     # zero-page
-      scope: variable.control
+      scope: variable.function.shell
       pop: true
     - match: '\,(\S+)\s?'     # relative
-      scope: entity.name.type
+      scope: entity.name.tag.yaml
       pop: true
     - match: '\;(\S+)\s?'     # absolute
       scope: keyword.control
@@ -64,15 +47,13 @@ contexts:
       scope: keyword.control
       pop: true
 
+      # Blocks
     - match: '\[\s?'
       scope: comment
       pop: true
     - match: '\]\s?'
       scope: comment
       pop: true
-
-
-      # Blocks
 
     - match: '\{'
       scope: variable.control
@@ -87,3 +68,39 @@ contexts:
         - meta_scope: comment.line
         - match: '\)'
           pop: true
+
+    # templated
+
+    - match: '(\S+)\^\!\s?'
+      scope: entity.name.type.typedef
+      pop: true
+    - match: '(\S+)\~\!\s?'
+      scope:  constant.numeric
+      pop: true
+    - match: '(\S+)\*\!\s?'
+      scope: entity.name.type.typedef
+      pop: true
+    - match: '(\S+)\=\!\s?'
+      scope:  constant.numeric
+      pop: true
+
+    - match: '(\S+)\^\s?'
+      scope: entity.name.type.typedef
+      pop: true
+    - match: '(\S+)\~\s?'
+      scope:  constant.numeric
+      pop: true
+    - match: '(\S+)\*\s?'
+      scope: entity.name.type.typedef
+      pop: true
+    - match: '(\S+)\=\s?'
+      scope:  constant.numeric
+      pop: true
+
+
+    - match: '(\S+)\?\s?'
+      scope: storage.type
+      pop: true
+    - match: '(\S+)\!\s?'
+      scope: constant.numeric
+      pop: true

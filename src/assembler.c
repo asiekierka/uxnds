@@ -92,7 +92,6 @@ findmacro(char *name)
 	for(i = 0; i < p.mlen; ++i)
 		if(scmp(p.macros[i].name, name, 64))
 			return &p.macros[i];
-	/* look for templated */
 	for(i = 0; i < p.mlen; ++i)
 		if(p.macros[i].name[0] == '%' && ssin(name, p.macros[i].name + 1) != -1)
 			return &p.macros[i];
@@ -141,7 +140,6 @@ char *template(char *src, char *dst, char *w, Macro *m)
 	scpy(src, dst, scin(src, '%') + 1);
 	scat(dst, input);
 	scat(dst, src + scin(src, '%') + 1);
-	printf("  Templated %s, to %s\n", w, dst);
 	return dst;
 }
 
@@ -375,7 +373,9 @@ cleanup(char *filename)
 	int i;
 	printf("Assembled %s(%d bytes), %d labels, %d macros.\n\n", filename, (p.length - TRIM), p.llen, p.mlen);
 	for(i = 0; i < p.llen; ++i)
-		if(!p.labels[i].refs)
+		if(p.labels[i].name[0] >= 'A' && p.labels[i].name[0] <= 'Z')
+			continue; /* Ignore capitalized labels(devices) */
+		else if(!p.labels[i].refs && scin(p.labels[i].name, '/') > 0)
 			printf("--- Unused label: %s\n", p.labels[i].name);
 	for(i = 0; i < p.mlen; ++i)
 		if(!p.macros[i].refs)
