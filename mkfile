@@ -1,7 +1,7 @@
 </$objtype/mkfile
 
 TARG=assembler debugger emulator
-ROM=`{ls -p projects/examples/*.usm | grep -v blank.usm | sed 's/\.usm//g'}
+USM=`{walk -f projects/ | grep '\.usm$' | grep -v blank.usm}
 CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
@@ -14,7 +14,7 @@ CLEANFILES=${TARG:%=bin/%} ${ROM:%=bin/%.rom}
 
 default:V: all
 
-all:V: ${TARG:%=bin/%} ${ROM:%=bin/%.rom}
+all:V: ${TARG:%=bin/%} ${USM:%.usm=%.rom}
 
 </sys/src/cmd/mkmany
 
@@ -24,8 +24,8 @@ all:V: ${TARG:%=bin/%} ${ROM:%=bin/%.rom}
 	mk install &&
 	rm -r npe-master
 
-bin/%.rom: projects/examples/%.usm bin/assembler
-	bin/assembler projects/examples/$stem.usm $target
+%.rom: %.usm bin/assembler
+	bin/assembler $stem.usm $target && cp $target bin/
 
 bin/assembler:Q: $O.assembler
 	mkdir -p bin && cp $prereq $target
