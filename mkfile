@@ -2,6 +2,7 @@
 
 TARG=assembler debugger emulator
 USM=`{walk -f projects/ | grep '\.usm$' | grep -v blank.usm}
+ROM=${USM:%.usm=%.rom}
 CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
@@ -10,11 +11,11 @@ HFILES=\
 	src/ppu.h\
 	src/uxn.h\
 
-CLEANFILES=${TARG:%=bin/%} ${ROM:%=bin/%.rom}
+CLEANFILES=${TARG:%=bin/%} `{echo $ROM | sed 's,([^ /]+/)+,bin/,g'}
 
 default:V: all
 
-all:V: ${TARG:%=bin/%} ${USM:%.usm=%.rom}
+all:V: ${TARG:%=bin/%} $ROM
 
 </sys/src/cmd/mkmany
 
