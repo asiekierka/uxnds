@@ -22,7 +22,7 @@ Uint8  peek8(Stack *s, Uint8 a) { if (s->ptr < a + 1) s->error = 1; return s->da
 void   mempoke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
 Uint8  mempeek8(Uint8 *m, Uint16 a) { return m[a]; }
 void   devpoke8(Device *d, Uint8 a, Uint8 b) { d->dat[a & 0xf] = b; d->talk(d, a & 0x0f, 1); }
-Uint8  devpeek8(Device *d, Uint8 a) { return d->dat[a & 0xf]; d->talk(d, a & 0x0f, 0); }
+Uint8  devpeek8(Device *d, Uint8 a) { d->talk(d, a & 0x0f, 0); return d->dat[a & 0xf];  }
 void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
 Uint16 pop16(Stack *s) { return pop8(s) + (pop8(s) << 8); }
 Uint16 peek16(Stack *s, Uint8 a) { return peek8(s, a * 2) + (peek8(s, a * 2 + 1) << 8); }
