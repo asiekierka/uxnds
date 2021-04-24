@@ -181,17 +181,16 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 
 #pragma mark - Devices
 
-Uint8
+void
 system_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	putcolors(&ppu, &d->dat[0x8]);
 	reqdraw = 1;
-	(void)d;
 	(void)b0;
-	return b1;
+	(void)b1;
 }
 
-Uint8
+void
 console_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
@@ -201,10 +200,9 @@ console_poke(Device *d, Uint8 b0, Uint8 b1)
 	case 0xd: printf("%s\n", &d->mem[(d->dat[0xc] << 8) + b1]); break;
 	}
 	fflush(stdout);
-	return b1;
 }
 
-Uint8
+void
 screen_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0xe) {
@@ -219,10 +217,9 @@ screen_poke(Device *d, Uint8 b0, Uint8 b1)
 		}
 		reqdraw = 1;
 	}
-	return b1;
 }
 
-Uint8
+void
 file_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	Uint8 read = b0 == 0xd;
@@ -230,7 +227,7 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
 		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
 		Uint16 offset = mempeek16(d->dat, 0x4);
-		Uint16 addr = (d->dat[b0 - 1] << 8) | b1;
+		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
 			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f)))
@@ -239,10 +236,10 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 		}
 		mempoke16(d->dat, 0x2, result);
 	}
-	return b1;
+	(void)b1;
 }
 
-static Uint8
+static void
 audio_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	if(b0 == 0xa) {
@@ -258,14 +255,12 @@ audio_poke(Device *d, Uint8 b0, Uint8 b1)
 			apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xb) >> 1;
 		else
 			apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xb) + 0x8000;
-		apu.queue->dat[apu.queue->n++] = (d->dat[0xd] << 8) + b1;
+		apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xd);
 	} else if(b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;
-	(void)d;
-	return b1;
 }
 
-Uint8
+void
 datetime_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	time_t seconds = time(NULL);
@@ -280,17 +275,16 @@ datetime_poke(Device *d, Uint8 b0, Uint8 b1)
 	d->dat[0x7] = t->tm_wday;
 	mempoke16(d->dat, 0x08, t->tm_yday);
 	d->dat[0xa] = t->tm_isdst;
-	(void)d;
 	(void)b0;
-	return b1;
+	(void)b1;
 }
 
-Uint8
+void
 ppnil(Device *d, Uint8 b0, Uint8 b1)
 {
 	(void)d;
 	(void)b0;
-	return b1;
+	(void)b1;
 }
 
 #pragma mark - Generics

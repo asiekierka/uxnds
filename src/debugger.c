@@ -37,7 +37,7 @@ printstack(Stack *s)
 
 #pragma mark - Devices
 
-Uint8
+void
 console_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	switch(b0) {
@@ -48,10 +48,9 @@ console_poke(Device *d, Uint8 b0, Uint8 b1)
 	fflush(stdout);
 	(void)d;
 	(void)b0;
-	return b1;
 }
 
-Uint8
+void
 file_poke(Device *d, Uint8 b0, Uint8 b1)
 {
 	Uint8 read = b0 == 0xd;
@@ -59,7 +58,7 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
 		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
 		Uint16 offset = mempeek16(d->dat, 0x4);
-		Uint16 addr = (d->dat[b0 - 1] << 8) | b1;
+		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
 			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f)))
@@ -68,15 +67,15 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 		}
 		mempoke16(d->dat, 0x2, result);
 	}
-	return b1;
+	(void)b1;
 }
 
-Uint8
+void
 ppnil(Device *d, Uint8 b0, Uint8 b1)
 {
 	(void)d;
 	(void)b0;
-	return b1;
+	(void)b1;
 }
 
 #pragma mark - Generics

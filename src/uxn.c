@@ -179,7 +179,7 @@ loaduxn(Uxn *u, char *filepath)
 }
 
 Device *
-portuxn(Uxn *u, Uint8 id, char *name, Uint8 (*pofn)(Device *d, Uint8 b0, Uint8 b1))
+portuxn(Uxn *u, Uint8 id, char *name, void (*pofn)(Device *d, Uint8 b0, Uint8 b1))
 {
 	Device *d = &u->dev[id];
 	d->addr = id * 0x10;
