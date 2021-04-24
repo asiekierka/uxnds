@@ -64,9 +64,11 @@ grammar = P {
     labeldef: C P'@' * V'label'
     relative: (P'^' / -> ',') * (C(V'label') / (s) -> (s\gsub '%$', '&'))
     sublabel: (P'$' / -> '&') * (C(V'label') / (s) -> (s\gsub '%$', '&'))
-    data: C P'[' * (1-P']') ^ 0 * P']'
+    data: C(P'[') * V'ws' * (V'data_item' * V'ws') ^ 0 * C(P']')
     macro: C(P'%' * V'name' * V'ws' * P'{') * V'ws' * (V'atom' * V'ows') ^ 0 * C P'}'
     macroref: C V'name'
+    data_item: C(V'hex' * #V'ws') + V'data_string'
+    data_string: C((1 - S' \n\t') ^ 1 - P']') / (s) -> '"', s
 }
 
 translate = (_filename) ->
@@ -81,7 +83,7 @@ translate = (_filename) ->
         error 'no match'
     filename = filename\gsub 'attic', 'auto'
     f = assert io.open filename, 'w'
-    f\write (table.concat(t)\gsub(' +\n', '\n')\gsub('  +', ' '))
+    f\write table.concat(t)
     f\close!
     f = assert io.popen 'bin/assembler %s bin/boot.rom'\format filename
     for l in f\lines!
@@ -91,10 +93,9 @@ translate = (_filename) ->
     f\close!
     os.exit 0
 
-translate 'attic/software/left.usm'
+translate 'attic/software/assembler.usm'
 os.exit 0
 
-translate 'attic/software/assembler.usm'
 translate 'attic/tests/opcodes.usm'
 translate 'attic/tests/basics.usm'
 
