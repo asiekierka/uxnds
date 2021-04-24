@@ -182,17 +182,18 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 #pragma mark - Devices
 
 void
-system_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+system_talk(Device *d, Uint8 b0, Uint8 w)
 {
+	if(!w) return;
 	putcolors(&ppu, &d->dat[0x8]);
 	reqdraw = 1;
 	(void)b0;
-	(void)b1;
 }
 
 void
-console_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+console_talk(Device *d, Uint8 b0, Uint8 w)
 {
+	if(!w) return;
 	switch(b0) {
 	case 0x8: printf("%c", d->dat[0x8]); break;
 	case 0x9: printf("0x%02x", d->dat[0x9]); break;
@@ -203,27 +204,27 @@ console_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 }
 
 void
-screen_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+screen_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(b0 == 0xe) {
+	if(w && b0 == 0xe) {
 		Uint16 x = mempeek16(d->dat, 0x8);
 		Uint16 y = mempeek16(d->dat, 0xa);
 		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-		Uint8 *layer = b1 >> 4 & 0x1 ? ppu.fg : ppu.bg;
-		switch(b1 >> 5) {
-		case 0: putpixel(&ppu, layer, x, y, b1 & 0x3); break;
-		case 1: puticn(&ppu, layer, x, y, addr, b1 & 0xf); break;
-		case 2: putchr(&ppu, layer, x, y, addr, b1 & 0xf); break;
+		Uint8 *layer = d->dat[0xe] >> 4 & 0x1 ? ppu.fg : ppu.bg;
+		switch(d->dat[0xe] >> 5) {
+		case 0: putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3); break;
+		case 1: puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf); break;
+		case 2: putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf); break;
 		}
 		reqdraw = 1;
 	}
 }
 
 void
-file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+file_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Uint8 read = b0 == 0xd;
-	if(read || b0 == 0xf) {
+	if(w && (read || b0 == 0xf)) {
 		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
 		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
 		Uint16 offset = mempeek16(d->dat, 0x4);
@@ -236,17 +237,16 @@ file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 		}
 		mempoke16(d->dat, 0x2, result);
 	}
-	(void)b1;
 }
 
 static void
-audio_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(b0 == 0xa) {
-		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
-		while(b1 >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
-		apu_play_note(&apu.notes[b1], mempeek16(d->dat, 0x0), mempeek16(d->dat, 0x2), d->dat[0x8], d->dat[0x9] & 0x7f, d->dat[0x9] > 0x7f);
-	} else if(b0 == 0xe && apu.queue != NULL) {
+	if(w && b0 == 0xa) {
+		if(d->dat[0xa] >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (d->dat[0xa] + 1) * sizeof(Note));
+		while(d->dat[0xa] >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
+		apu_play_note(&apu.notes[d->dat[0xa]], mempeek16(d->dat, 0x0), mempeek16(d->dat, 0x2), d->dat[0x8], d->dat[0x9] & 0x7f, d->dat[0x9] > 0x7f);
+	} else if(w && b0 == 0xe && apu.queue != NULL) {
 		if(apu.queue->n == apu.queue->sz) {
 			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
 			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
@@ -256,12 +256,12 @@ audio_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 		else
 			apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xb) + 0x8000;
 		apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xd);
-	} else if(b0 == 0xf && apu.queue != NULL)
+	} else if(w && b0 == 0xf && apu.queue != NULL)
 		apu.queue->finishes = 1;
 }
 
 void
-datetime_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+datetime_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
@@ -276,15 +276,15 @@ datetime_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 	mempoke16(d->dat, 0x08, t->tm_yday);
 	d->dat[0xa] = t->tm_isdst;
 	(void)b0;
-	(void)b1;
+	(void)w;
 }
 
 void
-nil_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+nil_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	(void)d;
 	(void)b0;
-	(void)b1;
+	(void)w;
 }
 
 #pragma mark - Generics

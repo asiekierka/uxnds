@@ -18,10 +18,10 @@
 
 |0100 ( -> )
 		
-	[ ;char-txt PRINT   ] #42 .Console/char DEO BR
-	[ ;byte-txt PRINT   ] #ab .Console/byte DEO BR
-	[ ;short-txt PRINT  ] #cdef .Console/short DEO2 BR
-	[ ;string-txt PRINT ] ;hello-word .Console/string DEO2 BR
+	;char-txt PRINT #42 .Console/char DEO BR
+	;byte-txt PRINT #ab .Console/byte DEO BR
+	;short-txt PRINT #cdef .Console/short DEO2 BR
+	;string-txt PRINT ;hello-word .Console/string DEO2 BR
 
 	;hello-word ;print JSR2
 	#ffff ;print-hexadecimal JSR2

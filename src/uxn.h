@@ -32,7 +32,7 @@ struct Uxn;
 
 typedef struct Device {
 	Uint8 addr, dat[16], *mem;
-	void (*talk)(struct Device *d, Uint8, Uint8, Uint8);
+	void (*talk)(struct Device *d, Uint8, Uint8);
 } Device;
 
 typedef struct Uxn {
@@ -47,4 +47,4 @@ int evaluxn(Uxn *u, Uint16 vec);
 void mempoke16(Uint8 *m, Uint16 a, Uint16 b);
 Uint16 mempeek16(Uint8 *m, Uint16 a);
 
-Device *portuxn(Uxn *u, Uint8 id, char *name, void (*talkfn)(Device *, Uint8, Uint8, Uint8));
+Device *portuxn(Uxn *u, Uint8 id, char *name, void (*talkfn)(Device *, Uint8, Uint8));

@@ -38,23 +38,23 @@ printstack(Stack *s)
 #pragma mark - Devices
 
 void
-console_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+console_talk(Device *d, Uint8 b0, Uint8 w)
 {
+	if(!w) return;
 	switch(b0) {
-	case 0x08: printf("%c", b1); break;
-	case 0x09: printf("0x%02x\n", b1); break;
-	case 0x0b: printf("0x%04x\n", (d->dat[0x0a] << 8) + b1); break;
+	case 0x8: printf("%c", d->dat[0x8]); break;
+	case 0x9: printf("0x%02x", d->dat[0x9]); break;
+	case 0xb: printf("0x%04x", mempeek16(d->dat, 0xa)); break;
+	case 0xd: printf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
 	}
 	fflush(stdout);
-	(void)d;
-	(void)b0;
 }
 
 void
-file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+file_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Uint8 read = b0 == 0xd;
-	if(read || b0 == 0xf) {
+	if(w && (read || b0 == 0xf)) {
 		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
 		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
 		Uint16 offset = mempeek16(d->dat, 0x4);
@@ -67,15 +67,14 @@ file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 		}
 		mempoke16(d->dat, 0x2, result);
 	}
-	(void)b1;
 }
 
 void
-nil_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
+nil_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	(void)d;
 	(void)b0;
-	(void)b1;
+	(void)w;
 }
 
 #pragma mark - Generics
