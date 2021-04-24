@@ -32,7 +32,7 @@ else
 fi
 
 echo "Assembling.."
-./bin/assembler projects/demos/bifurcan.usm bin/boot.rom
+./bin/assembler projects/examples/devices/console.lib.usm bin/boot.rom
 
 echo "Running.."
 if [ "${2}" = '--cli' ]; 

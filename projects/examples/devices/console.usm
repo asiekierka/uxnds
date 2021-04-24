@@ -6,20 +6,11 @@
 
 |10 @Console    [ &pad $8 &char $1 ]
 
-( variables )
-
-|0000
-
-@number [ &started $1 ]
-
 ( init )
 
 |0100 ( -> )
 	
 	;hello-word ;print JSR2
-	#ffff ;print-hexadecimal JSR2
-	;is-word ;print JSR2
-	#ffff ;print-decimal JSR2
 	
 BRK
 
@@ -28,48 +19,9 @@ BRK
 	&loop
 		( send ) DUP2 GET .Console/char DEO
 		( incr ) #0001 ADD2
-		( loop ) DUP2 GET ,&loop JNZ
+		( loop ) DUP2 GET #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
 
-@print-hexadecimal ( short -- )
-	LIT '0 .Console/char DEO
-	LIT 'x .Console/char DEO
-	DUP2 #000c SFT2 ,&digit JSR
-	DUP2 #0008 SFT2 ,&digit JSR
-	DUP2 #0004 SFT2 ,&digit JSR
-	                ,&digit JSR
-RTN
-
-	&digit
-	#0f AND DUP #0a LTH ,&not-alpha JNZ
-		#27 ADD
-	&not-alpha
-	LIT '0 ADD .Console/char DEO
-	POP
-RTN
-
-@print-decimal ( short -- )
-	#00 .number/started POK
-	DUP2 #2710 DIV2 DUP2 ,&digit JSR #2710 MUL2 SUB2
-	DUP2 #03e8 DIV2 DUP2 ,&digit JSR #03e8 MUL2 SUB2
-	DUP2 #0064 DIV2 DUP2 ,&digit JSR #0064 MUL2 SUB2
-	DUP2 #000a DIV2 DUP2 ,&digit JSR #000a MUL2 SUB2
-	                     ,&digit JSR
-	.number/started PEK ,&end JNZ
-	LIT '0 .Console/char DEO
-	&end
-RTN
-
-	&digit
-	SWP POP
-	DUP .number/started PEK ORA #02 JNZ
-	POP JMP2r
-	LIT '0 ADD .Console/char DEO
-	#01 .number/started POK
-RTN
-
-@hello-word "hello 20 "World! 0a 00
-@is-word 20 "is 20 00
-
+@hello-word "hello 20 "World!

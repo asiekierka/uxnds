@@ -182,7 +182,7 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 #pragma mark - Devices
 
 void
-system_poke(Device *d, Uint8 b0, Uint8 b1)
+system_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	putcolors(&ppu, &d->dat[0x8]);
 	reqdraw = 1;
@@ -191,19 +191,19 @@ system_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-console_poke(Device *d, Uint8 b0, Uint8 b1)
+console_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	switch(b0) {
-	case 0x8: printf("%c", b1); break;
-	case 0x9: printf("0x%02x\n", b1); break;
-	case 0xb: printf("0x%04x\n", (d->dat[0xa] << 8) + b1); break;
-	case 0xd: printf("%s\n", &d->mem[(d->dat[0xc] << 8) + b1]); break;
+	case 0x8: printf("%c", d->dat[0x8]); break;
+	case 0x9: printf("0x%02x", d->dat[0x9]); break;
+	case 0xb: printf("0x%04x", mempeek16(d->dat, 0xa)); break;
+	case 0xd: printf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
 	}
 	fflush(stdout);
 }
 
 void
-screen_poke(Device *d, Uint8 b0, Uint8 b1)
+screen_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	if(b0 == 0xe) {
 		Uint16 x = mempeek16(d->dat, 0x8);
@@ -220,7 +220,7 @@ screen_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-file_poke(Device *d, Uint8 b0, Uint8 b1)
+file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
@@ -240,7 +240,7 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 static void
-audio_poke(Device *d, Uint8 b0, Uint8 b1)
+audio_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	if(b0 == 0xa) {
 		if(b1 >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (b1 + 1) * sizeof(Note));
@@ -261,7 +261,7 @@ audio_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-datetime_poke(Device *d, Uint8 b0, Uint8 b1)
+datetime_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	time_t seconds = time(NULL);
 	struct tm *t = localtime(&seconds);
@@ -280,7 +280,7 @@ datetime_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-ppnil(Device *d, Uint8 b0, Uint8 b1)
+nil_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	(void)d;
 	(void)b0;
@@ -350,22 +350,22 @@ main(int argc, char **argv)
 	if(!init(&u))
 		return error("Init", "Failed");
 
-	devsystem = portuxn(&u, 0x0, "system", system_poke);
-	portuxn(&u, 0x1, "console", console_poke);
-	devscreen = portuxn(&u, 0x2, "screen", screen_poke);
-	devapu = portuxn(&u, 0x3, "audio", audio_poke);
-	devctrl = portuxn(&u, 0x4, "controller", ppnil);
-	portuxn(&u, 0x5, "---", ppnil);
-	devmouse = portuxn(&u, 0x6, "mouse", ppnil);
-	devfile = portuxn(&u, 0x7, "file", file_poke);
-	portuxn(&u, 0x8, "---", ppnil);
-	portuxn(&u, 0x9, "midi", ppnil);
-	portuxn(&u, 0xa, "datetime", datetime_poke);
-	portuxn(&u, 0xb, "---", ppnil);
-	portuxn(&u, 0xc, "---", ppnil);
-	portuxn(&u, 0xd, "---", ppnil);
-	portuxn(&u, 0xe, "---", ppnil);
-	portuxn(&u, 0xf, "---", ppnil);
+	devsystem = portuxn(&u, 0x0, "system", system_talk);
+	portuxn(&u, 0x1, "console", console_talk);
+	devscreen = portuxn(&u, 0x2, "screen", screen_talk);
+	devapu = portuxn(&u, 0x3, "audio", audio_talk);
+	devctrl = portuxn(&u, 0x4, "controller", nil_talk);
+	portuxn(&u, 0x5, "---", nil_talk);
+	devmouse = portuxn(&u, 0x6, "mouse", nil_talk);
+	devfile = portuxn(&u, 0x7, "file", file_talk);
+	portuxn(&u, 0x8, "---", nil_talk);
+	portuxn(&u, 0x9, "midi", nil_talk);
+	portuxn(&u, 0xa, "datetime", datetime_talk);
+	portuxn(&u, 0xb, "---", nil_talk);
+	portuxn(&u, 0xc, "---", nil_talk);
+	portuxn(&u, 0xd, "---", nil_talk);
+	portuxn(&u, 0xe, "---", nil_talk);
+	portuxn(&u, 0xf, "---", nil_talk);
 
 	apu.channel_ptr = &devapu->dat[0xa];
 

@@ -38,7 +38,7 @@ printstack(Stack *s)
 #pragma mark - Devices
 
 void
-console_poke(Device *d, Uint8 b0, Uint8 b1)
+console_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	switch(b0) {
 	case 0x08: printf("%c", b1); break;
@@ -51,7 +51,7 @@ console_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-file_poke(Device *d, Uint8 b0, Uint8 b1)
+file_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	Uint8 read = b0 == 0xd;
 	if(read || b0 == 0xf) {
@@ -71,7 +71,7 @@ file_poke(Device *d, Uint8 b0, Uint8 b1)
 }
 
 void
-ppnil(Device *d, Uint8 b0, Uint8 b1)
+nil_talk(Device *d, Uint8 b0, Uint8 b1, Uint8 rw)
 {
 	(void)d;
 	(void)b0;
@@ -106,13 +106,13 @@ main(int argc, char **argv)
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
 
-	portuxn(&u, 0x00, "console", console_poke);
-	portuxn(&u, 0x01, "empty", ppnil);
-	portuxn(&u, 0x02, "empty", ppnil);
-	portuxn(&u, 0x03, "empty", ppnil);
-	portuxn(&u, 0x04, "empty", ppnil);
-	portuxn(&u, 0x05, "empty", ppnil);
-	portuxn(&u, 0x06, "file", file_poke);
+	portuxn(&u, 0x00, "console", console_talk);
+	portuxn(&u, 0x01, "empty", nil_talk);
+	portuxn(&u, 0x02, "empty", nil_talk);
+	portuxn(&u, 0x03, "empty", nil_talk);
+	portuxn(&u, 0x04, "empty", nil_talk);
+	portuxn(&u, 0x05, "empty", nil_talk);
+	portuxn(&u, 0x06, "file", file_talk);
 	start(&u);
 
 	return 0;
