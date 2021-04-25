@@ -57,6 +57,8 @@ RTN
 - Implement Uxambly REPL
 - Load disks at a different place than 0x0000.
 - Curl device? 8-bit web browser?
+	- Replace LTS/GTS? `LTS = #80 ADD SWP #80 ADD SWP LTH`
+	- `#80 ADD SWP #80 ADD GTH`
 
 ## Palettes
 
