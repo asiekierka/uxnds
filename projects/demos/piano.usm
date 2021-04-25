@@ -10,13 +10,10 @@
 ( devices )
 
 |00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
 |30 @Audio      [ &pad    $8 &adsr     $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
 |40 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |60 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
-|70 @File       [ &vector $2 &success  $2 &offset $2 &pad   $2 &name   $2 &length $2 &load $2 &save $2 ]
-|a0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
 
@@ -25,16 +22,13 @@
 @last $1
 @octave $1
 @addr $1
-
-@pointer [ &x $2 &y $2 ]
 @color $1
-
-@adsr-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@wave-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@pointer     [ &x $2 &y $2 ]
+@knob        [ &x $2 &y $2 &value $1 ]
+@center      [ &x $2 &y $2 ]
+@adsr-view   [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@wave-view   [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @octave-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-
-@center    [ &x $2 &y $2 ]
-@knob [ &x $2 &y $2 &value $1 ]
 
 ( program )
 
@@ -55,13 +49,13 @@
 
 	( place octave )
 	.center/x PEK2 #0050 SUB2 .octave-view/x1 POK2
-	.center/y PEK2 #0008 ADD2 .octave-view/y1 POK2
+	.center/y PEK2 8+ .octave-view/y1 POK2
 	.octave-view/x1 PEK2 #0048 ADD2 .octave-view/x2 POK2
 	.octave-view/y1 PEK2 #0018 ADD2 .octave-view/y2 POK2
 
 	( place adsr )
 	.center/x PEK2 .adsr-view/x1 POK2
-	.center/y PEK2 #0008 ADD2 .adsr-view/y1 POK2
+	.center/y PEK2 8+ .adsr-view/y1 POK2
 	.adsr-view/x1 PEK2 #0058 ADD2 .adsr-view/x2 POK2
 	.adsr-view/y1 PEK2 #0018 ADD2 .adsr-view/y2 POK2
 
@@ -88,19 +82,15 @@ BRK
 @on-mouse ( -> )
 
 	;draw-cursor JSR2 
-
 	.Mouse/state DEI #00 NEQ ,&no-touch JNZ BRK &no-touch
-
 	( wave-view )
 	.Mouse/x DEI2 DUP2 .wave-view/x1 PEK2 GTH2 ROT ROT .wave-view/x2 PEK2 LTH2 #0101 EQU2
 	.Mouse/y DEI2 DUP2 .wave-view/y1 PEK2 GTH2 ROT ROT .wave-view/y2 PEK2 LTH2 #0101 EQU2
 	#0101 EQU2 ;on-touch-wave-view JNZ2
-
 	( adsr-view )
 	.Mouse/x DEI2 DUP2 .adsr-view/x1 PEK2 GTH2 ROT ROT .adsr-view/x2 PEK2 LTH2 #0101 EQU2
 	.Mouse/y DEI2 DUP2 .adsr-view/y1 PEK2 GTH2 ROT ROT .adsr-view/y2 PEK2 LTH2 #0101 EQU2
 	#0101 EQU2 ;on-touch-adsr-view JNZ2
-
 	( octave-view )
 	.Mouse/x DEI2 DUP2 .octave-view/x1 PEK2 GTH2 ROT ROT .octave-view/x2 PEK2 LTH2 #0101 EQU2
 	.Mouse/y DEI2 DUP2 .octave-view/y1 PEK2 GTH2 ROT ROT .octave-view/y2 PEK2 LTH2 #0101 EQU2
@@ -118,8 +108,8 @@ BRK
 
 @on-touch-octave-view ( -> )
 
-	.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 #0008 DIV2 SWP POP #08 NEQ ,&no-mod JNZ
-		.Mouse/y DEI2 .octave-view/y1 PEK2 SUB2 #0008 DIV2 SWP POP 
+	.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 8/ SWP POP #08 NEQ ,&no-mod JNZ
+		.Mouse/y DEI2 .octave-view/y1 PEK2 SUB2 8/ SWP POP 
 		DUP #00 NEQ ,&no-incr JNZ
 			.octave PEK #01 ADD .octave POK &no-incr
 		DUP #02 NEQ ,&no-decr JNZ
@@ -130,7 +120,7 @@ BRK
 		BRK
 	&no-mod
 
-	.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 #0008 DIV2 DUP2 SWP POP .last POK ;notes ADD2 GET ;play JSR2
+	.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 8/ DUP2 SWP POP .last POK ;notes ADD2 GET ;play JSR2
 
 	( release ) #00 .Mouse/state DEO
 	;draw-octave JSR2
@@ -176,7 +166,7 @@ BRK
 	DUP #61 NEQ ,&no-c JNZ
 		#00 .last POK ;notes GET ;play JSR2 &no-c
 	DUP #73 NEQ ,&no-d JNZ
-		#01 .last POK ;notes #0001 ADD2 GET ;play JSR2 &no-d
+		#01 .last POK ;notes ++ GET ;play JSR2 &no-d
 	DUP #64 NEQ ,&no-e JNZ
 		#02 .last POK ;notes #0002 ADD2 GET ;play JSR2 &no-e
 	DUP #66 NEQ ,&no-f JNZ
@@ -199,7 +189,7 @@ BRK
 	DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ
 		( move ) .Audio/addr DEI2 #0001 SUB2 .Audio/addr DEO2 &no-left
 	DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ
-		( move ) .Audio/addr DEI2 #0001 ADD2 .Audio/addr DEO2 &no-right
+		( move ) .Audio/addr DEI2 ++ .Audio/addr DEO2 &no-right
 	POP
 
 	;draw-octave JSR2
@@ -236,7 +226,7 @@ RTN
 	.octave-view/x1 PEK2 .octave-view/y1 PEK2
 
 	OVR2 OVR2 ;keys-left-icns #21 .last PEK #00 EQU ADD ;draw-key JSR2
-	OVR2 #0008 ADD2 OVR2 ;keys-middle-icns #21 .last PEK #01 EQU ADD ;draw-key JSR2
+	OVR2 8+ OVR2 ;keys-middle-icns #21 .last PEK #01 EQU ADD ;draw-key JSR2
 	OVR2 #0010 ADD2 OVR2 ;keys-right-icns #21 .last PEK #02 EQU ADD ;draw-key JSR2
 	OVR2 #0018 ADD2 OVR2 ;keys-left-icns #21 .last PEK #03 EQU ADD ;draw-key JSR2
 	OVR2 #0020 ADD2 OVR2 ;keys-middle-icns #21 .last PEK #04 EQU ADD ;draw-key JSR2
@@ -248,13 +238,13 @@ RTN
 	.octave-view/y1 PEK2 .Screen/y DEO2
 	#21 .Screen/color DEO
 
-	;arrow-icns #0008 ADD2 .Screen/addr DEO2
+	;arrow-icns 8+ .Screen/addr DEO2
 	.octave-view/y1 PEK2 #0010 ADD2 .Screen/y DEO2
 	#21 .Screen/color DEO
 
 	;font-hex .octave PEK #03 ADD #00 SWP #0008 MUL2 ADD2 .Screen/addr DEO2
 	.octave-view/x2 PEK2 #0008 SUB2 .Screen/x DEO2
-	.octave-view/y1 PEK2 #0008 ADD2 .Screen/y DEO2
+	.octave-view/y1 PEK2 8+ .Screen/y DEO2
 	#23 .Screen/color DEO
 
 RTN
@@ -297,7 +287,7 @@ RTN
 	
 	.wave-view/x1 PEK2
 	.wave-view/y1 PEK2
-	.wave-view/x2 PEK2 #0001 ADD2
+	.wave-view/x2 PEK2 ++
 	.wave-view/y2 PEK2
 	#00 ;fill-rect JSR2
 
@@ -316,7 +306,7 @@ RTN
 		OVR TOS .Audio/addr DEI2 ADD2 GET 
 		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
 		TOS #0004 DIV2 .wave-view/y1 PEK2 ADD2 .Screen/y DEO2
-		.Screen/x DEI2 #0001 ADD2 .Screen/x DEO2
+		.Screen/x DEI2 ++ .Screen/x DEO2
 		( draw ) OVR .Audio/length DEI2 SWP POP GTH #02 MUL #01 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
@@ -339,7 +329,7 @@ RTN
 	&loop
 		OVR2 .Screen/y DEO2
 		( draw ) DUPr STHr .Screen/color DEO
-		( incr ) SWP2 #0001 ADD2 SWP2
+		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 LTH2 ,&loop JNZ
 	POP2 POP2
 	POPr
