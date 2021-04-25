@@ -22,8 +22,8 @@ static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
-static Apu apu;
-static Device *devscreen, *devmouse, *devctrl, *devapu;
+static Apu apu[POLYPHONY];
+static Device *devscreen, *devmouse, *devctrl;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -43,7 +43,12 @@ error(char *msg, const char *err)
 static void
 audio_callback(void *u, Uint8 *stream, int len)
 {
-	apu_render(&apu, (Uxn *)u, (Sint16 *)stream, len >> 2);
+	int i;
+	Sint16 *samples = (Sint16 *)stream;
+	SDL_memset(stream, 0, len);
+	for(i = 0; i < POLYPHONY; ++i)
+		apu_render(&apu[i], samples, samples + len / 2);
+	(void)u;
 }
 
 void
@@ -92,7 +97,7 @@ quit(void)
 }
 
 int
-init(Uxn *u)
+init(void)
 {
 	SDL_AudioSpec as;
 	if(!initppu(&ppu, 48, 32, 16))
@@ -116,7 +121,7 @@ init(Uxn *u)
 	as.channels = 2;
 	as.callback = audio_callback;
 	as.samples = 512;
-	as.userdata = u;
+	as.userdata = NULL;
 	audio_id = SDL_OpenAudioDevice(NULL, 0, &as, NULL, 0);
 	if(!audio_id)
 		return error("Audio", SDL_GetError());
@@ -242,22 +247,23 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 static void
 audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(w && b0 == 0xa) {
-		if(d->dat[0xa] >= apu.n_notes) apu.notes = SDL_realloc(apu.notes, (d->dat[0xa] + 1) * sizeof(Note));
-		while(d->dat[0xa] >= apu.n_notes) SDL_zero(apu.notes[apu.n_notes++]);
-		apu_play_note(&apu.notes[d->dat[0xa]], mempeek16(d->dat, 0x0), mempeek16(d->dat, 0x2), d->dat[0x8], d->dat[0x9] & 0x7f, d->dat[0x9] > 0x7f);
-	} else if(w && b0 == 0xe && apu.queue != NULL) {
-		if(apu.queue->n == apu.queue->sz) {
-			apu.queue->sz = apu.queue->sz < 4 ? 4 : apu.queue->sz * 2;
-			apu.queue->dat = SDL_realloc(apu.queue->dat, apu.queue->sz * sizeof(*apu.queue->dat));
-		}
-		if(apu.queue->is_envelope)
-			apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xb) >> 1;
-		else
-			apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xb) + 0x8000;
-		apu.queue->dat[apu.queue->n++] = mempeek16(d->dat, 0xd);
-	} else if(w && b0 == 0xf && apu.queue != NULL)
-		apu.queue->finishes = 1;
+	Apu *c;
+	if(!w) return;
+	c = &apu[d->dat[0x7] % POLYPHONY];
+	SDL_LockAudioDevice(audio_id);
+	if(b0 == 0x1) c->period -= (Sint16)mempeek16(d->dat, 0x0);
+	if(b0 == 0x3 || b0 == 0xf) c->len = mempeek16(d->dat, (b0 & 0x8) | 0x2);
+	if(b0 == 0x5 || b0 == 0xf) c->addr = &d->mem[mempeek16(d->dat, (b0 & 0x8) | 0x4)];
+	if(b0 == 0x6 || b0 == 0xf) {
+		c->volume_l = d->dat[(b0 & 0x8) | 0x6] >> 4;
+		c->volume_r = d->dat[(b0 & 0x8) | 0x6] & 0xf;
+	}
+	if(b0 == 0xf) {
+		c->repeat = !(d->dat[0xf] & 0x80);
+		apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
+		d->dat[0x7]++;
+	}
+	SDL_UnlockAudioDevice(audio_id);
 }
 
 void
@@ -297,7 +303,6 @@ start(Uxn *u)
 	while(1) {
 		SDL_Event event;
 		double elapsed, start = SDL_GetPerformanceCounter();
-		SDL_LockAudioDevice(audio_id);
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT:
@@ -326,7 +331,6 @@ start(Uxn *u)
 			}
 		}
 		evaluxn(u, mempeek16(devscreen->dat, 0));
-		SDL_UnlockAudioDevice(audio_id);
 		if(reqdraw)
 			redraw(ppu.output, u);
 		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
@@ -347,13 +351,13 @@ main(int argc, char **argv)
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
-	if(!init(&u))
+	if(!init())
 		return error("Init", "Failed");
 
 	portuxn(&u, 0x0, "system", system_talk);
 	portuxn(&u, 0x1, "console", console_talk);
 	devscreen = portuxn(&u, 0x2, "screen", screen_talk);
-	devapu = portuxn(&u, 0x3, "audio", audio_talk);
+	portuxn(&u, 0x3, "audio", audio_talk);
 	devctrl = portuxn(&u, 0x4, "controller", nil_talk);
 	portuxn(&u, 0x5, "---", nil_talk);
 	devmouse = portuxn(&u, 0x6, "mouse", nil_talk);
@@ -366,8 +370,6 @@ main(int argc, char **argv)
 	portuxn(&u, 0xd, "---", nil_talk);
 	portuxn(&u, 0xe, "---", nil_talk);
 	portuxn(&u, 0xf, "---", nil_talk);
-
-	apu.channel_ptr = &devapu->dat[0xa];
 
 	/* Write screen size to dev/screen */
 	mempoke16(devscreen->dat, 2, ppu.hor * 8);

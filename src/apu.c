@@ -13,87 +13,69 @@ WITH REGARD TO THIS SOFTWARE.
 #include "uxn.h"
 #include "apu.h"
 
-static Uint32 note_advances[12] = {
-	0x82d01286 / (SAMPLE_FREQUENCY / 30), /* C7 */
-	0x8a976073 / (SAMPLE_FREQUENCY / 30),
-	0x92d5171d / (SAMPLE_FREQUENCY / 30), /* D7 */
-	0x9b904100 / (SAMPLE_FREQUENCY / 30),
-	0xa4d053c8 / (SAMPLE_FREQUENCY / 30), /* E7 */
-	0xae9d36b0 / (SAMPLE_FREQUENCY / 30), /* F7 */
-	0xb8ff493e / (SAMPLE_FREQUENCY / 30),
-	0xc3ff6a72 / (SAMPLE_FREQUENCY / 30), /* G7 */
-	0xcfa70054 / (SAMPLE_FREQUENCY / 30),
-	0xdc000000 / (SAMPLE_FREQUENCY / 30), /* A7 */
-	0xe914f623 / (SAMPLE_FREQUENCY / 30),
-	0xf6f11003 / (SAMPLE_FREQUENCY / 30) /* B7 */
+#define NOTE_PERIOD 0x10000
+#define ADSR_STEP (SAMPLE_FREQUENCY / 0xf)
+
+/* clang-format off */
+
+static Uint32 advances[12] = {
+	0x80000, 0x879c8, 0x8facd, 0x9837f, 0xa1451, 0xaadc1,
+	0xb504f, 0xbfc88, 0xcb2ff, 0xd7450, 0xe411f, 0xf1a1c
 };
 
-static void
-render_note(Apu *apu, Uxn *u, int note_i, Sint16 *samples, int n_samples)
+/* clang-format on */
+
+static Sint32
+envelope(Apu *c, Uint32 age)
 {
-	int i;
-	Note *note = &apu->notes[note_i];
-	while(n_samples--) {
-		Sint32 sample = 1;
-		for(i = 0; i < 2; ++i) {
-			WaveformGenerator *wv = &note->wv[i];
-			apu->queue = &wv->queue;
-			wv->count += wv->advance;
-			while(wv->count > wv->period) {
-				wv->count -= wv->period;
-				wv->start_value = wv->end_value;
-				if(apu->queue->i == apu->queue->n) {
-					apu->queue->i = apu->queue->n = 0;
-					if(!apu->queue->finishes) {
-						*apu->channel_ptr = note_i;
-						evaluxn(u, wv->vector);
-					}
-				}
-				if(!apu->queue->n) {
-					note->playing = 0;
-					return;
-				}
-				wv->end_value = (Sint16)apu->queue->dat[apu->queue->i++];
-				wv->period = (30 << 4) * apu->queue->dat[apu->queue->i++];
+	if(!c->r) return 0x0888;
+	if(age < c->a) return 0x0888 * age / c->a;
+	if(age < c->d) return 0x0444 * (2 * c->d - c->a - age) / (c->d - c->a);
+	if(age < c->s) return 0x0444;
+	if(age < c->r) return 0x0444 * (c->r - age) / (c->r - c->s);
+	c->advance = 0;
+	return 0x0000;
+}
+
+void
+apu_render(Apu *c, Sint16 *sample, Sint16 *end)
+{
+	Sint32 s;
+	if(!c->advance || !c->period) return;
+	while(sample < end) {
+		c->count += c->advance;
+		c->i += c->count / c->period;
+		c->count %= c->period;
+		if(c->i >= c->len) {
+			if(!c->repeat) {
+				c->advance = 0;
+				return;
 			}
-			if(wv->period >> 9)
-				sample *= wv->start_value + (Sint32)(wv->end_value - wv->start_value) * (Sint32)(wv->count >> 10) / (Sint32)(wv->period >> 10);
-			else
-				sample *= wv->end_value;
+			c->i %= c->len;
 		}
-		for(i = 0; i < 2; ++i)
-			*(samples++) += sample / 0xf * note->volume[i] / 0x10000;
+		s = (Sint16)(mempeek16(c->addr, c->i * 2) + 0x8000) * envelope(c, c->age++);
+		*sample++ += s * c->volume_l / 0x8000;
+		*sample++ += s * c->volume_r / 0x8000;
 	}
 }
 
 void
-apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples)
+apu_start(Apu *c, Uint16 adsr, Uint8 pitch)
 {
-	int i;
-	for(i = 0; i < n_samples * 2; ++i)
-		samples[i] = 0;
-	for(i = 0; i < apu->n_notes; ++i)
-		if(apu->notes[i].playing) render_note(apu, u, i, samples, n_samples);
-	apu->queue = NULL;
-}
-
-void
-apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch, Uint8 impl)
-{
-	int i;
-	if(pitch >= 108 || impl == 0) return;
-	note->playing = 1;
-	note->impl = impl;
-	for(i = 0; i < 2; ++i) {
-		note->volume[i] = 0xf & (volume >> 4 * (1 - i));
-		note->wv[i].count = note->wv[i].period = 0;
-		note->wv[i].end_value = 0x8000 * (1 - i);
-		note->wv[i].queue.n = note->wv[i].queue.i = 0;
-		note->wv[i].queue.finishes = 0;
-		note->wv[i].queue.is_envelope = i;
+	if(pitch < 108 && c->len)
+		c->advance = advances[pitch % 12] >> (8 - pitch / 12);
+	else {
+		c->advance = 0;
+		return;
 	}
-	note->wv[0].vector = wave_vector;
-	note->wv[0].advance = note_advances[pitch % 12] >> (8 - pitch / 12);
-	note->wv[1].vector = envelope_vector;
-	note->wv[1].advance = (30 << 20) / SAMPLE_FREQUENCY;
+	c->a = ADSR_STEP * (adsr >> 12);
+	c->d = ADSR_STEP * (adsr >> 8 & 0xf) + c->a;
+	c->s = ADSR_STEP * (adsr >> 4 & 0xf) + c->d;
+	c->r = ADSR_STEP * (adsr >> 0 & 0xf) + c->s;
+	c->age = 0;
+	c->i = 0;
+	if(c->len <= 0x100) /* single cycle mode */
+		c->period = NOTE_PERIOD * 337 / 2 / c->len;
+	else /* sample repeat mode */
+		c->period = NOTE_PERIOD;
 }

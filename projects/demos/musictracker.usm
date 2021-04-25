@@ -21,7 +21,7 @@
 @knob [ &x $2 &y $2 &value $1 ]
 @head [ &pos $1 ]
 @track [ &active $1 &ch1 $20 &ch2 $20 &ch3 $20 &ch4 $20 ]
-@adsr [ &ch1a $1 &ch1d $1 &ch1s $1 &ch1r $1 &ch2a $1 &ch2d $1 &ch2s $1 &ch2r $1 &ch3a $1 &ch3d $1 &ch3s $1 &ch3r $1 &ch4a $1 &ch4d $1 &ch4s $1 &ch4r $1 ]
+@adsr [ &ch1 $2 &ch2 $2 &ch3 $2 &ch4 $2 ]
 @volume [ &ch1 $1 &ch2 $1 &ch3 $1 &ch4 $1 ]
 
 ( devices )
@@ -29,7 +29,7 @@
 |00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
 |10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
 |20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|30 @Audio [ &wave $2 &envelope $2 &pad $4 &volume $1 &pitch $1 &play $1 &value $2 &delay $2 &finish $1 ]
+|30 @Audio [ &pad $8 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
 |40 @Controller [ &vector $2 &button $1 &key $1 ]
 |60 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
 |70 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
@@ -37,6 +37,7 @@
 ( vectors )
 
 |0100
+	@noise-wave
 
 	( theme ) #e0fa .System/r DEO2 #30fa .System/g DEO2 #30fa .System/b DEO2
 	( vectors ) ;on-screen .Screen/vector DEO2
@@ -55,10 +56,10 @@
 	.trkframe/x2 PEK2 .ctlframe/x2 POK2 .chnframe/y2 PEK2 .ctlframe/y2 POK2
 
 	( default settings )
-	;adsr-envelope .Audio/envelope DEO2
-	#00 .adsr/ch1a POK #40 .adsr/ch1d POK #80 .adsr/ch1s POK #c0 .adsr/ch1r POK #88 .volume/ch1 POK
-	#10 .adsr/ch2a POK #50 .adsr/ch2d POK #90 .adsr/ch2s POK #d0 .adsr/ch2r POK #88 .volume/ch2 POK
-	#20 .adsr/ch3a POK #60 .adsr/ch3d POK #a0 .adsr/ch3s POK #e0 .adsr/ch3r POK #88 .volume/ch3 POK
+	#048c .adsr/ch1 POK2 #88 .volume/ch1 POK
+	#159d .adsr/ch2 POK2 #88 .volume/ch2 POK
+	#26ae .adsr/ch3 POK2 #88 .volume/ch3 POK
+	#260e .adsr/ch4 POK2 #88 .volume/ch4 POK
 
 	.volume/ch3 PEK .Audio/volume DEO
 
@@ -120,9 +121,9 @@ BRK
 
 @play ( pitch -- )
 
-	#80 ORA .Audio/pitch DEO
-	;triangle-wave .Audio/wave DEO2
-	.track/active PEK .Audio/play DEO
+	;triangle-wave .Audio/addr DEO2
+	;triangle-wave/end ;triangle-wave SUB2 #0001 SFT2 .Audio/len DEO2
+	.Audio/pitch DEO
 
 RTN
 
@@ -154,21 +155,21 @@ BRK
 	
 	.Mouse/x DEI2 .ctlframe/x1 PEK2 SUB2 8- 8/ SWP POP #02 DIV
 	DUP #00 NEQ ,&no-a JNZ
-		;adsr #00 .track/active PEK #04 MUL ADD2 GET
+		.adsr .track/active PEK #02 MUL ADD PEK
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		;adsr #00 .track/active PEK #04 MUL ADD2 PUT &no-a
+		.adsr .track/active PEK #02 MUL ADD POK &no-a
 	DUP #01 NEQ ,&no-d JNZ
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 GET
-		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 PUT &no-d
+		.adsr .track/active PEK #02 MUL ADD PEK
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		.adsr .track/active PEK #02 MUL ADD POK &no-d
 	DUP #02 NEQ ,&no-s JNZ
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 GET
+		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 PUT &no-s
+		.adsr .track/active PEK #02 MUL ADD #01 ADD POK &no-s
 	DUP #03 NEQ ,&no-r JNZ
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 GET
-		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 PUT &no-r
+		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		.adsr .track/active PEK #02 MUL ADD #01 ADD POK &no-r
 	DUP #05 NEQ ,&no-left JNZ
 		;volume #00 .track/active PEK ADD2 GET
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
@@ -190,30 +191,44 @@ BRK
 	DUP #ff NEQ ,&skip1 JNZ
 		POP ,&listen2 JMP
 	&skip1
-	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.adsr/ch1 PEK2 .Audio/adsr DEO2
 	.volume/ch1 PEK .Audio/volume DEO
-	;square-wave .Audio/wave DEO2
-	#00 .Audio/play DEO
+	;square-wave .Audio/addr DEO2
+	;square-wave/end ;square-wave SUB2 #0001 SFT2 .Audio/len DEO2
+	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
 	&listen2
 	;track/ch2 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
 	DUP #ff NEQ ,&skip2 JNZ
 		POP ,&listen3 JMP
 	&skip2
-	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.adsr/ch2 PEK2 .Audio/adsr DEO2
 	.volume/ch2 PEK .Audio/volume DEO
-	;square-wave .Audio/wave DEO2
-	#01 .Audio/play DEO
+	;triangle-wave .Audio/addr DEO2
+	;triangle-wave/end ;triangle-wave SUB2 #0001 SFT2 .Audio/len DEO2
+	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
 	&listen3
 	;track/ch3 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
 	DUP #ff NEQ ,&skip3 JNZ
-		POP ,&end JMP
+		POP ,&listen4 JMP
 	&skip3
-	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	.adsr/ch3 PEK2 .Audio/adsr DEO2
 	.volume/ch3 PEK .Audio/volume DEO
-	;triangle-wave .Audio/wave DEO2
-	#02 .Audio/play DEO
+	;sine-wave .Audio/addr DEO2
+	;sine-wave/end ;sine-wave SUB2 #0001 SFT2 .Audio/len DEO2
+	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
+	&listen4
+	;track/ch4 #00 .head/pos PEK #08 DIV ADD2 GET
+	#01 SUB
+	DUP #ff NEQ ,&skip4 JNZ
+		POP ,&end JMP
+	&skip4
+	#0000 .Audio/adsr DEO2
+	.volume/ch4 PEK .Audio/volume DEO
+	;noise-wave .Audio/addr DEO2
+	;noise-wave-end ;noise-wave SUB2 #0001 SFT2 .Audio/len DEO2
+	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
 	&end
 
 RTN
@@ -319,14 +334,14 @@ RTN
 	.trkframe/y1 PEK2 #0038 ADD2 ;draw-octave JSR2
 	.trkframe/x1 PEK2 #0028 SUB2 .Screen/x DEO2
 	.trkframe/y1 PEK2 #0030 ADD2 .Screen/y DEO2
-	;font_hex #0028 ADD2 .Screen/addr DEO2
+	;font_hex #0020 ADD2 .Screen/addr DEO2
 	#23 .Screen/color DEO
 	.trkframe/x1 PEK2 #0030 SUB2 .Screen/x DEO2
 	;font_hex #0060 ADD2 .Screen/addr DEO2
 	#23 .Screen/color DEO
 	.trkframe/x1 PEK2 #0028 SUB2 .Screen/x DEO2
 	.trkframe/y1 PEK2 #0068 ADD2 .Screen/y DEO2
-	;font_hex #0020 ADD2 .Screen/addr DEO2
+	;font_hex #0018 ADD2 .Screen/addr DEO2
 	#23 .Screen/color DEO
 	.trkframe/x1 PEK2 #0030 SUB2 .Screen/x DEO2
 	;font_hex #0060 ADD2 .Screen/addr DEO2
@@ -342,8 +357,11 @@ RTN
 RTN
 
 @draw-knob ( x* y* value -- )
-	
+	.track/active PEK #03 EQU ;&blank JNZ2
+
+	&force
 	( load ) .knob/value POK .knob/y POK2 .knob/x POK2
+
 	.knob/x PEK2 .Screen/x DEO2
 	.knob/y PEK2 .Screen/y DEO2 ;knob_icns .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
@@ -360,31 +378,45 @@ RTN
 
 RTN
 
+	&blank
+
+	( load ) .knob/value POK .knob/y POK2 .knob/x POK2
+
+	.knob/x PEK2 .Screen/x DEO2
+	.knob/y PEK2 .Screen/y DEO2 #20 .Screen/color DEO
+	.knob/x PEK2 8+ .Screen/x DEO2 #20 .Screen/color DEO
+	.knob/y PEK2 8+ .Screen/y DEO2 #20 .Screen/color DEO
+	.knob/x PEK2 .Screen/x DEO2 #20 .Screen/color DEO
+	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
+	.knob/y PEK2 #0010 ADD2 .Screen/y DEO2
+	#20 .Screen/color DEO
+RTN
+
 @draw-controls ( -- )
 	
 	.ctlframe/x1 PEK2 .ctlframe/y1 PEK2 .ctlframe/x2 PEK2 .ctlframe/y2 PEK2 #01 ;line-rect JSR2
 	( env )
 	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 8+ #22 ;env_txt ;draw-label JSR2
 	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 #0010 ADD2
-		;adsr #00 .track/active PEK #04 MUL ADD2 GET #04 SFT
+		.adsr .track/active PEK #02 MUL ADD PEK #04 SFT
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0018 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0001 ADD2 GET #04 SFT
+		.adsr .track/active PEK #02 MUL ADD PEK #0f AND
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0028 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0002 ADD2 GET #04 SFT
+		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK #04 SFT
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0038 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		;adsr #00 .track/active PEK #04 MUL ADD2 #0003 ADD2 GET #04 SFT
+		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK #0f AND
 		;draw-knob JSR2
 	( vol )
 	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 8+ #22 ;vol_txt ;draw-label JSR2
 	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
 		;volume #00 .track/active PEK ADD2 GET #04 SFT
-	;draw-knob JSR2
+	;draw-knob/force JSR2
 	.ctlframe/x1 PEK2 #0068 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
 		;volume #00 .track/active PEK ADD2 GET #0f AND
-	;draw-knob JSR2
+	;draw-knob/force JSR2
 
 RTN
 
@@ -469,31 +501,10 @@ RTN
 
 RTN
 
-@adsr-envelope ( -- )
-	#ff ;adsr #00 .Audio/play DEI #04 MUL ADD2 GET SOUND
-	#80 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0001 ADD2 GET SOUND
-	#80 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0002 ADD2 GET SOUND
-	#00 ;adsr #00 .Audio/play DEI #04 MUL ADD2 #0003 ADD2 GET SOUND
-	SOUND_FINISH
-	BRK
-
-@square-wave ( -- )
-	#a800 SOUND
-	#a880 SOUND
-	#5800 SOUND
-	#5880 SOUND
-	BRK
-
-@triangle-wave ( -- )
-	#ff40 SOUND
-	#0080 SOUND
-	#8040 SOUND
-	BRK
-
-@ch1_txt [ "CHN0 00 ]
-@ch2_txt [ "CHN1 00 ]
-@ch3_txt [ "CHN2 00 ]
-@ch4_txt [ "---- 00 ]
+@ch1_txt [ "SQR  00 ]
+@ch2_txt [ "TRI  00 ]
+@ch3_txt [ "SINE 00 ]
+@ch4_txt [ "DRUM 00 ]
 @env_txt [ "Envelope 00 ]
 @vol_txt [ "Volume 00 ]
 
@@ -589,3 +600,61 @@ RTN
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
 ]
+
+@square-wave
+	a800 5800
+	&end
+
+@triangle-wave
+	8000 81ff 83ff 85ff 87ff 89ff 8bff 8dff 8fff 91ff 93ff 95ff 97ff
+	99ff 9bff 9dff 9fff a1ff a3ff a5ff a7ff a9ff abff adff afff b1ff
+	b3ff b5ff b7ff b9ff bbff bdff bfff c1ff c3ff c5ff c7ff c9ff cbff
+	cdff cfff d1ff d3ff d5ff d7ff d9ff dbff ddff dfff e1ff e3ff e5ff
+	e7ff e9ff ebff edff efff f1ff f3ff f5ff f7ff f9ff fbff fdff ffff
+	fdff fbff f9ff f7ff f5ff f3ff f1ff efff edff ebff e9ff e7ff e5ff
+	e3ff e1ff dfff ddff dbff d9ff d7ff d5ff d3ff d1ff cfff cdff cbff
+	c9ff c7ff c5ff c3ff c1ff bfff bdff bbff b9ff b7ff b5ff b3ff b1ff
+	afff adff abff a9ff a7ff a5ff a3ff a1ff 9fff 9dff 9bff 99ff 97ff
+	95ff 93ff 91ff 8fff 8dff 8bff 89ff 87ff 85ff 83ff 81ff 8000 7e00
+	7c00 7a00 7800 7600 7400 7200 7000 6e00 6c00 6a00 6800 6600 6400
+	6200 6000 5e00 5c00 5a00 5800 5600 5400 5200 5000 4e00 4c00 4a00
+	4800 4600 4400 4200 4000 3e00 3c00 3a00 3800 3600 3400 3200 3000
+	2e00 2c00 2a00 2800 2600 2400 2200 2000 1e00 1c00 1a00 1800 1600
+	1400 1200 1000 0e00 0c00 0a00 0800 0600 0400 0200 0001 0200 0400
+	0600 0800 0a00 0c00 0e00 1000 1200 1400 1600 1800 1a00 1c00 1e00
+	2000 2200 2400 2600 2800 2a00 2c00 2e00 3000 3200 3400 3600 3800
+	3a00 3c00 3e00 4000 4200 4400 4600 4800 4a00 4c00 4e00 5000 5200
+	5400 5600 5800 5a00 5c00 5e00 6000 6200 6400 6600 6800 6a00 6c00
+	6e00 7000 7200 7400 7600 7800 7a00 7c00 7e00
+	&end
+
+@sine-wave
+	8000 84c5 8989 8e49 9305 97b9 9c66 a108 a59e aa27 aea1 b30a b761
+	bba5 bfd3 c3ea c7ea cbcf cf9a d349 d6d9 da4b dd9d e0cd e3db e6c6
+	e98b ec2c eea6 f0f8 f322 f523 f6fb f8a8 fa2a fb81 fcac fdaa fe7c
+	ff20 ff98 ffe2 fffe ffed ffae ff42 fea9 fde3 fcef fbd0 fa84 f90c
+	f76a f59d f3a6 f186 ef3e ecce ea37 e77b e499 e194 de6c db23 d7b9
+	d430 d088 ccc5 c8e6 c4ed c0db bcb2 b874 b422 afbd ab47 a6c1 a22e
+	9d8f 98e5 9433 8f79 8ab9 85f6 8131 7c6b 77a7 72e5 6e28 6972 64c4
+	601f 5b85 56f9 527b 4e0e 49b2 4569 4136 3d18 3913 3527 3155 2d9f
+	2a07 268d 2333 1ffb 1ce4 19f1 1721 1478 11f4 0f98 0d64 0b58 0976
+	07be 0631 04d0 039a 0290 01b4 0104 0081 002c 0004 0009 003d 009d
+	012b 01e7 02cf 03e3 0524 0691 0828 09eb 0bd7 0ded 102b 1292 151f
+	17d2 1aaa 1da6 20c6 2407 2769 2aea 2e8a 3247 361f 3a12 3e1d 4240
+	4679 4ac7 4f27 5399 581b 5cab 6147 65ee 6a9f 6f57 7415 78d8 7d9d
+	8262 8727 8bea 90a8 9560 9a11 9eb8 a354 a7e4 ac66 b0d8 b538 b986
+	bdbf c1e2 c5ed c9e0 cdb8 d175 d515 d896 dbf8 df39 e259 e555 e82d
+	eae0 ed6d efd4 f212 f428 f614 f7d7 f96e fadb fc1c fd30 fe18 fed4
+	ff62 ffc2 fff6 fffb ffd3 ff7e fefb fe4b fd6f fc65 fb2f f9ce f841
+	f689 f4a7 f29b f067 ee0b eb87 e8de e60e e31b e004 dccc d972 d5f8
+	d260 ceaa cad8 c6ec c2e7 bec9 ba96 b64d b1f1 ad84 a906 a47a 9fe0
+	9b3b 968d 91d7 8d1a 8858 8394 7ece 7a09 7546 7086 6bcc 671a 6270
+	5dd1 593e 54b8 5042 4bdd 478b 434d 3f24 3b12 3719 333a 2f77 2bcf
+	2846 24dc 2193 1e6b 1b66 1884 15c8 1331 10c1 0e79 0c59 0a62 0895
+	06f3 057b 042f 0310 021c 0156 00bd 0051 0012 0001 001d 0067 00df
+	0183 0255 0353 047e 05d5 0757 0904 0adc 0cdd 0f07 1159 13d3 1674
+	1939 1c24 1f32 2262 25b4 2926 2cb6 3065 3430 3815 3c15 402c 445a
+	489e 4cf5 515e 55d8 5a61 5ef7 6399 6846 6cfa 71b6 7676 7b3a
+	&end
+
+@noise-wave-end

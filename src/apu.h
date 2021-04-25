@@ -14,31 +14,14 @@ typedef unsigned int Uint32;
 typedef signed int Sint32;
 
 #define SAMPLE_FREQUENCY 44100
+#define POLYPHONY 4
 
 typedef struct {
-	Uint16 *dat;
-	Uint8 i, n, sz, finishes, is_envelope;
-} Queue;
-
-typedef struct {
-	Uint32 count, advance, period;
-	Uint16 vector;
-	Sint16 start_value, end_value;
-	Queue queue;
-} WaveformGenerator;
-
-typedef struct {
-	WaveformGenerator wv[2];
-	Sint8 volume[2];
-	Uint8 playing, impl;
-} Note;
-
-typedef struct {
-	Queue *queue;
-	Note *notes;
-	Uint8 *channel_ptr;
-	int n_notes;
+	Uint8 *addr;
+	Uint32 count, advance, period, age, a, d, s, r;
+	Uint16 i, len;
+	Uint8 volume_l, volume_r, pitch, repeat;
 } Apu;
 
-void apu_render(Apu *apu, Uxn *u, Sint16 *samples, int n_samples);
-void apu_play_note(Note *note, Uint16 wave_vector, Uint16 envelope_vector, Uint8 volume, Uint8 pitch, Uint8 impl);
+void apu_render(Apu *c, Sint16 *sample, Sint16 *end);
+void apu_start(Apu *c, Uint16 adsr, Uint8 pitch);
