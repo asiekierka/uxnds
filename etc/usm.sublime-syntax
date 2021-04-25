@@ -24,6 +24,12 @@ contexts:
     - match: '\.(\S+)\sPOK'
       scope:  constant.numeric
       pop: true
+    - match: '\.(\S+)\sGET2'
+      scope:  constant.numeric
+      pop: true
+    - match: '\.(\S+)\sGET'
+      scope:  constant.numeric
+      pop: true
 
     - match: '\.(\S+)\sDEI2'
       scope:  entity.name.type.typedef
@@ -35,6 +41,12 @@ contexts:
       scope:  entity.name.type.typedef
       pop: true
     - match: '\.(\S+)\sPEK'
+      scope:  entity.name.type.typedef
+      pop: true
+    - match: '\.(\S+)\sPUT2'
+      scope:  entity.name.type.typedef
+      pop: true
+    - match: '\.(\S+)\sPUT'
       scope:  entity.name.type.typedef
       pop: true
 

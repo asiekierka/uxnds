@@ -12,7 +12,6 @@
 		Select paint color for 2-bit mode
 )
 
-
 %RTN { JMP2r }
 %STEP8 { #0033 SFT2 }
 
@@ -726,7 +725,7 @@ RTN
 	[ 0038 4492 2810 0000 ] ( open )
 	[ 0000 0082 4438 0000 ] ( closed )
 @tool_selector [ 80c0 e0f0 f8e0 1000 ]
-@tool_hand     [ 4040 4070 f8f8 f870 ]
+@tool_hand     [ 2020 20b8 7c7c 3838 ]
 @tool_eraser   [ 2050 b87c 3e1c 0800 ]
 @moveup_icn    [ 0010 387c fe10 1000 ]
 @movedown_icn  [ 0010 1010 fe7c 3810 ]

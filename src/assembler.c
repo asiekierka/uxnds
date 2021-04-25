@@ -92,9 +92,6 @@ findmacro(char *name)
 	for(i = 0; i < p.mlen; ++i)
 		if(scmp(p.macros[i].name, name, 64))
 			return &p.macros[i];
-	for(i = 0; i < p.mlen; ++i)
-		if(p.macros[i].name[0] == '%' && ssin(name, p.macros[i].name + 1) != -1)
-			return &p.macros[i];
 	return NULL;
 }
 
@@ -131,25 +128,10 @@ findopcode(char *s)
 	return 0;
 }
 
-char *template(char *src, char *dst, char *w, Macro *m)
-{
-	char input[64];
-	if(scin(src, '%') == -1)
-		return src;
-	scpy(w, input, ssin(w, m->name + 1) + 1);
-	scpy(src, dst, scin(src, '%') + 1);
-	scat(dst, input);
-	scat(dst, src + scin(src, '%') + 1);
-	return dst;
-}
-
 char *
 sublabel(char *src, char *scope, char *name)
 {
-	scpy(scope, src, 64);
-	scpy("/", src + slen(src), 64);
-	scpy(name, src + slen(src), 64);
-	return src;
+	return scat(scat(scpy(scope, src, 64), "/"), name);
 }
 
 #pragma mark - Parser
@@ -237,9 +219,8 @@ walktoken(char *w)
 	}
 	if((m = findmacro(w))) {
 		int i, res = 0;
-		char templated[64];
 		for(i = 0; i < m->len; ++i)
-			res += walktoken(template(m->items[i], templated, w, m));
+			res += walktoken(m->items[i]);
 		return res;
 	}
 	return error("Unknown label in first pass", w);
@@ -286,20 +267,18 @@ parsetoken(char *w)
 		else
 			return 0;
 		return 1;
-	} else if((m = findmacro(w))) {
-		int i;
-		for(i = 0; i < m->len; ++i) {
-			char templated[64];
-			if(!parsetoken(template(m->items[i], templated, w, m)))
-				return 0;
-		}
-		return ++m->refs;
 	} else if(sihx(w)) {
 		if(slen(w) == 2)
 			pushbyte(shex(w), 0);
 		else if(slen(w) == 4)
 			pushshort(shex(w), 0);
 		return 1;
+	} else if((m = findmacro(w))) {
+		int i;
+		for(i = 0; i < m->len; ++i)
+			if(!parsetoken(m->items[i]))
+				return 0;
+		return ++m->refs;
 	}
 	return 0;
 }
@@ -337,7 +316,7 @@ pass1(FILE *f)
 int
 pass2(FILE *f)
 {
-	int ccmnt = 0, ctemplate = 0;
+	int ccmnt = 0, cmacr = 0;
 	char w[64], scope[64], subw[64];
 	printf("Pass 2\n");
 	while(fscanf(f, "%s", w) == 1) {
@@ -346,7 +325,7 @@ pass2(FILE *f)
 		if(w[0] == '[') continue;
 		if(w[0] == ']') continue;
 		if(skipblock(w, &ccmnt, '(', ')')) continue;
-		if(skipblock(w, &ctemplate, '{', '}')) continue;
+		if(skipblock(w, &cmacr, '{', '}')) continue;
 		if(w[0] == '|') {
 			if(p.length && shex(w + 1) < p.ptr)
 				return error("Memory Overwrite", w);
