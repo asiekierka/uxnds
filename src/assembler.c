@@ -236,28 +236,28 @@ parsetoken(char *w)
 			return error("Address is not in zero page", w);
 		pushbyte(l->addr, 1);
 		return ++l->refs;
-	} else if(w[0] == ',' && (l = findlabel(w + 1))) {
+	} else if(w[0] == ',' && (l = findlabel(w + 1))) { /* relative */
 		int off = l->addr - p.ptr - 3;
 		if(off < -126 || off > 126)
 			return error("Address is too far", w);
 		pushbyte((Sint8)off, 1);
 		return ++l->refs;
-	} else if(w[0] == ':' && (l = findlabel(w + 1))) { /* absolute */
+	} else if(w[0] == ':' && (l = findlabel(w + 1))) { /* raw */
 		pushshort(l->addr, 0);
 		return ++l->refs;
 	} else if(w[0] == ';' && (l = findlabel(w + 1))) { /* absolute */
 		pushshort(l->addr, 1);
 		return ++l->refs;
-	} else if(findopcode(w) || scmp(w, "BRK", 4)) {
+	} else if(findopcode(w) || scmp(w, "BRK", 4)) { /* opcode */
 		pushbyte(findopcode(w), 0);
 		return 1;
-	} else if(w[0] == '"') {
+	} else if(w[0] == '"') { /* string */
 		pushword(w + 1);
 		return 1;
-	} else if(w[0] == '\'') {
+	} else if(w[0] == '\'') { /* char */
 		pushbyte((Uint8)w[1], 0);
 		return 1;
-	} else if(w[0] == '#') {
+	} else if(w[0] == '#') { /* immediate */
 		if(slen(w + 1) == 1)
 			pushbyte((Uint8)w[1], 1);
 		if(sihx(w + 1) && slen(w + 1) == 2)
@@ -267,11 +267,13 @@ parsetoken(char *w)
 		else
 			return 0;
 		return 1;
-	} else if(sihx(w)) {
+	} else if(sihx(w)) { /* raw */
 		if(slen(w) == 2)
 			pushbyte(shex(w), 0);
 		else if(slen(w) == 4)
 			pushshort(shex(w), 0);
+		else
+			return error("Hex value length is invalid", w);
 		return 1;
 	} else if((m = findmacro(w))) {
 		int i;

@@ -23,7 +23,7 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu;
-static Device *devsystem, *devscreen, *devmouse, *devctrl, *devapu, *devfile;
+static Device *devscreen, *devmouse, *devctrl, *devapu;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -350,14 +350,14 @@ main(int argc, char **argv)
 	if(!init(&u))
 		return error("Init", "Failed");
 
-	devsystem = portuxn(&u, 0x0, "system", system_talk);
+	portuxn(&u, 0x0, "system", system_talk);
 	portuxn(&u, 0x1, "console", console_talk);
 	devscreen = portuxn(&u, 0x2, "screen", screen_talk);
 	devapu = portuxn(&u, 0x3, "audio", audio_talk);
 	devctrl = portuxn(&u, 0x4, "controller", nil_talk);
 	portuxn(&u, 0x5, "---", nil_talk);
 	devmouse = portuxn(&u, 0x6, "mouse", nil_talk);
-	devfile = portuxn(&u, 0x7, "file", file_talk);
+	portuxn(&u, 0x7, "file", file_talk);
 	portuxn(&u, 0x8, "---", nil_talk);
 	portuxn(&u, 0x9, "midi", nil_talk);
 	portuxn(&u, 0xa, "datetime", datetime_talk);

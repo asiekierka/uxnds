@@ -30,6 +30,14 @@ static Uint8 font[][8] = {
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x82, 0x7c},
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x80, 0x80}};
 
+Uint8
+readpixel(Uint8 *sprite, Uint8 h, Uint8 v)
+{
+	Uint8 ch1 = ((sprite[v] >> h) & 0x1);
+	Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
+	return ch1 + ch2;
+}
+
 void
 clear(Ppu *p)
 {
@@ -79,9 +87,8 @@ puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-			if(ch1 == 0 && (color == 0x05 || color == 0x0a || color == 0x0f))
-				continue;
-			putpixel(p, layer, x + h, y + v, ch1 ? color % 4 : color / 4);
+			if(ch1 == 1 || (color != 0x05 && color != 0x0a && color != 0x0f))
+				putpixel(p, layer, x + h, y + v, ch1 ? color % 4 : color / 4);
 		}
 }
 
@@ -135,15 +142,10 @@ drawppu(Ppu *p)
 			Uint16 key = (y * p->hor + x) * 16;
 			for(v = 0; v < 8; v++)
 				for(h = 0; h < 8; h++) {
-					Uint8 *sprite = &p->fg[key];
-					Uint8 ch1 = ((sprite[v] >> h) & 0x1);
-					Uint8 ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-					if(ch1 + ch2 == 0) {
-						sprite = &p->bg[key];
-						ch1 = ((sprite[v] >> h) & 0x1);
-						ch2 = (((sprite[v + 8] >> h) & 0x1) << 1);
-					}
-					drawpixel(p, x * 8 + p->pad + 7 - h, y * 8 + p->pad + v, ch1 + ch2);
+					Uint8 color = readpixel(&p->fg[key], h, v);
+					if(color == 0)
+						color = readpixel(&p->bg[key], h, v);
+					drawpixel(p, x * 8 + p->pad + 7 - h, y * 8 + p->pad + v, color);
 				}
 		}
 }
