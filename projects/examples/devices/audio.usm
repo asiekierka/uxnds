@@ -21,7 +21,7 @@
 	;on-frame .Screen/vector DEO2 ( run on-frame every 1/60th of a second )
 	#ff .Audio/volume DEO         ( set volume to max )
 	;saw .Audio/addr DEO2         ( set waveform to saw for audio engine )
-	;saw/end ;saw SUB2 #0002 SFT2 .Audio/len DEO2
+	;saw/end ;saw SUB2 .Audio/len DEO2
 	#1202 .Audio/adsr DEO2        ( set envelope for audio engine )
 
 BRK
@@ -59,38 +59,22 @@ BRK
 ( defines a sawtooth wave. )
 
 @saw ( -> )
-	dfa0 df40 dee0 de80 de20 ddc0 dd60 dd00
-	dca0 dc40 dbe0 db80 db20 dac0 da60 da00
-	d9a0 d940 d8e0 d880 d820 d7c0 d760 d700
-	d6a0 d640 d5e0 d580 d520 d4c0 d460 d400
-	d3a0 d340 d2e0 d280 d220 d1c0 d160 d100
-	d0a0 d040 cfe0 cf80 cf20 cec0 ce60 ce00
-	cda0 cd40 cce0 cc80 cc20 cbc0 cb60 cb00
-	caa0 ca40 c9e0 c980 c920 c8c0 c860 c800
-	c7a0 c740 c6e0 c680 c620 c5c0 c560 c500
-	c4a0 c440 c3e0 c380 c320 c2c0 c260 c200
-	c1a0 c140 c0e0 c080 c020 bfc0 bf60 bf00
-	bea0 be40 bde0 bd80 bd20 bcc0 bc60 bc00
-	bba0 bb40 bae0 ba80 ba20 b9c0 b960 b900
-	b8a0 b840 b7e0 b780 b720 b6c0 b660 b600
-	b5a0 b540 b4e0 b480 b420 b3c0 b360 b300
-	b2a0 b240 b1e0 b180 b120 b0c0 b060 b000
-	afa0 af40 aee0 ae80 ae20 adc0 ad60 ad00
-	aca0 ac40 abe0 ab80 ab20 aac0 aa60 aa00
-	a9a0 a940 a8e0 a880 a820 a7c0 a760 a700
-	a6a0 a640 a5e0 a580 a520 a4c0 a460 a400
-	a3a0 a340 a2e0 a280 a220 a1c0 a160 a100
-	a0a0 a040 9fe0 9f80 9f20 9ec0 9e60 9e00
-	9da0 9d40 9ce0 9c80 9c20 9bc0 9b60 9b00
-	9aa0 9a40 99e0 9980 9920 98c0 9860 9800
-	97a0 9740 96e0 9680 9620 95c0 9560 9500
-	94a0 9440 93e0 9380 9320 92c0 9260 9200
-	91a0 9140 90e0 9080 9020 8fc0 8f60 8f00
-	8ea0 8e40 8de0 8d80 8d20 8cc0 8c60 8c00
-	8ba0 8b40 8ae0 8a80 8a20 89c0 8960 8900
-	88a0 8840 87e0 8780 8720 86c0 8660 8600
-	85a0 8540 84e0 8480 8420 83c0 8360 8300
-	82a0 8240 81e0 8180 8120 80c0 8060 8000
+	5f5f 5e5e 5e5d 5d5d 5c5c 5b5b 5b5a 5a5a
+	5959 5858 5857 5757 5656 5555 5554 5454
+	5353 5252 5251 5151 5050 4f4f 4f4e 4e4e
+	4d4d 4c4c 4c4b 4b4b 4a4a 4949 4948 4848
+	4747 4646 4645 4545 4444 4343 4342 4242
+	4141 4040 403f 3f3f 3e3e 3d3d 3d3c 3c3c
+	3b3b 3a3a 3a39 3939 3838 3737 3736 3636
+	3535 3434 3433 3333 3232 3131 3130 3030
+	2f2f 2e2e 2e2d 2d2d 2c2c 2b2b 2b2a 2a2a
+	2929 2828 2827 2727 2626 2525 2524 2424
+	2323 2222 2221 2121 2020 1f1f 1f1e 1e1e
+	1d1d 1c1c 1c1b 1b1b 1a1a 1919 1918 1818
+	1717 1616 1615 1515 1414 1313 1312 1212
+	1111 1010 100f 0f0f 0e0e 0d0d 0d0c 0c0c
+	0b0b 0a0a 0a09 0909 0808 0707 0706 0606
+	0505 0404 0403 0303 0202 0101 0100 0000
 	&end
 
 BRK

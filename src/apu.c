@@ -53,9 +53,9 @@ apu_render(Apu *c, Sint16 *sample, Sint16 *end)
 			}
 			c->i %= c->len;
 		}
-		s = (Sint16)(mempeek16(c->addr, c->i * 2) + 0x8000) * envelope(c, c->age++);
-		*sample++ += s * c->volume_l / 0x8000;
-		*sample++ += s * c->volume_r / 0x8000;
+		s = (Sint8)(c->addr[c->i]) * envelope(c, c->age++);
+		*sample++ += s * c->volume_l / 0x80;
+		*sample++ += s * c->volume_r / 0x80;
 	}
 }
 
