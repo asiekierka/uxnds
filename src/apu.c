@@ -79,3 +79,20 @@ apu_start(Apu *c, Uint16 adsr, Uint8 pitch)
 	else /* sample repeat mode */
 		c->period = NOTE_PERIOD;
 }
+
+Uint8
+apu_get_vu(Apu *c, Apu *end)
+{
+	size_t i;
+	Sint32 sum[2] = {0, 0};
+	for(; c < end; ++c) {
+		if(!c->advance) continue;
+		sum[0] += envelope(c, c->age) * c->volume_l;
+		sum[1] += envelope(c, c->age) * c->volume_r;
+	}
+	for(i = 0; i < 2; ++i) {
+		sum[i] /= 0x800;
+		if(sum[i] > 0xf) sum[i] = 0xf;
+	}
+	return (sum[0] << 4) | sum[1];
+}

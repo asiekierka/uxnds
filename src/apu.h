@@ -20,8 +20,10 @@ typedef struct {
 	Uint8 *addr;
 	Uint32 count, advance, period, age, a, d, s, r;
 	Uint16 i, len;
-	Uint8 volume_l, volume_r, pitch, repeat;
+	Sint8 volume_l, volume_r;
+	Uint8 pitch, repeat;
 } Apu;
 
 void apu_render(Apu *c, Sint16 *sample, Sint16 *end);
 void apu_start(Apu *c, Uint16 adsr, Uint8 pitch);
+Uint8 apu_get_vu(Apu *c, Apu *end);

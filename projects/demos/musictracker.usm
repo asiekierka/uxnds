@@ -72,6 +72,7 @@ BRK
 @on-screen ( -> )
 	
 	;move-head JSR2
+	;draw-vu JSR2
 	.head/pos PEK #08 MOD #00 NEQ ,&skip JNZ
 		;bang JSR2
 	&skip
@@ -417,6 +418,16 @@ RTN
 	;draw-knob/force JSR2
 	.ctlframe/x1 PEK2 #0068 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
 		;volume #00 .track/active PEK ADD2 GET #0f AND
+	;draw-knob/force JSR2
+
+RTN
+
+@draw-vu ( -- )
+	.ctlframe/x1 PEK2 #0088 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		.Audio/volume DEI DUP STH #04 SFT
+	;draw-knob/force JSR2
+	.ctlframe/x1 PEK2 #0098 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
+		STHr #0f AND
 	;draw-knob/force JSR2
 
 RTN

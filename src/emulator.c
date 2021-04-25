@@ -248,7 +248,10 @@ static void
 audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Apu *c;
-	if(!w) return;
+	if(!w) {
+		if(b0 == 0xe) d->dat[0xe] = apu_get_vu(apu, apu + POLYPHONY);
+		return;
+	}
 	c = &apu[d->dat[0x7] % POLYPHONY];
 	SDL_LockAudioDevice(audio_id);
 	if(b0 == 0x1) c->period -= (Sint16)mempeek16(d->dat, 0x0);
