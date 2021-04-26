@@ -12,7 +12,7 @@
 |00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
 |10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
-|30 @Audio      [ &pad    $8 &adsr     $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|30 @Audio      [ &vector $2 &output   $1 &pad    $5 &adsr     $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
 |70 @Midi       [ &vector $2 &message  $2 ]
 |80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
@@ -87,9 +87,8 @@ BRK
 	
 	.wave-view/x1 PEK2 #0028 ADD2 .Screen/x DEO2
 	.wave-view/y1 PEK2 #0010 SUB2 .Screen/y DEO2
-	.Audio/volume DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	.Audio/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
-	#88 .Audio/volume DEO
 
 
 BRK

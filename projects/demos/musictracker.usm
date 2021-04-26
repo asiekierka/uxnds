@@ -6,8 +6,6 @@
 %++ { #0001 ADD2 }
 %MOD { DUP2 DIV MUL SUB }
 %TRACK { ;track/ch1 #00 .track/active PEK #0020 MUL2 ADD2 }
-%SOUND { STH #00 .Audio/value DEO2 STHr #00 .Audio/delay DEO2 }
-%SOUND_FINISH { #00 .Audio/finish DEO }
 
 ( variables )
 
@@ -21,15 +19,16 @@
 @knob [ &x $2 &y $2 &value $1 ]
 @head [ &pos $1 ]
 @track [ &active $1 &ch1 $20 &ch2 $20 &ch3 $20 &ch4 $20 ]
-@adsr [ &ch1 $2 &ch2 $2 &ch3 $2 &ch4 $2 ]
-@volume [ &ch1 $1 &ch2 $1 &ch3 $1 &ch4 $1 ]
 
 ( devices )
 
 |00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
 |10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
 |20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|30 @Audio [ &pad $8 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
+|30 @Audio0 [ &vector $2 &output $1 &pad $5 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
+|40 @Audio1 [ &vector $2 &output $1 &pad $5 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
+|50 @Audio2 [ &vector $2 &output $1 &pad $5 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
+|60 @Audio3 [ &vector $2 &output $1 &pad $5 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
 |80 @Controller [ &vector $2 &button $1 &key $1 ]
 |90 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
 |a0 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
@@ -56,12 +55,19 @@
 	.trkframe/x2 PEK2 .ctlframe/x2 POK2 .chnframe/y2 PEK2 .ctlframe/y2 POK2
 
 	( default settings )
-	#048c .adsr/ch1 POK2 #88 .volume/ch1 POK
-	#159d .adsr/ch2 POK2 #88 .volume/ch2 POK
-	#26ae .adsr/ch3 POK2 #88 .volume/ch3 POK
-	#260e .adsr/ch4 POK2 #88 .volume/ch4 POK
+	#048c .Audio0/adsr DEO2 #88 .Audio0/volume DEO
+	#159d .Audio1/adsr DEO2 #88 .Audio1/volume DEO
+	#26ae .Audio2/adsr DEO2 #88 .Audio2/volume DEO
+	#0000 .Audio3/adsr DEO2 #88 .Audio3/volume DEO
 
-	.volume/ch3 PEK .Audio/volume DEO
+	;square-wave .Audio0/addr DEO2
+	;square-wave/end ;square-wave SUB2 .Audio0/len DEO2
+	;triangle-wave .Audio1/addr DEO2
+	;triangle-wave/end ;triangle-wave SUB2 .Audio1/len DEO2
+	;sine-wave .Audio2/addr DEO2
+	;sine-wave/end ;sine-wave SUB2 .Audio2/len DEO2
+	;noise-wave .Audio3/addr DEO2
+	;noise-wave-end ;noise-wave SUB2 .Audio3/len DEO2
 
 	;draw-timeline JSR2
 	;draw-controls JSR2
@@ -122,10 +128,7 @@ BRK
 
 @play ( pitch -- )
 
-	.adsr/ch3 PEK2 .Audio/adsr DEO2
-	;triangle-wave .Audio/addr DEO2
-	;triangle-wave/end ;triangle-wave SUB2 .Audio/len DEO2
-	.Audio/pitch DEO
+	.Audio0/pitch DEO
 
 RTN
 
@@ -157,29 +160,29 @@ BRK
 	
 	.Mouse/x DEI2 .ctlframe/x1 PEK2 SUB2 8- 8/ SWP POP #02 DIV
 	DUP #00 NEQ ,&no-a JNZ
-		.adsr .track/active PEK #02 MUL ADD PEK
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		.adsr .track/active PEK #02 MUL ADD POK &no-a
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEO &no-a
 	DUP #01 NEQ ,&no-d JNZ
-		.adsr .track/active PEK #02 MUL ADD PEK
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		.adsr .track/active PEK #02 MUL ADD POK &no-d
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEO &no-d
 	DUP #02 NEQ ,&no-s JNZ
-		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		.adsr .track/active PEK #02 MUL ADD #01 ADD POK &no-s
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEO &no-s
 	DUP #03 NEQ ,&no-r JNZ
-		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		.adsr .track/active PEK #02 MUL ADD #01 ADD POK &no-r
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEO &no-r
 	DUP #05 NEQ ,&no-left JNZ
-		;volume #00 .track/active PEK ADD2 GET
+		.Audio0/volume .track/active PEK #10 MUL ADD DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		;volume #00 .track/active PEK ADD2 PUT &no-left
+		.Audio0/volume .track/active PEK #10 MUL ADD DEO &no-left
 	DUP #06 NEQ ,&no-right JNZ
-		;volume #00 .track/active PEK ADD2 GET
+		.Audio0/volume .track/active PEK #10 MUL ADD DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		;volume #00 .track/active PEK ADD2 PUT &no-right
+		.Audio0/volume .track/active PEK #10 MUL ADD DEO &no-right
 	POP
 	( release ) #00 .Mouse/state DEO
 	;draw-controls JSR2
@@ -193,44 +196,28 @@ BRK
 	DUP #ff NEQ ,&skip1 JNZ
 		POP ,&listen2 JMP
 	&skip1
-	.adsr/ch1 PEK2 .Audio/adsr DEO2
-	.volume/ch1 PEK .Audio/volume DEO
-	;square-wave .Audio/addr DEO2
-	;square-wave/end ;square-wave SUB2 .Audio/len DEO2
-	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
+	#00 SWP ;notes ADD2 GET .Audio0/pitch DEO
 	&listen2
 	;track/ch2 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
 	DUP #ff NEQ ,&skip2 JNZ
 		POP ,&listen3 JMP
 	&skip2
-	.adsr/ch2 PEK2 .Audio/adsr DEO2
-	.volume/ch2 PEK .Audio/volume DEO
-	;triangle-wave .Audio/addr DEO2
-	;triangle-wave/end ;triangle-wave SUB2 .Audio/len DEO2
-	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
+	#00 SWP ;notes ADD2 GET .Audio1/pitch DEO
 	&listen3
 	;track/ch3 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
 	DUP #ff NEQ ,&skip3 JNZ
 		POP ,&listen4 JMP
 	&skip3
-	.adsr/ch3 PEK2 .Audio/adsr DEO2
-	.volume/ch3 PEK .Audio/volume DEO
-	;sine-wave .Audio/addr DEO2
-	;sine-wave/end ;sine-wave SUB2 .Audio/len DEO2
-	#00 SWP ;notes ADD2 GET .Audio/pitch DEO
+	#00 SWP ;notes ADD2 GET .Audio2/pitch DEO
 	&listen4
 	;track/ch4 #00 .head/pos PEK #08 DIV ADD2 GET
 	#01 SUB
 	DUP #ff NEQ ,&skip4 JNZ
 		POP ,&end JMP
 	&skip4
-	#0000 .Audio/adsr DEO2
-	.volume/ch4 PEK .Audio/volume DEO
-	;noise-wave .Audio/addr DEO2
-	;noise-wave-end ;noise-wave SUB2 .Audio/len DEO2
-	#00 SWP ;notes ADD2 GET #80 ORA .Audio/pitch DEO
+	#00 SWP ;notes ADD2 GET #80 ORA .Audio3/pitch DEO
 	&end
 
 RTN
@@ -400,31 +387,31 @@ RTN
 	( env )
 	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 8+ #22 ;env_txt ;draw-label JSR2
 	.ctlframe/x1 PEK2 8+ .ctlframe/y1 PEK2 #0010 ADD2
-		.adsr .track/active PEK #02 MUL ADD PEK #04 SFT
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEI #04 SFT
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0018 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		.adsr .track/active PEK #02 MUL ADD PEK #0f AND
+		.Audio0/adsr .track/active PEK #10 MUL ADD DEI #0f AND
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0028 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK #04 SFT
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEI #04 SFT
 		;draw-knob JSR2
 	.ctlframe/x1 PEK2 #0038 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		.adsr .track/active PEK #02 MUL ADD #01 ADD PEK #0f AND
+		.Audio0/adsr .track/active PEK #10 MUL ADD #01 ADD DEI #0f AND
 		;draw-knob JSR2
 	( vol )
 	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 8+ #22 ;vol_txt ;draw-label JSR2
 	.ctlframe/x1 PEK2 #0058 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		;volume #00 .track/active PEK ADD2 GET #04 SFT
+		.Audio0/volume .track/active PEK #10 MUL ADD DEI #04 SFT
 	;draw-knob/force JSR2
 	.ctlframe/x1 PEK2 #0068 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		;volume #00 .track/active PEK ADD2 GET #0f AND
+		.Audio0/volume .track/active PEK #10 MUL ADD DEI #0f AND
 	;draw-knob/force JSR2
 
 RTN
 
 @draw-vu ( -- )
 	.ctlframe/x1 PEK2 #0088 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
-		.Audio/volume DEI DUP STH #04 SFT
+		.Audio0/output .track/active PEK #10 MUL ADD DEI DUP STH #04 SFT
 	;draw-knob/force JSR2
 	.ctlframe/x1 PEK2 #0098 ADD2 .ctlframe/y1 PEK2 #0010 ADD2
 		STHr #0f AND
@@ -513,8 +500,8 @@ RTN
 
 RTN
 
-@ch1_txt [ "SQR  00 ]
-@ch2_txt [ "TRI  00 ]
+@ch1_txt [ "SQR 20 00 ]
+@ch2_txt [ "TRI 20 00 ]
 @ch3_txt [ "SINE 00 ]
 @ch4_txt [ "DRUM 00 ]
 @env_txt [ "Envelope 00 ]

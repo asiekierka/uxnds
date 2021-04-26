@@ -54,8 +54,8 @@ apu_render(Apu *c, Sint16 *sample, Sint16 *end)
 			c->i %= c->len;
 		}
 		s = (Sint8)(c->addr[c->i]) * envelope(c, c->age++);
-		*sample++ += s * c->volume_l / 0x180;
-		*sample++ += s * c->volume_r / 0x180;
+		*sample++ += s * c->volume[0] / 0x180;
+		*sample++ += s * c->volume[1] / 0x180;
 	}
 }
 
@@ -81,17 +81,13 @@ apu_start(Apu *c, Uint16 adsr, Uint8 pitch)
 }
 
 Uint8
-apu_get_vu(Apu *c, Apu *end)
+apu_get_vu(Apu *c)
 {
 	size_t i;
-	Sint32 sum[2] = {0, 0};
-	for(; c < end; ++c) {
-		if(!c->advance) continue;
-		sum[0] += envelope(c, c->age) * c->volume_l;
-		sum[1] += envelope(c, c->age) * c->volume_r;
-	}
+	Sint32 sum[2];
+	if(!c->advance || !c->period) return 0;
 	for(i = 0; i < 2; ++i) {
-		sum[i] /= 0x800;
+		sum[i] = envelope(c, c->age) * c->volume[i] / 0x800;
 		if(sum[i] > 0xf) sum[i] = 0xf;
 	}
 	return (sum[0] << 4) | sum[1];

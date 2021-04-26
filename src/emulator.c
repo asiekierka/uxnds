@@ -25,7 +25,7 @@ static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu[POLYPHONY];
 static Mpu mpu;
-static Device *devscreen, *devmouse, *devctrl, *devmidi;
+static Device *devscreen, *devmouse, *devctrl, *devmidi, *devaudio0;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -251,26 +251,21 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 static void
 audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	Apu *c;
-	if(!w) {
-		if(b0 == 0xe) d->dat[0xe] = apu_get_vu(apu, apu + POLYPHONY);
-		return;
+	Apu *c = &apu[d - devaudio0];
+	if(!w && b0 == 0x2) {
+		d->dat[0x2] = apu_get_vu(c);
 	}
-	c = &apu[d->dat[0x7] % POLYPHONY];
-	SDL_LockAudioDevice(audio_id);
-	if(b0 == 0x1) c->period -= (Sint16)mempeek16(d->dat, 0x0);
-	if(b0 == 0x3 || b0 == 0xf) c->len = mempeek16(d->dat, (b0 & 0x8) | 0x2);
-	if(b0 == 0x5 || b0 == 0xf) c->addr = &d->mem[mempeek16(d->dat, (b0 & 0x8) | 0x4)];
-	if(b0 == 0x6 || b0 == 0xf) {
-		c->volume_l = d->dat[(b0 & 0x8) | 0x6] >> 4;
-		c->volume_r = d->dat[(b0 & 0x8) | 0x6] & 0xf;
-	}
-	if(b0 == 0xf) {
+	if(w && b0 == 0xf) {
+		SDL_LockAudioDevice(audio_id);
+		c->period -= (Sint16)mempeek16(d->dat, 0x0);
+		c->len = mempeek16(d->dat, 0xa);
+		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
+		c->volume[0] = d->dat[0xe] >> 4;
+		c->volume[1] = d->dat[0xe] & 0xf;
 		c->repeat = !(d->dat[0xf] & 0x80);
 		apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
-		d->dat[0x7]++;
+		SDL_UnlockAudioDevice(audio_id);
 	}
-	SDL_UnlockAudioDevice(audio_id);
 }
 
 void
@@ -378,10 +373,10 @@ main(int argc, char **argv)
 	portuxn(&u, 0x0, "system", system_talk);
 	portuxn(&u, 0x1, "console", console_talk);
 	devscreen = portuxn(&u, 0x2, "screen", screen_talk);
-	portuxn(&u, 0x3, "audio", audio_talk);
-	portuxn(&u, 0x4, "---", nil_talk);
-	portuxn(&u, 0x5, "---", nil_talk);
-	portuxn(&u, 0x6, "---", nil_talk);
+	devaudio0 = portuxn(&u, 0x3, "audio0", audio_talk);
+	portuxn(&u, 0x4, "audio1", audio_talk);
+	portuxn(&u, 0x5, "audio2", audio_talk);
+	portuxn(&u, 0x6, "audio3", audio_talk);
 	devmidi = portuxn(&u, 0x7, "midi", midi_talk);
 	devctrl = portuxn(&u, 0x8, "controller", nil_talk);
 	devmouse = portuxn(&u, 0x9, "mouse", nil_talk);
