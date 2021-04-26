@@ -255,9 +255,8 @@ audio_talk(Device *d, Uint8 b0, Uint8 w)
 	if(!w && b0 == 0x2) {
 		d->dat[0x2] = apu_get_vu(c);
 	}
-	if(w && b0 == 0xf) {
+	else if(w && b0 == 0xf) {
 		SDL_LockAudioDevice(audio_id);
-		c->period -= (Sint16)mempeek16(d->dat, 0x0);
 		c->len = mempeek16(d->dat, 0xa);
 		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
 		c->volume[0] = d->dat[0xe] >> 4;
