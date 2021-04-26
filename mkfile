@@ -1,13 +1,14 @@
 </$objtype/mkfile
 
 TARG=assembler debugger emulator
-USM=`{walk -f projects/ | grep '\.usm$' | grep -v blank.usm}
+USM=`{walk -f projects/ | grep '\.usm$' | grep -v blank.usm | grep -v asma.usm}
 ROM=${USM:%.usm=%.rom}
 CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
 	/sys/include/npe/stdio.h\
 	src/apu.h\
+	src/mpu.h\
 	src/ppu.h\
 	src/uxn.h\
 
@@ -41,7 +42,7 @@ $O.assembler: assembler.$O
 
 $O.debugger: debugger.$O uxn.$O
 
-$O.emulator: emulator.$O apu.$O ppu.$O uxn.$O
+$O.emulator: emulator.$O apu.$O mpu.$O ppu.$O uxn.$O
 
 %.$O: src/%.c
 	$CC $CFLAGS -Isrc -o $target src/$stem.c
