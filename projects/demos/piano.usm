@@ -13,9 +13,9 @@
 |10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
 |30 @Audio      [ &pad    $8 &adsr     $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|40 @Controller [ &vector $2 &button   $1 &key    $1 ]
-|60 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
-|90 @Midi       [ &vector $2 &message  $2 ]
+|70 @Midi       [ &vector $2 &message  $2 ]
+|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
+|90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
 
 ( variables )
 
