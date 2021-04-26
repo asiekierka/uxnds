@@ -16,6 +16,7 @@ WITH REGARD TO THIS SOFTWARE.
 #include "uxn.h"
 #include "ppu.h"
 #include "apu.h"
+#include "mpu.h"
 
 static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
@@ -23,7 +24,8 @@ static SDL_Renderer *gRenderer;
 static SDL_Texture *gTexture;
 static Ppu ppu;
 static Apu apu[POLYPHONY];
-static Device *devscreen, *devmouse, *devctrl;
+static Mpu mpu;
+static Device *devscreen, *devmouse, *devctrl, *devmidi;
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0;
 
@@ -102,6 +104,8 @@ init(void)
 	SDL_AudioSpec as;
 	if(!initppu(&ppu, 48, 32, 16))
 		return error("PPU", "Init failure");
+	if(!initmpu(&mpu, 1))
+		return error("MPU", "Init failure");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
 	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppu.width * zoom, ppu.height * zoom, SDL_WINDOW_SHOWN);
@@ -289,6 +293,14 @@ datetime_talk(Device *d, Uint8 b0, Uint8 w)
 }
 
 void
+midi_talk(Device *d, Uint8 b0, Uint8 w)
+{
+	(void)d;
+	(void)b0;
+	(void)w;
+}
+
+void
 nil_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	(void)d;
@@ -304,6 +316,7 @@ start(Uxn *u)
 	evaluxn(u, 0x0100);
 	redraw(ppu.output, u);
 	while(1) {
+		int i;
 		SDL_Event event;
 		double elapsed, start = SDL_GetPerformanceCounter();
 		while(SDL_PollEvent(&event) != 0) {
@@ -332,6 +345,11 @@ start(Uxn *u)
 					redraw(ppu.output, u);
 				break;
 			}
+		}
+		listenmpu(&mpu);
+		for(i = 0; i < mpu.queue; ++i) {
+			mempoke16(devmidi->dat, 2, mpu.events[i].message);
+			evaluxn(u, mempeek16(devmidi->dat, 0));
 		}
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 		if(reqdraw)
@@ -366,7 +384,7 @@ main(int argc, char **argv)
 	devmouse = portuxn(&u, 0x6, "mouse", nil_talk);
 	portuxn(&u, 0x7, "file", file_talk);
 	portuxn(&u, 0x8, "---", nil_talk);
-	portuxn(&u, 0x9, "midi", nil_talk);
+	devmidi = portuxn(&u, 0x9, "midi", midi_talk);
 	portuxn(&u, 0xa, "datetime", datetime_talk);
 	portuxn(&u, 0xb, "---", nil_talk);
 	portuxn(&u, 0xc, "---", nil_talk);

@@ -7,6 +7,8 @@ clang-format -i src/ppu.h
 clang-format -i src/ppu.c
 clang-format -i src/apu.h
 clang-format -i src/apu.c
+clang-format -i src/mpu.h
+clang-format -i src/mpu.c
 clang-format -i src/assembler.c
 clang-format -i src/emulator.c
 clang-format -i src/debugger.c
@@ -23,12 +25,12 @@ if [ "${1}" = '--debug' ];
 then
 	echo "[debug]"
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/assembler.c -o bin/assembler
-	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/ppu.c src/emulator.c src/apu.c -L/usr/local/lib -lSDL2 -o bin/emulator
+	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/ppu.c src/apu.c src/mpu.c src/emulator.c -L/usr/local/lib -lSDL2 -lportmidi -o bin/emulator
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/debugger.c -o bin/debugger
 else
 	cc src/assembler.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/assembler
 	cc src/uxn.c src/debugger.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/debugger
-	cc src/uxn.c src/ppu.c src/emulator.c src/apu.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -o bin/emulator
+	cc src/uxn.c src/ppu.c src/apu.c src/mpu.c src/emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -lportmidi -o bin/emulator
 fi
 
 echo "Assembling.."
