@@ -183,6 +183,7 @@ portuxn(Uxn *u, Uint8 id, char *name, void (*talkfn)(Device *d, Uint8 b0, Uint8 
 {
 	Device *d = &u->dev[id];
 	d->addr = id * 0x10;
+	d->u = u;
 	d->mem = u->ram.dat;
 	d->talk = talkfn;
 	printf("Device added #%02x: %s, at 0x%04x \n", id, name, d->addr);

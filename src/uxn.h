@@ -31,6 +31,7 @@ typedef struct {
 struct Uxn;
 
 typedef struct Device {
+	struct Uxn *u;
 	Uint8 addr, dat[16], *mem;
 	void (*talk)(struct Device *d, Uint8, Uint8);
 } Device;

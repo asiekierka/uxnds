@@ -193,9 +193,13 @@ doctrl(Uxn *u, SDL_Event *event, int z)
 void
 system_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(!w) return;
-	putcolors(&ppu, &d->dat[0x8]);
-	reqdraw = 1;
+	if(!w) {
+		d->dat[0x2] = d->u->wst.ptr;
+		d->dat[0x3] = d->u->rst.ptr;
+	} else {
+		putcolors(&ppu, &d->dat[0x8]);
+		reqdraw = 1;
+	}
 	(void)b0;
 }
 
