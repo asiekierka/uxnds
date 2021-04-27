@@ -252,9 +252,12 @@ static void
 audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Apu *c = &apu[d - devaudio0];
-	if(!w && b0 == 0x2) {
-		d->dat[0x2] = apu_get_vu(c);
-	} else if(w && b0 == 0xf) {
+	if(!w) {
+		if(b0 == 0x2)
+			mempoke16(d->dat, 0x2, c->i);
+		else if(b0 == 0x4)
+			d->dat[0x4] = apu_get_vu(c);
+	} else if(b0 == 0xf) {
 		SDL_LockAudioDevice(audio_id);
 		c->len = mempeek16(d->dat, 0xa);
 		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
