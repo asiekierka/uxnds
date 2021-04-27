@@ -254,8 +254,7 @@ audio_talk(Device *d, Uint8 b0, Uint8 w)
 	Apu *c = &apu[d - devaudio0];
 	if(!w && b0 == 0x2) {
 		d->dat[0x2] = apu_get_vu(c);
-	}
-	else if(w && b0 == 0xf) {
+	} else if(w && b0 == 0xf) {
 		SDL_LockAudioDevice(audio_id);
 		c->len = mempeek16(d->dat, 0xa);
 		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
@@ -342,7 +341,9 @@ start(Uxn *u)
 		}
 		listenmpu(&mpu);
 		for(i = 0; i < mpu.queue; ++i) {
-			mempoke16(devmidi->dat, 2, mpu.events[i].message);
+			devmidi->dat[2] = mpu.events[i].message;
+			devmidi->dat[3] = mpu.events[i].message >> 8;
+			devmidi->dat[4] = mpu.events[i].message >> 16;
 			evaluxn(u, mempeek16(devmidi->dat, 0));
 		}
 		evaluxn(u, mempeek16(devscreen->dat, 0));

@@ -6,14 +6,18 @@
 %2/ { #0002 DIV2 }
 %++ { #0001 ADD2 }
 %TOS { #00 SWP }
+%MOD { DUP2 DIV MUL SUB }
 
 ( devices )
 
 |00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
 |10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr $2 &color $1 ]
-|30 @Audio      [ &vector $2 &output   $1 &pad    $5 &adsr     $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|70 @Midi       [ &vector $2 &message  $2 ]
+|30 @Audio0     [ &vector $2 &output   $1 &pad    $5 &adsr  $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|40 @Audio1     [ &vector $2 &output   $1 &pad    $5 &adsr  $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|50 @Audio2     [ &vector $2 &output   $1 &pad    $5 &adsr  $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|60 @Audio3     [ &vector $2 &output   $1 &pad    $5 &adsr  $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|70 @Midi       [ &vector $2 &channel  $1 &note   $1 &velocity $1 ]
 |80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
 
@@ -71,10 +75,10 @@
 
 	( default settings )
 	#ff .last POK
-	#048c .Audio/adsr DEO2
-	#88 .Audio/volume DEO
-	;sine-wave .Audio/addr DEO2
-	;sine-wave/end ;sine-wave SUB2 #0001 SFT2 .Audio/length DEO2
+	#048c .Audio0/adsr DEO2
+	#88 .Audio0/volume DEO
+	;sine-wave .Audio0/addr DEO2
+	;sine-wave/end ;sine-wave SUB2 #0001 SFT2 .Audio0/length DEO2
 
 	( inital drawing ) 
 	;draw-octave JSR2
@@ -87,15 +91,15 @@ BRK
 	
 	.wave-view/x1 PEK2 #0028 ADD2 .Screen/x DEO2
 	.wave-view/y1 PEK2 #0010 SUB2 .Screen/y DEO2
-	.Audio/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	.Audio0/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
-
 
 BRK
 
 @on-midi ( -> )
 	
-	.Midi/message DEI .Audio/pitch DEO
+	.Midi/note DEI #00 NEQ ,&note-on JNZ BRK &note-on
+	.Midi/note DEI .Audio0/pitch .Midi/channel DEI #04 MOD #10 MUL ADD DEO
 
 BRK
 
@@ -120,7 +124,7 @@ BRK
 
 @on-touch-wave-view ( -> )
 
-	.Mouse/x DEI2 .wave-view/x1 PEK2 SUB2 .Audio/length DEO2
+	.Mouse/x DEI2 .wave-view/x1 PEK2 SUB2 .Audio0/length DEO2
 	;draw-wave JSR2
 	;draw-cursor JSR2 
 
@@ -151,21 +155,21 @@ BRK
 
 	.Mouse/x DEI2 .adsr-view/x1 PEK2 SUB2 8/ SWP POP #03 DIV
 	DUP #00 NEQ ,&no-a JNZ
-		.Audio/adsr DEI
+		.Audio0/adsr DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		.Audio/adsr DEO &no-a
+		.Audio0/adsr DEO &no-a
 	DUP #01 NEQ ,&no-d JNZ
-		.Audio/adsr DEI
+		.Audio0/adsr DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		.Audio/adsr DEO &no-d
+		.Audio0/adsr DEO &no-d
 	DUP #02 NEQ ,&no-s JNZ
-		.Audio/adsr #01 ADD DEI
+		.Audio0/adsr #01 ADD DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
-		.Audio/adsr #01 ADD DEO &no-s
+		.Audio0/adsr #01 ADD DEO &no-s
 	DUP #03 NEQ ,&no-r JNZ
-		.Audio/adsr #01 ADD DEI
+		.Audio0/adsr #01 ADD DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
-		.Audio/adsr #01 ADD DEO &no-r
+		.Audio0/adsr #01 ADD DEO &no-r
 	POP
 
 	( release ) #00 .Mouse/state DEO
@@ -203,13 +207,13 @@ BRK
 
 	.Controller/button DEI #f0 AND
 	DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ
-		( move ) .Audio/addr DEI2 #0001 SUB2 .Audio/addr DEO2 &no-up
+		( move ) .Audio0/addr DEI2 #0001 SUB2 .Audio0/addr DEO2 &no-up
 	DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ
-		( move ) .Audio/addr DEI2 #0001 ADD2 .Audio/addr DEO2 &no-down
+		( move ) .Audio0/addr DEI2 #0001 ADD2 .Audio0/addr DEO2 &no-down
 	DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ
-		( move ) .Audio/addr DEI2 #0010 SUB2 .Audio/addr DEO2 &no-left
+		( move ) .Audio0/addr DEI2 #0010 SUB2 .Audio0/addr DEO2 &no-left
 	DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ
-		( move ) .Audio/addr DEI2 #0010 ADD2 .Audio/addr DEO2 &no-right
+		( move ) .Audio0/addr DEI2 #0010 ADD2 .Audio0/addr DEO2 &no-right
 	POP
 
 	;draw-octave JSR2
@@ -219,7 +223,7 @@ BRK
 
 @play ( pitch -- )
 	
-	.octave PEK #0c MUL ADD .Audio/pitch DEO
+	.octave PEK #0c MUL ADD .Audio0/pitch DEO
 
 RTN
 
@@ -290,16 +294,16 @@ RTN
 @draw-adsr ( -- )
 
 	.adsr-view/x1 PEK2 .adsr-view/y1 PEK2
-		.Audio/adsr DEI #04 SFT
+		.Audio0/adsr DEI #04 SFT
 		;draw-knob JSR2
 	.adsr-view/x1 PEK2 #0018 ADD2 .adsr-view/y1 PEK2
-		.Audio/adsr DEI #0f AND
+		.Audio0/adsr DEI #0f AND
 		;draw-knob JSR2
 	.adsr-view/x1 PEK2 #0030 ADD2 .adsr-view/y1 PEK2
-		.Audio/adsr #01 ADD DEI #04 SFT
+		.Audio0/adsr #01 ADD DEI #04 SFT
 		;draw-knob JSR2
 	.adsr-view/x1 PEK2 #0048 ADD2 .adsr-view/y1 PEK2
-		.Audio/adsr #01 ADD DEI #0f AND
+		.Audio0/adsr #01 ADD DEI #0f AND
 		;draw-knob JSR2
 
 RTN
@@ -324,11 +328,11 @@ RTN
 			.wave-view/y1 PEK2 #0010 ADD2 .Screen/y DEO2
 			#03 .Screen/color DEO
 		&no-dot
-		OVR TOS .Audio/addr DEI2 ADD2 GET 
+		OVR TOS .Audio0/addr DEI2 ADD2 GET 
 		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
 		TOS #0004 DIV2 .wave-view/y1 PEK2 ADD2 .Screen/y DEO2
 		.Screen/x DEI2 ++ .Screen/x DEO2
-		( draw ) OVR .Audio/length DEI2 SWP POP GTH #02 MUL #01 ADD .Screen/color DEO
+		( draw ) OVR .Audio0/length DEI2 SWP POP GTH #02 MUL #01 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
 	POP2
@@ -336,16 +340,16 @@ RTN
 	( range )
 	.wave-view/x1 PEK2 .Screen/x DEO2
 	.wave-view/y1 PEK2 #0010 SUB2 .Screen/y DEO2
-	.Audio/addr DEI2 ;draw-short JSR2
+	.Audio0/addr DEI2 ;draw-short JSR2
 	.wave-view/x2 PEK2 #0020 SUB2 .Screen/x DEO2
-	.Audio/length DEI2 ;draw-short JSR2
+	.Audio0/length DEI2 ;draw-short JSR2
 
 RTN
 
 @draw-wave-length ( color -- )
 	
 	STH
-	.wave-view/x1 PEK2 .Audio/length DEI2 ADD2 .Screen/x DEO2
+	.wave-view/x1 PEK2 .Audio0/length DEI2 ADD2 .Screen/x DEO2
 	.wave-view/y1 PEK2 DUP2 #0020 ADD2
 	&loop
 		OVR2 .Screen/y DEO2
