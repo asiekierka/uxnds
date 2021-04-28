@@ -1,0 +1,456 @@
+( a blank file )
+
+%RTN { JMP2r }
+%8+ { #0008 ADD2 }
+%8/ { #0008 DIV2 }
+%2/ { #0002 DIV2 }
+%2* { #0002 MUL2 }
+%8* { #0008 MUL2 }
+%++ { #0001 ADD2 }
+%TOS { #00 SWP }
+%MOD { DUP2 DIV MUL SUB }
+
+%PAD-WIDTH { #0030 }
+%PAD-HEIGHT { #0020 }
+%STATE-LENGTH { #04 }
+
+( devices )
+
+|00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y     $2 &addr   $2 &color $1 ]
+|30 @Audio0     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|40 @Audio1     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|50 @Audio2     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|60 @Audio3     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|70 @Midi       [ &vector $2 &channel  $1 &note   $1 &velocity $1 ]
+|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
+|90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
+|a0 @File       [ &vector $2 &success  $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
+|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
+
+( variables )
+
+|0000
+
+@selection $1
+@last $1
+@color $1
+@center      [ &x $2 &y $2 ]
+@pointer     [ &x $2 &y $2 ]
+@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@frame [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@label [ &x $2 &y $2 &color $1 &addr $2 ]
+
+@state [ ( addr length )
+	$4 $4 $4 $4
+	$4 $4 $4 $4
+	$4 $4 $4 $4
+	$4 $4 $4 $4
+]
+
+( program )
+
+|0100 ( -> )
+	
+	( theme ) 
+	#0fe5 .System/r DEO2 
+	#0fc5 .System/g DEO2 
+	#0f25 .System/b DEO2
+
+	( vectors )
+	;on-control .Controller/vector DEO2
+	;on-mouse .Mouse/vector DEO2
+	;on-frame .Screen/vector DEO2
+	;on-midi .Midi/vector DEO2
+
+	( store location/length )
+	#88 .Audio0/volume DEO #011c .Audio0/adsr DEO2
+	#88 .Audio1/volume DEO #011c .Audio1/adsr DEO2
+	#88 .Audio2/volume DEO #011c .Audio2/adsr DEO2
+	#88 .Audio3/volume DEO #111c .Audio3/adsr DEO2
+
+	;load-samples JSR2
+
+	( find center )
+	.Screen/width DEI2 2/ .center/x POK2
+	.Screen/height DEI2 2/ .center/y POK2
+
+	( place views )
+	.center/x PEK2 PAD-WIDTH 2* SUB2 .frame/x1 POK2
+	.center/y PEK2 PAD-HEIGHT 2/ SUB2 .frame/y1 POK2
+	.center/x PEK2 PAD-WIDTH 2* ADD2 .frame/x2 POK2
+	.center/y PEK2 PAD-HEIGHT 2* ADD2 .frame/y2 POK2
+
+	;draw-pads JSR2
+
+BRK
+
+@on-frame ( -> )
+	
+	.frame/y2 PEK2 .Screen/y DEO2
+
+	.center/x PEK2 PAD-WIDTH 2* SUB2 .Screen/x DEO2
+	.Audio0/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.center/x PEK2 PAD-WIDTH 2* SUB2 #0008 ADD2 .Screen/x DEO2
+	.Audio1/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.center/x PEK2 PAD-WIDTH 2* SUB2 #0010 ADD2 .Screen/x DEO2
+	.Audio2/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.center/x PEK2 PAD-WIDTH 2* SUB2 #0018 ADD2 .Screen/x DEO2
+	.Audio3/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	( TODO: draw in mixer )
+	( TODO: draw global )
+
+BRK
+
+@on-mouse ( -> )
+
+	;draw-cursor JSR2 
+
+	.Mouse/state DEI #00 NEQ ,&on-touch JNZ BRK &on-touch
+
+	( x ) .Mouse/x DEI2 .center/x PEK2 PAD-WIDTH 2* SUB2 SUB2 PAD-WIDTH DIV2 SWP POP
+	( y ) .Mouse/y DEI2 .center/y PEK2 PAD-HEIGHT 2* SUB2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
+	DUP #b0 SWP
+	;play-pad JSR2
+
+	( select ) DUP .selection POK ;draw-editor JSR2
+
+	( release ) #00 .Mouse/state DEO
+
+BRK
+
+@on-midi ( -> )
+	
+	.Midi/note DEI #00 NEQ ,&note-on JNZ BRK &note-on
+
+	.Midi/channel DEI #90 NEQ ,&no-drum JNZ 
+		.Midi/note DEI DUP #80 ADD SWP #10 MOD ;play-pad JSR2
+		BRK
+	&no-drum
+
+	;pad-addr #0008 ADD2 GET2 .Audio0/addr DEO2
+	#0008 .Audio0/length DEO2
+	.Midi/note DEI .Audio0/pitch DEO
+
+BRK
+
+@on-control ( -> )
+
+	.Controller/key DEI #00 NEQ ,&key-down JNZ BRK &key-down
+
+	.Controller/key DEI 
+	DUP #31 NEQ ,&no-0 JNZ #b0 #00 ;play-pad JSR2 &no-0
+	DUP #32 NEQ ,&no-1 JNZ #b0 #01 ;play-pad JSR2 &no-1
+	DUP #33 NEQ ,&no-2 JNZ #b0 #02 ;play-pad JSR2 &no-2
+	DUP #34 NEQ ,&no-3 JNZ #b0 #03 ;play-pad JSR2 &no-3
+	DUP #71 NEQ ,&no-4 JNZ #b0 #04 ;play-pad JSR2 &no-4
+	DUP #77 NEQ ,&no-5 JNZ #b0 #05 ;play-pad JSR2 &no-5
+	DUP #65 NEQ ,&no-6 JNZ #b0 #06 ;play-pad JSR2 &no-6
+	DUP #72 NEQ ,&no-7 JNZ #b0 #07 ;play-pad JSR2 &no-7
+	DUP #61 NEQ ,&no-8 JNZ #b0 #08 ;play-pad JSR2 &no-8
+	DUP #73 NEQ ,&no-9 JNZ #b0 #09 ;play-pad JSR2 &no-9
+	DUP #64 NEQ ,&no-a JNZ #b0 #0a ;play-pad JSR2 &no-a
+	DUP #66 NEQ ,&no-b JNZ #b0 #0b ;play-pad JSR2 &no-b
+	DUP #7a NEQ ,&no-c JNZ #b0 #0c ;play-pad JSR2 &no-c
+	DUP #78 NEQ ,&no-d JNZ #b0 #0d ;play-pad JSR2 &no-d
+	DUP #63 NEQ ,&no-e JNZ #b0 #0e ;play-pad JSR2 &no-e
+	DUP #76 NEQ ,&no-f JNZ #b0 #0f ;play-pad JSR2 &no-f
+	POP
+
+BRK
+
+@load-samples ( -- )
+
+	#00 #10
+	&loop
+		( name ) OVR TOS #0019 MUL2 ;pad-path ADD2 .File/name DEO2
+		( length ) OVR TOS #0002 MUL2 ;pad-length ADD2 GET2 .File/length DEO2
+		( load ) OVR TOS #0002 MUL2 ;pad-addr ADD2 GET2 .File/load DEO2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+	
+RTN
+
+@play-pad ( note pad -- )
+	
+	STH
+	( unseslect last )
+	.last PEK #01 ;draw-pad JSR2
+	DUPr STHr .last POK 
+
+	( highlight )
+	DUPr STHr #02 ;draw-pad JSR2
+
+	( length )
+	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 DUP2 GET2 SWP2 #0002 ADD2 GET2 SWP2 SUB2 
+	DUPr STHr #04 DIV #10 MUL .Audio0/length ADD DEO2	
+
+	( addr )
+	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 GET2
+	DUPr STHr #04 DIV #10 MUL .Audio0/addr ADD DEO2
+
+	( pitch )
+	DUPr STHr #04 DIV #10 MUL .Audio0/pitch ADD DEO
+
+	DUPr STHr #04 DIV ;draw-mixer JSR2
+
+	POPr
+
+RTN
+
+@draw-editor ( pad -- )
+
+	( get state )
+
+	.frame/y2 PEK2 #0008 ADD2 .Screen/y DEO2
+
+	.frame/x1 PEK2 .Screen/x DEO2
+	DUP #02 MUL TOS ;pad-addr ADD2 GET2
+	( addr ) #21 ;draw-short JSR2
+
+	.frame/x1 PEK2 #0028 ADD2 .Screen/x DEO2
+	DUP #02 MUL TOS ;pad-length ADD2 GET2
+	( addr ) #21 ;draw-short JSR2
+
+	POP
+
+RTN
+
+@draw-mixer ( mixer -- )
+
+	;cursor .Screen/addr DEO2
+
+	( y ) DUP TOS #0002 SUB2 PAD-HEIGHT MUL2 .center/y PEK2 ADD2 
+	( x ) .center/x PEK2 PAD-WIDTH 2* ADD2 
+	SWP2 
+	.Screen/y DEO2
+	.Screen/x DEO2
+
+	#23 .Screen/color DEO
+
+	POP
+
+	( once/repeat interface )
+	( draw ADSR knobs )
+
+RTN
+
+@draw-pads ( -- )
+	
+	#00 #10
+	&loop
+		OVR #01 ;draw-pad JSR2
+		SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+
+RTN
+
+@draw-pad ( pad color -- )
+	
+	STH STH
+
+	DUPr STHr 
+
+	DUP #04 DIV SWP #04 MOD TOS PAD-WIDTH MUL2 ( center ) .center/x PEK2 ADD2 PAD-WIDTH #0002 MUL2 SUB2
+	ROT TOS PAD-HEIGHT MUL2 ( center ) .center/y PEK2 ADD2 PAD-HEIGHT #0002 MUL2 SUB2
+
+	( draw outline )
+	OVR2 OVR2 
+	OVR2 PAD-WIDTH #0002 SUB2 ADD2 
+	OVR2 PAD-HEIGHT #0002 SUB2 ADD2 
+	OVRr STHr ;line-rect JSR2
+
+	( draw name )
+	OVR2 #0002 ADD2 
+	OVR2 #0002 ADD2 
+	#20 OVRr STHr ADD 
+	;pad-name DUPr STHr TOS #0005 MUL2 ADD2 
+	;draw-label-left JSR2
+
+	POP2 POP2
+
+	POPr POPr
+
+RTN
+
+@draw-cursor ( -- )
+	
+	( clear last cursor )
+	;clear .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+	#30 .Screen/color DEO
+	( record pointer positions )
+	.Mouse/x DEI2 .pointer/x POK2 
+	.Mouse/y DEI2 .pointer/y POK2
+	( draw new cursor )
+	;cursor .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+	( colorize on state )
+	#31 [ .Mouse/state DEI #00 NEQ ] ADD .Screen/color DEO
+
+RTN
+
+@draw-short ( addr color -- )
+
+	STH SWP 
+	DUP #04 SFT TOS 8* ;font-hex ADD2 .Screen/addr DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND TOS 8* ;font-hex ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	DUP #04 SFT TOS 8* ;font-hex ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND TOS 8* ;font-hex ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	( draw ) STHr .Screen/color DEO
+
+RTN
+
+@line-rect ( x1 y1 x2 y2 color -- )
+
+	( load ) .color POK DUP2 STH2 .rect/y2 POK2 .rect/x2 POK2 DUP2 STH2 .rect/y1 POK2 .rect/x1 POK2
+	STH2r #0001 ADD2 STH2r
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTS2 ,&ver JNZ
+	POP2 POP2
+	.rect/x1 PEK2 #0001 ADD2 .rect/x2 PEK2 #0001 SUB2
+	&hor
+		( save ) OVR2 .Screen/x DEO2
+		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
+		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 ++ LTS2 ,&hor JNZ
+	POP2 POP2
+
+RTN
+
+@draw-label-left ( x y color addr -- )
+	
+	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
+	.label/addr PEK2
+	&loop
+		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( incr ) #0001 ADD2
+		( incr ) .Screen/x DEI2 #0007 ADD2 .Screen/x DEO2
+		DUP2 GET #00 NEQ ,&loop JNZ
+	POP2
+
+RTN
+
+@pad-name [
+	"PAD1 $1 "SYN1 $1 "SYN2 $1 "CYM1 $1 ( short )
+	"HHAT $1 "OHAT $1 "CHAT $1 "RIDE $1
+	"SID1 $1 "SNR1 $1 "SNR2 $1 "SID2 $1 ( long )
+	"BDR1 $1 "KCK1 $1 "KCK2 $1 "BDR2 $1 ]
+
+@pad-addr [
+	4000 4400 4800 4c00
+	5000 5800 6000 6800
+	7000 7800 8000 8800
+	9000 b000 d000 f000 $2 ]
+
+@pad-length [
+	0800 0800 0800 0800
+	0800 0800 0800 0800
+	0800 0800 0800 0800
+	0800 0800 0800 0800 $2 ]
+
+@pad-path [
+	"projects/sounds/pad1.ss8 $1 "projects/sounds/syn1.ss8 $1
+	"projects/sounds/syn2.ss8 $1 "projects/sounds/cym1.ss8 $1
+	"projects/sounds/hhat.ss8 $1 "projects/sounds/ohat.ss8 $1
+	"projects/sounds/chat.ss8 $1 "projects/sounds/ride.ss8 $1
+	"projects/sounds/sid1.ss8 $1 "projects/sounds/snr1.ss8 $1
+	"projects/sounds/snr2.ss8 $1 "projects/sounds/sid2.ss8 $1
+	"projects/sounds/bdr1.ss8 $1 "projects/sounds/kck1.ss8 $1
+	"projects/sounds/kck2.ss8 $1 "projects/sounds/bdr2.ss8 $1 ]
+
+@clear  [ 
+	0000 0000 0000 0000 ]
+
+@cursor [ 
+	80c0 e0f0 f8e0 1000 ]
+
+@meter [
+	0000 0000 0000 0000
+	0000 0000 0000 0070 
+	0000 0000 0000 007e
+	0000 0000 0000 707e
+	0000 0000 0070 7e7e
+	0000 0000 007e 7e7e
+	0000 0000 707e 7e7e
+	0000 0000 7e7e 7e7e
+	0000 0070 7e7e 7e7e
+	0000 007e 7e7e 7e7e
+	0000 707e 7e7e 7e7e
+	0000 7e7e 7e7e 7e7e
+	0070 7e7e 7e7e 7e7e
+	007e 7e7e 7e7e 7e7e
+	707e 7e7e 7e7e 7e7e
+	7e7e 7e7e 7e7e 7e7e ]
+
+@font-hex ( 0-F )
+[
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
+	007c 8280 f080 827c 007c 8280 f080 8080
+]
+
+@font ( spectrum-zx font )
+[
+	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
+	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
+	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
+	0038 446c 107c 1000 000c 0808 0838 3800 003e 2222 2266 6600 0000 0822 0022 0800
+	0000 1018 1c18 1000 0000 0818 3818 0800 0008 1c00 001c 0800 0028 2828 2800 2800
+	003e 4a4a 3a0a 0a00 000c 3046 620c 3000 0000 0000 0000 ffff 0010 3800 3810 0038
+	0008 1c2a 0808 0800 0008 0808 2a1c 0800 0000 0804 7e04 0800 0000 1020 7e20 1000
+	0000 4040 7e00 0000 0000 0024 6624 0000 0000 1038 7c00 0000 0000 007c 3810 0000
+	0000 0000 0000 0000 0008 0808 0800 0800 0014 1400 0000 0000 0024 7e24 247e 2400
+	0008 1e28 1c0a 3c08 0042 0408 1020 4200 0030 4832 4c44 3a00 0008 1000 0000 0000
+	0004 0808 0808 0400 0010 0808 0808 1000 0000 1408 3e08 1400 0000 0808 3e08 0800
+	0000 0000 0008 0810 0000 0000 3c00 0000 0000 0000 0000 0800 0000 0204 0810 2000
+	003c 464a 5262 3c00 0018 2808 0808 3e00 003c 4202 3c40 7e00 003c 421c 0242 3c00
+	0008 1828 487e 0800 007e 407c 0242 3c00 003c 407c 4242 3c00 007e 0204 0810 1000
+	003c 423c 4242 3c00 003c 4242 3e02 3c00 0000 0008 0000 0800 0000 0800 0008 0810
+	0000 0810 2010 0800 0000 003e 003e 0000 0000 1008 0408 1000 003c 4202 0c00 0800
+	003c 425a 5442 3c00 0018 2442 7e42 4200 007c 427c 4242 7c00 003c 4240 4042 3c00
+	0078 4442 4244 7800 007e 407c 4040 7e00 003e 4040 7c40 4000 003c 4240 4e42 3c00
+	0042 427e 4242 4200 003e 0808 0808 3e00 0002 0202 4242 3c00 0044 4870 4844 4200
+	0040 4040 4040 7e00 0042 665a 4242 4200 0042 6252 4a46 4200 003c 4242 4242 3c00
+	007c 4242 7c40 4000 003c 4242 524a 3c00 007c 4242 7c44 4200 003c 403c 0242 3c00
+	00fe 1010 1010 1000 0042 4242 4242 3c00 0042 4242 4224 1800 0042 4242 5a66 4200
+	0042 2418 1824 4200 0082 4428 1010 1000 007e 0408 1020 7e00 000c 0808 0808 0c00
+	0040 2010 0804 0200 0018 0808 0808 1800 0008 1422 0000 0000 0000 0000 0000 7e00
+	0008 0400 0000 0000 0000 1c02 1e22 1e00 0020 203c 2222 3c00 0000 1e20 2020 1e00
+	0002 021e 2222 1e00 0000 1c22 3c20 1e00 000c 101c 1010 1000 0000 1c22 221e 021c
+	0020 202c 3222 2200 0008 0018 0808 0400 0008 0008 0808 4830 0020 2428 3028 2400
+	0010 1010 1010 0c00 0000 6854 5454 5400 0000 5864 4444 4400 0000 3844 4444 3800
+	0000 7844 4478 4040 0000 3c44 443c 0406 0000 2c30 2020 2000 0000 3840 3804 7800
+	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
+	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
+	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
+]
