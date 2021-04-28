@@ -107,10 +107,18 @@ BRK
 
 @on-frame ( -> )
 	
-	.wave-view/x1 PEK2 #0028 ADD2 .Screen/x DEO2
-	.wave-view/y1 PEK2 #0010 SUB2 .Screen/y DEO2
-	.Audio0/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
+	.adsr-view/y2 PEK2 #0020 SUB2 .Screen/y DEO2
+
+	#00 #10
+	&loop
+		.adsr-view/x2 PEK2 #003a SUB2 .Screen/x DEO2
+		OVR #10 SWP SUB .Audio0/output DEI #0f AND LTH .Screen/color DEO
+		.adsr-view/x2 PEK2 #003a SUB2 #0002 ADD2 .Screen/x DEO2
+		OVR #10 SWP SUB .Audio0/output DEI #04 SFT LTH .Screen/color DEO
+		.Screen/y DEI2 #0002 ADD2 .Screen/y DEO2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
 
 BRK
 
@@ -495,24 +503,6 @@ RTN
 @knob-offsety [
 	07 06 05 03 02 01 00 00
 	00 00 01 02 03 05 06 07 ]
-
-@meter [
-	0000 0000 0000 0000
-	0000 0000 0000 0070 
-	0000 0000 0000 007e
-	0000 0000 0000 707e
-	0000 0000 0070 7e7e
-	0000 0000 007e 7e7e
-	0000 0000 707e 7e7e
-	0000 0000 7e7e 7e7e
-	0000 0070 7e7e 7e7e
-	0000 007e 7e7e 7e7e
-	0000 707e 7e7e 7e7e
-	0000 7e7e 7e7e 7e7e
-	0070 7e7e 7e7e 7e7e
-	007e 7e7e 7e7e 7e7e
-	707e 7e7e 7e7e 7e7e
-	7e7e 7e7e 7e7e 7e7e ]
 
 @font-hex ( 0-F )
 [
