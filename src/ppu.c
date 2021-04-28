@@ -41,13 +41,12 @@ readpixel(Uint8 *sprite, Uint8 h, Uint8 v)
 void
 clear(Ppu *p)
 {
-	int i, sz = p->height * p->width;
-	for(i = 0; i < sz; ++i) {
+	int i, sz = p->height * p->width, rows = sz / 4;
+	for(i = 0; i < sz; ++i)
 		p->output[i] = p->colors[0];
+	for(i = 0; i < rows; i++) {
 		p->fg[i] = 0;
 		p->bg[i] = 0;
-		p->fg[sz + i] = 0;
-		p->bg[sz + i] = 0;
 	}
 }
 
@@ -160,9 +159,9 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	p->height = (8 * p->ver + p->pad * 2);
 	if(!(p->output = malloc(p->width * p->height * sizeof(Uint32))))
 		return 0;
-	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
+	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
 		return 0;
-	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) * 2)))
+	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
 		return 0;
 	clear(p);
 	return 1;
