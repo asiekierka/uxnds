@@ -86,10 +86,6 @@ start(Uxn *u)
 	if(!evaluxn(u, PAGE_PROGRAM))
 		return error("Reset", "Failed");
 	printstack(&u->wst);
-	printf("FRAME --------\n");
-	if(!evaluxn(u, PAGE_PROGRAM + 0x08))
-		return error("Frame", "Failed");
-	printstack(&u->wst);
 	return 1;
 }
 
@@ -105,13 +101,22 @@ main(int argc, char **argv)
 	if(!loaduxn(&u, argv[1]))
 		return error("Load", "Failed");
 
-	portuxn(&u, 0x00, "console", console_talk);
-	portuxn(&u, 0x01, "empty", nil_talk);
+	portuxn(&u, 0x00, "empty", nil_talk);
+	portuxn(&u, 0x01, "console", console_talk);
 	portuxn(&u, 0x02, "empty", nil_talk);
 	portuxn(&u, 0x03, "empty", nil_talk);
 	portuxn(&u, 0x04, "empty", nil_talk);
 	portuxn(&u, 0x05, "empty", nil_talk);
-	portuxn(&u, 0x06, "file", file_talk);
+	portuxn(&u, 0x06, "empty", nil_talk);
+	portuxn(&u, 0x07, "empty", nil_talk);
+	portuxn(&u, 0x08, "empty", nil_talk);
+	portuxn(&u, 0x09, "empty", nil_talk);
+	portuxn(&u, 0x0a, "file", file_talk);
+	portuxn(&u, 0x0b, "empty", nil_talk);
+	portuxn(&u, 0x0c, "empty", nil_talk);
+	portuxn(&u, 0x0d, "empty", nil_talk);
+	portuxn(&u, 0x0e, "empty", nil_talk);
+	portuxn(&u, 0x0f, "empty", nil_talk);
 	start(&u);
 
 	return 0;
