@@ -80,26 +80,34 @@ putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 }
 
 void
-puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
+puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
 			if(ch1 == 1 || (color != 0x05 && color != 0x0a && color != 0x0f))
-				putpixel(p, layer, x + h, y + v, ch1 ? color % 4 : color / 4);
+				putpixel(p,
+					layer,
+					x + (flipx ? 7 - h : h),
+					y + (flipy ? 7 - v : v),
+					ch1 ? color % 4 : color / 4);
 		}
 }
 
 void
-putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color)
+putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1) * color;
 			Uint8 ch2 = ((sprite[v + 8] >> (7 - h)) & 0x1) * color;
-			putpixel(p, layer, x + h, y + v, (((ch1 + ch2 * 2) + color / 4) & 0x3));
+			putpixel(p,
+				layer,
+				x + (flipx ? 7 - h : h),
+				y + (flipy ? 7 - v : v),
+				(((ch1 + ch2 * 2) + color / 4) & 0x3));
 		}
 }
 
@@ -118,8 +126,8 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x20; ++i) { /* memory */
 		x = ((i % 8) * 3 + 1) * 8, y = (i / 8 + 1) * 8, b = stack[i];
-		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i) * 0x7);
-		puticn(p, p->bg, x + 8, y, font[b & 0xf], 1 + (ptr == i) * 0x7);
+		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
+		puticn(p, p->bg, x + 8, y, font[b & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
 	}
 	for(x = 0; x < 0x20; ++x) {
 		drawpixel(p, x, p->height / 2, 2);

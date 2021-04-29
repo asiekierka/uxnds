@@ -224,11 +224,13 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 y = mempeek16(d->dat, 0xa);
 		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
 		Uint8 *layer = d->dat[0xe] >> 4 & 0x1 ? ppu.fg : ppu.bg;
-		switch(d->dat[0xe] >> 5) {
-		case 0: putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3); break;
-		case 1: puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf); break;
-		case 2: putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf); break;
-		}
+		Uint8 mode = d->dat[0xe] >> 5;
+		if(!mode)
+			putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
+		else if(mode % 2)
+			puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, d->dat[0xe] >> 6 & 0x1, d->dat[0xe] >> 7 & 0x1);
+		else
+			putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, d->dat[0xe] >> 6 & 0x1, d->dat[0xe] >> 7 & 0x1);
 		reqdraw = 1;
 	}
 }

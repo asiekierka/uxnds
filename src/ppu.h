@@ -26,7 +26,7 @@ typedef struct Ppu {
 int initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad);
 void putcolors(Ppu *p, Uint8 *addr);
 void putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);
-void puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color);
-void putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color);
+void puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
 void drawppu(Ppu *p);
 void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);

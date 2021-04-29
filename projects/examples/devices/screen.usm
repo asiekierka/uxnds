@@ -19,8 +19,8 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#0c5f .System/r DEO2
-	#022f .System/g DEO2 
+	#025f .System/r DEO2
+	#0c2f .System/g DEO2 
 	#0da4 .System/b DEO2 
 
 	( find screen center )
@@ -28,25 +28,78 @@
 	.Screen/height DEI2 #0002 DIV2 .center/y POK2
 
 	( draw )
+	;draw-table JSR2
 	;draw-sprites JSR2
+	;draw-circle JSR2
 	
 BRK
 
 @draw-sprites ( -- )
 	
 	;preview_icn .Screen/addr DEO2
-
-	#00 #ff
+	#00 #00
 	&loop
 		( move ) OVR #0f AND #40 SFT #02 DIV #00 SWP 
 			.center/x PEK2 #0040 SUB2 ADD2 .Screen/x DEO2
 		( move ) OVR #f0 AND #02 DIV #00 SWP 
-			.center/y PEK2 #0018 SUB2 ADD2 .Screen/y DEO2
+			.center/y PEK2 #0040 SUB2 ADD2 .Screen/y DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&loop JNZ
+		DUP2 NEQ ,&loop JNZ
 	POP2
 	
 RTN
 
-@preview_icn  [ 183c 66db db66 3c18 0000 183c 3c18 0000 ]
+@draw-table ( -- )
+	
+	#00 #10
+	&loop
+		OVR #08 MUL #00 SWP ;font_hex ADD2 .Screen/addr DEO2
+
+		( x-axis ) 
+		OVR #08 MUL #00 SWP 
+		.center/x PEK2 #0040 SUB2 ADD2 .Screen/x DEO2
+		.center/y PEK2 #0050 SUB2 .Screen/y DEO2
+		( draw ) #21 .Screen/color DEO
+
+		( y-axis )
+		OVR #08 MUL #00 SWP 
+		.center/y PEK2 #0040 SUB2 ADD2 .Screen/y DEO2
+		.center/x PEK2 #0050 SUB2 .Screen/x DEO2
+		( draw ) #21 .Screen/color DEO
+
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+
+RTN
+
+@draw-circle ( -- )
+	
+	;preview_icn .Screen/addr DEO2
+
+	.center/x PEK2 #0048 ADD2 .Screen/x DEO2
+	.center/y PEK2 #0030 ADD2 .Screen/y DEO2
+	#21 .Screen/color DEO
+	.center/x PEK2 #0050 ADD2 .Screen/x DEO2
+	#61 .Screen/color DEO
+	.center/x PEK2 #0048 ADD2 .Screen/x DEO2
+	.center/y PEK2 #0038 ADD2 .Screen/y DEO2
+	#a1 .Screen/color DEO
+	.center/x PEK2 #0050 ADD2 .Screen/x DEO2
+	#f1 .Screen/color DEO
+
+RTN
+
+@preview_icn  [ 
+	0f38 675f dfbf bfbf 0007 1820 2344 4848 ]
+
+@font_hex [
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
+	007c 8280 f080 827c 007c 8280 f080 8080 ]
