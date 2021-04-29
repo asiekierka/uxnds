@@ -227,10 +227,11 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint8 mode = d->dat[0xe] >> 5;
 		if(!mode)
 			putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
-		else if(mode % 2)
-			puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, d->dat[0xe] >> 6 & 0x1, d->dat[0xe] >> 7 & 0x1);
+		else if(mode-- & 0x1)
+			puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
 		else
-			putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, d->dat[0xe] >> 6 & 0x1, d->dat[0xe] >> 7 & 0x1);
+			putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+
 		reqdraw = 1;
 	}
 }
