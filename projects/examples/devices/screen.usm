@@ -1,6 +1,7 @@
 ( dev/screen )
 
 %RTN { JMP2r }
+%MOD { DUP2 DIV MUL SUB }
 
 ( devices )
 
@@ -18,95 +19,34 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#530f .System/r DEO2
-	#f20f .System/g DEO2 
-	#ad0f .System/b DEO2 
+	#0c5f .System/r DEO2
+	#022f .System/g DEO2 
+	#0da4 .System/b DEO2 
 
 	( find screen center )
 	.Screen/width DEI2 #0002 DIV2 .center/x POK2
 	.Screen/height DEI2 #0002 DIV2 .center/y POK2
 
 	( draw )
-	;draw-background JSR2
 	;draw-sprites JSR2
 	
 BRK
 
-@draw-background ( -- )
-	
-	( draw hor line )
-	#0000 .Screen/x DEO2 .center/y PEK2 .Screen/y DEO2
-	#0000 .Screen/width DEI2 ( from/to )
-	&draw-hor
-		( draw ) #01 .Screen/color DEO
-		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-hor JNZ
-	POP2 POP2
-
-	( draw ver line )
-	.center/x PEK2 .Screen/x DEO2 #0000 .Screen/y DEO2
-	#0000 .Screen/height DEI2 ( from/to )
-	&draw-ver
-		( draw ) #02 .Screen/color DEO
-		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-ver JNZ
-	POP2 POP2
-
-RTN
-
 @draw-sprites ( -- )
 	
-	( draw blending modes )
 	;preview_icn .Screen/addr DEO2
-	#0010 .Screen/y DEO2
-	#00 #08
-	&draw-pixel1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+
+	#00 #ff
+	&loop
+		( move ) OVR #0f AND #40 SFT #02 DIV #00 SWP 
+			.center/x PEK2 #0040 SUB2 ADD2 .Screen/x DEO2
+		( move ) OVR #f0 AND #02 DIV #00 SWP 
+			.center/y PEK2 #0018 SUB2 ADD2 .Screen/y DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel1 JNZ
-	POP POP
-	#0018 .Screen/y DEO2
-	#00 #08
-	&draw-pixel2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
-		( draw ) OVR #08 ADD .Screen/color DEO
-		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel2 JNZ
-	POP POP
-	#0020 .Screen/y DEO2
-	#00 #08
-	&draw-icn1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
-		( draw ) OVR #20 ADD .Screen/color DEO
-		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn1 JNZ
-	POP POP
-	#0028 .Screen/y DEO2
-	#00 #08
-	&draw-icn2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
-		( draw ) OVR #28 ADD .Screen/color DEO
-		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn2 JNZ
-	POP POP
-	#0030 .Screen/y DEO2
-	#00 #08
-	&draw-chr1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
-		( draw ) OVR #40 ADD .Screen/color DEO
-		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr1 JNZ
-	POP POP
-	#0038 .Screen/y DEO2
-	#00 #08
-	&draw-chr2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
-		( draw ) OVR #48 ADD .Screen/color DEO
-		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr2 JNZ
-	POP POP
-
+		DUP2 LTH ,&loop JNZ
+	POP2
+	
 RTN
 
 @preview_icn  [ 183c 66db db66 3c18 0000 183c 3c18 0000 ]

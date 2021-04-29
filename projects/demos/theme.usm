@@ -5,27 +5,26 @@
 %2/  { #0001 SFT2 }
 %8+  { #0008 ADD2 }
 %STEP8 { #0033 SFT2 }
-%S2B { SWP POP }
 
 ( devices )
 
-|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
-|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|90 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+|00 @System [ &vector $2 &pad   $6 &r      $2 &g     $2 &b     $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad   $2 &x     $2 &y $2 &addr $2 &color $1 ]
+|90 @Mouse  [ &vector $2 &x     $2 &y      $2 &state $1 &chord $1 ]
 
 ( variables )
 
 |0000
 
-@center [ &x $2 &y $2 ]
-@color [ &byte $1 ]
-@pointer [ &x $2 &y $2 &sprite $2 ]
-@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@window [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 &w $2 &h $2 ]
-@label [ &x $2 &y $2 &addr $2 ]
-@slider [ &x1 $2 &y $2 &x2 $2 &pos $2 ]
-@selection [ &byte $1 ]
-@addr [ &byte $1 ]
+@color     $1
+@selection $1
+
+@center  [ &x $2 &y $2 ]
+@pointer [ &x $2 &y $2 ]
+@rect    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@window  [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 &w $2 &h $2 ]
+@slider  [ &x1 $2 &y $2 &x2 $2 &pos $2 ]
+
 @theme [
 	&r1 $1 &r2 $1 &r3 $1 &r4 $1
 	&g1 $1 &g2 $1 &g3 $1 &g4 $1
@@ -34,18 +33,23 @@
 
 ( program )
 
-|0100
+|0100 ( -> )
 
-	( theme ) #127f .System/r DEO2 #34e7 .System/g DEO2 #56c4 .System/b DEO2
-	( vectors ) ;on-mouse .Mouse/vector DEO2
+	( theme ) 
+	#027f .System/r DEO2 
+	#04e7 .System/g DEO2 
+	#06c4 .System/b DEO2
+
+	( vectors ) 
+	;on-mouse .Mouse/vector DEO2
 	
+	( size window )
 	#00b0 .window/w POK2
 	#0050 .window/h POK2
 
 	( center window )
-
-	.Screen/width DEI2 #0002 DIV2 .window/w PEK2 #0002 DIV2 SUB2 .window/x1 POK2
-	.Screen/height DEI2 #0002 DIV2 .window/h PEK2 #0002 DIV2 SUB2 .window/y1 POK2
+	.Screen/width DEI2 2/ .window/w PEK2 2/ SUB2 .window/x1 POK2
+	.Screen/height DEI2 2/ .window/h PEK2 2/ SUB2 .window/y1 POK2
 
 	#01 .theme/r1 POK #02 .theme/g1 POK #03 .theme/b1 POK
 	#04 .theme/r2 POK #06 .theme/g2 POK #07 .theme/b2 POK
@@ -53,8 +57,8 @@
 	#0c .theme/r4 POK #0b .theme/g4 POK #0d .theme/b4 POK
 
 	( find screen center )
-	.Screen/width DEI2 #0002 DIV2 .center/x POK2
-	.Screen/height DEI2 #0002 DIV2 .center/y POK2
+	.Screen/width DEI2 2/ .center/x POK2
+	.Screen/height DEI2 2/ .center/y POK2
 
 	;update-theme JSR2
 	;draw-background JSR2
@@ -62,35 +66,33 @@
 
 BRK
 
-@on-mouse
+@on-mouse ( -> )
 	
 	;draw-cursor JSR2
 
-	.Mouse/state DEI #00 NEQ ;&no-skip JNZ2 BRK &no-skip
+	.Mouse/state DEI #00 NEQ #01 JNZ [ BRK ]
 
 	.Mouse/y DEI2 .window/y1 PEK2 SUB2 STEP8
-
 	DUP2 #0010 NEQ2 ,&no-touch-red JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-red JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-red JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/r1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/r1 #00 .selection PEK ADD2 PUT
 	&no-touch-red
 	DUP2 #0020 NEQ2 ,&no-touch-green JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-green JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-green JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/g1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/g1 #00 .selection PEK ADD2 PUT
 	&no-touch-green
 	DUP2 #0030 NEQ2 ,&no-touch-blue JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-blue JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-blue JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 S2B ;theme/b1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/b1 #00 .selection PEK ADD2 PUT
 	&no-touch-blue
 	DUP2 #0040 NEQ2 ,&no-touch-radio JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0050 ADD2 LTH2 ,&no-touch-radio JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #008c ADD2 GTH2 ,&no-touch-radio JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 S2B .selection POK
+		.Mouse/x DEI2 .window/x1 PEK2 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 SWP POP .selection POK
 	&no-touch-radio
-
 	POP2
 
 	;update-theme JSR2
@@ -98,7 +100,7 @@ BRK
 
 BRK
 
-@update-theme
+@update-theme ( -- )
 
 	#08 DEI #0f AND .theme/r1 PEK #40 SFT ADD #08 DEO
 	#0a DEI #0f AND .theme/g1 PEK #40 SFT ADD #0a DEO
@@ -115,7 +117,7 @@ BRK
 
 RTN
 
-@draw-background
+@draw-background ( -- )
 	
 	( draw hor line )
 	#0000 .Screen/x DEO2 .center/y PEK2 .Screen/y DEO2
@@ -140,7 +142,7 @@ RTN
 	#0010 .Screen/y DEO2
 	#00 #08
 	&draw-pixel1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-pixel1 JNZ
@@ -148,7 +150,7 @@ RTN
 	#0018 .Screen/y DEO2
 	#00 #08
 	&draw-pixel2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #08 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-pixel2 JNZ
@@ -156,7 +158,7 @@ RTN
 	#0020 .Screen/y DEO2
 	#00 #08
 	&draw-icn1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #20 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-icn1 JNZ
@@ -164,7 +166,7 @@ RTN
 	#0028 .Screen/y DEO2
 	#00 #08
 	&draw-icn2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #28 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-icn2 JNZ
@@ -172,7 +174,7 @@ RTN
 	#0030 .Screen/y DEO2
 	#00 #08
 	&draw-chr1
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #40 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-chr1 JNZ
@@ -180,7 +182,7 @@ RTN
 	#0038 .Screen/y DEO2
 	#00 #08
 	&draw-chr2
-		( move ) OVR #00 SWP #0008 MUL2 #0010 ADD2 .Screen/x DEO2
+		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #48 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&draw-chr2 JNZ
@@ -188,7 +190,7 @@ RTN
 
 RTN
 
-@draw-window
+@draw-window ( -- )
 	
 	.window/x1 PEK2 .window/w PEK2 ADD2 .window/x2 POK2
 	.window/y1 PEK2 .window/h PEK2 ADD2 .window/y2 POK2
@@ -196,17 +198,17 @@ RTN
 	.window/x1 PEK2 .window/y1 PEK2 .window/x2 PEK2 .window/y2 PEK2 #01 ;line-rect JSR2
 	.window/x1 PEK2 #0002 SUB2 .window/y1 PEK2 #0002 SUB2 .window/x2 PEK2 #0002 ADD2 .window/y2 PEK2 #0002 ADD2 #01 ;line-rect JSR2
 
-	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0010 ADD2 #25 ;red_txt ;draw-label JSR2
-	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0010 ADD2 #28 .System/r ;draw-byte JSR2
-	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0010 ADD2 #28 .System/r #01 ADD ;draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0010 ADD2 ;red_txt #25 ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .Screen/x DEO2 
+	.System/r DEI2 #28 ;draw-short JSR2
 
-	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0020 ADD2 #25 ;green_txt ;draw-label JSR2
-	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0020 ADD2 #28 .System/g ;draw-byte JSR2
-	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0020 ADD2 #28 .System/g #01 ADD ;draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0020 ADD2 ;green_txt #25 ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .Screen/x DEO2 
+	.System/g DEI2 #28 ;draw-short JSR2
 
-	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0030 ADD2 #25 ;blue_txt ;draw-label JSR2
-	.window/x1 PEK2 #0038 ADD2 .window/y1 PEK2 #0030 ADD2 #28 .System/b ;draw-byte JSR2
-	.window/x1 PEK2 #0048 ADD2 .window/y1 PEK2 #0030 ADD2 #28 .System/b #01 ADD ;draw-byte JSR2
+	.window/x1 PEK2 #0008 ADD2 .window/y1 PEK2 #0030 ADD2 ;blue_txt #25 ;draw-label JSR2
+	.window/x1 PEK2 #0038 ADD2 .Screen/x DEO2 
+	.System/b DEI2 #28 ;draw-short JSR2
 
 	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0010 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/r1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
 	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0020 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/g1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
@@ -235,15 +237,16 @@ RTN
 RTN
 
 @draw-cursor ( -- )
-
+	
 	( clear last cursor )
-	;clear_icn .Screen/addr DEO2
+	#fff8 .Screen/addr DEO2
 	.pointer/x PEK2 .Screen/x DEO2
 	.pointer/y PEK2 .Screen/y DEO2
 	#30 .Screen/color DEO
 
 	( record pointer positions )
-	.Mouse/x DEI2 .pointer/x POK2 .Mouse/y DEI2 .pointer/y POK2
+	.Mouse/x DEI2 .pointer/x POK2 
+	.Mouse/y DEI2 .pointer/y POK2
 
 	( draw new cursor )
 	;pointer_icn .Screen/addr DEO2
@@ -253,7 +256,7 @@ RTN
 
 RTN
 
-@draw-slider ( x1 y x2 pos color -- )
+@draw-slider ( x1* y* x2* pos* color -- )
 	
 	( load ) .color POK .slider/pos POK2 .slider/x2 POK2 .slider/y POK2 .slider/x1 POK2
 
@@ -280,7 +283,7 @@ RTN
 
 RTN
 
-@fill-rect ( x1 y1 x2 y2 color )
+@fill-rect ( x1* y1* x2* y2* color -- )
 	
 	.color POK
 	( x1 x2 y1 y2 ) ROT2 SWP2
@@ -299,7 +302,7 @@ RTN
 
 RTN
 
-@line-rect ( x1 y1 x2 y2 color -- )
+@line-rect ( x1* y1* x2* y2* color -- )
 
 	( load ) .color POK .rect/y2 POK2 .rect/x2 POK2 DUP2 .Screen/y DEO2 .rect/y1 POK2 DUP2 .Screen/x DEO2 .rect/x1 POK2
 	&hor
@@ -316,49 +319,58 @@ RTN
 
 RTN
 
-@draw-label ( x y color addr -- )
+@draw-label ( x* y* addr* color  -- )
 	
-	( load ) .label/addr POK2 .color POK .Screen/y DEO2 .Screen/x DEO2 .label/addr PEK2
+	STH STH2 
+	.Screen/y DEO2 
+	.Screen/x DEO2 
+	STH2r
 	&loop
-		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .color PEK .Screen/color DEO
+		DUP2 GET #00 SWP #0008 MUL2 
+		;font ADD2 .Screen/addr DEO2 
+		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		DUP2 GET #00 NEQ ,&loop JNZ
-	POP2
+	POP2 POPr
 
 RTN
 
-@draw-byte ( x y color addr -- )
+@draw-short ( short* color -- )
 
-	.addr POK STH
-	.Screen/y DEO2
-	.Screen/x DEO2
-	;font_hex #00 .addr PEK DEI #04 SFT #0008 MUL2 ADD2 .Screen/addr DEO2
-	STHr DUP STH .Screen/color DEO
-	;font_hex #00 .addr PEK DEI #0f AND #0008 MUL2 ADD2 .Screen/addr DEO2
+	STH SWP 
+	DUP #04 SFT #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	STHr .Screen/color DEO
+	( draw ) DUPr STHr .Screen/color DEO
+	DUP #04 SFT #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
+	.Screen/x DEI2 8+ .Screen/x DEO2
+	( draw ) STHr .Screen/color DEO
 
 RTN
 
-@clear_icn    [ 0000 0000 0000 0000 ]
+@red_txt      [ "Red 00 ]
+@green_txt    [ "Green 00 ]
+@blue_txt     [ "Blue 00 ]
+
 @pointer_icn  [ 80c0 e0f0 f8e0 1000 ]
 @halftone_icn [ aa55 aa55 aa55 aa55 ]
 @slidera_icn  [ 3f7f ffff ffff 7f3f ]
 @sliderb_icn  [ ffff ffff ffff ffff ]
 @sliderc_icn  [ fcfe ffff ffff fefc ]
 @sliderd_icn  [ 003c 7e7e 7e7e 3c00 ]
-@preview_icn  [ 183c 66db db66 3c18 0000 183c 3c18 0000 ]
+
+@preview_icn  [ 
+	183c 66db db66 3c18 
+	0000 183c 3c18 0000 ]
 @radio_icns
 	[ 3c42 8181 8181 423c ]
 	[ 3c42 99bd bd99 423c ]
-
-@red_txt   [ "Red 00 ]
-@green_txt [ "Green 00 ]
-@blue_txt  [ "Blue 00 ]
-
-@font_hex ( 0-F TODO: should pull from @font instead.. )
-[
+@font-hex [
 	003c 464a 5262 3c00 0018 0808 0808 1c00
 	003c 4202 3c40 7e00 003c 421c 0242 3c00
 	000c 1424 447e 0400 007e 407c 0242 3c00
@@ -366,11 +378,9 @@ RTN
 	003c 423c 4242 3c00 003c 4242 3e02 3c00
 	003c 4242 7e42 4200 007c 427c 4242 7c00
 	003c 4240 4042 3c00 007c 4242 4242 7c00
-	007e 4078 4040 7e00 007e 4078 4040 4000
-]
+	007e 4078 4040 7e00 007e 4078 4040 4000 ]
 
-@font ( spectrum-zx font )
-[
+@font ( spectrum-zx font ) [
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
 	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
@@ -402,5 +412,4 @@ RTN
 	0000 7844 4478 4040 0000 3c44 443c 0406 0000 2c30 2020 2000 0000 3840 3804 7800
 	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
-	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
-]
+	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c ]

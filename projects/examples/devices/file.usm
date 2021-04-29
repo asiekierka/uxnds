@@ -62,8 +62,8 @@ BRK
 
 BRK
 
-@successtxt "Success! $1
-@failedtxt "Failed. $1
+@successtxt "Success! 09 $1
+@failedtxt  "Failed. 09 $1
 
 @srcpath    "projects/pictures/ako10x10.chr $1
 @dstpath    "bin/image-copy.chr $1

@@ -14,7 +14,7 @@
 	
 BRK
 
-@print ( addr -- )
+@print ( addr* -- )
 	
 	&loop
 		( send ) DUP2 GET .Console/char DEO

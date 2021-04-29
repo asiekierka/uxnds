@@ -24,21 +24,23 @@
 
 ( program )
 
-|0100
+|0100 ( -> )
 	
 	( theme ) 
 	#0ff8 .System/r DEO2 
 	#0f08 .System/g DEO2 
 	#0f08 .System/b DEO2
+
 	( vectors ) 
 	;on-frame .Screen/vector DEO2
 
 BRK
 
-@on-frame
+@on-frame ( -> )
 
 	( only draw once per second )
-	.DateTime/second DEI .current PEK NEQ #01 JNZ [ BRK ]
+	( skip ) .DateTime/second DEI .current PEK NEQ #01 JNZ [ BRK ]
+
 	.DateTime/second DEI .current POK
 
 	( clear )

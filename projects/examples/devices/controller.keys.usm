@@ -18,6 +18,7 @@
 	#0f73 .System/r DEO2 
 	#0fe3 .System/g DEO2 
 	#0fc3 .System/b DEO2
+
 	( vectors ) 
 	;on-button .Controller/vector DEO2
 	;draw-cursor JSR2
@@ -26,7 +27,8 @@ BRK
 
 @on-button ( -> )
 	
-	.Controller/key DEI #00 NEQ ,&skip JNZ BRK &skip  
+	( skip ) .Controller/key DEI #00 NEQ #01 JNZ [ BRK ] 
+
 	.Controller/key DEI #0d NEQ ,&no-return JNZ 
 		( draw ) #20 .Screen/color DEO
 		( reset ) #0000 .Screen/x DEO2
@@ -34,9 +36,11 @@ BRK
 		;draw-cursor JSR2
 		BRK
 	&no-return
+
 	;font #00 .Controller/key DEI 8* ADD2 .Screen/addr DEO2
 	( draw ) #21 .Screen/color DEO
 	( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
+	
 	;draw-cursor JSR2
 
 BRK

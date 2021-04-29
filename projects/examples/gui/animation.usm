@@ -15,11 +15,14 @@
 	#4cfd .System/r DEO2 
 	#4cf3 .System/g DEO2 
 	#dcf2 .System/b DEO2
+
 	( vectors )
 	;on-frame .Screen/vector DEO2
+
 	( starting position )
 	.Screen/width DEI2 #0002 DIV2 .dvd/x POK2
 	.Screen/height DEI2 #0002 DIV2 .dvd/y POK2
+	
 	#21 ;draw-dvd JSR2
 	
 BRK

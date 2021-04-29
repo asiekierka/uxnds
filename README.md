@@ -38,7 +38,7 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 	
 BRK
 
-@print ( addr -- )
+@print ( addr* -- )
 	
 	&loop
 		( send ) DUP2 GET .Console/char DEO

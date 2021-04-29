@@ -14,7 +14,7 @@
 
 |00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr $2 &color $1 ]
-|90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
+|90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
 |b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
@@ -54,6 +54,7 @@ BRK
 
 	( only draw once per second )
 	.DateTime/second DEI .last PEK NEQ #01 JNZ [ BRK ]
+
 	.DateTime/second DEI .last POK
 
 	;redraw JSR2
@@ -144,7 +145,7 @@ RTN
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear .Screen/addr DEO2 
+	#fff8 .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	#30 .Screen/color DEO
@@ -160,13 +161,14 @@ RTN
 
 RTN
 
-@clear  [ 
-	0000 0000 0000 0000 ]
 @cursor [ 
 	80c0 e0f0 f8e0 1000 ]
+
 @digits [
-	7b6f 2492 73e7 73cf 5bc9 
-	79cf 49ef 7249 7bef 7bc9 ]
+	7b6f 2492 73e7 73cf 
+	5bc9 79cf 49ef 7249 
+	7bef 7bc9 ]
+
 @tiles [
 	0102 0408 1020 4080
 	8040 2010 0804 0201 

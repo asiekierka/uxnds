@@ -7,35 +7,38 @@
 
 ( devices )
 
-|00 @System     [ &vector $2 &pad    $6 &r      $2 &g     $2 &b      $2 ]
-|20 @Screen     [ &vector $2 &width  $2 &height $2 &pad   $2 &x      $2 &y    $2 &addr  $2 &color $1 ]
-|30 @Audio      [ &pad $8 &adsr $2 &len $2 &addr $2 &volume $1 &pitch $1 ]
+|00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y    $2 &addr  $2 &color $1 ]
+|30 @Audio0     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr $2 &volume $1 &pitch $1 ]
 
 |0100 ( -> )
 	
-	( set color pallete )
+	( theme )
 	#00ff .System/r DEO2 
 	#0f0f .System/g DEO2 
 	#0ff0 .System/b DEO2 
 
-	;on-frame .Screen/vector DEO2 ( run on-frame every 1/60th of a second )
-	#ff .Audio/volume DEO         ( set volume to max )
-	;saw .Audio/addr DEO2         ( set waveform to saw for audio engine )
-	;saw/end ;saw SUB2 .Audio/len DEO2
-	#1202 .Audio/adsr DEO2        ( set envelope for audio engine )
+	( vectors )
+	;on-frame .Screen/vector DEO2
+
+	( setup synth )
+	#1202 .Audio0/adsr DEO2
+	;saw .Audio0/addr DEO2
+	#0100 .Audio0/length DEO2
+	#ff .Audio0/volume DEO
 
 BRK
 
 @on-frame ( -> )
 
 	( incr ) .timer PEK #01 ADD .timer POK 
-	( skip ) .timer PEK #10 EQU ,&play-note JNZ BRK &play-note
+	( skip ) .timer PEK #10 EQU #01 JNZ [ BRK ]
 
 	( get note )
 	;melody #00 .progress PEK ADD2 GET 
 
 	( play note )
-	DUP .Audio/pitch DEO
+	DUP .Audio0/pitch DEO
 
 	( erase last note )
 	#20  .Screen/color DEO
@@ -52,42 +55,28 @@ BRK
 
 BRK
 
-@silence ( -> )
+@dot [ 003c 7eff 7e3c 0000 ] 
 
-BRK
-
-( defines a sawtooth wave. )
-
-@saw ( -> )
-	5f5f 5e5e 5e5d 5d5d 5c5c 5b5b 5b5a 5a5a
-	5959 5858 5857 5757 5656 5555 5554 5454
-	5353 5252 5251 5151 5050 4f4f 4f4e 4e4e
-	4d4d 4c4c 4c4b 4b4b 4a4a 4949 4948 4848
-	4747 4646 4645 4545 4444 4343 4342 4242
-	4141 4040 403f 3f3f 3e3e 3d3d 3d3c 3c3c
-	3b3b 3a3a 3a39 3939 3838 3737 3736 3636
-	3535 3434 3433 3333 3232 3131 3130 3030
-	2f2f 2e2e 2e2d 2d2d 2c2c 2b2b 2b2a 2a2a
-	2929 2828 2827 2727 2626 2525 2524 2424
-	2323 2222 2221 2121 2020 1f1f 1f1e 1e1e
-	1d1d 1c1c 1c1b 1b1b 1a1a 1919 1918 1818
-	1717 1616 1615 1515 1414 1313 1312 1212
-	1111 1010 100f 0f0f 0e0e 0d0d 0d0c 0c0c
-	0b0b 0a0a 0a09 0909 0808 0707 0706 0606
-	0505 0404 0403 0303 0202 0101 0100 0000
-	&end
-
-BRK
-
-( song data, #ff is used for a rest )
+@saw [
+	0003 0609 0c0f 1215 181b 1e21 2427 2a2d
+	3033 3639 3b3e 4143 4649 4b4e 5052 5557
+	595b 5e60 6264 6667 696b 6c6e 7071 7274
+	7576 7778 797a 7b7b 7c7d 7d7e 7e7e 7e7e
+	7f7e 7e7e 7e7e 7d7d 7c7b 7b7a 7978 7776
+	7574 7271 706e 6c6b 6967 6664 6260 5e5b
+	5957 5552 504e 4b49 4643 413e 3b39 3633
+	302d 2a27 2421 1e1b 1815 120f 0c09 0603
+	00fd faf7 f4f1 eeeb e8e5 e2df dcd9 d6d3
+	d0cd cac7 c5c2 bfbd bab7 b5b2 b0ae aba9
+	a7a5 a2a0 9e9c 9a99 9795 9492 908f 8e8c
+	8b8a 8988 8786 8585 8483 8382 8282 8282
+	8182 8282 8282 8383 8485 8586 8788 898a
+	8b8c 8e8f 9092 9495 9799 9a9c 9ea0 a2a5
+	a7a9 abae b0b2 b5b7 babd bfc2 c5c7 cacd
+	d0d3 d6d9 dcdf e2e5 e8eb eef1 f4f7 fafd ]
 
 @melody [ 
 	54 52 54 4f 4b 4f 48 ff
 	54 52 54 4f 4b 4f 48 ff
 	54 56 57 56 57 54 56 54 
-	56 52 54 52 54 50 54 ff
-] 
-
-( dot sprite )
-	 
-@dot [ 003c 7eff 7e3c 0000 ] 
+	56 52 54 52 54 50 54 ff ] 

@@ -82,7 +82,7 @@ BRK
 
 RTN
 
-@line-rect ( x1 y1 x2 y2 color )
+@line-rect ( x1* y1* x2* y2* color -- )
 
 	( load ) .color POK .rect/y2 POK2 .rect/x2 POK2 DUP2 .Screen/y DEO2 .rect/y1 POK2 DUP2 .Screen/x DEO2 .rect/x1 POK2
 	&hor
