@@ -16,9 +16,6 @@
 |10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr $2 &color $1 ]
 |30 @Audio0     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr $2 &volume $1 &pitch $1 ]
-|40 @Audio1     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr $2 &volume $1 &pitch $1 ]
-|50 @Audio2     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr $2 &volume $1 &pitch $1 ]
-|60 @Audio3     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr $2 &volume $1 &pitch $1 ]
 |70 @Midi       [ &vector $2 &channel  $1 &note   $1 &velocity $1 ]
 |80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
@@ -28,13 +25,12 @@
 
 |0000
 
-@last-note $1
-@octave $1
-@addr $1
-@color $1
+@last-note   $1
+@octave      $1
+@color       $1
 @pointer     [ &x $2 &y $2 ]
-@knob        [ &x $2 &y $2 &value $1 ]
 @center      [ &x $2 &y $2 ]
+@knob        [ &x $2 &y $2 &value $1 ]
 @adsr-view   [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @wave-view   [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @octave-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
@@ -87,16 +83,6 @@
 	#88 .Audio0/volume DEO
 	WAVEFORM .Audio0/addr DEO2
 	#0100 .Audio0/length DEO2
-
-	#011a .Audio1/adsr DEO2
-	#88 .Audio1/volume DEO
-	WAVEFORM #0100 ADD2 .Audio1/addr DEO2
-	#0100 .Audio1/length DEO2
-
-	#1118 .Audio2/adsr DEO2
-	#88 .Audio2/volume DEO
-	WAVEFORM #0200 ADD2 .Audio2/addr DEO2
-	#0100 .Audio2/length DEO2
 
 	( inital drawing ) 
 	;draw-octave JSR2
