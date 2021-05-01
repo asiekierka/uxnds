@@ -31,8 +31,6 @@
 	.Screen/width DEI2 #0002 / #0008 - .cat/x POK2
 	.Screen/height DEI2 #0004 / #0003 * #0018 - .cat/y POK2
 
-	( place polycat )
-
 	( vectors )
 	;on-mouse .Mouse/vector DEO2
 	;on-frame .Screen/vector DEO2
@@ -48,19 +46,19 @@ BRK
 
 	.Mouse/x DEI2 .cat/x PEK2 > #20 MUL
 	.Mouse/y DEI2 .cat/y PEK2 > #40 MUL
-	ADD #00 SWP ;draw-eye JSR2
+		ADD #00 SWP ;draw-eye JSR2
 
 BRK
 
 @on-frame ( -> )
 
 	.cat/timer PEK #01 ADD [ DUP ] .cat/timer POK
-	DUP #00 NEQ ,&skip0 JNZ #0000 ;draw-tail JSR2 &skip0
-	DUP #10 NEQ ,&skip1 JNZ #0001 ;draw-tail JSR2 &skip1
-	DUP #20 NEQ ,&skip2 JNZ #0002 ;draw-tail JSR2 &skip2
-	DUP #30 NEQ ,&skip3 JNZ #0003 ;draw-tail JSR2 &skip3
-	DUP #40 NEQ ,&skip4 JNZ #0002 ;draw-tail JSR2 &skip4
-	DUP #50 NEQ ,&skip5 JNZ #0001 ;draw-tail JSR2 &skip5
+		DUP #00 NEQ ,&skip0 JNZ #0000 ;draw-tail JSR2 &skip0
+		DUP #10 NEQ ,&skip1 JNZ #0001 ;draw-tail JSR2 &skip1
+		DUP #20 NEQ ,&skip2 JNZ #0002 ;draw-tail JSR2 &skip2
+		DUP #30 NEQ ,&skip3 JNZ #0003 ;draw-tail JSR2 &skip3
+		DUP #40 NEQ ,&skip4 JNZ #0002 ;draw-tail JSR2 &skip4
+		DUP #50 NEQ ,&skip5 JNZ #0001 ;draw-tail JSR2 &skip5
 	POP
 
 BRK
@@ -69,42 +67,39 @@ BRK
 
 	( ears )
 	.cat/y PEK2 .Screen/y DEO2
-
-	.cat/x PEK2 #0008 - .Screen/x DEO2
+	.cat/x PEK2 DUP2 STH2 #0008 - .Screen/x DEO2
 	;ears .Screen/addr DEO2
 	#41 .Screen/color DEO
-	.cat/x PEK2 .Screen/x DEO2
+	STH2r .Screen/x DEO2
 	;ears #0010 + .Screen/addr DEO2
 	#41 .Screen/color DEO
 
-	#0000 ;draw-eye JSR2
-	#0000 ;draw-tail JSR2
+	#0000 ,draw-eye JSR
+	#0000 ,draw-tail JSR
 
 RTN
 
 @draw-eye ( quad* -- )
 	
 	.cat/y PEK2 #0008 + .Screen/y DEO2
-	.cat/x PEK2 #0008 - .Screen/x DEO2
-
+	.cat/x PEK2 DUP2 STH2 #0008 - .Screen/x DEO2
 	DUP2 ;eye + .Screen/addr DEO2
-	#41 .Screen/color DEO
-	.cat/x PEK2 .Screen/x DEO2
+	( draw ) #41 .Screen/color DEO
+	STH2r .Screen/x DEO2
 	;eye #0010 + + .Screen/addr DEO2
-	#41 .Screen/color DEO
+	( draw ) #41 .Screen/color DEO
 
 RTN
 
 @draw-tail ( frame* -- )
 
 	.cat/y PEK2 #0010 + .Screen/y DEO2
-
-	.cat/x PEK2 #0008 - .Screen/x DEO2
+	.cat/x PEK2 DUP2 STH2 #0008 - .Screen/x DEO2
 	;body .Screen/addr DEO2
-	#41 .Screen/color DEO
-	.cat/x PEK2 .Screen/x DEO2
+	( draw ) #41 .Screen/color DEO
+	STH2r .Screen/x DEO2
 	#0010 * ;body #0010 + + .Screen/addr DEO2
-	#41 .Screen/color DEO
+	( draw ) #41 .Screen/color DEO
 
 RTN
 
@@ -115,13 +110,16 @@ RTN
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	#30 .Screen/color DEO
+
 	( record pointer positions )
 	.Mouse/x DEI2 .pointer/x POK2 
 	.Mouse/y DEI2 .pointer/y POK2
+
 	( draw new cursor )
 	;cursor .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
+
 	( colorize on state )
 	#31 [ .Mouse/state DEI #00 NEQ ] ADD .Screen/color DEO
 
@@ -135,10 +133,10 @@ RTN
 
 	#00 #10
 	&loop
-		#21 .Screen/color DEO
-		.Screen/addr DEI2 #0008 + .Screen/addr DEO2
-		.Screen/x DEI2 #0008 + .Screen/x DEO2
-		SWP #01 ADD SWP
+		( draw ) #21 .Screen/color DEO
+		( sety ) .Screen/addr DEI2 #0008 + .Screen/addr DEO2
+		( setx ) .Screen/x DEI2 #0008 + .Screen/x DEO2
+		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
 	POP2
 
@@ -172,5 +170,5 @@ RTN
 	e0e0 e0e0 e080 8000 f2f9 f9fe b884 8400 ]
 
 @ground [
-	bf15 0210 0200 0200 ff55 aa54 a900 2000
-	fb55 aa45 2200 0400 ba40 a040 8880 0080 ]
+	bf00 5c02 0202 020c ef10 6f90 8080 8074
+	ff00 fe01 0100 0116 fd00 3c40 4040 4028 ]
