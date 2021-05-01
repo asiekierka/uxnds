@@ -1,26 +1,15 @@
 ( polycat )
 
 %RTN { JMP2r }
-%8+ { #0008 ADD2 }
-%2/ { #0002 DIV2 }
-%MOD { DUP2 DIV MUL SUB }
-%INC { #01 ADD }
-%TOS { #00 SWP }
+%+ { ADD2 } %- { SUB2 } 
+%* { MUL2 } %/ { DIV2 } 
+%> { GTH2 }
 
 ( devices )
 
 |00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color $1 ]
-|30 @Audio0     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|40 @Audio1     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|50 @Audio2     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|60 @Audio3     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|70 @Midi       [ &vector $2 &channel  $1 &note   $1 &velocity $1 ]
-|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
-|a0 @File       [ &vector $2 &success  $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
-|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
 
@@ -39,8 +28,8 @@
 	#0caf .System/b DEO2
 
 	( find center )
-	.Screen/width DEI2 2/ #0008 SUB2 .cat/x POK2
-	.Screen/height DEI2 #0004 DIV2 #0003 MUL2 #0018 SUB2 .cat/y POK2
+	.Screen/width DEI2 #0002 / #0008 - .cat/x POK2
+	.Screen/height DEI2 #0004 / #0003 * #0018 - .cat/y POK2
 
 	( place polycat )
 
@@ -57,8 +46,8 @@ BRK
 	
 	;draw-cursor JSR2
 
-	.Mouse/x DEI2 .cat/x PEK2 GTH2 #20 MUL
-	.Mouse/y DEI2 .cat/y PEK2 GTH2 #40 MUL
+	.Mouse/x DEI2 .cat/x PEK2 > #20 MUL
+	.Mouse/y DEI2 .cat/y PEK2 > #40 MUL
 	ADD #00 SWP ;draw-eye JSR2
 
 BRK
@@ -81,11 +70,11 @@ BRK
 	( ears )
 	.cat/y PEK2 .Screen/y DEO2
 
-	.cat/x PEK2 #0008 SUB2 .Screen/x DEO2
+	.cat/x PEK2 #0008 - .Screen/x DEO2
 	;ears .Screen/addr DEO2
 	#41 .Screen/color DEO
 	.cat/x PEK2 .Screen/x DEO2
-	;ears #0010 ADD2 .Screen/addr DEO2
+	;ears #0010 + .Screen/addr DEO2
 	#41 .Screen/color DEO
 
 	#0000 ;draw-eye JSR2
@@ -95,26 +84,26 @@ RTN
 
 @draw-eye ( quad* -- )
 	
-	.cat/y PEK2 #0008 ADD2 .Screen/y DEO2
-	.cat/x PEK2 #0008 SUB2 .Screen/x DEO2
+	.cat/y PEK2 #0008 + .Screen/y DEO2
+	.cat/x PEK2 #0008 - .Screen/x DEO2
 
-	DUP2 ;eye ADD2 .Screen/addr DEO2
+	DUP2 ;eye + .Screen/addr DEO2
 	#41 .Screen/color DEO
 	.cat/x PEK2 .Screen/x DEO2
-	;eye #0010 ADD2 ADD2 .Screen/addr DEO2
+	;eye #0010 + + .Screen/addr DEO2
 	#41 .Screen/color DEO
 
 RTN
 
 @draw-tail ( frame* -- )
 
-	.cat/y PEK2 #0010 ADD2 .Screen/y DEO2
+	.cat/y PEK2 #0010 + .Screen/y DEO2
 
-	.cat/x PEK2 #0008 SUB2 .Screen/x DEO2
+	.cat/x PEK2 #0008 - .Screen/x DEO2
 	;body .Screen/addr DEO2
 	#41 .Screen/color DEO
 	.cat/x PEK2 .Screen/x DEO2
-	#0010 MUL2 ;body #0010 ADD2 ADD2 .Screen/addr DEO2
+	#0010 * ;body #0010 + + .Screen/addr DEO2
 	#41 .Screen/color DEO
 
 RTN
@@ -140,15 +129,15 @@ RTN
 
 @draw-ground ( -- )
 
-	.cat/y PEK2 #0018 ADD2 .Screen/y DEO2
-	.cat/x PEK2 #0010 SUB2 .Screen/x DEO2
+	.cat/y PEK2 #0018 + .Screen/y DEO2
+	.cat/x PEK2 #0010 - .Screen/x DEO2
 	;ground .Screen/addr DEO2
 
 	#00 #10
 	&loop
 		#21 .Screen/color DEO
-		.Screen/addr DEI2 #0008 ADD2 .Screen/addr DEO2
-		.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+		.Screen/addr DEI2 #0008 + .Screen/addr DEO2
+		.Screen/x DEI2 #0008 + .Screen/x DEO2
 		SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
 	POP2
