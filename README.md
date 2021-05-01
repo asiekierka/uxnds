@@ -1,10 +1,10 @@
 # Uxn
 
-A [stack-based VM](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C. 
+An [8-bit stack-based computer](https://wiki.xxiivv.com/site/uxn.html), written in ANSI C. 
 
 ## Build
 
-To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/).
+To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/) and [Portmidi](http://portmedia.sourceforge.net/portmidi/).
 
 ```sh
 ./build.sh 
@@ -34,7 +34,7 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 |0100 ( -> )
 	
-	;hello-word ;print JSR2
+	;hello-word ,print JSR
 	
 BRK
 
@@ -54,11 +54,6 @@ RTN
 ## TODOs
 
 - Shortcut to export/import disk state
-- Implement Uxambly REPL
-- Load disks at a different place than 0x0000.
-- Curl device? 8-bit web browser?
-	- Replace LTS/GTS? `LTS = #80 ADD SWP #80 ADD SWP LTH`
-	- `#80 ADD SWP #80 ADD GTH`
 
 ## Palettes
 

@@ -1,7 +1,9 @@
 ( dev/mouse )
 
-%RTN { JMP2r }
-%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }.
+%RTN   { JMP2r }
+%ABS2  { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
+%LTS2  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 }
+%GTS2  { #8000 ADD2 SWP2 #8000 ADD2 LTH2 }
 
 ( devices )
 
@@ -93,15 +95,15 @@ RTN
 	( load ) .color POK .line/y0 POK2 .line/x0 POK2 .line/y POK2 .line/x POK2
 	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
 	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
-	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2 
-	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2 
+	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
+	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
 	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
 	&loop
-		( draw ) 
 		.line/x PEK2 .Screen/x DEO2 
 		.line/y PEK2 .Screen/y DEO2 
 		.color PEK .Screen/color DEO
-		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		[ .line/x PEK2 .line/x0 PEK2 EQU2 ] 
+		[ .line/y PEK2 .line/y0 PEK2 EQU2 ] #0101 EQU2 ,&end JNZ
 		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
 		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
 			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
@@ -111,7 +113,7 @@ RTN
 			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
 			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
 		&skipx
-		,&loop JMP
+		;&loop JMP2
 	&end
 
 RTN

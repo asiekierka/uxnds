@@ -10,7 +10,7 @@
 
 |0100 ( -> )
 	
-	;hello-word ;print JSR2
+	;hello-word ,print JSR
 	
 BRK
 
