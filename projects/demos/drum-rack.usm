@@ -40,9 +40,13 @@
 @color $1
 @center      [ &x $2 &y $2 ]
 @pointer     [ &x $2 &y $2 ]
-@rect [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@frame [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@label [ &x $2 &y $2 &color $1 &addr $2 ]
+@knob        [ &x $2 &y $2 &value $1 ]
+@rect        [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@frame       [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@label       [ &x $2 &y $2 &color $1 &addr $2 ]
+@pos         [ &x $2 &y $2 ] 
+@padview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@mixview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 
 @state [ ( addr length )
 	$4 $4 $4 $4
@@ -79,12 +83,46 @@
 	.Screen/height DEI2 2/ .center/y POK2
 
 	( place views )
-	.center/x PEK2 PAD-WIDTH 2* SUB2 .frame/x1 POK2
-	.center/y PEK2 PAD-HEIGHT 2/ SUB2 .frame/y1 POK2
-	.center/x PEK2 PAD-WIDTH 2* ADD2 .frame/x2 POK2
+	.center/x PEK2 PAD-WIDTH #0003 MUL2 SUB2 #0010 SUB2 .frame/x1 POK2
+	.center/y PEK2 PAD-HEIGHT 2* SUB2 .frame/y1 POK2
+	.center/x PEK2 PAD-WIDTH #0003 MUL2 ADD2 #0010 ADD2 .frame/x2 POK2
 	.center/y PEK2 PAD-HEIGHT 2* ADD2 .frame/y2 POK2
 
+	( place padview )
+	.frame/x1 PEK2 .padview/x1 POK2
+	.frame/y1 PEK2 .padview/y1 POK2
+	.padview/x1 PEK2 #0004 PAD-WIDTH MUL2 ADD2 .padview/x2 POK2
+	.padview/y1 PEK2 #0004 PAD-HEIGHT MUL2 ADD2 .padview/y2 POK2
+
+	( place mixview )
+	.padview/x2 PEK2 .mixview/x1 POK2
+	.padview/y1 PEK2 .mixview/y1 POK2
+	.mixview/x1 PEK2 #0080 ADD2 .mixview/x2 POK2
+	.padview/y2 PEK2 .mixview/y2 POK2
+
 	;draw-pads JSR2
+	;draw-mixers JSR2
+
+	.frame/x1 PEK2 #0004 SUB2 
+	.frame/y1 PEK2 #0004 SUB2 
+	.frame/x2 PEK2 #0002 ADD2
+	.frame/y2 PEK2 #0002 ADD2
+	#03
+	;line-rect JSR2
+
+	.padview/x1 PEK2 #0002 SUB2
+	.padview/y1 PEK2 #0002 SUB2
+	.padview/x2 PEK2
+	.padview/y2 PEK2
+	#02
+	;line-rect JSR2
+
+	.mixview/x1 PEK2 #0002 ADD2
+	.mixview/y1 PEK2 #0002 SUB2
+	.mixview/x2 PEK2
+	.mixview/y2 PEK2
+	#02
+	;line-rect JSR2
 
 BRK
 
@@ -119,14 +157,9 @@ BRK
 
 	.Mouse/state DEI #00 NEQ ,&on-touch JNZ BRK &on-touch
 
-	( x ) .Mouse/x DEI2 .center/x PEK2 PAD-WIDTH 2* SUB2 SUB2 PAD-WIDTH DIV2 SWP POP
-	( y ) .Mouse/y DEI2 .center/y PEK2 PAD-HEIGHT 2* SUB2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
-	DUP #b0 SWP
-	;play-pad JSR2
-
-	( select ) DUP .selection POK ;draw-editor JSR2
-
-	( release ) #00 .Mouse/state DEO
+	.Mouse/x DEI2 DUP2 .padview/x1 PEK2 GTH2 ROT ROT .padview/x2 PEK2 #0001 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .padview/y1 PEK2 GTH2 ROT ROT .padview/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-pad JNZ2
 
 BRK
 
@@ -167,6 +200,20 @@ BRK
 	DUP #63 NEQ ,&no-e JNZ #b0 #0e ;play-pad JSR2 &no-e
 	DUP #76 NEQ ,&no-f JNZ #b0 #0f ;play-pad JSR2 &no-f
 	POP
+
+BRK
+
+@on-touch-pad ( -> )
+	
+
+	( x ) .Mouse/x DEI2 .padview/x1 PEK2 SUB2 PAD-WIDTH DIV2 SWP POP
+	( y ) .Mouse/y DEI2 .padview/y1 PEK2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
+	DUP #b0 SWP
+	;play-pad JSR2
+
+	( select ) DUP .selection POK ;draw-editor JSR2
+
+	( release ) #00 .Mouse/state DEO
 
 BRK
 
@@ -232,18 +279,54 @@ RTN
 
 	;cursor .Screen/addr DEO2
 
-	( y ) DUP TOS #0002 SUB2 PAD-HEIGHT MUL2 .center/y PEK2 ADD2 
-	( x ) .center/x PEK2 PAD-WIDTH 2* ADD2 
-	SWP2 
-	.Screen/y DEO2
-	.Screen/x DEO2
+	DUP #00 SWP PAD-HEIGHT MUL2 .mixview/y1 PEK2 ADD2 STH2
 
-	#23 .Screen/color DEO
+	( adsr )
+	.mixview/x1 PEK2 #0008 ADD2 DUP2r STH2r
+		.Audio0/adsr DEI #04 SFT
+		;draw-knob JSR2
+	.mixview/x1 PEK2 #0018 ADD2 DUP2r STH2r
+		.Audio0/adsr DEI #0f AND
+		;draw-knob JSR2
+	.mixview/x1 PEK2 #0028 ADD2 DUP2r STH2r
+		.Audio0/adsr #01 ADD DEI #04 SFT
+		;draw-knob JSR2
+	.mixview/x1 PEK2 #0038 ADD2 DUP2r STH2r
+		.Audio0/adsr #01 ADD DEI #0f AND
+		;draw-knob JSR2
+
+	( volume )
+	.mixview/x1 PEK2 #0058 ADD2 DUP2r STH2r
+		.Audio0/volume DEI #04 SFT
+		;draw-knob JSR2
+	.mixview/x1 PEK2 #0068 ADD2 DUP2r STH2r
+		.Audio0/volume DEI #0f AND
+		;draw-knob JSR2
 
 	POP
+	POP2r
 
 	( once/repeat interface )
-	( draw ADSR knobs )
+
+RTN
+
+@draw-knob ( x* y* value -- )
+
+	( load ) .knob/value POK .knob/y POK2 .knob/x POK2
+
+	.knob/x PEK2 .Screen/x DEO2
+	.knob/y PEK2 .Screen/y DEO2 ;knob_icns .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 GET ADD2 .Screen/x DEO2
+	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 GET ADD2 .Screen/y DEO2
+	;knob_icns #0020 ADD2 .Screen/addr DEO2
+	#25 .Screen/color DEO
+	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
+	.knob/y PEK2 #0010 ADD2 .Screen/y DEO2
+	;font-hex #00 .knob/value PEK #08 MUL ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
 
 RTN
 
@@ -258,14 +341,25 @@ RTN
 
 RTN
 
+@draw-mixers ( -- )
+	
+	#00 #04
+	&loop
+		OVR ;draw-mixer JSR2
+		SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+
+RTN
+
 @draw-pad ( pad color -- )
 	
 	STH STH
 
 	DUPr STHr 
 
-	DUP #04 DIV SWP #04 MOD TOS PAD-WIDTH MUL2 ( center ) .center/x PEK2 ADD2 PAD-WIDTH #0002 MUL2 SUB2
-	ROT TOS PAD-HEIGHT MUL2 ( center ) .center/y PEK2 ADD2 PAD-HEIGHT #0002 MUL2 SUB2
+	DUP #04 DIV SWP #04 MOD TOS PAD-WIDTH MUL2 ( center ) .padview/x1 PEK2 ADD2 
+	ROT TOS PAD-HEIGHT MUL2 ( center ) .padview/y1 PEK2 ADD2 
 
 	( draw outline )
 	OVR2 OVR2 
@@ -384,6 +478,21 @@ RTN
 	"projects/sounds/snr2.ss8 $1 "projects/sounds/sid2.ss8 $1
 	"projects/sounds/bdr1.ss8 $1 "projects/sounds/kck1.ss8 $1
 	"projects/sounds/kck2.ss8 $1 "projects/sounds/bdr2.ss8 $1 ]
+
+@knob_icns [
+	0003 0c10 2020 4040
+	00c0 3008 0404 0202
+	4040 2020 100c 0300
+	0202 0404 0830 c000
+	0000 183c 3c18 0000 ]
+
+@knob-offsetx [
+	01 00 00 00 00 01 02 03
+	05 06 07 08 08 08 08 07 ]
+
+@knob-offsety [
+	07 06 05 03 02 01 00 00
+	00 00 01 02 03 05 06 07 ]
 
 @clear  [ 
 	0000 0000 0000 0000 ]
