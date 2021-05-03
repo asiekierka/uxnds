@@ -84,10 +84,10 @@
 	;on-midi .Midi/vector DEO2
 
 	( store location/length )
-	#88 .Audio0/volume DEO #023c .Audio0/adsr DEO2
-	#7a .Audio1/volume DEO #1334 .Audio1/adsr DEO2
-	#a7 .Audio2/volume DEO #0414 .Audio2/adsr DEO2
-	#88 .Audio3/volume DEO #022c .Audio3/adsr DEO2
+	#dd .Audio0/volume DEO #023c .Audio0/adsr DEO2
+	#ce .Audio1/volume DEO #1334 .Audio1/adsr DEO2
+	#ec .Audio2/volume DEO #0414 .Audio2/adsr DEO2
+	#ee .Audio3/volume DEO #022c .Audio3/adsr DEO2
 
 	#0400 .Audio0/length DEO2
 	#0800 .Audio1/length DEO2
@@ -155,23 +155,17 @@ BRK
 
 @on-frame ( -> )
 	
-	.frame/y2 PEK2 .Screen/y DEO2
-
-	.center/x PEK2 PAD-WIDTH 2* SUB2 .Screen/x DEO2
-	.Audio0/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	.center/x PEK2 PAD-WIDTH 2* SUB2 #0008 ADD2 .Screen/x DEO2
-	.Audio1/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	.center/x PEK2 PAD-WIDTH 2* SUB2 #0010 ADD2 .Screen/x DEO2
-	.Audio2/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	.center/x PEK2 PAD-WIDTH 2* SUB2 #0018 ADD2 .Screen/x DEO2
-	.Audio3/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
+	( update VU monitors )
+	#00 #04
+	&loop
+		OVR STH
+		( x ) .mix-view/x1 PEK2 #0074 ADD2
+		( y ) .mix-view/y1 PEK2 PAD-HEIGHT DUPr STHr TOS MUL2 ADD2 #0002 ADD2
+		( output ) .Audio0/output STHr #10 MUL ADD DEI 
+		;draw-monitor JSR2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
 
 BRK
 
@@ -200,7 +194,7 @@ BRK
 	.Midi/note DEI #00 NEQ ,&note-on JNZ BRK &note-on
 
 	.Midi/channel DEI #90 NEQ ,&no-drum JNZ 
-		( .Midi/note DEI DUP #80 ADD SWP #10 MOD ;play-pad JSR2 )
+		.Midi/note DEI #10 MOD ;play-pad JSR2 )
 		BRK
 	&no-drum
 
@@ -380,7 +374,7 @@ RTN
 	.wav-view/x1 PEK2 #0002 ADD2 .Screen/x DEO2
 
 	( waveform )
-	#00 #ff
+	#00 #e8
 	&loop
 		( dotted line )
 		OVR #01 AND ,&no-dot JNZ 
@@ -568,6 +562,28 @@ RTN
 	;font-hex .piano/octave PEK #03 ADD #00 SWP #0008 MUL2 ADD2 .Screen/addr DEO2
 	.oct-view/y1 PEK2 8+ .Screen/y DEO2
 	#23 .Screen/color DEO
+
+RTN
+
+@draw-monitor ( x* y* stereo -- )
+
+	STH 
+
+	.Screen/y DEO2
+	.Screen/x DEO2
+
+	#00 #0f
+	&loop
+		OVR #10 SWP SUB DUPr STHr #0f AND LTH #01 ADD .Screen/color DEO
+		.Screen/x DEI2 #0002 ADD2 .Screen/x DEO2
+		OVR #10 SWP SUB DUPr STHr #04 SFT LTH #01 ADD .Screen/color DEO
+		.Screen/x DEI2 #0002 SUB2 .Screen/x DEO2
+		.Screen/y DEI2 #0002 ADD2 .Screen/y DEO2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+
+	POPr
 
 RTN
 
