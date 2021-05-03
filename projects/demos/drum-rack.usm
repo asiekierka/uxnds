@@ -1,8 +1,6 @@
 ( drum rack 
 
 	TODO
-		- Change pitch of sample
-		- Draw pad pitch on pad
 		- When selecting a pad, should highlight note in octave
 )
 
@@ -21,7 +19,6 @@
 
 %PAD-WIDTH { #0030 }
 %PAD-HEIGHT { #0020 }
-%STATE-LENGTH { #04 }
 
 ( devices )
 
@@ -44,7 +41,6 @@
 
 @piano [ &last $1 &octave $1 ]
 
-@last-note $1
 @last $1
 @color $1
 @center      [ &x $2 &y $2 ]
@@ -53,18 +49,10 @@
 @rect        [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @frame       [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @label       [ &x $2 &y $2 &color $1 &addr $2 ]
-@pos         [ &x $2 &y $2 ] 
-@pad-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@mix-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@oct-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@wav-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-
-@state [ ( addr length )
-	$4 $4 $4 $4
-	$4 $4 $4 $4
-	$4 $4 $4 $4
-	$4 $4 $4 $4
-]
+@pad-view    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@mix-view    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@oct-view    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@wav-view    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 
 @modes [ $1 $1 $1 $1 ] ( single/repeat )
 
@@ -95,7 +83,7 @@
 	#1000 .Audio3/length DEO2
 
 	#01 .modes POK
-	#03 .piano/octave POK
+	#01 .piano/octave POK
 
 	;load-samples JSR2
 
@@ -309,7 +297,7 @@ BRK
 		DUP2 ;notes ADD2 LDA .last PEK SWP .piano/octave PEK #02 SUB #0c MUL ADD ;set-pitch JSR2
 
 		( record last note )
-		SWP POP .last-note POK 
+		SWP POP .piano/last POK 
 		.last PEK ;play-pad JSR2
 
 		( release ) #00 .Mouse/state DEO
@@ -541,13 +529,13 @@ RTN
 	
 	.oct-view/x1 PEK2 .oct-view/y1 PEK2
 
-	OVR2 OVR2 ;keys-left-icns #21 .last-note PEK #00 EQU ADD ;draw-key JSR2
-	OVR2 8+ OVR2 ;keys-middle-icns #21 .last-note PEK #01 EQU ADD ;draw-key JSR2
-	OVR2 #0010 ADD2 OVR2 ;keys-right-icns #21 .last-note PEK #02 EQU ADD ;draw-key JSR2
-	OVR2 #0018 ADD2 OVR2 ;keys-left-icns #21 .last-note PEK #03 EQU ADD ;draw-key JSR2
-	OVR2 #0020 ADD2 OVR2 ;keys-middle-icns #21 .last-note PEK #04 EQU ADD ;draw-key JSR2
-	OVR2 #0028 ADD2 OVR2 ;keys-middle-icns #21 .last-note PEK #05 EQU ADD ;draw-key JSR2
-	SWP2 #0030 ADD2 SWP2 ;keys-right-icns #21 .last-note PEK #06 EQU ADD ;draw-key JSR2
+	OVR2 OVR2 ;keys-left-icns #21 .piano/last PEK #00 EQU ADD ;draw-key JSR2
+	OVR2 8+ OVR2 ;keys-middle-icns #21 .piano/last PEK #01 EQU ADD ;draw-key JSR2
+	OVR2 #0010 ADD2 OVR2 ;keys-right-icns #21 .piano/last PEK #02 EQU ADD ;draw-key JSR2
+	OVR2 #0018 ADD2 OVR2 ;keys-left-icns #21 .piano/last PEK #03 EQU ADD ;draw-key JSR2
+	OVR2 #0020 ADD2 OVR2 ;keys-middle-icns #21 .piano/last PEK #04 EQU ADD ;draw-key JSR2
+	OVR2 #0028 ADD2 OVR2 ;keys-middle-icns #21 .piano/last PEK #05 EQU ADD ;draw-key JSR2
+	SWP2 #0030 ADD2 SWP2 ;keys-right-icns #21 .piano/last PEK #06 EQU ADD ;draw-key JSR2
 
 	.oct-view/x1 PEK2 #0040 ADD2 .Screen/x DEO2
 
@@ -773,24 +761,6 @@ RTN
 @knob-offsety [
 	07 06 05 03 02 01 00 00
 	00 00 01 02 03 05 06 07 ]
-
-@meter [
-	0000 0000 0000 0000
-	0000 0000 0000 0070 
-	0000 0000 0000 007e
-	0000 0000 0000 707e
-	0000 0000 0070 7e7e
-	0000 0000 007e 7e7e
-	0000 0000 707e 7e7e
-	0000 0000 7e7e 7e7e
-	0000 0070 7e7e 7e7e
-	0000 007e 7e7e 7e7e
-	0000 707e 7e7e 7e7e
-	0000 7e7e 7e7e 7e7e
-	0070 7e7e 7e7e 7e7e
-	007e 7e7e 7e7e 7e7e
-	707e 7e7e 7e7e 7e7e
-	7e7e 7e7e 7e7e 7e7e ]
 
 @font-notes [
 	003e 4140 4040 413e
