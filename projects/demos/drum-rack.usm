@@ -524,17 +524,17 @@ RTN
 	;draw-label-left JSR2
 
 	( draw note )
-	OVR2 #0002 ADD2 .Screen/x DEO2
+	OVR2 #0003 ADD2 .Screen/x DEO2
 	DUP2 #0014 ADD2 .Screen/y DEO2
-	OVRr STHr TOS ;pad-pitch ADD2 LDA
-	#0c MOD TOS #0008 MUL2 ;font-num-uc #0030 ADD2 ADD2 .Screen/addr DEO2
+	( get pitch ) DUPr STHr TOS ;pad-pitch ADD2 LDA
+	#0c DIV TOS #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
 
 	( draw octave )
-	OVR2 #000a ADD2 .Screen/x DEO2
+	OVR2 #000b ADD2 .Screen/x DEO2
 	DUP2 #0014 ADD2 .Screen/y DEO2
-	OVRr STHr TOS ;pad-pitch ADD2 LDA
-	#0c DIV TOS #0008 MUL2 ;font-num-uc #0030 ADD2 ADD2 .Screen/addr DEO2
+	( get pitch ) DUPr STHr TOS ;pad-pitch ADD2 LDA
+	#0c MOD TOS #0008 MUL2 ;font-notes ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
 
 	POP2 POP2
@@ -775,6 +775,21 @@ RTN
 	007e 7e7e 7e7e 7e7e
 	707e 7e7e 7e7e 7e7e
 	7e7e 7e7e 7e7e 7e7e ]
+
+@font-notes [
+	003e 4140 4040 413e
+	40ae 4100 4040 413e
+	007e 4141 4141 417e
+	40ae 4101 4141 417e
+	003e 4140 7c40 413e
+	003f 4040 7e40 4040
+	40af 4000 7e40 4040
+	003e 4140 5f41 413e
+	40ae 4100 5f41 413e
+	003e 4141 7f41 4141
+	40ae 4101 7f41 4141
+	007e 4141 7e41 417e
+]
 
 @font-hex ( 0-F )
 [
