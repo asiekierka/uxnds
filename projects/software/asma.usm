@@ -1,910 +1,753 @@
-( asma: in-Uxn assembler (not working yet, in progress) )
-
-%HCF { #0000 DIV }
-%SHORT_FLAG { #20 }
-%RETURN_FLAG { #40 }
-
 ( devices )
 
-|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
-|10 @Console [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
-|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|30 @Audio [ &wave $2 &envelope $2 &pad $4 &volume $1 &pitch $1 &play $1 &value $2 &delay $2 &finish $1 ]
-|80 @Controller [ &vector $2 &button $1 &key $1 ]
-|90 @Mouse [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
-|a0 @File [ &vector $2 &success $2 &offset $2 &pad $2 &name $2 &length $2 &load $2 &save $2 ]
-|b0 @DateTime [ &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
-
-( variables )
-
-|0000
-
-@tree [ &search-key $2 &max-key-len $1 ]
-@assembler [ &pass $1 &state $1 &token $2 &scope-len $1 &scope $80 &heap $2 &addr $2 &subtree $2 &field_size $2 &var_size $2 &field $2 ]
+|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
+|a0 @File       [ &vector $2 &success  $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
 
 ( vectors )
 
-|0100 ,RESET JMP
+|0100
 
-@RESET
-	;assembler-heap-start .assembler/heap POK2
+%asma-IF-ERROR { ;asma/error LDA2 ORA }
 
-	;&read-filename ,assemble-file JSR
-	HCF
+@reset
+	;asma-init-assembler JSR2
+	;&filename ,asma-assemble-file-pass JSR
+	asma-IF-ERROR ,asma-print-error JNZ
+	;asma-init-assembler-pass JSR2
+	;&filename ,asma-assemble-file-pass JSR
+	asma-IF-ERROR ,asma-print-error JNZ
+	BRK
 
-	HCF
+	&filename
+		( "test.usm 00 )
+		"projects/software/noodle.usm 00
 
-	&read-filename [ "projects/software/noodle.usm 00 ]
+@asma-print-error ( -- )
+	;asma/error LDA2 .Console/string DEO2
+	#3a .Console/char DEO
+	#20 .Console/char DEO
+	;asma/orig-token LDA2 .Console/string DEO2
+	;&line .Console/string DEO2
+	;asma/line LDA2 .Console/short DEO2
+	#2e .Console/char DEO
+	#0a .Console/char DEO
+	BRK
 
-@assemble-file ( filename-ptr* -- )
+	&line 20 "on 20 "line 20 00
+
+@asma-assemble-file-pass ( filename-ptr* -- )
 	#0000
 
 	&loop
 	OVR2 .File/name DEO2
 	DUP2 .File/offset DEO2
-	#0600 .File/length DEO2
-	#f000 DUP2 DUP2 .File/load DEO2
-	.File/success DEI2 DUP2 #0000 EQU2 ,&end JNZ
-	,assemble-chunk JSR
+	#0100 .File/length DEO2
+	#fe00 DUP2 DUP2 .File/load DEO2
+	.File/success DEI2 DUP2 ORA ,&not-end JNZ
+	POP2 POP2
+	&error
+	POP2 POP2 POP2
+	JMP2r
+
+	&not-end
+	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JNZ
 	SUB2 SUB2
 	,&loop JMP
 
-	&end
-	POP2 POP2 POP2 POP2 POP2
+@asma-init-assembler ( -- )
+	#ff ;asma/pass STA
+	#0000 ;asma/error STA2
+	;asma-heap ;asma/heap STA2
+	;asma-labels/_entry ;asma-trees/labels STA2
+	( FIXME should walk the label tree and remove any in the heap )
+	;asma-opcodes/_entry ;asma-trees/opcodes STA2
+	#0000 ;asma-trees/macros STA2
+
+@asma-init-assembler-pass ( -- )
+	;asma/pass LDA #01 ADD ;asma/pass STA
+	#00 ;asma/state STA
+	#0000 ;asma/addr STA2
+	#0001 ;asma/line STA2
 	JMP2r
 
-@assemble-chunk ( ptr* len* -- assembled-up-to-ptr*  )
-	( FIXME we still return on seeing 00 in source code,
-	while assemble-file is now binary safe )
-	OVR2 ADD2 STH2
-	#0001 SUB2
+@asma-assemble-chunk ( ptr* len* -- assembled-up-to-ptr* )
+	OVR2 ADD2 #0001 SUB2 SWP2 DUP2 STH2
+	,&loop JMP
 
-	&per-token
-	DUP2 STH2
-
-	&loop
+	&next-char-pop
+	POP
+	&next-char
 	#0001 ADD2
-	DUP2 LDA
-	#20 GTH ,&loop JNZ
+	&loop ( last-ptr* ptr* / start-of-token* )
+	OVR2 OVR2 LTH2 ,&end JNZ
+	DUP2 LDA ( last-ptr* ptr* char / start-of-token* )
+	DUP #20 GTH ,&next-char-pop JNZ
 
-	DUP2 OVR2r STH2r LTS2 ,&valid JNZ
-	SWP2r POP2r POP2
-	STH2r #0001 ADD2
-	JMP2r
+	#00 OVR2 ( last-ptr* ptr* char 00 ptr* / start-of-token* )
+	STA
+	STH2r ,asma-assemble-token JSR asma-IF-ERROR ,&error JNZ
 
-	&valid
-	DUP2 LDA #00 OVR2 STA
-	STH2r #0001 ADD2 ,assemble-token JSR
-	,&per-token JNZ
+	#0a NEQ ,&not-newline JNZ
+	;asma/line LDA2 #0001 ADD2 ;asma/line STA2
+	&not-newline
 
-	POP2r JMP2r
-
-@assemble-macro ( macro-ptr* -- )
-	DUP2 ;strlen JSR2 DUP2 #0000 EQU2 ,&end JNZ
-	OVR2 ,assemble-token JSR
-	ADD2 #0001 ADD2
-	,assemble-macro JMP
+	DUP2 #0001 ADD2 STH2 ,&next-char JMP
 
 	&end
-	POP2 POP2
+	POP2 POP2 STH2r
 	JMP2r
 
-@assemble-token ( string-ptr* -- )
-	( get location of tree )
-	DUP2
-	;state-machine-pointers #00 .assembler/state PEK ;highest-bit JSR2 #0004 MUL2 ADD2
-	DUP2 STH2
-	( see if first char is recognised )
-	SWP2 #01 ;traverse-tree JSR2
-	,&not-found JNZ
-	( skip first character of token )
-	SWP2 #0001 ADD2 .assembler/token POK2
-	( tail call handling function defined in tree )
-	POP2r JMP2
+	&error
+	POP POP2 POP2
+	JMP2r
 
-	&not-found
-	( not interested in incoming-ptr )
+@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &scope-addr $2 &error $2 ]
+@asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
+
+@asma-assemble-token ( string-ptr* -- )
+	DUP2 .Console/string DEO2 #0a .Console/char DEO
+	DUP2 ;asma/token STA2
+	DUP2 ;asma/orig-token STA2
+	DUP2 LDA ,&not-empty JNZ
 	POP2
-	.assembler/token POK2
-	( tail call default handling function defined in state-machine-pointers )
-	LIT2r [ 0002 ] ADD2r LDA2r
 	JMP2r
 
-@parse-hex-length ( string-ptr* -- value 01 if one or two hex digits
-                                OR 00 otherwise )
-	DUP2 #0001 ADD2 LDA ,parse-hex-string/try-two JNZ
-	LDA ,parse-hex-digit JSR DUP #04 SFT ,parse-hex-string/fail1 JNZ
-	#01 JMP2r
+	&not-empty ( token* / )
+	( truncate to one char long )
+	#0001 ADD2 ( end* / )
+	DUP2 STH2 DUP2r LDAr ( end* / end* char )
+	DUP2 STH2 ( end* / end* char end* )
+	LITr 00 STH2 ( / end* char end* 00 end* )
+	STAr ( / end* char end* )
 
-@parse-hex-string ( string-ptr* -- value* 02 if four hex digits
-                                OR value 01 if two hex digits
-                                OR 00 otherwise )
-	DUP2 #0004 ADD2 LDA #00 EQU ,&try-four JNZ
-	&try-two
-	DUP2 #0002 ADD2 LDA ,&fail2 JNZ
-	&known-two
-	DUP2 LDA ,parse-hex-digit JSR DUP #04 SFT ,&fail3 JNZ ROT ROT
-	#0001 ADD2 LDA ,parse-hex-digit JSR DUP #04 SFT ,&fail2 JNZ
-	SWP #40 SFT ORA #01 JMP2r
+	( find lowest set bit of assembler/state
+	  in C, this would be i & -i )
+	#00 ;asma/state LDA DUP2 SUB AND ( tree-offset* / end* )
+	DUP2 ;&first-char-trees ADD2 ( tree-offset* incoming-ptr* / end* )
+	;asma-traverse-tree JSR2
 
-	&fail3 POP
-	&fail2 POP
-	&fail1 POP #00 JMP2r
+	( restore truncated char )
+	STAr
 
-	&try-four
-	DUP2 #0002 ADD2 ,&known-two JSR ,&maybe-four JNZ
-	,&try-two JMP
+	,&not-found JNZ
 
-	&maybe-four
-	ROT ROT ,&known-two JSR ,&four JNZ
-	,&fail1 JMP
+	( tree-offset* token-routine-ptr* / end* )
+	STH2r ;asma/token STA2
+	SWP2 POP2 LDA2
+	JMP2 ( tail call )
 
-	&four
-	SWP #02 JMP2r
+	&not-found ( tree-offset* dummy* / end* )
+	POP2 POP2r
+	;&first-char-dispatch ADD2 LDA2
+	JMP2 ( tail call )
 
-@parse-hex-digit ( charcode -- 00-0f if valid hex
-                            -- 10-ff otherwise )
+	&first-char-trees
+		:asma-first-char-normal/_entry
+		:asma-first-char-comment/_entry
+		:asma-first-char-macro/_entry
+
+	&first-char-dispatch
+		:asma-normal-body
+		:asma-ignore
+		:asma-macro-body
+
+@asma-parse-hex-digit ( charcode -- 00-0f if valid hex
+                                 OR 10-ff otherwise )
 	DUP #3a LTH ,&digit JNZ
-	DUP #60 GTH ,&lowercase JNZ
-	DUP #40 GTH ,&uppercase JNZ
+	DUP #60 GTH ,&letter JNZ
 	JMP2r
 
-	&digit ( #30 is #00 )
-	#30 SUB JMP2r
+	&digit
+	#30 SUB
+	JMP2r
 
-	&lowercase ( #61 is #0a )
-	#57 SUB JMP2r
+	&letter
+	#57 SUB
+	JMP2r
 
-	&uppercase ( #41 is #0a )
-	#37 SUB JMP2r
-
-@find-opcode ( name* -- byte 00 if valid opcode name
-                     OR 01 if not found )
-	;opcodes/tree SWP2 #03 ,traverse-tree JSR
-	,&nomatch JNZ
-	;opcodes/asm SUB2 #0007 DIV2
-	SWP JMP2r
-
-	&nomatch
-	DUP2 EQU2 JMP2r
-
-@traverse-tree ( tree-ptr* search-key* max-key-len --
-		binary-ptr* 00 if key matched
-		OR incoming-ptr* 01 if key not found )
-	.tree/max-key-len POK .tree/search-key POK2
+@asma-parse-hex-string ( -- value* 06 if valid hex and length > 2
+                         OR value* 03 if valid hex and length <= 2
+                         OR 00 otherwise )
+	;asma/token LDA2 DUP2 ,asma-strlen JSR #02 GTH ROT ROT
+	LIT2r 0000
 
 	&loop
-	DUP2 LDA2 #0000 NEQ2 ,&valid-node JNZ
+	DUP2 LDA
+	DUP ,&not-end JNZ
+	POP POP2
+	STH2r ROT #01 ADD #03 MUL
+	JMP2r
+
+	&not-end
+	,asma-parse-hex-digit JSR
+	DUP #f0 AND ,&fail JNZ
+	LIT2r 0010 MUL2r
+	#00 STH STH ADD2r
+	#0001 ADD2
+	,&loop JMP
+
+	&fail
+	POP POP2 POP2r
+	DUP EOR
+	JMP2r
+
+@asma-strlen ( string-ptr* -- length )
+	LITr 00
+
+	&loop
+	DUP2 LDA
+	,&not-end JNZ
+	POP2 STHr
+	JMP2r
+
+	&not-end
+	LITr 01 ADDr
+	#0001 ADD2
+	,&loop JMP
+
+%asma-SHORT-FLAG { #20 }
+%asma-RETURN-FLAG { #40 }
+
+@asma-parse-opcode ( -- byte 00 if valid opcode
+                     OR 01 otherwise )
+	;asma/token LDA2
+	DUP2 ,asma-strlen JSR #03 LTH ,&too-short JNZ
+
+	( truncate to three chars long )
+	#0003 ADD2 ( end* / )
+	DUP2 STH2 DUP2r LDAr ( end* / end* char )
+	DUP2 STH2 ( end* / end* char end* )
+	LITr 00 STH2 ( / end* char end* 00 end* )
+	STAr ( / end* char end* )
+
+	;asma-trees/opcodes ;asma-traverse-tree JSR2
+	STAr
+	,&not-found JNZ
+
+	;asma-opcodes/_disasm SUB2 #0003 SFT2 ( 00 byte / end* )
+	&loop
+	DUP2r LDAr STHr LIT2r 0001 ADD2r ( 00 byte char / end* )
+	DUP ,&not-end JNZ
+	POP POP2r
+	SWP
+	JMP2r
+
+	&not-end
+	DUP LIT '2 NEQ ,&not-two JNZ
+	POP asma-SHORT-FLAG ORA ,&loop JMP
+
+	&not-two
+	LIT 'r NEQ ,&not-return JNZ
+	asma-RETURN-FLAG ORA ,&loop JMP
+
+	&not-return ( 00 byte / end* )
+	&not-found ( incoming-ptr* / end* )
+	POP2r
+	&too-short ( token* / )
+	POP2 #01
+	JMP2r
+
+@asma-write-byte ( byte -- )
+	#3e .Console/char DEO
+	#20 .Console/char DEO
+	.Console/byte DEO ( FIXME actually write! )
+	#0a .Console/char DEO
+	;asma/addr LDA2 #0001 ADD2 ;asma/addr STA2
+	JMP2r
+
+@asma-write-short ( short -- )
+	SWP
+	,asma-write-byte JSR
+	,asma-write-byte JMP ( tail call )
+
+@asma-append-heap-byte ( dummy byte -- dummy )
+	;asma/heap LDA2
+	OVR2 OVR2 STA POP
+	#0001 ADD2 ;asma/heap STA2
+	POP
+	JMP2r
+
+@asma-append-heap-short ( dummy short* -- dummy )
+	SWP
+	,asma-append-heap-byte JSR
+	,asma-append-heap-byte JMP ( tail call )
+
+@asma-append-heap-string ( string* -- )
+	DUP2 LDA
+	DUP ,asma-append-heap-byte JSR
+	,&keep-going JNZ
+	POP2 JMP2r
+
+	&keep-going
+	#0001 ADD2
+	,asma-append-heap-string JMP
+
+@asma-traverse-tree ( incoming-ptr* -- binary-ptr* 00 if key found
+                                    OR node-incoming-ptr* 01 if key not found )
+	( ;&help-str .Console/string DEO2
+	DUP2 .Console/short DEO2
+	#20 .Console/char DEO
+	;asma/token LDA2 .Console/string DEO2
+	#20 .Console/char DEO
+	;asma/orig-token LDA2 .Console/string DEO2
+	#0a .Console/char DEO )
+
+	&loop ( incoming-ptr* )
+	DUP2 LDA2 ORA ,&valid-node JNZ
 	#01 JMP2r
 
 	&valid-node
-	LDA2 DUP2 STH2 #0004 ADD2 ,strcmp-tree JSR
+	LDA2 DUP2 STH2
+	#0004 ADD2 ,asma-strcmp-tree JSR
 	DUP ,&nomatch JNZ
 	POP2r JMP2r
 
 	&nomatch
-	#07 SFT #02 MUL #00 SWP
+	#06 SFT #02 AND #00 SWP
 	STH2r ADD2
 	,&loop JMP
 
-@strcmp-tree ( node-key* -- order if strings differ
-                         OR after-node-key* 00 if strings match )
-	.tree/search-key PEK2 STH2
-	.tree/max-key-len PEK
+	( &help-str "Looking 20 "up 20 00 )
 
-	&loop ( node-key* key-len in wst, search-key* in rst )
-	DUP ,&keep-going JNZ
+@asma-strcmp-tree ( node-key* -- order if strings differ
+                              OR after-node-key* 00 if strings match )
+	;asma/token LDA2 STH2
 
-	( exhausted key-len, match found )
-	POP2r
-	JMP2r
-
-	&keep-going
-	#01 OVR2 LDA DUP2r LDAr STHr
+	&loop ( node-key* / token* )
+	DUP2 #0001 ADD2 SWP2 LDA DUP2r LDAr STHr
 	DUP2 ORA ,&not-end JNZ
 
 	( end of C strings, match found )
-	POP2r POP ROT POP SWP ADD2 #00
+	POP2r POP
 	JMP2r
 
 	&not-end
-	SUB DUP ,&nomatch JNZ
-	POP SUB
-	LIT2r [ 0001 ] ADD2r STH
-	LIT2  [ 0001 ] ADD2  STHr
+	SUB
+	DUP ,&nomatch JNZ
+	POP
+	LIT2r 0001 ADD2r
 	,&loop JMP
 
 	&nomatch
-	STH POP2 POP2 STHr POP2r
+	POP2r ROT ROT POP2
 	JMP2r
 
-@highest-bit ( n -- 00 if n is 00
-                 OR 01 if n is 01
-                 OR 02 if n is 02..03
-                 OR 03 if n is 04..07
-                 OR 04 if n is 08..0f
-                 ..
-                 OR 08 if n is 80..ff )
-	DUP #00 NEQ JMP JMP2r
-	DUP #01 SFT ORA
-	DUP #02 SFT ORA
-	DUP #04 SFT ORA
-	#1d MUL #05 SFT #00 SWP ;&lookup ADD2 LDA
+( actions based on first character )
+
+%asma-STATE-SET { ;asma/state LDA ORA ;asma/state STA }
+%asma-STATE-CLEAR { #ff EOR ;asma/state LDA AND ;asma/state STA }
+
+@asma-comment-start
+	#02 asma-STATE-SET
+@asma-ignore
 	JMP2r
 
-	&lookup
-	[ 01 06 02 07 05 04 03 08 ]
-
-@memcpy ( src-ptr* dest-ptr* length* -- after-dest-ptr* )
-	SWP2 STH2
-
-	&loop
-	DUP2 ORA ,&keep-going JNZ
-	POP2 POP2 STH2r
+@asma-comment-end
+	#02 asma-STATE-CLEAR
 	JMP2r
 
-	&keep-going
-	#0001 SUB2
-	SWP2 DUP2 LDA DUP2r STH2r STA
-	#0001 ADD2 SWP2
-	LIT2r [ 0001 ] ADD2r
-	,&loop JMP
+@asma-macro-define
+	;asma/pass LDA ,&ignore-macro JNZ
 
-@strcpy ( src-ptr* dest-ptr* -- after-dest-ptr* )
-	OVR2 ,strlen JSR #0001 ADD2 ,memcpy JMP
-
-@strlen ( string-ptr* -- length* )
-	DUP2 #0001 SUB2
-	&loop
-	#0001 ADD2
-	DUP2 LDA ,&loop JNZ
-	SWP2 SUB2
+	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-exist JNZ
+	POP2
+	;asma-msg-macro ;asma/error STA2
 	JMP2r
 
-@append-heap ( string-ptr* -- after-string-ptr* )
-	.assembler/heap PEK2 ;strcpy JSR2
-	DUP2 .assembler/heap POK2
+	&not-exist
+	( define macro by creating new node )
+	;asma/heap LDA2 SWP2 STA2
+	#0000 ;asma-append-heap-short JSR2 ( less-than pointer )
+	#0000 ;asma-append-heap-short JSR2 ( greater-than pointer )
+	;asma/token LDA2 ;asma-append-heap-string JSR2 ( key )
+	#04 asma-STATE-SET
 	JMP2r
 
-@append-tree ( string-ptr* incoming-ptr* -- binary-data* )
-	.assembler/heap PEK2 SWP2 STA2
-	;&zero-pointers .assembler/heap PEK2 #0004 ,memcpy JSR .assembler/heap POK2
-	,append-heap JSR
+	&ignore-macro
+	#0c asma-STATE-SET
 	JMP2r
 
-	&zero-pointers [ 0000 0000 ]
+@asma-macro-body
+	;asma/token LDA2 ;asma-append-heap-string JSR2
+	JMP2r
 
-@add-label ( label-flags string-ptr* tree-ptr* -- )
-	OVR2 #ff ;traverse-tree JSR2
+@asma-macro-end
+	#00 ;asma-append-heap-byte JSR2
+	#0c asma-STATE-CLEAR
+	JMP2r
+
+@asma-label-define
+	#0000 ;asma/scope-addr STA2
+	;asma-trees/labels ,asma-label-helper JSR
+	,&already-existed JNZ
+
+	#0000 ;asma-append-heap-short JSR2 ( data2: subtree incoming ptr )
+
+	&already-existed
+	;asma/addr LDA2 ;asma/scope-addr STA2
+	#0002 ADD2 ;asma-trees/scope STA2
+	JMP2r
+
+@asma-sublabel-define
+	;asma-trees/scope LDA2 ,asma-label-helper JSR
+	POP POP2
+	JMP2r
+
+@asma-label-helper ( incoming-ptr* -- binary-ptr* 00 if label existed already
+                                   OR binary-ptr* 01 if label was created )
+	;asma-traverse-tree JSR2
 	,&new-label JNZ
 
-	( label already exists, check the flags and addr value )
-	SWP2 POP2
-	DUP2 #0001 ADD2 LDA2 .assembler/addr PEK2 EQU2 ,&addr-okay JNZ
-	( FIXME address is different to previous run, or label defined twice )
-	&addr-okay
-	LDA EQU ,&type-okay JNZ
-	( FIXME node type is different to before )
-	&type-okay
+	( label already exists )
+	( FIXME check label address )
+	#01 JMP2r
+
+	&new-label ( incoming-ptr* )
+	( define label by creating new node )
+	;asma/heap LDA2 SWP2 STA2
+	#0000 ;asma-append-heap-short JSR2 ( less-than pointer )
+	#0000 ;asma-append-heap-short JSR2 ( greater-than pointer )
+	;asma/token LDA2 ;asma-append-heap-string JSR2 ( key )
+
+	;asma/heap LDA2
+
+	;asma/addr LDA2 ;asma/scope-addr LDA2 SUB2
+	;asma-append-heap-short JSR2 ( data1: address )
+	#00 JMP2r
+
+@asma-pad-absolute
+	#0000 ,asma-pad-helper JMP
+
+@asma-pad-relative
+	;asma/addr LDA2
+	( fall through )
+
+@asma-pad-helper ( offset* -- )
+	;asma-parse-hex-string JSR2
+	,&valid JNZ
+
+	;asma-msg-hex ;asma/error POK2
 	JMP2r
 
-	&new-label
-	,append-tree JSR
-	(
-	~assembler.heap SWP2 STR2
-	,$zero-pointers ~assembler.heap #0004 ^memcpy JSR =assembler.heap
-	~assembler.heap ,strcpy JSR2
-	)
-	
-	DUP2 STH2 STA STH2r
-	DUP2 #0001 ADD2 .assembler/addr PEK2 SWP2 STA2
-	#0003 ADD2 .assembler/heap POK2
-	JMP2r
-
-@lookup-label ( string-ptr* -- address* node-type if found
-                            OR false-address* 00 if not found )
-	DUP2
-	&loop
-	DUP2 #0001 ADD2 SWP2 LDA
-	DUP #2e EQU ,&dotted JNZ
-	,&loop JNZ
-	DUP2 EOR2 ( faster than POP2 #0000 )
-	.assembler/field POK2
-
-	&main
-	DUP2 ;label-tree SWP2 #ff ;traverse-tree JSR2
-	,&not-found JNZ
-
-	SWP2 POP2
-	.assembler/field PEK2 #0000 EQU2 ,&end JNZ
-	DUP2 LDA #80 LTH ,&not-found JNZ
-	#0003 ADD2 .assembler/field PEK2 #ff ;traverse-tree JSR2
-	,&not-found JNZ
-
-	&end
-	DUP2 #0001 ADD2 LDA2 SWP2 LDA
-	JMP2r
-
-	&not-found
-	POP2
-	( FIXME complain about missing label )
-	POP2
-	( false-address is out of reach for JMP )
-	.assembler/addr PEK2 #8765 ADD2
-	#00
-	JMP2r
-
-	&dotted
-	DUP OVR2 .assembler/field POK2
-	EOR ROT ROT #0001 SUB2 STA
-	,&main JMP
-
-@write-byte ( byte -- )
-	( FIXME )  .Console/byte DEO
-	.assembler/addr PEK2 #0001 ADD2 .assembler/addr POK2
-	JMP2r
-
-@write-short ( short -- )
-	( FIXME )  .Console/short DEO2
-	.assembler/addr PEK2 #0002 ADD2 .assembler/addr POK2
-	JMP2r
-
-@label-tree :l-root
-@macro-tree [ 0000 ]
-
-@opcodes
-	(
-		The code for this section is automatically generated, and needs to be
-		regenerated when the opcode list in src/assembler.c is updated.
-
-		After editing src/assembler.c, run "lua etc/assembler-trees.lua"
-		and this file will be edited automatically.
-
-		This is the first example of a binary tree in this code, so let's
-		explore them in general. The format of a tree node in memory is:
-
-		left-node* right-node* node-key-cstring binary-data
-
-		and the general algorithm is to compare the key you're looking for
-		against node-key-cstring, and move to the node pointed to by left-node*
-		or right-node* if the keys don't match. If your key sorts earlier than
-		use left-node*, otherwise go to right-node*. When you find a node that
-		matches your key, traverse-bintree gives you a pointer to the
-		binary-data straight after the node-key-cstring. This data can contain
-		anything you want: fixed length fields, executable code... in this case
-		of this opcode tree, we store nothing. traverse-bintree is passed the
-		maximum length of node-key-cstring, not including the zero, so the zero
-		can be omitted if the string is at that maximum length.
-
-		If the key isn't present in the tree, you'll eventually get to a node
-		where the left-node* or right-node* pointer you'll need to follow is
-		null (0000). traverse-bintree will give you the location of that
-		pointer, so if you want to insert another node, you can write it to the
-		heap and overwrite the pointer with the new node's location. This
-		approach works even if the tree is completely empty and the pointer
-		you've provided to the root node is null, since that pointer gets
-		updated to point to the first node without needing any special logic.
-
-		The ordering of nodes in memory is totally arbitrary, so for pre-
-		prepared trees like this one we can have our own meaning for the order
-		of the nodes. By ordering the opcodes by their byte value, we can find
-		the byte by subtracting $asm from the binary-data pointer and dividing
-		by seven (the size of each node). By multiplying the byte value by seven
-		and adding to $disasm, we get the opcode name when disassembling too.
-	)
-	
-	&tree   :&op-lth ( opcode tree )
-	&start
-	&op-brk :&op-add :&op-dup &disasm [ "BRK ] &asm
-	&op-nop :&op-mul :&op-ovr         [ "NOP ]
-	&op-lit [ 0000 ] [ 0000 ]         [ "LIT ]
-	&op-pop [ 0000 ] [ 0000 ]         [ "POP ]
-	&op-dup :&op-div :&op-eor         [ "DUP ]
-	&op-swp [ 0000 ] [ 0000 ]         [ "SWP ]
-	&op-ovr :&op-ora :&op-pek         [ "OVR ]
-	&op-rot :&op-pop :&op-sft         [ "ROT ]
-	&op-equ :&op-brk :&op-jnz         [ "EQU ]
-	&op-neq [ 0000 ] [ 0000 ]         [ "NEQ ]
-	&op-gth [ 0000 ] [ 0000 ]         [ "GTH ]
-	&op-lth :&op-equ :&op-pok         [ "LTH ]
-	&op-gts :&op-gth :&op-jmp         [ "GTS ]
-	&op-lts [ 0000 ] [ 0000 ]         [ "LTS ]
-	        [ 0000 ] [ 0000 ]         [ "??? ]
-	        [ 0000 ] [ 0000 ]         [ "??? ]
-	&op-pek [ 0000 ] [ 0000 ]         [ "PEK ]
-	&op-pok :&op-nop :&op-sth         [ "POK ]
-	&op-ldr :&op-jsr :&op-lit         [ "LDR ]
-	&op-str [ 0000 ] [ 0000 ]         [ "STR ]
-	&op-jmp [ 0000 ] [ 0000 ]         [ "JMP ]
-	&op-jnz :&op-gts :&op-ldr         [ "JNZ ]
-	&op-jsr [ 0000 ] [ 0000 ]         [ "JSR ]
-	&op-sth :&op-rot :&op-sub         [ "STH ]
-	&op-add [ 0000 ] :&op-and         [ ADD ]
-	&op-sub :&op-str :&op-swp         [ "SUB ]
-	&op-mul :&op-lts :&op-neq         [ "MUL ]
-	&op-div [ 0000 ] [ 0000 ]         [ "DIV ]
-	&op-and [ 0000 ] [ 0000 ]         [ "AND ]
-	&op-ora [ 0000 ] [ 0000 ]         [ "ORA ]
-	&op-eor [ 0000 ] [ 0000 ]         [ "EOR ]
-	&op-sft [ 0000 ] [ 0000 ]         [ "SFT ]
-
-@state-machine-pointers
-( normal mode 00 )
-:normal-root   :normal-main
-( macro definition 01 )
-:macro-root    :macro-main
-( macro definition, contents ignored 02 )
-:macro-root    :ignore
-( variable definition, expect field size 04 )
-:variable-nul  :variable-size
-( variable definition, expect field name 08 )
-:variable-root :variable-name
-( reserved for future use 10 )
-[ 0000 ]       :ignore
-( literal data 20 )
-:normal-5d     :data-main
-( reserved for future use 40 )
-[ 0000 ]       :ignore
-( comment 80 )
-:normal-29     :ignore
-
-(
-	Next up, we have the tree of code corresponding to each token's
-	first character. Here we do have a binary payload, which is
-	the code to run when the assembler considers the token.
-
-	Some special assembler modes have their own trees. Since comments
-	have a very simple tree that only understands the end of comments,
-	we reuse the terminal branch of the main tree as the root of
-	the comment tree.
-)
-
-
-(
-	Left and right parentheses start and end comment sections. They use the
-	highest bit in assembler state, so they receive highest priority: it
-	doesn't matter what other bits are set, a comment's a comment.
-)
-
-
-@normal-28  [ 0000 ]    :normal-29  [ 28 ]
-	.assembler/state PEK #80 ORA .assembler/state POK
-	JMP2r
-
-@normal-29  [ 0000 ]    [ 0000 ]    [ 29 ]
-	.assembler/state PEK #7f AND .assembler/state POK
-	JMP2r
-
-(
-	Ampersands introduce global labels, and define the scope for any
-	local labels that follow.
-)
-
-
-@normal-@   [ 0000 ]    [ 0000 ]    [ 40 ]
-	#00 .assembler/token PEK2 ;label-tree ;add-label JSR2
-
-	&scope
-	.assembler/token PEK2 ;assembler/scope ;strcpy JSR2
-	DUP2 ;assembler/scope SUB2 .assembler/scope-len POK POP
-	#0001 SUB2 #2d SWP POK POP
-	JMP2r
-
-(
-	Dollar signs introduce local labels, which use the scope defined above.
-)
-
-
-@normal-24  :normal-"   :normal-,   [ 24 ]
-	.assembler/token PEK2
-	;assembler/scope .assembler/scope-len PEK ADD
-	;strcpy JSR2 POP2
-
-	#00 ;assembler/scope ;label-tree ;add-label JMP2 ( tail call )
-
-(
-	Hash signs followed by two or four hex digits write a literal.
-)
-
-
-@normal-#   [ 0000 ]    [ 0000 ]    [ 23 ]
-	.assembler/token PEK2 ;parse-hex-string JSR2
-	DUP ,&valid JNZ
-	( FIXME complain about invalid hex literal )
-	POP
-	JMP2r
-	
 	&valid
-	DUP #01 SUB SHORT_FLAG MUL ( short flag for opcode )
-	;opcodes/op-lit ;opcodes/start SUB2 #07 DIV
-	ADD ADD ;write-byte JSR2
-
-	&value
-	#02 EQU ,&short JNZ
-	;write-byte JMP2 ( tail call )
-
-	&short
-	;write-short JMP2 ( tail call )
-
-(
-	Left and right square brackets start and end literal data sections.
-)
-
-
-@normal-5b  :normal-@   :normal-5d  [ 5b ]
-	.assembler/state PEK #20 ORA .assembler/state POK
+	( FIXME complain if rewind after writing nonzeroes )
+	ADD2 ;asma/addr STA2
 	JMP2r
 
-@normal-5d  [ 0000 ]    [ 0000 ]    [ 5d ]
-	.assembler/state PEK #df AND .assembler/state POK
-	JMP2r
+@asma-raw-char
+	;asma/token LDA2 LDA
+	;asma-write-byte JMP2 ( tail call )
 
-@data-]    :normal-28  [ 0000 ]    [ 5d ]
-	.assembler/state PEK #df AND .assembler/state POK
-	JMP2r
+@asma-raw-word
+	;asma/token LDA2
 
-@data-root
-@data-nul  [ 0000 ]    :data-]    [ 00 ]
-	JMP2r
-
-@data-main
-	.assembler/token PEK2 ;parse-hex-string JSR2
-	DUP ,normal-#/value JNZ
-	POP
-
-	.assembler/token PEK2
 	&loop
 	DUP2 LDA
-	DUP ,&keep-going JNZ
-	POP POP2 JMP2r
+	DUP ,&not-end JNZ
 
-	&keep-going
-	;write-byte JSR2
+	POP POP2
+	JMP2r
+
+	&not-end
+	;asma-write-byte JSR2
 	#0001 ADD2
 	,&loop JMP
 
-(
-	A pipe moves the current address to the hex value given.
-)
+@asma-literal-abs-addr
+	LIT LIT2 ;asma-write-byte JSR2
+	( fall through )
 
+@asma-abs-addr
+	,asma-addr-helper JSR
+	;asma-write-short JMP2 ( tail call )
 
-@normal-|   :normal-{   :normal-}   [ 7c ]
-	.assembler/token PEK2 ;parse-hex-string JSR2
-	DUP #02 EQU ,&valid JNZ
-	#00 EQU JMP POP
-	( FIXME complain about invalid hex literal )
+@asma-literal-zero-addr
+	LIT LIT ;asma-write-byte JSR2
+	,asma-addr-helper JSR
+	;asma-write-byte JSR2
+
+	,&not-zero-page JNZ
 	JMP2r
 
-	&valid
+	&not-zero-page
+	;asma-msg-zero-page ;asma/error STA2
+	JMP2r
+
+@asma-literal-rel-addr
+	LIT LIT ;asma-write-byte JSR2
+	,asma-addr-helper JSR ;asma/addr LDA2 SUB2 #0002 SUB2
+
+	DUP2 #0080 LTH2 STH
+	DUP2 #ff7f GTH2 STHr ORA ,&in-bounds JNZ
+
+	POP2
+	;asma-msg-relative ;asma/error STA2
+	JMP2r
+
+	&in-bounds
+	;asma-write-byte JSR2
 	POP
-	DUP2 .assembler/addr PEK2 LTH2 ,&backwards JNZ
-	( FIXME add zeroes when writing )
-	.assembler/addr POK2
 	JMP2r
 
-	&backwards
-	( FIXME complain about going backwards )
-	POP2
-	JMP2r
+@asma-addr-helper ( -- addr* )
+	;asma/token LDA2 DUP2 LDA #26 NEQ ,&not-local JNZ
+	#0001 ADD2 ;asma/token STA2
+	;asma/scope-addr LDA2 ;asma-trees/scope LDA2
+	,&final-lookup JMP
 
-(
-	Commas and dots write the label address - the comma precedes this
-	with a LIT2 opcode.
-)
-
-
-@normal-,   :normal-%   :normal-dot [ 2c ]
-	;opcodes/op-lit ;opcodes/start SUB2 #07 DIV SHORT_FLAG ADD ;write-byte JSR2 POP
-	,normal-dot/main JMP
-
-@normal-dot [ 0000 ]    :normal-;   [ 2e ]
-	&main
-	.assembler/token PEK2 ;lookup-label JSR2
-	POP ( don't care about node type )
-	;write-short JMP2 ( tail call )
-
-(
-	Caret writes LIT, followed by the label address as an offset.
-)
-
-
-@normal-^   :normal-5b  :normal-|   [ 5e ]
-	;opcodes/op-lit ;opcodes/start SUB2 #07 DIV ;write-byte JSR2 POP
-	.assembler/token PEK2 ;lookup-label JSR2
-	POP ( don't care about node type )
-	.assembler/addr PEK2 SUB2
-	DUP2 #ff79 GTH2 ,&okay JNZ
-	DUP2 #0080 LTH2 ,&okay JNZ
-
-	( FIXME complain about jump being too far )
-
-	&okay
-	;write-byte JSR2 POP
-	JMP2r
-
-(
-	Tilde and equals are the load and store helpers respectively.
-	If the target is in the zero page, use LDR/PEK or STR/POK opcodes,
-	otherwise use LDR2/PEK2 or STR2/POK2 opcodes.
-)
-
-@normal-~   [ 0000 ]    [ 0000 ]    [ 7e ]
-	LIT2r :opcodes/op-ldr LIT2r :opcodes/op-pek
-	,normal-=/main JMP
-
-@normal-root
-@normal-=   :normal-24  :normal-^   [ 3d ]
-	LIT2r :opcodes/op-str LIT2r :opcodes/op-pok
-	&main
-	.assembler/token PEK2 ;lookup-label JSR2
-	DUP #03 AND ,&valid JNZ
-
-	( FIXME complain about helper not being usable )
-	POP2 JMP2r
-
-	&valid
-	#02 AND ,&two-byte JNZ
-	SWP2r
-	&two-byte
-	POP2r
-	LIT2r :opcodes/start SUB2r LITr [ 07 ] DIVr
-	OVR #00 EQU ,&byte-mode JNZ
-
-	;write-short SHORT_FLAG ,&end JMP
-
-	&byte-mode
-	SWP POP
-	;write-byte #00
-
-	&end
-	;opcodes/op-lit ;opcodes/start SUB2 #07 DIV ADD ADD ;write-byte JSR2
-	JSR2
-	STHr ;write-byte JSR2
-	POPr
-	JMP2r
-
-(
-	Semicolons introduce variables. The variable name is added to the label
-	tree as usual, but all of the subfields are collected into their own tree
-	pointed to in the variable name's binary data.
-)
-
-@normal-;   [ 0000 ]    [ 0000 ]    [ 3b ]
-	#80 .assembler/token PEK2 ;label-tree ;add-label JSR2
-	.assembler/heap PEK2 #0000 OVR2 STA2
-	DUP2 #0003 SUB2 .assembler/var_size POK2
-	DUP2 .assembler/subtree POK2
-	#0002 ADD2 .assembler/heap POK2
-
-	.assembler/state PEK #0c ORA .assembler/state POK
-	JMP2r
-
-@variable-root
-@variable-{ :variable-nul :variable-} [ 7b ]
-	JMP2r
-
-@variable-nul [ 0000 ]    :normal-28  [ 00 ]
-	JMP2r
-
-@variable-} [ 0000 ]    [ 0000 ]    [ 7d ]
-	.assembler/state PEK #f3 AND .assembler/state POK
-	JMP2r
-
-@variable-name
-	#00 .assembler/token PEK2 .assembler/subtree PEK2 ;add-label JSR2
-	.assembler/heap PEK2 #0003 SUB2 .assembler/field_size POK2
-	.assembler/state PEK #f7 AND .assembler/state POK
-	JMP2r
-
-@variable-size
-	.assembler/token PEK2 ;parse-hex-length JSR2
-	,&valid JNZ
-	( FIXME complain about invalid size )
-	JMP2r
-
-	&valid
-	&no-var-size
-	DUP #02 GTH ,&end JNZ
-	DUP .assembler/field_size PEK2 STA
-	.assembler/var_size PEK2 #0000 EQU2 ,&end JNZ
-	DUP #80 EOR .assembler/var_size PEK2 STA
-	,&end JMP
-
-	&loop
-	#00 ;write-byte JSR2
-	#01 SUB
-	&end
-	DUP ,&loop JNZ
-	POP
-	.assembler/state PEK #0c ORA .assembler/state POK
-	#0000 .assembler/var_size POK2
-	JMP2r
-
-(
-	Percent signs introduce macros. The macro name is added to the macro tree,
-	and all the arguments are collected into a list that follows the label's
-	binary data.
-)
-
-@normal-%   [ 0000 ]    :normal-28  [ 25 ]
-	;macro-tree .assembler/token PEK2 #ff ;traverse-tree JSR2
-	,&new-macro JNZ
-
-	( macro already exists, we assume defined in a previous pass
-	  we totally ignore the contents )
-	POP2
-	.assembler/state PEK #02 ORA .assembler/state POK
-	JMP2r
-
-	&new-macro
-	.assembler/token PEK2 SWP2 ;append-tree JSR2
-	POP2
-	.assembler/state PEK #01 ORA .assembler/state POK
-	JMP2r
-
-@macro-root
-@macro-{   :macro-nul :macro-}   [ 7b ]
-	JMP2r
-
-@macro-}   [ 0000 ]    [ 0000 ]    [ 7d ]
-	.assembler/heap PEK2 DUP2 #00 ROT ROT STA
-	#0001 ADD2 .assembler/heap POK2
-	.assembler/state PEK #fc AND .assembler/state POK
-	JMP2r
-
-@macro-nul [ 0000 ]    :normal-28  [ 00 ]
-	JMP2r
-
-@macro-main
-	.assembler/token PEK2 ;append-heap JSR2
-	POP2
-	JMP2r
-
-
-@normal-"   :normal-nul :normal-#   [ 22 ]
-	( FIXME NYI )
-	JMP2r
-
-@normal-{   [ 0000 ]    [ 0000 ]    [ 7b ]
-	( these are spurious, but ignore them anyway )
-	JMP2r
-
-@normal-}   [ 0000 ]    :normal-~   [ 7d ]
-	( these are spurious, but ignore them anyway )
-	JMP2r
-
-@normal-nul [ 0000 ]    [ 0000 ]    [ 00 ]
-@ignore
-	JMP2r
-
-@normal-main
-	.assembler/token PEK2
-	;opcodes/tree OVR2 #03 ;traverse-tree JSR2
-	,&not-opcode JNZ
-
-	;opcodes/asm SUB2 #0007 DIV2
-	SWP2 #0003 ADD2
-	&flags
+	&not-local ( token* )
 	DUP2 LDA
-	DUP #00 EQU ,&end-flags JNZ
-	DUP #32 NEQ ,&not-two JNZ
-	POP SWP2 SHORT_FLAG ORA SWP2 #0001 ADD2 ,&flags JMP
-	&not-two
-	DUP #72 NEQ ,&not-r JNZ
-	POP SWP2 RETURN_FLAG ORA SWP2 #0001 ADD2 ,&flags JMP
-	&not-r
-	POP POP2 .assembler/token PEK2 SWP2
-	,&not-opcode JMP
-
-	&end-flags
+	DUP ,&not-end JNZ
 	POP POP2
-	;write-byte JSR2
+	#0000 ;asma-trees/labels
+	,&final-lookup JMP
+
+	&not-end ( token* char )
+	#2f EQU ,&found-slash JNZ
+	#0001 ADD2
+	,&not-local JMP
+
+	&found-slash ( token* )
+	DUP2 #00 ROT ROT STA
+	;asma-trees/labels ;asma-traverse-tree JSR2 STH
+	SWP2 DUP2 #2f ROT ROT STA
+	STHr ,&not-found JNZ
+	( token* binary-ptr* )
+	#0001 ADD2 ;asma/token STA2
+	DUP2 LDA2 SWP2 #0002 ADD2
+
+	&final-lookup ( addr-offset* incoming-ptr* )
+	;asma-traverse-tree JSR2 ,&not-found JNZ
+	LDA2 ADD2
+	JMP2r
+
+	&not-found ( dummy* dummy* )
+
+	;asma/pass LDA #00 EQU ,&ignore-error JNZ
+	;asma-msg-label ;asma/error STA2
+	&ignore-error
+
+	POP2 POP2
+	;asma/addr LDA2
+	JMP2r
+
+@asma-literal-hex
+	;asma-parse-hex-string JSR2 JMP
+	( hex invalid ) ,&invalid JMP
+	( hex byte    ) ,asma-byte-helper JMP
+	( hex short   ) ,asma-short-helper JMP
+
+	&invalid
+	POP2
+
+	;asma-msg-hex ;asma/error STA2
+	JMP2r
+
+@asma-byte-helper ( dummy value -- )
+	LIT LIT ;asma-write-byte JSR2
+	&raw
+	;asma-write-byte JSR2
 	POP
 	JMP2r
+
+@asma-short-helper ( value* -- )
+	LIT LIT2 ;asma-write-byte JSR2
+	&raw
+	;asma-write-short JMP2 ( tail call )
+
+@asma-normal-body
+	;asma-parse-opcode JSR2 ,&not-opcode JNZ
+	;asma-write-byte JMP2 ( tail call )
 
 	&not-opcode
-	POP2
-	;macro-tree SWP2 #ff ;traverse-tree JSR2
-	,&not-macro JNZ
-	;assemble-macro JMP2 ( tail call )
+	;asma-parse-hex-string JSR2 JMP
+	( hex invalid ) ,&not-hex JMP
+	( hex byte    ) ,asma-byte-helper/raw JMP
+	( hex short   ) ,asma-short-helper/raw JMP
 
-	&not-macro
-	( FIXME complain about bad opcode / nonexistent macro )
+	&not-hex
+	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-macro JNZ
+
+	&macro-loop
+	DUP2 LDA ,&keep-going JNZ
+	&error
 	POP2
 	JMP2r
 
-(
-	Here's the big set of trees relating to labels. Starting from l-root, all
-	the devices are stored here, perhaps some helper functions in the future,
-	too.
+	&keep-going
+	DUP2 DUP2 ;asma-strlen JSR2 #00 SWP #0001 ADD2 ADD2
+	SWP2 ;asma-assemble-token JSR2 asma-IF-ERROR ,&error JNZ
+	,&macro-loop JMP
 
-	left-node* right-node* node-key-cstring binary-data
+	&not-macro
+	POP2
 
-	The node-keys are terminated with NUL since, unlike the opcodes and first
-	characters, the keys are variable length.
+	;asma-msg-label ;asma/error STA2
+	JMP2r
 
-	The binary-data is either three or five bytes long:
-		flags value* [ subtree-pointer* ]
+( messages )
 
-	The flags byte is divided up into bits:
+@asma-msg-hex       "Invalid 20 "hexadecimal 00
+@asma-msg-zero-page "Address 20 "not 20 "in 20 "zero 20 "page 00
+@asma-msg-relative  "Address 20 "outside 20 "range 00
+@asma-msg-label     "Label 20 "not 20 "found 00
+@asma-msg-macro     "Macro 20 "already 20 "exists 00
 
-	bit 0-1: 00 means store / load helpers cannot be used,
-	         01 means the helpers use POK / PEK,
-	         02 means the helpers use STR / LDR,
-	         03 is invalid;
-	bits 2-6 are reserved; and
-	bit 7: 80 means there is a subtree.
+( trees )
 
-	If there is a subtree, it is searched when the reference contains a dot.
-)
+( --- 8< ------- 8< --- cut here --- 8< ------- 8< --- )
+(          automatically generated code below          )
+(          see etc/asma.moon for instructions          )
 
+(	label       less than  greater than key            data )
 
-@l-Audio           [ 0000 ]          [ 0000 ]         [ "Audio 00 ]      [ 80 ] :Audio :l-Audio-root
-@l-Audio-delay     [ 0000 ]          [ 0000 ]         [ "delay 00 ]      [ 02 ] :Audio/delay
-@l-Audio-envelope :l-Audio-delay    :l-Audio-finish   [ "envelope 00 ]   [ 02 ] :Audio/envelope
-@l-Audio-finish    [ 0000 ]          [ 0000 ]         [ "finish 00 ]     [ 01 ] :Audio/finish
-@l-Audio-root
-@l-Audio-pitch    :l-Audio-envelope :l-Audio-value    [ "pitch 00 ]      [ 01 ] :Audio/pitch
-@l-Audio-play      [ 0000 ]          [ 0000 ]         [ "play 00 ]       [ 01 ] :Audio/play
-@l-Audio-value    :l-Audio-play     :l-Audio-volume   [ "value 00 ]      [ 02 ] :Audio/value
-@l-Audio-volume    [ 0000 ]         :l-Audio-wave     [ "volume 00 ]     [ 01 ] :Audio/volume
-@l-Audio-wave      [ 0000 ]          [ 0000 ]         [ "wave 00 ]       [ 02 ] :Audio/wave
-@l-Console        :l-Audio          :l-Controller     [ "Console 00 ]    [ 80 ] :Console :l-Console-root
-@l-Console-byte    [ 0000 ]         :l-Console-char   [ "byte 00 ]       [ 01 ] :Console/byte
-@l-Console-char    [ 0000 ]          [ 0000 ]         [ "char 00 ]       [ 01 ] :Console/char
-@l-Console-root
-@l-Console-short  :l-Console-byte   :l-Console-string [ "short 00 ]      [ 02 ] :Console/short
-@l-Console-string  [ 0000 ]         :l-Console-vector [ "string 00 ]     [ 02 ] :Console/string
-@l-Console-vector  [ 0000 ]          [ 0000 ]         [ "vector 00 ]     [ 02 ] :Console/vector
-@l-Controller      [ 0000 ]          [ 0000 ]         [ "Controller 00 ] [ 80 ] :Controller :l-Controller-root
-@l-Controller-button  [ 0000 ]          [ 0000 ]         [ "button 00 ]     [ 01 ] :Controller/button
-@l-Controller-root
-@l-Controller-key :l-Controller-button :l-Controller-vector [ "key 00 ]        [ 01 ] :Controller/key
-@l-Controller-vector  [ 0000 ]          [ 0000 ]         [ "vector 00 ]     [ 02 ] :Controller/vector
-@l-root
-@l-DateTime       :l-Console        :l-Mouse          [ "DateTime 00 ]   [ 80 ] :DateTime :l-DateTime-root
-@l-DateTime-day    [ 0000 ]          [ 0000 ]         [ "day 00 ]        [ 01 ] :DateTime/day
-@l-DateTime-dotw  :l-DateTime-day   :l-DateTime-doty  [ "dotw 00 ]       [ 01 ] :DateTime/dotw
-@l-DateTime-doty   [ 0000 ]         :l-DateTime-hour  [ "doty 00 ]       [ 02 ] :DateTime/doty
-@l-DateTime-hour   [ 0000 ]          [ 0000 ]         [ "hour 00 ]       [ 01 ] :DateTime/hour
-@l-DateTime-root
-@l-DateTime-isdst :l-DateTime-dotw  :l-DateTime-refresh [ "isdst 00 ]      [ 01 ] :DateTime/isdst
-@l-DateTime-minute  [ 0000 ]         :l-DateTime-month [ "minute 00 ]     [ 01 ] :DateTime/minute
-@l-DateTime-month  [ 0000 ]          [ 0000 ]         [ "month 00 ]      [ 01 ] :DateTime/month
-@l-DateTime-refresh :l-DateTime-minute :l-DateTime-second [ "refresh 00 ]    [ 01 ] :DateTime/refresh
-@l-DateTime-second  [ 0000 ]         :l-DateTime-year  [ "second 00 ]     [ 01 ] :DateTime/second
-@l-DateTime-year   [ 0000 ]          [ 0000 ]         [ "year 00 ]       [ 02 ] :DateTime/year
-@l-File            [ 0000 ]          [ 0000 ]         [ "File 00 ]       [ 80 ] :File :l-File-root
-@l-File-length     [ 0000 ]          [ 0000 ]         [ "length 00 ]     [ 02 ] :File/length
-@l-File-load      :l-File-length    :l-File-name      [ "load 00 ]       [ 02 ] :File/load
-@l-File-name       [ 0000 ]          [ 0000 ]         [ "name 00 ]       [ 02 ] :File/name
-@l-File-root
-@l-File-offset    :l-File-load      :l-File-success   [ "offset 00 ]     [ 02 ] :File/offset
-@l-File-save       [ 0000 ]          [ 0000 ]         [ "save 00 ]       [ 02 ] :File/save
-@l-File-success   :l-File-save      :l-File-vector    [ "success 00 ]    [ 02 ] :File/success
-@l-File-vector     [ 0000 ]          [ 0000 ]         [ "vector 00 ]     [ 02 ] :File/vector
-@l-Mouse          :l-File           :l-Screen         [ "Mouse 00 ]      [ 80 ] :Mouse :l-Mouse-root
-@l-Mouse-chord     [ 0000 ]         :l-Mouse-state    [ "chord 00 ]      [ 01 ] :Mouse/chord
-@l-Mouse-state     [ 0000 ]          [ 0000 ]         [ "state 00 ]      [ 01 ] :Mouse/state
-@l-Mouse-root
-@l-Mouse-vector   :l-Mouse-chord    :l-Mouse-x        [ "vector 00 ]     [ 02 ] :Mouse/vector
-@l-Mouse-x         [ 0000 ]         :l-Mouse-y        [ "x 00 ]          [ 02 ] :Mouse/x
-@l-Mouse-y         [ 0000 ]          [ 0000 ]         [ "y 00 ]          [ 02 ] :Mouse/y
-@l-Screen          [ 0000 ]         :l-System         [ "Screen 00 ]     [ 80 ] :Screen :l-Screen-root
-@l-Screen-addr     [ 0000 ]          [ 0000 ]         [ "addr 00 ]       [ 02 ] :Screen/addr
-@l-Screen-color   :l-Screen-addr    :l-Screen-height  [ "color 00 ]      [ 01 ] :Screen/color
-@l-Screen-height   [ 0000 ]          [ 0000 ]         [ "height 00 ]     [ 02 ] :Screen/height
-@l-Screen-root
-@l-Screen-vector  :l-Screen-color   :l-Screen-x       [ "vector 00 ]     [ 02 ] :Screen/vector
-@l-Screen-width    [ 0000 ]          [ 0000 ]         [ "width 00 ]      [ 02 ] :Screen/width
-@l-Screen-x       :l-Screen-width   :l-Screen-y       [ "x 00 ]          [ 02 ] :Screen/x
-@l-Screen-y        [ 0000 ]          [ 0000 ]         [ "y 00 ]          [ 02 ] :Screen/y
-@l-System          [ 0000 ]          [ 0000 ]         [ "System 00 ]     [ 80 ] :System :l-System-root
-@l-System-b        [ 0000 ]          [ 0000 ]         [ b 00 ]          [ 02 ] :System/b
-@l-System-root
-@l-System-g       :l-System-b       :l-System-r       [ "g 00 ]          [ 02 ] :System/g
-@l-System-r        [ 0000 ]         :l-System-vector  [ "r 00 ]          [ 02 ] :System/r
-@l-System-vector   [ 0000 ]          [ 0000 ]         [ "vector 00 ]     [ 02 ] :System/vector
+@asma-first-char-comment
+	&_entry      $2         $2          ') 00          :asma-comment-end
 
-@assembler-heap-start
+@asma-first-char-macro
+	&28          $2         $2          '( 00          :asma-comment-start
+	&29         :&28        $2          ') 00          :asma-comment-end
+	&_entry     :&29       :&7d         '{ 00          :asma-ignore
+	&7d          $2         $2          '} 00          :asma-macro-end
+
+@asma-first-char-normal
+	&22          $2         $2          '" 00          :asma-raw-word
+	&23         :&22        $2          '# 00          :asma-literal-hex
+	&24         :&23       :&25         '$ 00          :asma-pad-relative
+	&25          $2         $2          '% 00          :asma-macro-define
+	&26         :&24       :&29         26 00 ( & )    :asma-sublabel-define
+	&27          $2         $2          '' 00          :asma-raw-char
+	&28         :&27        $2          '( 00          :asma-comment-start
+	&29         :&28       :&2c         ') 00          :asma-comment-end
+	&2c          $2         $2          ', 00          :asma-literal-rel-addr
+	&_entry     :&26       :&5d         '. 00          :asma-literal-zero-addr
+	&3a          $2         $2          ': 00          :asma-abs-addr
+	&3b         :&3a        $2          '; 00          :asma-literal-abs-addr
+	&40         :&3b       :&5b         '@ 00          :asma-label-define
+	&5b          $2         $2          '[ 00          :asma-ignore
+	&5d         :&40       :&7c         '] 00          :asma-ignore
+	&7b          $2         $2          '{ 00          :asma-ignore
+	&7c         :&7b       :&7d         '| 00          :asma-pad-absolute
+	&7d          $2         $2          '} 00          :asma-ignore
+
+@asma-labels
+	&Audio0      $2         $2          "Audio0 00     0030 :asma-ldev-Audio/_entry
+	&Audio1     :&Audio0   :&Audio2     "Audio1 00     0040 :asma-ldev-Audio/_entry
+	&Audio2      $2         $2          "Audio2 00     0050 :asma-ldev-Audio/_entry
+	&Audio3     :&Audio1   :&Controller "Audio3 00     0060 :asma-ldev-Audio/_entry
+	&Console     $2         $2          "Console 00    0010 :asma-ldev-Console/_entry
+	&Controller :&Console   $2          "Controller 00 0080 :asma-ldev-Controller/_entry
+	&_entry     :&Audio3   :&Mouse      "DateTime 00   00b0 :asma-ldev-DateTime/_entry
+	&File        $2         $2          "File 00       00a0 :asma-ldev-File/_entry
+	&Midi       :&File      $2          "Midi 00       0070 :asma-ldev-Midi/_entry
+	&Mouse      :&Midi     :&System     "Mouse 00      0090 :asma-ldev-Mouse/_entry
+	&Screen      $2         $2          "Screen 00     0020 :asma-ldev-Screen/_entry
+	&System     :&Screen    $2          "System 00     0000 :asma-ldev-System/_entry
+
+@asma-ldev-Audio
+	&addr        $2         $2          "addr 00       000c
+	&adsr       :&addr      $2          "adsr 00       0008
+	&length     :&adsr     :&output     "length 00     000a
+	&output      $2         $2          "output 00     0004
+	&_entry     :&length   :&vector     "pitch 00      000f
+	&position    $2         $2          "position 00   0002
+	&vector     :&position :&volume     "vector 00     0000
+	&volume      $2         $2          "volume 00     000e
+
+@asma-ldev-Console
+	&byte        $2         $2          "byte 00       0009
+	&char       :&byte      $2          "char 00       0008
+	&_entry     :&char     :&string     "short 00      000a
+	&string      $2         $2          "string 00     000c
+
+@asma-ldev-Controller
+	&button      $2         $2          "button 00     0002
+	&_entry     :&button   :&vector     "key 00        0003
+	&vector      $2         $2          "vector 00     0000
+
+@asma-ldev-DateTime
+	&day         $2         $2          "day 00        0003
+	&dotw       :&day       $2          "dotw 00       0007
+	&doty       :&dotw     :&hour       "doty 00       0008
+	&hour        $2         $2          "hour 00       0004
+	&_entry     :&doty     :&second     "isdst 00      000a
+	&minute      $2         $2          "minute 00     0005
+	&month      :&minute    $2          "month 00      0002
+	&second     :&month    :&year       "second 00     0006
+	&year        $2         $2          "year 00       0000
+
+@asma-ldev-File
+	&length      $2         $2          "length 00     000a
+	&load       :&length   :&name       "load 00       000c
+	&name        $2         $2          "name 00       0008
+	&_entry     :&load     :&success    "offset 00     0004
+	&save        $2         $2          "save 00       000e
+	&success    :&save     :&vector     "success 00    0002
+	&vector      $2         $2          "vector 00     0000
+
+@asma-ldev-Midi
+	&channel     $2         $2          "channel 00    0002
+	&note       :&channel   $2          "note 00       0003
+	&_entry     :&note     :&velocity   "vector 00     0000
+	&velocity    $2         $2          "velocity 00   0004
+
+@asma-ldev-Mouse
+	&chord       $2         $2          "chord 00      0007
+	&state      :&chord     $2          "state 00      0006
+	&_entry     :&state    :&y          "vector 00     0000
+	&x           $2         $2          "x 00          0002
+	&y          :&x         $2          "y 00          0004
+
+@asma-ldev-Screen
+	&addr        $2         $2          "addr 00       000c
+	&color      :&addr     :&height     "color 00      000e
+	&height      $2         $2          "height 00     0004
+	&_entry     :&color    :&x          "vector 00     0000
+	&width       $2         $2          "width 00      0002
+	&x          :&width    :&y          "x 00          0008
+	&y           $2         $2          "y 00          000a
+
+@asma-ldev-System
+	&b           $2         $2          "b 00          000c
+	&g          :&b        :&r          "g 00          000a
+	&r           $2         $2          "r 00          0008
+	&_entry     :&g        :&wst        "rst 00        0003
+	&vector      $2         $2          "vector 00     0000
+	&wst        :&vector    $2          "wst 00        0002
+
+@asma-opcodes
+	&BRK        :&AND      :&DEI &_disasm "BRK 00
+	&LIT         $2         $2          "LIT 00
+	&NOP         $2         $2          "NOP 00
+	&POP        :&ORA      :&STH        "POP 00
+	&DUP        :&DIV      :&EOR        "DUP 00
+	&SWP         $2         $2          "SWP 00
+	&OVR         $2         $2          "OVR 00
+	&ROT         $2         $2          "ROT 00
+	&EQU        :&DEO      :&JSR        "EQU 00
+	&NEQ        :&MUL      :&NOP        "NEQ 00
+	&GTH         $2         $2          "GTH 00
+	&_entry     :&EQU      :&POP        "LTH 00
+	&JMP        :&GTH      :&JNZ        "JMP 00
+	&JNZ         $2         $2          "JNZ 00
+	&JSR        :&JMP      :&LDR        "JSR 00
+	&STH        :&SFT      :&SUB        "STH 00
+	&PEK        :&OVR      :&POK        "PEK 00
+	&POK         $2         $2          "POK 00
+	&LDR        :&LDA      :&LIT        "LDR 00
+	&STR         $2         $2          "STR 00
+	&LDA         $2         $2          "LDA 00
+	&STA         $2         $2          "STA 00
+	&DEI         $2         $2          "DEI 00
+	&DEO        :&BRK      :&DUP        "DEO 00
+	&ADD         $2         $2          "ADD 00
+	&SUB        :&STR      :&SWP        "SUB 00
+	&MUL         $2         $2          "MUL 00
+	&DIV         $2         $2          "DIV 00
+	&AND        :&ADD       $2          "AND 00
+	&ORA        :&NEQ      :&PEK        "ORA 00
+	&EOR         $2         $2          "EOR 00
+	&SFT        :&ROT      :&STA        "SFT 00
+
+@asma-heap
 
