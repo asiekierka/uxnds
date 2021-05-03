@@ -41,9 +41,9 @@ BRK
 @print ( addr* -- )
 	
 	&loop
-		( send ) DUP2 GET .Console/char DEO
+		( send ) DUP2 LDA .Console/char DEO
 		( incr ) #0001 ADD2
-		( loop ) DUP2 GET #00 NEQ ,&loop JNZ
+		( loop ) DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2
 
 RTN

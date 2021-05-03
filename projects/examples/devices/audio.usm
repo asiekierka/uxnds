@@ -35,7 +35,7 @@ BRK
 	( skip ) .timer PEK #10 EQU #01 JNZ [ BRK ]
 
 	( get note )
-	;melody #00 .progress PEK ADD2 GET 
+	;melody #00 .progress PEK ADD2 LDA 
 
 	( play note )
 	DUP .Audio0/pitch DEO

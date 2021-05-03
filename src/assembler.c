@@ -42,7 +42,7 @@ Program p;
 char ops[][4] = {
 	"BRK", "LIT", "NOP", "POP", "DUP", "SWP", "OVR", "ROT",
 	"EQU", "NEQ", "GTH", "LTH", "JMP", "JNZ", "JSR", "STH",
-	"PEK", "POK", "GET", "PUT", "---", "---", "DEI", "DEO",
+	"PEK", "POK", "LDR", "STR", "LDA", "STA", "DEI", "DEO",
 	"ADD", "SUB", "MUL", "DIV", "AND", "ORA", "EOR", "SFT"
 };
 

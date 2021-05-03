@@ -76,17 +76,17 @@ BRK
 	DUP2 #0010 NEQ2 ,&no-touch-red JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-red JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-red JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/r1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/r1 #00 .selection PEK ADD2 STA
 	&no-touch-red
 	DUP2 #0020 NEQ2 ,&no-touch-green JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-green JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-green JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/g1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/g1 #00 .selection PEK ADD2 STA
 	&no-touch-green
 	DUP2 #0030 NEQ2 ,&no-touch-blue JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-blue JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-blue JNZ
-		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/b1 #00 .selection PEK ADD2 PUT
+		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/b1 #00 .selection PEK ADD2 STA
 	&no-touch-blue
 	DUP2 #0040 NEQ2 ,&no-touch-radio JNZ
 		.Mouse/x DEI2 .window/x1 PEK2 #0050 ADD2 LTH2 ,&no-touch-radio JNZ
@@ -210,9 +210,9 @@ RTN
 	.window/x1 PEK2 #0038 ADD2 .Screen/x DEO2 
 	.System/b DEI2 #28 ;draw-short JSR2
 
-	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0010 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/r1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
-	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0020 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/g1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
-	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0030 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/b1 .selection PEK ADD GET #0004 MUL2 #01 ;draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0010 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/r1 .selection PEK ADD LDA #0004 MUL2 #01 ;draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0020 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/g1 .selection PEK ADD LDA #0004 MUL2 #01 ;draw-slider JSR2
+	.window/x1 PEK2 #0060 ADD2 .window/y1 PEK2 #0030 ADD2 .window/x1 PEK2 #0090 ADD2 #00 ;theme/b1 .selection PEK ADD LDA #0004 MUL2 #01 ;draw-slider JSR2
 
 	.window/x1 PEK2 #0050 ADD2 .Screen/x DEO2
 	.window/y1 PEK2 #0040 ADD2 .Screen/y DEO2
@@ -326,12 +326,12 @@ RTN
 	.Screen/x DEO2 
 	STH2r
 	&loop
-		DUP2 GET #00 SWP #0008 MUL2 
+		DUP2 LDA #00 SWP #0008 MUL2 
 		;font ADD2 .Screen/addr DEO2 
 		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 GET #00 NEQ ,&loop JNZ
+		DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2 POPr
 
 RTN

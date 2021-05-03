@@ -64,7 +64,7 @@
 
 	&loop
 	#0001 ADD2
-	DUP2 GET
+	DUP2 LDA
 	#20 GTH ,&loop JNZ
 
 	DUP2 OVR2r STH2r LTS2 ,&valid JNZ
@@ -73,7 +73,7 @@
 	JMP2r
 
 	&valid
-	DUP2 GET #00 OVR2 PUT
+	DUP2 LDA #00 OVR2 STA
 	STH2r #0001 ADD2 ,assemble-token JSR
 	,&per-token JNZ
 
@@ -107,24 +107,24 @@
 	POP2
 	.assembler/token POK2
 	( tail call default handling function defined in state-machine-pointers )
-	LIT2r [ 0002 ] ADD2r GET2r
+	LIT2r [ 0002 ] ADD2r LDA2r
 	JMP2r
 
 @parse-hex-length ( string-ptr* -- value 01 if one or two hex digits
                                 OR 00 otherwise )
-	DUP2 #0001 ADD2 GET ,parse-hex-string/try-two JNZ
-	GET ,parse-hex-digit JSR DUP #04 SFT ,parse-hex-string/fail1 JNZ
+	DUP2 #0001 ADD2 LDA ,parse-hex-string/try-two JNZ
+	LDA ,parse-hex-digit JSR DUP #04 SFT ,parse-hex-string/fail1 JNZ
 	#01 JMP2r
 
 @parse-hex-string ( string-ptr* -- value* 02 if four hex digits
                                 OR value 01 if two hex digits
                                 OR 00 otherwise )
-	DUP2 #0004 ADD2 GET #00 EQU ,&try-four JNZ
+	DUP2 #0004 ADD2 LDA #00 EQU ,&try-four JNZ
 	&try-two
-	DUP2 #0002 ADD2 GET ,&fail2 JNZ
+	DUP2 #0002 ADD2 LDA ,&fail2 JNZ
 	&known-two
-	DUP2 GET ,parse-hex-digit JSR DUP #04 SFT ,&fail3 JNZ ROT ROT
-	#0001 ADD2 GET ,parse-hex-digit JSR DUP #04 SFT ,&fail2 JNZ
+	DUP2 LDA ,parse-hex-digit JSR DUP #04 SFT ,&fail3 JNZ ROT ROT
+	#0001 ADD2 LDA ,parse-hex-digit JSR DUP #04 SFT ,&fail2 JNZ
 	SWP #40 SFT ORA #01 JMP2r
 
 	&fail3 POP
@@ -174,11 +174,11 @@
 	.tree/max-key-len POK .tree/search-key POK2
 
 	&loop
-	DUP2 GET2 #0000 NEQ2 ,&valid-node JNZ
+	DUP2 LDA2 #0000 NEQ2 ,&valid-node JNZ
 	#01 JMP2r
 
 	&valid-node
-	GET2 DUP2 STH2 #0004 ADD2 ,strcmp-tree JSR
+	LDA2 DUP2 STH2 #0004 ADD2 ,strcmp-tree JSR
 	DUP ,&nomatch JNZ
 	POP2r JMP2r
 
@@ -200,7 +200,7 @@
 	JMP2r
 
 	&keep-going
-	#01 OVR2 GET DUP2r GETr STHr
+	#01 OVR2 LDA DUP2r LDAr STHr
 	DUP2 ORA ,&not-end JNZ
 
 	( end of C strings, match found )
@@ -229,7 +229,7 @@
 	DUP #01 SFT ORA
 	DUP #02 SFT ORA
 	DUP #04 SFT ORA
-	#1d MUL #05 SFT #00 SWP ;&lookup ADD2 GET
+	#1d MUL #05 SFT #00 SWP ;&lookup ADD2 LDA
 	JMP2r
 
 	&lookup
@@ -245,7 +245,7 @@
 
 	&keep-going
 	#0001 SUB2
-	SWP2 DUP2 GET DUP2r STH2r PUT
+	SWP2 DUP2 LDA DUP2r STH2r STA
 	#0001 ADD2 SWP2
 	LIT2r [ 0001 ] ADD2r
 	,&loop JMP
@@ -257,7 +257,7 @@
 	DUP2 #0001 SUB2
 	&loop
 	#0001 ADD2
-	DUP2 GET ,&loop JNZ
+	DUP2 LDA ,&loop JNZ
 	SWP2 SUB2
 	JMP2r
 
@@ -267,7 +267,7 @@
 	JMP2r
 
 @append-tree ( string-ptr* incoming-ptr* -- binary-data* )
-	.assembler/heap PEK2 SWP2 PUT2
+	.assembler/heap PEK2 SWP2 STA2
 	;&zero-pointers .assembler/heap PEK2 #0004 ,memcpy JSR .assembler/heap POK2
 	,append-heap JSR
 	JMP2r
@@ -280,10 +280,10 @@
 
 	( label already exists, check the flags and addr value )
 	SWP2 POP2
-	DUP2 #0001 ADD2 GET2 .assembler/addr PEK2 EQU2 ,&addr-okay JNZ
+	DUP2 #0001 ADD2 LDA2 .assembler/addr PEK2 EQU2 ,&addr-okay JNZ
 	( FIXME address is different to previous run, or label defined twice )
 	&addr-okay
-	GET EQU ,&type-okay JNZ
+	LDA EQU ,&type-okay JNZ
 	( FIXME node type is different to before )
 	&type-okay
 	JMP2r
@@ -296,8 +296,8 @@
 	~assembler.heap ,strcpy JSR2
 	)
 	
-	DUP2 STH2 PUT STH2r
-	DUP2 #0001 ADD2 .assembler/addr PEK2 SWP2 PUT2
+	DUP2 STH2 STA STH2r
+	DUP2 #0001 ADD2 .assembler/addr PEK2 SWP2 STA2
 	#0003 ADD2 .assembler/heap POK2
 	JMP2r
 
@@ -305,7 +305,7 @@
                             OR false-address* 00 if not found )
 	DUP2
 	&loop
-	DUP2 #0001 ADD2 SWP2 GET
+	DUP2 #0001 ADD2 SWP2 LDA
 	DUP #2e EQU ,&dotted JNZ
 	,&loop JNZ
 	DUP2 EOR2 ( faster than POP2 #0000 )
@@ -317,12 +317,12 @@
 
 	SWP2 POP2
 	.assembler/field PEK2 #0000 EQU2 ,&end JNZ
-	DUP2 GET #80 LTH ,&not-found JNZ
+	DUP2 LDA #80 LTH ,&not-found JNZ
 	#0003 ADD2 .assembler/field PEK2 #ff ;traverse-tree JSR2
 	,&not-found JNZ
 
 	&end
-	DUP2 #0001 ADD2 GET2 SWP2 GET
+	DUP2 #0001 ADD2 LDA2 SWP2 LDA
 	JMP2r
 
 	&not-found
@@ -336,7 +336,7 @@
 
 	&dotted
 	DUP OVR2 .assembler/field POK2
-	EOR ROT ROT #0001 SUB2 PUT
+	EOR ROT ROT #0001 SUB2 STA
 	,&main JMP
 
 @write-byte ( byte -- )
@@ -554,7 +554,7 @@
 
 	.assembler/token PEK2
 	&loop
-	DUP2 GET
+	DUP2 LDA
 	DUP ,&keep-going JNZ
 	POP POP2 JMP2r
 
@@ -671,7 +671,7 @@
 
 @normal-;   [ 0000 ]    [ 0000 ]    [ 3b ]
 	#80 .assembler/token PEK2 ;label-tree ;add-label JSR2
-	.assembler/heap PEK2 #0000 OVR2 PUT2
+	.assembler/heap PEK2 #0000 OVR2 STA2
 	DUP2 #0003 SUB2 .assembler/var_size POK2
 	DUP2 .assembler/subtree POK2
 	#0002 ADD2 .assembler/heap POK2
@@ -705,9 +705,9 @@
 	&valid
 	&no-var-size
 	DUP #02 GTH ,&end JNZ
-	DUP .assembler/field_size PEK2 PUT
+	DUP .assembler/field_size PEK2 STA
 	.assembler/var_size PEK2 #0000 EQU2 ,&end JNZ
-	DUP #80 EOR .assembler/var_size PEK2 PUT
+	DUP #80 EOR .assembler/var_size PEK2 STA
 	,&end JMP
 
 	&loop
@@ -747,7 +747,7 @@
 	JMP2r
 
 @macro-}   [ 0000 ]    [ 0000 ]    [ 7d ]
-	.assembler/heap PEK2 DUP2 #00 ROT ROT PUT
+	.assembler/heap PEK2 DUP2 #00 ROT ROT STA
 	#0001 ADD2 .assembler/heap POK2
 	.assembler/state PEK #fc AND .assembler/state POK
 	JMP2r
@@ -785,7 +785,7 @@
 	;opcodes/asm SUB2 #0007 DIV2
 	SWP2 #0003 ADD2
 	&flags
-	DUP2 GET
+	DUP2 LDA
 	DUP #00 EQU ,&end-flags JNZ
 	DUP #32 NEQ ,&not-two JNZ
 	POP SWP2 SHORT_FLAG ORA SWP2 #0001 ADD2 ,&flags JMP

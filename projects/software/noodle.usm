@@ -301,15 +301,15 @@ BRK
 		.Controller/key DEI #08 NEQ ,&no-edit-backspace JNZ
 			.path/length PEK #00 EQU ,&edit-end JNZ
 			.path/length PEK #01 SUB .path/length POK
-			#00 ;path/name #00 .path/length PEK ADD2 PUT
+			#00 ;path/name #00 .path/length PEK ADD2 STA
 			BRK
 			&no-edit-backspace
 		( default )
 		.path/length PEK #1f EQU ,&edit-end JNZ
-			.Controller/key DEI ;path/name #00 .path/length PEK ADD2 PUT
+			.Controller/key DEI ;path/name #00 .path/length PEK ADD2 STA
 			.path/length PEK #01 ADD .path/length POK
 		&edit-end
-		#00 ;path/name #00 .path/length PEK ADD2 PUT
+		#00 ;path/name #00 .path/length PEK ADD2 STA
 		BRK
 	&no-edit
 	
@@ -375,7 +375,7 @@ RTN
 	
 	;data FILESIZE ;data ADD2
 	&loop
-		( write ) OVR2 #00 ROT ROT PUT
+		( write ) OVR2 #00 ROT ROT STA
 		( incr ) SWP2 #0001 ADD2 SWP2
 		OVR2 OVR2 LTH2 ,&loop JNZ
 	POP2 POP2
@@ -498,7 +498,7 @@ RTN
 		#00 .px/x POK
 		&hor
 			( addr ) ;size_icns #00 .brush/size PEK 8* ADD2
-			( byte ) #00 .px/y PEK ADD2 GET #07 .px/x PEK SUB SFT #01 AND
+			( byte ) #00 .px/y PEK ADD2 LDA #07 .px/x PEK SUB SFT #01 AND
 			#00 EQU ,&no-pixel JNZ
 			;patternize JSR2 #00 EQU ,&no-pixel JNZ
 				.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 .brush/oper PEK2 JSR2 &no-pixel
@@ -557,7 +557,7 @@ RTN
 	SWP POP #07 AND .px/x POK
 	( get tile ) .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8*
 	( add addr ) ;data ADD2
-	#00 .px/y PEK ADD2 GET #07 .px/x PEK SUB SFT #01 AND
+	#00 .px/y PEK ADD2 LDA #07 .px/x PEK SUB SFT #01 AND
 
 RTN
 
@@ -565,9 +565,9 @@ RTN
 
 	.pt1/y POK2 .pt1/x POK2
 	( get tile addr ) ;data .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8* .pt1/y PEK2 MOD8 ADD2 ADD2
-	( load ) DUP2 GET
+	( load ) DUP2 LDA
 	( mask ) #01 #07 .pt1/x PEK2 MOD8 SWP POP SUB SFL ORA
-	( save ) ROT ROT PUT
+	( save ) ROT ROT STA
 
 RTN
 
@@ -575,9 +575,9 @@ RTN
 
 	.pt1/y POK2 .pt1/x POK2
 	( get tile addr ) ;data .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8* .pt1/y PEK2 MOD8 ADD2 ADD2
-	( load ) DUP2 GET
+	( load ) DUP2 LDA
 	( mask ) #01 #07 .pt1/x PEK2 MOD8 SWP POP SUB SFL #ff EOR AND
-	( save ) ROT ROT PUT
+	( save ) ROT ROT STA
 
 RTN
 
@@ -852,11 +852,11 @@ RTN
 	
 	.color POK
 	&loop
-		DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 		( draw ) .color PEK #20 ADD .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		( loop ) DUP2 GET #00 NEQ ,&loop JNZ
+		( loop ) DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2
 
 RTN
@@ -886,11 +886,11 @@ RTN
 @strcpy ( src* dst* -- )
 
 	&loop
-		( copy src->dst ) OVR2 OVR2 SWP2 GET ROT ROT PUT
+		( copy src->dst ) OVR2 OVR2 SWP2 LDA ROT ROT STA
 		( incr dst ) ++
 		( incr src ) SWP2 ++ SWP2
-		OVR2 GET #00 NEQ ,&loop JNZ
-	#00 ROT ROT PUT POP2
+		OVR2 LDA #00 NEQ ,&loop JNZ
+	#00 ROT ROT STA POP2
 	
 RTN
 

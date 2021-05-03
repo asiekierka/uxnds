@@ -21,20 +21,20 @@
 %DATA-LOCKS { #3000 }
 %DATA-TYPES { #4000 }
 
-%GET-CHAR { #24 MOD #00 SWP ;b36clc ADD2 GET } ( b36 -- char )
-%GET-VALUE { #20 SUB #00 SWP ;values ADD2 GET } ( char -- b36 )
+%LDA-CHAR { #24 MOD #00 SWP ;b36clc ADD2 LDA } ( b36 -- char )
+%LDA-VALUE { #20 SUB #00 SWP ;values ADD2 LDA } ( char -- b36 )
 
-%GET-INDEX { #00 SWP #00 .grid/width PEK MUL2 ROT #00 SWP ADD2 } ( x y -- index )
-%GET-CELL { GET-INDEX DATA-CELLS ADD2 GET } ( x y -- char )
-%SET-CELL { ROT ROT GET-INDEX DATA-CELLS ADD2 PUT } ( x y char -- )
-%GET-TYPE { GET-INDEX DATA-TYPES ADD2 GET } ( x y -- type )
-%SET-TYPE { ROT ROT GET-INDEX DATA-TYPES ADD2 PUT } ( x y type -- )
-%GET-LOCK { GET-INDEX DATA-TYPES ADD2 GET } ( x y -- type )
-%SET-LOCK { ROT ROT GET-INDEX DATA-TYPES ADD2 PUT } ( x y type -- )
-%GET-PORT { } ( x y lock -- char )
+%LDA-INDEX { #00 SWP #00 .grid/width PEK MUL2 ROT #00 SWP ADD2 } ( x y -- index )
+%LDA-CELL { LDA-INDEX DATA-CELLS ADD2 LDA } ( x y -- char )
+%SET-CELL { ROT ROT LDA-INDEX DATA-CELLS ADD2 STA } ( x y char -- )
+%LDA-TYPE { LDA-INDEX DATA-TYPES ADD2 LDA } ( x y -- type )
+%SET-TYPE { ROT ROT LDA-INDEX DATA-TYPES ADD2 STA } ( x y type -- )
+%LDA-LOCK { LDA-INDEX DATA-TYPES ADD2 LDA } ( x y -- type )
+%SET-LOCK { ROT ROT LDA-INDEX DATA-TYPES ADD2 STA } ( x y type -- )
+%LDA-PORT { } ( x y lock -- char )
 %SET-PORT { } ( x y char -- )
 
-%GET-CELL-VALUE { GET-CELL GET-VALUE } ( x y -- b36 )
+%LDA-CELL-VALUE { LDA-CELL LDA-VALUE } ( x y -- b36 )
 
 ( devices )
 
@@ -183,14 +183,14 @@ RTN
 		DUP2 #01 SET-LOCK
 	$no-lock
 	STH DUP2 #02 #02 STHr MUL ADD ,set-type JSR2
-	GET-CELL
+	LDA-CELL
 	)
 
 RTN
 
 @get-cell-sprite ( x y -- addr )
 	
-	DUP2 GET-CELL
+	DUP2 LDA-CELL
 	( if character is dot )
 	DUP #2e NEQ ,&no-bar JNZ
 		( check if x,y is grid )
@@ -209,11 +209,11 @@ RTN
 @op-a ( x y char -- )
 
 	POP
-	( get left ) DUP2 SWP -- SWP GET-CELL-VALUE STH
-	( get right ) DUP2 SWP ++ SWP GET-CELL-VALUE STH
+	( get left ) DUP2 SWP -- SWP LDA-CELL-VALUE STH
+	( get right ) DUP2 SWP ++ SWP LDA-CELL-VALUE STH
 	( incr y ) ++
 	( get result ) ADDr STHr
-	GET-CHAR
+	LDA-CHAR
 	SET-CELL
 
 RTN
@@ -221,11 +221,11 @@ RTN
 @op-b ( x y char -- )
 	
 	POP
-	( get left ) DUP2 SWP -- SWP GET-CELL-VALUE STH
-	( get right ) DUP2 SWP ++ SWP GET-CELL-VALUE STH
+	( get left ) DUP2 SWP -- SWP LDA-CELL-VALUE STH
+	( get right ) DUP2 SWP ++ SWP LDA-CELL-VALUE STH
 	( incr y ) ++
 	( get result ) SUBr STHr
-	GET-CHAR
+	LDA-CHAR
 	SET-CELL
 
 	( NOTE: Issue is not with modulo, but with converting ff to 36 )
@@ -308,7 +308,7 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 -- GET-CELL #2e EQU ,&not-collide JNZ
+	DUP2 -- LDA-CELL #2e EQU ,&not-collide JNZ
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -377,7 +377,7 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 SWP -- SWP GET-CELL #2e EQU ,&not-collide JNZ
+	DUP2 SWP -- SWP LDA-CELL #2e EQU ,&not-collide JNZ
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -420,7 +420,7 @@ RTN
 	&not-dot
 
 	( skip locked )
-	ROT ROT DUP2 GET-LOCK #00 EQU ,&not-locked JNZ
+	ROT ROT DUP2 LDA-LOCK #00 EQU ,&not-locked JNZ
 		POP POP2 RTN
 	&not-locked
 	ROT
@@ -469,7 +469,7 @@ RTN
 		#00 .grid/width PEK
 		&hor
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
-			DUP2 GET-CELL ;run-char JSR2
+			DUP2 LDA-CELL ;run-char JSR2
 			( incr ) SWP ++ SWP
 			DUP2 LTH ,&hor JNZ
 		POP2
@@ -487,19 +487,19 @@ RTN
 	( Positionx )
 	#0000 .Screen/x DEO2
 	.selection/x1 PEK
-		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0008 .Screen/x DEO2
-		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( Positiony )
 	#0010 .Screen/x DEO2
 	.selection/y1 PEK
-		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0018 .Screen/x DEO2
-		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0020 .Screen/x DEO2
@@ -509,10 +509,10 @@ RTN
 	( Frame )
 	#0030 .Screen/x DEO2
 	.timer/frame PEK
-		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0038 .Screen/x DEO2
-		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0040 .Screen/x DEO2
@@ -522,10 +522,10 @@ RTN
 	( Speed )
 	#0050 .Screen/x DEO2
 	.timer/speed PEK
-		DUP #04 SFT GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0058 .Screen/x DEO2
-		#0f AND GET-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 SUB #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( TODO: Signal VU )

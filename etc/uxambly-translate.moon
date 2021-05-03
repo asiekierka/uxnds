@@ -7,12 +7,12 @@ import P, R, S, C, Ct, Cp, V from require 'lpeg'
 local labels, filename
 
 opcode_translate =
-    PEK2: 'GET'
-    POK2: 'PUT'
+    PEK2: 'LDA'
+    POK2: 'STA'
     LDR: 'PEK2'
     STR: 'POK2'
-    LDR2: 'GET2'
-    STR2: 'PUT2'
+    LDR2: 'LDA2'
+    STR2: 'STA2'
 
 grammar = P {
     'file'

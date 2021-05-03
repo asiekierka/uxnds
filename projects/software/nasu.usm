@@ -31,10 +31,10 @@
 } ( x y w h -- x1 y1 x2 y2 )
 
 %SET-RECT {
-	DUP2 ROT2 SWP2 #0006 ADD2 PUT2
-	DUP2 ROT2 SWP2 #0004 ADD2 PUT2
-	DUP2 ROT2 SWP2 #0002 ADD2 PUT2
-	DUP2 ROT2 SWP2 PUT2
+	DUP2 ROT2 SWP2 #0006 ADD2 STA2
+	DUP2 ROT2 SWP2 #0004 ADD2 STA2
+	DUP2 ROT2 SWP2 #0002 ADD2 STA2
+	DUP2 ROT2 SWP2 STA2
 	POP2
 } ( x1 y1 x2 y2 addr -- )
 
@@ -208,12 +208,12 @@ BRK
 	.bankview/mode PEK #01 NEQ ,&not-copy-mode JNZ
 		#00 .i POK
 		&copy-loop
-			( load ) .settings/tile PEK2 .i PEK ADD GET
+			( load ) .settings/tile PEK2 .i PEK ADD LDA
 			( get touch addr )
 			.Mouse/x DEI2 .bankview/x PEK2 SUB2 STEP8
 			.Mouse/y DEI2 .bankview/y PEK2 SUB2 STEP8 #0010 MUL2 ADD2
 			( 2-bit mode ) #00 .settings/depth PEK #01 ADD MUL2
-			.settings/page PEK2 ADD2 #00 .i PEK ADD2 PUT
+			.settings/page PEK2 ADD2 #00 .i PEK ADD2 STA
 			( incr ) .i PEK #01 ADD .i POK
 			.i PEK #08 LTH ,&copy-loop JNZ
 		;redraw JSR2 BRK
@@ -227,7 +227,7 @@ BRK
 			.Mouse/x DEI2 .bankview/x PEK2 SUB2 STEP8
 			.Mouse/y DEI2 .bankview/y PEK2 SUB2 STEP8 #0010 MUL2 ADD2
 			( 2-bit mode ) #00 .settings/depth PEK #01 ADD MUL2
-			.settings/page PEK2 ADD2 #00 .i PEK ADD2 PUT
+			.settings/page PEK2 ADD2 #00 .i PEK ADD2 STA
 			( incr ) .i PEK #01 ADD .i POK
 			.i PEK #08 LTH ,&erase-loop JNZ
 		;redraw JSR2 BRK
@@ -251,16 +251,16 @@ BRK
 	.Mouse/x DEI2 .tileview/x PEK2 SUB2 .Mouse/x DEI2 .tileview/x PEK2 SUB2 #0040 DIV2 #0040 MUL2 SUB2 .pos/x POK2
 	.Mouse/y DEI2 .tileview/y PEK2 SUB2 .Mouse/y DEI2 .tileview/y PEK2 SUB2 #0040 DIV2 #0040 MUL2 SUB2 .pos/y POK2
 	.Mouse/state DEI #10 NEQ ,&no-erase-mode JNZ
-		( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 GET
+		( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 LDA
 		( mask ) #01 #07 .pos/x PEK2 8/ SWP POP SUB SFL
 		#ff EOR AND
-		( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 PUT
+		( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 STA
 		;redraw JSR2 BRK
 	&no-erase-mode
-	( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 GET
+	( load ) .addr PEK2 .pos/y PEK2 8/ ADD2 LDA
 	( mask ) #01 #07 .pos/x PEK2 8/ SWP POP SUB SFL
 	ORA
-	( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 PUT
+	( save ) .addr PEK2 .pos/y PEK2 8/ ADD2 STA
 	;redraw JSR2
 
 BRK
@@ -358,29 +358,29 @@ RTN
 
 @op_shiftup
 	
-	.settings/tile PEK2 GET
-	.settings/tile PEK2 #0001 ADD2 GET .settings/tile PEK2 PUT
-	.settings/tile PEK2 #0002 ADD2 GET .settings/tile PEK2 #0001 ADD2 PUT
-	.settings/tile PEK2 #0003 ADD2 GET .settings/tile PEK2 #0002 ADD2 PUT
-	.settings/tile PEK2 #0004 ADD2 GET .settings/tile PEK2 #0003 ADD2 PUT
-	.settings/tile PEK2 #0005 ADD2 GET .settings/tile PEK2 #0004 ADD2 PUT
-	.settings/tile PEK2 #0006 ADD2 GET .settings/tile PEK2 #0005 ADD2 PUT
-	.settings/tile PEK2 #0007 ADD2 GET .settings/tile PEK2 #0006 ADD2 PUT
-	.settings/tile PEK2 #0007 ADD2 PUT
+	.settings/tile PEK2 LDA
+	.settings/tile PEK2 #0001 ADD2 LDA .settings/tile PEK2 STA
+	.settings/tile PEK2 #0002 ADD2 LDA .settings/tile PEK2 #0001 ADD2 STA
+	.settings/tile PEK2 #0003 ADD2 LDA .settings/tile PEK2 #0002 ADD2 STA
+	.settings/tile PEK2 #0004 ADD2 LDA .settings/tile PEK2 #0003 ADD2 STA
+	.settings/tile PEK2 #0005 ADD2 LDA .settings/tile PEK2 #0004 ADD2 STA
+	.settings/tile PEK2 #0006 ADD2 LDA .settings/tile PEK2 #0005 ADD2 STA
+	.settings/tile PEK2 #0007 ADD2 LDA .settings/tile PEK2 #0006 ADD2 STA
+	.settings/tile PEK2 #0007 ADD2 STA
 
 RTN
 
 @op_shiftdown
 	
-	.settings/tile PEK2 #0007 ADD2 GET
-	.settings/tile PEK2 #0006 ADD2 GET .settings/tile PEK2 #0007 ADD2 PUT
-	.settings/tile PEK2 #0005 ADD2 GET .settings/tile PEK2 #0006 ADD2 PUT
-	.settings/tile PEK2 #0004 ADD2 GET .settings/tile PEK2 #0005 ADD2 PUT
-	.settings/tile PEK2 #0003 ADD2 GET .settings/tile PEK2 #0004 ADD2 PUT
-	.settings/tile PEK2 #0002 ADD2 GET .settings/tile PEK2 #0003 ADD2 PUT
-	.settings/tile PEK2 #0001 ADD2 GET .settings/tile PEK2 #0002 ADD2 PUT
-	.settings/tile PEK2 GET .settings/tile PEK2 #0001 ADD2 PUT
-	.settings/tile PEK2 PUT
+	.settings/tile PEK2 #0007 ADD2 LDA
+	.settings/tile PEK2 #0006 ADD2 LDA .settings/tile PEK2 #0007 ADD2 STA
+	.settings/tile PEK2 #0005 ADD2 LDA .settings/tile PEK2 #0006 ADD2 STA
+	.settings/tile PEK2 #0004 ADD2 LDA .settings/tile PEK2 #0005 ADD2 STA
+	.settings/tile PEK2 #0003 ADD2 LDA .settings/tile PEK2 #0004 ADD2 STA
+	.settings/tile PEK2 #0002 ADD2 LDA .settings/tile PEK2 #0003 ADD2 STA
+	.settings/tile PEK2 #0001 ADD2 LDA .settings/tile PEK2 #0002 ADD2 STA
+	.settings/tile PEK2 LDA .settings/tile PEK2 #0001 ADD2 STA
+	.settings/tile PEK2 STA
 
 RTN
 
@@ -529,7 +529,7 @@ RTN
 		&hor
 			( get bit )
 			;blank_icn #00
-			.settings/tile PEK2 #00 .pt/y PEK ADD2 GET #07 .pt/x PEK SUB SFT #01 AND ( get bit )
+			.settings/tile PEK2 #00 .pt/y PEK ADD2 LDA #07 .pt/x PEK SUB SFT #01 AND ( get bit )
 			8* ADD2 .Screen/addr DEO2 ( add *8 )
 			( draw ) #21 .Screen/color DEO
 			( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
@@ -575,7 +575,7 @@ RTN
 	#00 .i POK
 	&bytes
 		.tileview/x PEK2 #0088 ADD2 .Screen/x DEO2
-		.settings/tile PEK2 #00 .i PEK ADD2 GET #22 ;draw-byte JSR2
+		.settings/tile PEK2 #00 .i PEK ADD2 LDA #22 ;draw-byte JSR2
 		( incr ) .i PEK #01 ADD .i POK
 		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
 	.i PEK #08 LTH ;&bytes JNZ2
@@ -684,16 +684,16 @@ RTN
 @draw-short ( short -- )
 
 	.addr POK2
-	;font_hex #00 ;addr GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr LDA #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #22 .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr LDA #0f AND #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #22 .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr ++ GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr ++ LDA #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #22 .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr ++ GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr ++ LDA #0f AND #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #22 .Screen/color DEO
 
 RTN

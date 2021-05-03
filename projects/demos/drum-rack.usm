@@ -35,7 +35,6 @@
 
 |0000
 
-@selection $1
 @last $1
 @color $1
 @center      [ &x $2 &y $2 ]
@@ -47,6 +46,7 @@
 @pos         [ &x $2 &y $2 ] 
 @padview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @mixview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@wavview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 
 @state [ ( addr length )
 	$4 $4 $4 $4
@@ -60,9 +60,9 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#0fe5 .System/r DEO2 
-	#0fc5 .System/g DEO2 
-	#0f25 .System/b DEO2
+	#0aff .System/r DEO2 
+	#0af2 .System/g DEO2 
+	#0af3 .System/b DEO2
 
 	( vectors )
 	;on-control .Controller/vector DEO2
@@ -82,11 +82,11 @@
 	.Screen/width DEI2 2/ .center/x POK2
 	.Screen/height DEI2 2/ .center/y POK2
 
-	( place views )
+	( place frame )
 	.center/x PEK2 PAD-WIDTH #0003 MUL2 SUB2 #0010 SUB2 .frame/x1 POK2
-	.center/y PEK2 PAD-HEIGHT 2* SUB2 .frame/y1 POK2
+	.center/y PEK2 #0050 SUB2 .frame/y1 POK2
 	.center/x PEK2 PAD-WIDTH #0003 MUL2 ADD2 #0010 ADD2 .frame/x2 POK2
-	.center/y PEK2 PAD-HEIGHT 2* ADD2 .frame/y2 POK2
+	.frame/y1 PEK2 PAD-HEIGHT #0004 MUL2 ADD2 #0030 ADD2 .frame/y2 POK2
 
 	( place padview )
 	.frame/x1 PEK2 .padview/x1 POK2
@@ -100,6 +100,12 @@
 	.mixview/x1 PEK2 #0080 ADD2 .mixview/x2 POK2
 	.padview/y2 PEK2 .mixview/y2 POK2
 
+	( place wavview )
+	.frame/x1 PEK2 .wavview/x1 POK2
+	.mixview/y2 PEK2 #0008 ADD2 .wavview/y1 POK2
+	.frame/x2 PEK2 .wavview/x2 POK2
+	.wavview/y1 PEK2 #0020 ADD2 .wavview/y2 POK2
+
 	;draw-pads JSR2
 	;draw-mixers JSR2
 
@@ -107,21 +113,14 @@
 	.frame/y1 PEK2 #0004 SUB2 
 	.frame/x2 PEK2 #0002 ADD2
 	.frame/y2 PEK2 #0002 ADD2
-	#03
+	#01
 	;line-rect JSR2
 
-	.padview/x1 PEK2 #0002 SUB2
-	.padview/y1 PEK2 #0002 SUB2
-	.padview/x2 PEK2
-	.padview/y2 PEK2
-	#02
-	;line-rect JSR2
-
-	.mixview/x1 PEK2 #0002 ADD2
-	.mixview/y1 PEK2 #0002 SUB2
-	.mixview/x2 PEK2
-	.mixview/y2 PEK2
-	#02
+	.mixview/x1 PEK2 #0002 ADD2 
+	.mixview/y1 PEK2 #0000 SUB2 
+	.mixview/x2 PEK2 #0002 SUB2
+	.mixview/y2 PEK2 #0002 SUB2
+	#01
 	;line-rect JSR2
 
 BRK
@@ -172,7 +171,7 @@ BRK
 		BRK
 	&no-drum
 
-	;pad-addr #0008 ADD2 GET2 .Audio0/addr DEO2
+	;pad-addr #0008 ADD2 LDA2 .Audio0/addr DEO2
 	#0008 .Audio0/length DEO2
 	.Midi/note DEI .Audio0/pitch DEO
 
@@ -205,14 +204,15 @@ BRK
 
 @on-touch-pad ( -> )
 	
-
 	( x ) .Mouse/x DEI2 .padview/x1 PEK2 SUB2 PAD-WIDTH DIV2 SWP POP
 	( y ) .Mouse/y DEI2 .padview/y1 PEK2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
-	DUP #b0 SWP
-	;play-pad JSR2
+	
+	DUP #b0 SWP ;play-pad JSR2
 
-	( select ) DUP .selection POK ;draw-editor JSR2
+	DUP ;draw-editor JSR2
+	DUP ;draw-waveform JSR2
 
+	POP
 	( release ) #00 .Mouse/state DEO
 
 BRK
@@ -222,8 +222,8 @@ BRK
 	#00 #10
 	&loop
 		( name ) OVR TOS #0019 MUL2 ;pad-path ADD2 .File/name DEO2
-		( length ) OVR TOS #0002 MUL2 ;pad-length ADD2 GET2 .File/length DEO2
-		( load ) OVR TOS #0002 MUL2 ;pad-addr ADD2 GET2 .File/load DEO2
+		( length ) OVR TOS #0002 MUL2 ;pad-length ADD2 LDA2 .File/length DEO2
+		( load ) OVR TOS #0002 MUL2 ;pad-addr ADD2 LDA2 .File/load DEO2
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
 	POP2
@@ -241,11 +241,11 @@ RTN
 	DUPr STHr #02 ;draw-pad JSR2
 
 	( length )
-	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 DUP2 GET2 SWP2 #0002 ADD2 GET2 SWP2 SUB2 
+	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 DUP2 LDA2 SWP2 #0002 ADD2 LDA2 SWP2 SUB2 
 	DUPr STHr #04 DIV #10 MUL .Audio0/length ADD DEO2	
 
 	( addr )
-	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 GET2
+	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 LDA2
 	DUPr STHr #04 DIV #10 MUL .Audio0/addr ADD DEO2
 
 	( pitch )
@@ -257,6 +257,39 @@ RTN
 
 RTN
 
+@draw-waveform ( pad -- )
+	
+	#02 MUL #00 SWP ;pad-addr ADD2 LDA2 STH2
+
+	.wavview/x1 PEK2
+	.wavview/y1 PEK2
+	.wavview/x2 PEK2 ++
+	.wavview/y2 PEK2
+	#00 ;fill-rect JSR2
+
+	.wavview/x1 PEK2 .Screen/x DEO2
+
+	( waveform )
+	#00 #ff
+	&loop
+		( dotted line )
+		OVR #01 AND ,&no-dot JNZ 
+			.wavview/y1 PEK2 #0010 ADD2 .Screen/y DEO2
+			#03 .Screen/color DEO
+		&no-dot
+		OVR TOS #0010 MUL2 [ DUP2r STH2r ] ADD2 LDA 
+		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
+		TOS #0004 DIV2 .wavview/y1 PEK2 ADD2 .Screen/y DEO2
+		.Screen/x DEI2 ++ .Screen/x DEO2
+		( draw ) OVR .Audio0/length DEI2 SWP POP GTH #02 MUL #01 ADD .Screen/color DEO
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ,&loop JNZ
+	POP2
+
+	POP2r
+
+RTN
+
 @draw-editor ( pad -- )
 
 	( get state )
@@ -264,11 +297,11 @@ RTN
 	.frame/y2 PEK2 #0008 ADD2 .Screen/y DEO2
 
 	.frame/x1 PEK2 .Screen/x DEO2
-	DUP #02 MUL TOS ;pad-addr ADD2 GET2
+	DUP #02 MUL TOS ;pad-addr ADD2 LDA2
 	( addr ) #21 ;draw-short JSR2
 
 	.frame/x1 PEK2 #0028 ADD2 .Screen/x DEO2
-	DUP #02 MUL TOS ;pad-length ADD2 GET2
+	DUP #02 MUL TOS ;pad-length ADD2 LDA2
 	( addr ) #21 ;draw-short JSR2
 
 	POP
@@ -279,7 +312,7 @@ RTN
 
 	;cursor .Screen/addr DEO2
 
-	DUP #00 SWP PAD-HEIGHT MUL2 .mixview/y1 PEK2 ADD2 STH2
+	DUP #00 SWP PAD-HEIGHT MUL2 .mixview/y1 PEK2 ADD2 #0002 ADD2 STH2
 
 	( adsr )
 	.mixview/x1 PEK2 #0008 ADD2 DUP2r STH2r
@@ -295,6 +328,9 @@ RTN
 		.Audio0/adsr #01 ADD DEI #0f AND
 		;draw-knob JSR2
 
+	.mixview/x1 PEK2 #0048 ADD2 DUP2r STH2r
+		#00 ;draw-switch JSR2
+
 	( volume )
 	.mixview/x1 PEK2 #0058 ADD2 DUP2r STH2r
 		.Audio0/volume DEI #04 SFT
@@ -303,9 +339,9 @@ RTN
 		.Audio0/volume DEI #0f AND
 		;draw-knob JSR2
 
+
 	POP
 	POP2r
-
 	( once/repeat interface )
 
 RTN
@@ -319,13 +355,36 @@ RTN
 	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 GET ADD2 .Screen/x DEO2
-	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 GET ADD2 .Screen/y DEO2
+	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 LDA ADD2 .Screen/x DEO2
+	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 LDA ADD2 .Screen/y DEO2
 	;knob_icns #0020 ADD2 .Screen/addr DEO2
 	#25 .Screen/color DEO
 	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
 	.knob/y PEK2 #0010 ADD2 .Screen/y DEO2
 	;font-hex #00 .knob/value PEK #08 MUL ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+RTN
+
+@draw-switch ( x* y* value -- )
+	
+	POP ( TODO: use value for toggle position )
+	.Screen/y DEO2
+	.Screen/x DEO2
+	;switch .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+	;switch #0008 ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
+	.Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
+	;switch #0010 ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+	;switch #0018 ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
 
 RTN
@@ -395,7 +454,7 @@ RTN
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	( colorize on state )
-	#31 [ .Mouse/state DEI #00 NEQ ] ADD .Screen/color DEO
+	#33 [ .Mouse/state DEI #00 NEQ ] SUB .Screen/color DEO
 
 RTN
 
@@ -443,11 +502,30 @@ RTN
 	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
 	.label/addr PEK2
 	&loop
-		( draw ) DUP2 GET #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP #0030 SUB2 #0008 MUL2 ;font-num-uc ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) #0001 ADD2
-		( incr ) .Screen/x DEI2 #0007 ADD2 .Screen/x DEO2
-		DUP2 GET #00 NEQ ,&loop JNZ
+		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+		DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2
+
+RTN
+
+@fill-rect ( x1* y1* x2* y2* color -- )
+	
+	.color POK
+	( x1 x2 y1 y2 ) ROT2 SWP2
+	&ver
+		( save ) OVR2 .Screen/y DEO2
+		STH2 STH2 OVR2 OVR2
+		&hor
+			( save ) OVR2 .Screen/x DEO2
+			( draw ) .color PEK .Screen/color DEO
+			( incr ) SWP2 ++ SWP2
+			OVR2 OVR2 LTS2 ,&hor JNZ
+		POP2 POP2 STH2r STH2r
+		( incr ) SWP2 ++ SWP2
+		OVR2 OVR2 LTS2 ,&ver JNZ
+	POP2 POP2 POP2 POP2
 
 RTN
 
@@ -518,6 +596,17 @@ RTN
 	707e 7e7e 7e7e 7e7e
 	7e7e 7e7e 7e7e 7e7e ]
 
+@switch [
+	001f 204f 5f5f 4f40
+	00f8 04f2 fafa f202
+	4040 4040 4020 1f00
+	0202 0202 0204 f800
+	0000 0000 0000 0000
+	0000 0000 0000 0000
+	0000 0000 0000 0000
+	0000 0000 0000 0000
+]
+
 @font-hex ( 0-F )
 [
 	007c 8282 8282 827c 0030 1010 1010 1010
@@ -530,38 +619,26 @@ RTN
 	007c 8280 f080 827c 007c 8280 f080 8080
 ]
 
-@font ( spectrum-zx font )
-[
-	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
-	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
-	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
-	0038 446c 107c 1000 000c 0808 0838 3800 003e 2222 2266 6600 0000 0822 0022 0800
-	0000 1018 1c18 1000 0000 0818 3818 0800 0008 1c00 001c 0800 0028 2828 2800 2800
-	003e 4a4a 3a0a 0a00 000c 3046 620c 3000 0000 0000 0000 ffff 0010 3800 3810 0038
-	0008 1c2a 0808 0800 0008 0808 2a1c 0800 0000 0804 7e04 0800 0000 1020 7e20 1000
-	0000 4040 7e00 0000 0000 0024 6624 0000 0000 1038 7c00 0000 0000 007c 3810 0000
-	0000 0000 0000 0000 0008 0808 0800 0800 0014 1400 0000 0000 0024 7e24 247e 2400
-	0008 1e28 1c0a 3c08 0042 0408 1020 4200 0030 4832 4c44 3a00 0008 1000 0000 0000
-	0004 0808 0808 0400 0010 0808 0808 1000 0000 1408 3e08 1400 0000 0808 3e08 0800
-	0000 0000 0008 0810 0000 0000 3c00 0000 0000 0000 0000 0800 0000 0204 0810 2000
-	003c 464a 5262 3c00 0018 2808 0808 3e00 003c 4202 3c40 7e00 003c 421c 0242 3c00
-	0008 1828 487e 0800 007e 407c 0242 3c00 003c 407c 4242 3c00 007e 0204 0810 1000
-	003c 423c 4242 3c00 003c 4242 3e02 3c00 0000 0008 0000 0800 0000 0800 0008 0810
-	0000 0810 2010 0800 0000 003e 003e 0000 0000 1008 0408 1000 003c 4202 0c00 0800
-	003c 425a 5442 3c00 0018 2442 7e42 4200 007c 427c 4242 7c00 003c 4240 4042 3c00
-	0078 4442 4244 7800 007e 407c 4040 7e00 003e 4040 7c40 4000 003c 4240 4e42 3c00
-	0042 427e 4242 4200 003e 0808 0808 3e00 0002 0202 4242 3c00 0044 4870 4844 4200
-	0040 4040 4040 7e00 0042 665a 4242 4200 0042 6252 4a46 4200 003c 4242 4242 3c00
-	007c 4242 7c40 4000 003c 4242 524a 3c00 007c 4242 7c44 4200 003c 403c 0242 3c00
-	00fe 1010 1010 1000 0042 4242 4242 3c00 0042 4242 4224 1800 0042 4242 5a66 4200
-	0042 2418 1824 4200 0082 4428 1010 1000 007e 0408 1020 7e00 000c 0808 0808 0c00
-	0040 2010 0804 0200 0018 0808 0808 1800 0008 1422 0000 0000 0000 0000 0000 7e00
-	0008 0400 0000 0000 0000 1c02 1e22 1e00 0020 203c 2222 3c00 0000 1e20 2020 1e00
-	0002 021e 2222 1e00 0000 1c22 3c20 1e00 000c 101c 1010 1000 0000 1c22 221e 021c
-	0020 202c 3222 2200 0008 0018 0808 0400 0008 0008 0808 4830 0020 2428 3028 2400
-	0010 1010 1010 0c00 0000 6854 5454 5400 0000 5864 4444 4400 0000 3844 4444 3800
-	0000 7844 4478 4040 0000 3c44 443c 0406 0000 2c30 2020 2000 0000 3840 3804 7800
-	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
-	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
-	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c
-]
+@font-num-uc [
+	003e 4141 4141 413e 0018 0808 0808 081c 
+	003e 4101 3e40 407f 003e 4101 1f01 413e 
+	0011 2141 7f01 0101 007f 4040 7e01 413e 
+	003e 4140 7e41 413e 003e 4101 0102 0408 
+	003e 4141 3e41 413e 003e 4141 3f01 0102 
+	0000 0800 0000 0800 0000 0800 0000 0800 
+	0000 0800 0000 0810 0000 0408 1008 0400 
+	0000 001c 001c 0000 0000 1008 0408 1000 
+	0000 0000 0000 0000 003e 4101 3f41 413f 
+	007e 4141 7e41 417e 003e 4140 4040 413e 
+	007e 4141 4141 417e 007f 4040 7e40 407f 
+	007f 4040 7e40 4040 003e 4140 5e41 413e 
+	0041 4141 7f41 4141 0008 0808 0808 0808 
+	007f 0101 0101 413e 0041 4244 7844 4241 
+	0040 4040 4040 403f 0076 4949 4949 4949 
+	005e 6141 4141 4141 003e 4141 4141 413e 
+	007e 4141 7e40 4040 003e 4141 4145 423d 
+	007e 4141 7e41 4141 003e 4140 3e01 413e 
+	007f 0808 0808 0808 0041 4141 4141 433d 
+	0041 4141 4122 1408 0049 4949 4949 4976 
+	0041 2214 0814 2241 0041 4141 3f01 413e 
+	007f 0101 3e40 407f ]

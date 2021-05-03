@@ -107,21 +107,21 @@ BRK
 
 	.Controller/key DEI
 	DUP #61 NEQ ,&no-c JNZ
-		;notes GET ;play JSR2 &no-c
+		;notes LDA ;play JSR2 &no-c
 	DUP #73 NEQ ,&no-d JNZ
-		;notes #0001 ADD2 GET ;play JSR2 &no-d
+		;notes #0001 ADD2 LDA ;play JSR2 &no-d
 	DUP #64 NEQ ,&no-e JNZ
-		;notes #0002 ADD2 GET ;play JSR2 &no-e
+		;notes #0002 ADD2 LDA ;play JSR2 &no-e
 	DUP #66 NEQ ,&no-f JNZ
-		;notes #0003 ADD2 GET ;play JSR2 &no-f
+		;notes #0003 ADD2 LDA ;play JSR2 &no-f
 	DUP #67 NEQ ,&no-g JNZ
-		;notes #0004 ADD2 GET ;play JSR2 &no-g
+		;notes #0004 ADD2 LDA ;play JSR2 &no-g
 	DUP #68 NEQ ,&no-a JNZ
-		;notes #0005 ADD2 GET ;play JSR2 &no-a
+		;notes #0005 ADD2 LDA ;play JSR2 &no-a
 	DUP #6a NEQ ,&no-b JNZ
-		;notes #0006 ADD2 GET ;play JSR2 &no-b
+		;notes #0006 ADD2 LDA ;play JSR2 &no-b
 	DUP #6b NEQ ,&no-c2 JNZ
-		;notes #0007 ADD2 GET ;play JSR2 &no-c2
+		;notes #0007 ADD2 LDA ;play JSR2 &no-c2
 	POP
 
 BRK
@@ -139,7 +139,7 @@ RTN
 	#0e .Mouse/y DEI2 .trkframe/y1 PEK2 SUB2 SWP POP #08 DIV SUB
 	.Mouse/state DEI #10 NEQ ,&no-erase JNZ POP #00 &no-erase
 	( edit note )
-	TRACK #00 .Mouse/x DEI2 .trkframe/x1 PEK2 SUB2 SWP POP #08 DIV ADD2 PUT
+	TRACK #00 .Mouse/x DEI2 .trkframe/x1 PEK2 SUB2 SWP POP #08 DIV ADD2 STA
 	( release ) #00 .Mouse/state DEO
 	;draw-notes JSR2
 
@@ -191,33 +191,33 @@ BRK
 
 @bang ( -- )
 		
-	;track/ch1 #00 .head/pos PEK #08 DIV ADD2 GET
+	;track/ch1 #00 .head/pos PEK #08 DIV ADD2 LDA
 	#01 SUB
 	DUP #ff NEQ ,&skip1 JNZ
 		POP ,&listen2 JMP
 	&skip1
-	#00 SWP ;notes ADD2 GET .Audio0/pitch DEO
+	#00 SWP ;notes ADD2 LDA .Audio0/pitch DEO
 	&listen2
-	;track/ch2 #00 .head/pos PEK #08 DIV ADD2 GET
+	;track/ch2 #00 .head/pos PEK #08 DIV ADD2 LDA
 	#01 SUB
 	DUP #ff NEQ ,&skip2 JNZ
 		POP ,&listen3 JMP
 	&skip2
-	#00 SWP ;notes ADD2 GET .Audio1/pitch DEO
+	#00 SWP ;notes ADD2 LDA .Audio1/pitch DEO
 	&listen3
-	;track/ch3 #00 .head/pos PEK #08 DIV ADD2 GET
+	;track/ch3 #00 .head/pos PEK #08 DIV ADD2 LDA
 	#01 SUB
 	DUP #ff NEQ ,&skip3 JNZ
 		POP ,&listen4 JMP
 	&skip3
-	#00 SWP ;notes ADD2 GET .Audio2/pitch DEO
+	#00 SWP ;notes ADD2 LDA .Audio2/pitch DEO
 	&listen4
-	;track/ch4 #00 .head/pos PEK #08 DIV ADD2 GET
+	;track/ch4 #00 .head/pos PEK #08 DIV ADD2 LDA
 	#01 SUB
 	DUP #ff NEQ ,&skip4 JNZ
 		POP ,&end JMP
 	&skip4
-	#00 SWP ;notes ADD2 GET #80 ORA .Audio3/pitch DEO
+	#00 SWP ;notes ADD2 LDA #80 ORA .Audio3/pitch DEO
 	&end
 
 RTN
@@ -232,7 +232,7 @@ RTN
 	( incr ) .head/pos PEK #01 ADD .head/pos POK
 	.trkframe/x1 PEK2 #00 .head/pos PEK ADD2 .Screen/x DEO2
 	;head_icn .Screen/addr DEO2
-	#21 ( if note ) TRACK #00 .head/pos PEK #08 DIV ADD2 GET #00 NEQ ADD .Screen/color DEO
+	#21 ( if note ) TRACK #00 .head/pos PEK #08 DIV ADD2 LDA #00 NEQ ADD .Screen/color DEO
 
 RTN
 
@@ -240,7 +240,7 @@ RTN
 
 	#00 #20
 	&loop
-		( load ) OVR #00 SWP TRACK ADD2 GET
+		( load ) OVR #00 SWP TRACK ADD2 LDA
 		DUP STH #00 SWP #0e SWP SUB 8* .trkframe/y1 PEK2 ADD2 .Screen/y DEO2
 		OVR #00 SWP 8* .trkframe/x1 PEK2 ADD2 .Screen/x DEO2
 		STHr #00 EQU ,&skip JNZ
@@ -256,7 +256,7 @@ RTN
 
 	#00 #20
 	&notes-loop
-		( load ) OVR #00 SWP TRACK ADD2 GET
+		( load ) OVR #00 SWP TRACK ADD2 LDA
 		DUP STH #00 SWP #0e SWP SUB 8* .trkframe/y1 PEK2 ADD2 .Screen/y DEO2
 		OVR #00 SWP 8* .trkframe/x1 PEK2 ADD2 .Screen/x DEO2
 		;note_icn .Screen/addr DEO2
@@ -356,8 +356,8 @@ RTN
 	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/x PEK2 #00 #00 .knob/value PEK ;knob_offsetx ADD2 GET ADD2 .Screen/x DEO2
-	.knob/y PEK2 #00 #00 .knob/value PEK ;knob_offsety ADD2 GET ADD2 .Screen/y DEO2
+	.knob/x PEK2 #00 #00 .knob/value PEK ;knob_offsetx ADD2 LDA ADD2 .Screen/x DEO2
+	.knob/y PEK2 #00 #00 .knob/value PEK ;knob_offsety ADD2 LDA ADD2 .Screen/y DEO2
 	;knob_icns #0020 ADD2 .Screen/addr DEO2
 	#25 .Screen/color DEO
 	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
@@ -453,10 +453,10 @@ RTN
 	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
 	.label/addr PEK2
 	&loop
-		( draw ) DUP2 GET #00 SWP 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 GET #00 NEQ ,&loop JNZ
+		DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2
 
 RTN

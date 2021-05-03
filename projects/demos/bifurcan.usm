@@ -110,7 +110,7 @@ RTN
 	&loop
 		( save-x ) OVR #03 MOD TOS #0008 MUL2 .anchor/x PEK2 ADD2 .Screen/x DEO2
 		( save-y ) OVR #03 DIV TOS #0008 MUL2 .anchor/y PEK2 ADD2 .Screen/y DEO2
-		( get digit* ) OVR DUPr STHr #02 MUL TOS ;digits ADD2 GET2 
+		( get digit* ) OVR DUPr STHr #02 MUL TOS ;digits ADD2 LDA2 
 		( get bit ) ROT #0e SWP SUB TOS SFT2 #0001 AND2 
 		( set tile ) #0008 MUL2 ;tiles ADD2 
 		( set style ) .style PEK #10 MUL TOS ADD2

@@ -127,9 +127,9 @@
 	DUP2 ;&h JSR2
 	;&next JSR2 #0001 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ,digit JSR
 	DUP2 ;&v JSR2
-	#04 ;v/spacing PUT
+	#04 ;v/spacing STA
 	.lines/y1 PEK2 #0003 SUB2 .neralie/y PEK2 .neralie/x PEK2 ;v JSR2
-	#01 ;v/spacing PUT
+	#01 ;v/spacing STA
 	,&next JSR #0001 .Screen/y DEO2 .neralie/x PEK2 #0003 SUB2 .Screen/x DEO2 ;digit JSR2
 	DUP2 ,&h JSR
 	,&next JSR .Screen/width DEI2 #0009 SUB2 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ;digit JSR2
@@ -226,7 +226,7 @@
 		can end up overflowing into bit 24.
 	)
 	
-	;mul/bhi PUT2 ;mul/ahi PUT2
+	;mul/bhi STA2 ;mul/ahi STA2
 	#00
 		#00
 			#00 .mul/alo PEK #00 .mul/blo PEK MUL2

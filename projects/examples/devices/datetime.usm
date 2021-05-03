@@ -51,13 +51,13 @@ BRK
 	#0080 SCALEX #0080 SCALEY .needles/hx PEK2 .needles/hy PEK2 #00 ;draw-line JSR2
 
 	( place )
-	#00 .DateTime/second DEI #0002 MUL2 ;table ADD2 GET2
+	#00 .DateTime/second DEI #0002 MUL2 ;table ADD2 LDA2
 		#00 SWP SCALEY .needles/sy POK2
 		#00 SWP SCALEX .needles/sx POK2
-	#00 .DateTime/minute DEI #0002 MUL2 ;table ADD2 GET2
+	#00 .DateTime/minute DEI #0002 MUL2 ;table ADD2 LDA2
 		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY .needles/my POK2
 		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX .needles/mx POK2
-	#00 .DateTime/hour DEI 12HOURS #05 MUL #0002 MUL2 ;table ADD2 GET2
+	#00 .DateTime/hour DEI 12HOURS #05 MUL #0002 MUL2 ;table ADD2 LDA2
 		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY .needles/hy POK2
 		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX .needles/hx POK2
 
@@ -69,7 +69,7 @@ BRK
 	( circle )
 	#00 #3c
 	&loop
-		( load ) OVR #00 SWP #0002 MUL2 ;table ADD2 GET2
+		( load ) OVR #00 SWP #0002 MUL2 ;table ADD2 LDA2
 		#00 SWP SCALEY .Screen/y DEO2
 		#00 SWP SCALEX .Screen/x DEO2
 		OVR #0f MOD #00 EQU #01 ADD .Screen/color DEO

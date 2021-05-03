@@ -159,7 +159,7 @@ BRK
 	&no-mod
 
 	.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 8/ SWP POP #06 GTH ,&no-key JNZ
-		.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 8/ DUP2 SWP POP .last-note POK ;notes ADD2 GET ;play JSR2
+		.Mouse/x DEI2 .octave-view/x1 PEK2 SUB2 8/ DUP2 SWP POP .last-note POK ;notes ADD2 LDA ;play JSR2
 		( release ) #00 .Mouse/state DEO
 		;draw-octave JSR2
 	&no-key
@@ -211,21 +211,21 @@ BRK
 
 	.Controller/key DEI
 	DUP #61 NEQ ,&no-c JNZ
-		#00 .last-note POK ;notes GET ;play JSR2 &no-c
+		#00 .last-note POK ;notes LDA ;play JSR2 &no-c
 	DUP #73 NEQ ,&no-d JNZ
-		#01 .last-note POK ;notes ++ GET ;play JSR2 &no-d
+		#01 .last-note POK ;notes ++ LDA ;play JSR2 &no-d
 	DUP #64 NEQ ,&no-e JNZ
-		#02 .last-note POK ;notes #0002 ADD2 GET ;play JSR2 &no-e
+		#02 .last-note POK ;notes #0002 ADD2 LDA ;play JSR2 &no-e
 	DUP #66 NEQ ,&no-f JNZ
-		#03 .last-note POK ;notes #0003 ADD2 GET ;play JSR2 &no-f
+		#03 .last-note POK ;notes #0003 ADD2 LDA ;play JSR2 &no-f
 	DUP #67 NEQ ,&no-g JNZ
-		#04 .last-note POK ;notes #0004 ADD2 GET ;play JSR2 &no-g
+		#04 .last-note POK ;notes #0004 ADD2 LDA ;play JSR2 &no-g
 	DUP #68 NEQ ,&no-a JNZ
-		#05 .last-note POK ;notes #0005 ADD2 GET ;play JSR2 &no-a
+		#05 .last-note POK ;notes #0005 ADD2 LDA ;play JSR2 &no-a
 	DUP #6a NEQ ,&no-b JNZ
-		#06 .last-note POK ;notes #0006 ADD2 GET ;play JSR2 &no-b
+		#06 .last-note POK ;notes #0006 ADD2 LDA ;play JSR2 &no-b
 	DUP #6b NEQ ,&no-c2 JNZ
-		#07 .last-note POK ;notes #0007 ADD2 GET ;play JSR2 &no-c2
+		#07 .last-note POK ;notes #0007 ADD2 LDA ;play JSR2 &no-c2
 	POP
 
 	.Controller/button DEI #f0 AND
@@ -359,7 +359,7 @@ RTN
 			.wave-view/y1 PEK2 #0010 ADD2 .Screen/y DEO2
 			#03 .Screen/color DEO
 		&no-dot
-		OVR TOS .Audio0/addr DEI2 ADD2 GET 
+		OVR TOS .Audio0/addr DEI2 ADD2 LDA 
 		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
 		TOS #0004 DIV2 .wave-view/y1 PEK2 ADD2 .Screen/y DEO2
 		.Screen/x DEI2 ++ .Screen/x DEO2
@@ -401,8 +401,8 @@ RTN
 	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 GET ADD2 .Screen/x DEO2
-	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 GET ADD2 .Screen/y DEO2
+	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 LDA ADD2 .Screen/x DEO2
+	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 LDA ADD2 .Screen/y DEO2
 	;knob_icns #0020 ADD2 .Screen/addr DEO2
 	#25 .Screen/color DEO
 	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2

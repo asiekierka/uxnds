@@ -149,7 +149,7 @@ BRK
 
 	( insert )
 	.selection/to PEK2 .selection/from PEK2 SUB2 ;shift-right JSR2
-	.Controller/key DEI .selection/from PEK2 PUT
+	.Controller/key DEI .selection/from PEK2 STA
 	.selection/from PEK2 ++ .selection/from POK2
 	.selection/from PEK2 ++ .selection/to POK2
 	;redraw JSR2
@@ -234,10 +234,10 @@ BRK
 
 	.File/name DEO2 #8000 .File/length DEO2 ;document/body .File/load DEO2
 	( get file length )
-	;document/body ;document/eof PUT2
+	;document/body ;document/eof STA2
 	&loop
-		( incr ) ;document/eof GET2 ++ ;document/eof PUT2
-	;document/eof GET2 GET #00 NEQ ,&loop JNZ
+		( incr ) ;document/eof LDA2 ++ ;document/eof STA2
+	;document/eof LDA2 LDA #00 NEQ ,&loop JNZ
 
 RTN
 
@@ -262,22 +262,22 @@ RTN
 	.i POK2
 	.selection/from PEK2 -- .j POK2 ( start -> end )
 	&loop
-		( move ) .j PEK2 .i PEK2 ADD2 GET .j PEK2 PUT
+		( move ) .j PEK2 .i PEK2 ADD2 LDA .j PEK2 STA
 		( incr ) .j PEK2 ++ .j POK2
-		.j PEK2 ;document/eof GET2 LTH2 ,&loop JNZ
-	;document/eof GET2 .i PEK2 SUB2 ;document/eof PUT2
+		.j PEK2 ;document/eof LDA2 LTH2 ,&loop JNZ
+	;document/eof LDA2 .i PEK2 SUB2 ;document/eof STA2
 
 RTN
 
 @shift-right ( length -- )
 
 	.i POK2
-	;document/eof GET2 .j POK2 ( end -> start )
+	;document/eof LDA2 .j POK2 ( end -> start )
 	&loop
-		( move ) .j PEK2 .i PEK2 SUB2 GET .j PEK2 PUT
+		( move ) .j PEK2 .i PEK2 SUB2 LDA .j PEK2 STA
 		( decr ) .j PEK2 -- .j POK2
 		.j PEK2 .selection/from PEK2 GTH2 ,&loop JNZ
-	;document/eof GET2 .i PEK2 ADD2 ;document/eof PUT2
+	;document/eof LDA2 .i PEK2 ADD2 ;document/eof STA2
 
 RTN
 
@@ -302,10 +302,10 @@ RTN
 @goto-linestart ( -- )
 
 	&loop
-		.selection/from PEK2 -- GET #0a EQU RTN?
-		.selection/from PEK2 -- GET #0d EQU RTN?
+		.selection/from PEK2 -- LDA #0a EQU RTN?
+		.selection/from PEK2 -- LDA #0d EQU RTN?
 		( decr ) .selection/from PEK2 DUP2 .selection/to POK2 -- .selection/from POK2
-	.selection/from PEK2 GET #00 NEQ ,&loop JNZ
+	.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
 	( clamp at document body )
 	.selection/from PEK2 ;document/body GTH2 RTN?
 	;document/body DUP2 .selection/from POK2 ++ .selection/to POK2
@@ -315,10 +315,10 @@ RTN
 @goto-lineend ( -- )
 	
 	&loop
-		.selection/from PEK2 GET #0a EQU RTN?
-		.selection/from PEK2 GET #0d EQU RTN?
+		.selection/from PEK2 LDA #0a EQU RTN?
+		.selection/from PEK2 LDA #0d EQU RTN?
 		( incr ) .selection/from PEK2 ++ DUP2 ++ .selection/to POK2 .selection/from POK2
-		.selection/from PEK2 GET #00 NEQ ,&loop JNZ
+		.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
 	( clamp at document body )
 	.selection/from PEK2 ;document/eof LTH2 RTN?
 	;document/eof -- DUP2 .selection/from POK2 ++ .selection/to POK2
@@ -330,9 +330,9 @@ RTN
 	.selection/to PEK2 .j POK2
 	&loop
 		( decr ) .j PEK2 -- .j POK2
-		.j PEK2 GET #20 EQU ,&end JNZ
-		.j PEK2 GET #0a EQU ,&end JNZ
-		.j PEK2 GET #0d EQU ,&end JNZ
+		.j PEK2 LDA #20 EQU ,&end JNZ
+		.j PEK2 LDA #0a EQU ,&end JNZ
+		.j PEK2 LDA #0d EQU ,&end JNZ
 		.j PEK2 ;document/body GTH2 ,&loop JNZ
 	&end
 	( return ) .j PEK2 --
@@ -344,9 +344,9 @@ RTN
 	.selection/to PEK2 .j POK2
 	&loop
 		( incr ) .j PEK2 ++ .j POK2
-		.j PEK2 GET #20 EQU ,&end JNZ
-		.j PEK2 GET #0a EQU ,&end JNZ
-		.j PEK2 GET #0d EQU ,&end JNZ
+		.j PEK2 LDA #20 EQU ,&end JNZ
+		.j PEK2 LDA #0a EQU ,&end JNZ
+		.j PEK2 LDA #0d EQU ,&end JNZ
 		.j PEK2 ;document/body GTH2 ,&loop JNZ
 	&end
 	( return ) .j PEK2 ++
@@ -358,8 +358,8 @@ RTN
 	#0000 .j POK2
 	&loop
 		( incr ) .j PEK2 ++ .j POK2
-		.selection/from PEK2 .j PEK2 SUB2 GET #0a EQU ,&end JNZ
-		.selection/from PEK2 .j PEK2 SUB2 GET #0d EQU ,&end JNZ
+		.selection/from PEK2 .j PEK2 SUB2 LDA #0a EQU ,&end JNZ
+		.selection/from PEK2 .j PEK2 SUB2 LDA #0d EQU ,&end JNZ
 		.selection/from PEK2 .j PEK2 SUB2 ;document/body GTH2 ,&loop JNZ
 	&end
 	( return ) .j PEK2
@@ -371,11 +371,11 @@ RTN
 	;document/body .j POK2 #0000 .pt/y POK2
 	&loop
 		.pt/y PEK2 .position/y PEK2 -- GTH2 ,&end JNZ
-		.j PEK2 GET #0a NEQ .j PEK2 GET #0d NEQ #0101 EQU2 ,&no-space JNZ
+		.j PEK2 LDA #0a NEQ .j PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JNZ
 			( incr ) .pt/y PEK2 ++ .pt/y POK2
 		&no-space
 		( incr ) .j PEK2 ++ .j POK2
-	.j PEK2 GET #00 NEQ ,&loop JNZ
+	.j PEK2 LDA #00 NEQ ,&loop JNZ
 	&end
 	( return ) .j PEK2
 
@@ -386,8 +386,8 @@ RTN
 	;find-line JSR2 ( find line )
 	#0000 .pt/x POK2
 	&loop
-		.j PEK2 .pt/x PEK2 ADD2 GET #0a EQU ,&end JNZ
-		.j PEK2 .pt/x PEK2 ADD2 GET #0d EQU ,&end JNZ
+		.j PEK2 .pt/x PEK2 ADD2 LDA #0a EQU ,&end JNZ
+		.j PEK2 .pt/x PEK2 ADD2 LDA #0d EQU ,&end JNZ
 		( incr ) .pt/x PEK2 ++ .pt/x POK2
 		.pt/x PEK2 .position/x PEK2 -- LTH2 ,&loop JNZ
 	&end
@@ -407,9 +407,9 @@ RTN
 	
 	#0000 .i POK2 ( start )
 	.selection/to PEK2 .selection/from PEK2 SUB2 .j POK2 ( end )
-	.j PEK2 ;clip/len PUT2
+	.j PEK2 ;clip/len STA2
 	&loop
-		.selection/from PEK2 .i PEK2 ADD2 GET ;clip/body .i PEK2 ADD2 PUT
+		.selection/from PEK2 .i PEK2 ADD2 LDA ;clip/body .i PEK2 ADD2 STA
 		( incr ) .i PEK2 ++ .i POK2
 		.i PEK2 .j PEK2 LTH2 ,&loop JNZ
 
@@ -417,11 +417,11 @@ RTN
 
 @paste ( -- )
 	
-	;clip/len GET2 ;shift-right JSR2
+	;clip/len LDA2 ;shift-right JSR2
 	#0000 .i POK2 ( start )
-	;clip/len GET2 .j POK2 ( end )
+	;clip/len LDA2 .j POK2 ( end )
 	&loop
-		;clip/body .i PEK2 ADD2 GET .selection/from PEK2 .i PEK2 ADD2 PUT
+		;clip/body .i PEK2 ADD2 LDA .selection/from PEK2 .i PEK2 ADD2 STA
 		( incr ) .i PEK2 ++ .i POK2
 		.i PEK2 .j PEK2 LTH2 ,&loop JNZ
 
@@ -431,7 +431,7 @@ RTN
 	
 	;document/body .selection/from POK2 #0000 .pt/x POK2 #0000 .pt/y POK2
 	&loop
-		.selection/from PEK2 GET #0a NEQ .selection/from PEK2 GET #0d NEQ #0101 EQU2 ,&no-space JNZ
+		.selection/from PEK2 LDA #0a NEQ .selection/from PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JNZ
 			( incr ) .pt/y PEK2 ++ .pt/y POK2
 			#0000 .pt/x POK2
 		&no-space
@@ -441,7 +441,7 @@ RTN
 		&no-reached
 		( incr ) .pt/x PEK2 ++ .pt/x POK2
 		( incr ) .selection/from PEK2 ++ .selection/from POK2
-	.selection/from PEK2 GET #00 NEQ ,&loop JNZ
+	.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
 
 RTN
 
@@ -477,16 +477,16 @@ RTN
 @draw-short ( short )
 
 	.addr POK2
-	;font_hex #00 ;addr GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr LDA #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #2e .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr LDA #0f AND #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #2e .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr ++ GET #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr ++ LDA #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #2e .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	;font_hex #00 ;addr ++ GET #0f AND #08 MUL ADD2 .Screen/addr DEO2
+	;font_hex #00 ;addr ++ LDA #0f AND #08 MUL ADD2 .Screen/addr DEO2
 	( draw ) #2e .Screen/color DEO
 
 RTN
@@ -519,10 +519,10 @@ RTN
 	#0000 .j POK2 ( j is linebreaks )
 	&find-offset
 		.scroll/y PEK2 .j PEK2 EQU2 ,&find-offset-end JNZ
-		.textarea/addr PEK2 GET #0a NEQ .textarea/addr PEK2 GET #0d NEQ #0101 EQU2 ,&no-break JNZ
+		.textarea/addr PEK2 LDA #0a NEQ .textarea/addr PEK2 LDA #0d NEQ #0101 EQU2 ,&no-break JNZ
 			( incr ) .j PEK2 ++ .j POK2 &no-break
 		( incr ) .textarea/addr PEK2 ++ .textarea/addr POK2
-	.textarea/addr PEK2 GET #00 NEQ ,&find-offset JNZ
+	.textarea/addr PEK2 LDA #00 NEQ ,&find-offset JNZ
 	&find-offset-end
 
 	#0018 .Screen/x DEO2 #0000 .Screen/y DEO2
@@ -533,7 +533,7 @@ RTN
 		.Screen/y DEI2 .Screen/height DEI2 #0010 SUB2 GTH2 ;&end JNZ2
 
 
-		.i PEK2 GET #0a NEQ .i PEK2 GET #0d NEQ #0101 EQU2 ;&no-linebreak JNZ2
+		.i PEK2 LDA #0a NEQ .i PEK2 LDA #0d NEQ #0101 EQU2 ;&no-linebreak JNZ2
 			( draw linebreak )
 			;linebreak_icn .Screen/addr DEO2
 			( draw ) #02
@@ -563,9 +563,9 @@ RTN
 
 
 		( get character )
-		;font #00 .i PEK2 GET #20 SUB 8* ADD2 .Screen/addr DEO2
+		;font #00 .i PEK2 LDA #20 SUB 8* ADD2 .Screen/addr DEO2
 		( is a special character )
-		.i PEK2 GET #20 GTH ,&no-tab JNZ ;font .Screen/addr DEO2 &no-tab
+		.i PEK2 LDA #20 GTH ,&no-tab JNZ ;font .Screen/addr DEO2 &no-tab
 
 		( draw ) #21
 		.i PEK2 .selection/from PEK2 -- GTH2
@@ -575,7 +575,7 @@ RTN
 		( incr ) .i PEK2 ++ .i POK2
 		( incr ) .Screen/x DEI2 #0007 ADD2 .Screen/x DEO2
 
-	.i PEK2 GET #00 NEQ ;&loop JNZ2
+	.i PEK2 LDA #00 NEQ ;&loop JNZ2
 
 	&end
 
@@ -616,10 +616,10 @@ RTN
 	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
 	.label/addr PEK2
 	&loop
-		( draw ) DUP2 GET #00 SWP #20 SUB 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP #20 SUB 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 GET #00 NEQ ,&loop JNZ
+		DUP2 LDA #00 NEQ ,&loop JNZ
 	POP2
 	( selection )
 	.selection/from PEK2 ;document/body SUB2 ;draw-short JSR2
