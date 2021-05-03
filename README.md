@@ -61,6 +61,10 @@ RTN
 - `#a1f3` `#a14d` `#a16c`, grey-pink/teal
 - `#8c4b` `#884b` `#e8bb`, commodore64
 
+## Convert audio for Unx
+
+```sox sub202_C.wav -b 8 -c 1 -e signed output.raw```
+
 ## Refs
 
 https://code.9front.org/hg/plan9front/file/a7f9946e238f/sys/src/games/nes/cpu.c

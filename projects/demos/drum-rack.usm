@@ -1,4 +1,11 @@
-( a blank file )
+( drum rack 
+
+	TODO
+		- Change pitch of sample
+		- Draw pad pitch on pad
+		- When selecting a pad, should highlight note in octave
+)
+
 
 %RTN { JMP2r }
 %8+ { #0008 ADD2 }
@@ -35,6 +42,9 @@
 
 |0000
 
+@piano [ &last $1 &octave $1 ]
+
+@last-note $1
 @last $1
 @color $1
 @center      [ &x $2 &y $2 ]
@@ -44,9 +54,10 @@
 @frame       [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @label       [ &x $2 &y $2 &color $1 &addr $2 ]
 @pos         [ &x $2 &y $2 ] 
-@padview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@mixview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-@wavview     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@pad-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@mix-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@oct-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
+@wav-view     [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 
 @state [ ( addr length )
 	$4 $4 $4 $4
@@ -55,14 +66,16 @@
 	$4 $4 $4 $4
 ]
 
+@modes [ $1 $1 $1 $1 ] ( single/repeat )
+
 ( program )
 
 |0100 ( -> )
 	
 	( theme ) 
 	#0aff .System/r DEO2 
-	#0af2 .System/g DEO2 
-	#0af3 .System/b DEO2
+	#0a2f .System/g DEO2 
+	#0a3f .System/b DEO2
 
 	( vectors )
 	;on-control .Controller/vector DEO2
@@ -71,10 +84,18 @@
 	;on-midi .Midi/vector DEO2
 
 	( store location/length )
-	#88 .Audio0/volume DEO #011c .Audio0/adsr DEO2
-	#88 .Audio1/volume DEO #011c .Audio1/adsr DEO2
-	#88 .Audio2/volume DEO #011c .Audio2/adsr DEO2
-	#88 .Audio3/volume DEO #111c .Audio3/adsr DEO2
+	#88 .Audio0/volume DEO #023c .Audio0/adsr DEO2
+	#7a .Audio1/volume DEO #1334 .Audio1/adsr DEO2
+	#a7 .Audio2/volume DEO #0414 .Audio2/adsr DEO2
+	#88 .Audio3/volume DEO #022c .Audio3/adsr DEO2
+
+	#0400 .Audio0/length DEO2
+	#0800 .Audio1/length DEO2
+	#0800 .Audio2/length DEO2
+	#1000 .Audio3/length DEO2
+
+	#01 .modes POK
+	#03 .piano/octave POK
 
 	;load-samples JSR2
 
@@ -86,40 +107,47 @@
 	.center/x PEK2 PAD-WIDTH #0003 MUL2 SUB2 #0010 SUB2 .frame/x1 POK2
 	.center/y PEK2 #0050 SUB2 .frame/y1 POK2
 	.center/x PEK2 PAD-WIDTH #0003 MUL2 ADD2 #0010 ADD2 .frame/x2 POK2
-	.frame/y1 PEK2 PAD-HEIGHT #0004 MUL2 ADD2 #0030 ADD2 .frame/y2 POK2
+	.frame/y1 PEK2 PAD-HEIGHT #0004 MUL2 ADD2 #0028 ADD2 .frame/y2 POK2
 
-	( place padview )
-	.frame/x1 PEK2 .padview/x1 POK2
-	.frame/y1 PEK2 .padview/y1 POK2
-	.padview/x1 PEK2 #0004 PAD-WIDTH MUL2 ADD2 .padview/x2 POK2
-	.padview/y1 PEK2 #0004 PAD-HEIGHT MUL2 ADD2 .padview/y2 POK2
+	( place pad-view )
+	.frame/x1 PEK2 .pad-view/x1 POK2
+	.frame/y1 PEK2 .pad-view/y1 POK2
+	.pad-view/x1 PEK2 #0004 PAD-WIDTH MUL2 ADD2 .pad-view/x2 POK2
+	.pad-view/y1 PEK2 #0004 PAD-HEIGHT MUL2 ADD2 .pad-view/y2 POK2
 
-	( place mixview )
-	.padview/x2 PEK2 .mixview/x1 POK2
-	.padview/y1 PEK2 .mixview/y1 POK2
-	.mixview/x1 PEK2 #0080 ADD2 .mixview/x2 POK2
-	.padview/y2 PEK2 .mixview/y2 POK2
+	( place mix-view )
+	.pad-view/x2 PEK2 #0006 ADD2 .mix-view/x1 POK2
+	.pad-view/y1 PEK2 .mix-view/y1 POK2
+	.mix-view/x1 PEK2 #007a ADD2 .mix-view/x2 POK2
+	.pad-view/y2 PEK2 .mix-view/y2 POK2
 
-	( place wavview )
-	.frame/x1 PEK2 .wavview/x1 POK2
-	.mixview/y2 PEK2 #0008 ADD2 .wavview/y1 POK2
-	.frame/x2 PEK2 .wavview/x2 POK2
-	.wavview/y1 PEK2 #0020 ADD2 .wavview/y2 POK2
+	( place oct-view )
+	.frame/x1 PEK2 .oct-view/x1 POK2
+	.mix-view/y2 PEK2 #0004 ADD2 .oct-view/y1 POK2
+	.oct-view/x1 PEK2 #0050 ADD2 .oct-view/x2 POK2
+	.oct-view/y1 PEK2 #0018 ADD2 .oct-view/y2 POK2
+
+	( place wav-view )
+	.oct-view/x2 PEK2 .wav-view/x1 POK2
+	.mix-view/y2 PEK2 #0004 ADD2 .wav-view/y1 POK2
+	.frame/x2 PEK2 .wav-view/x2 POK2
+	.wav-view/y1 PEK2 #0020 ADD2 .wav-view/y2 POK2
 
 	;draw-pads JSR2
 	;draw-mixers JSR2
+	;draw-octave JSR2
 
-	.frame/x1 PEK2 #0004 SUB2 
-	.frame/y1 PEK2 #0004 SUB2 
-	.frame/x2 PEK2 #0002 ADD2
-	.frame/y2 PEK2 #0002 ADD2
+	.mix-view/x1 PEK2 #0004 SUB2 
+	.mix-view/y1 PEK2 #0000 SUB2 
+	.mix-view/x2 PEK2 #0002 SUB2
+	.mix-view/y2 PEK2 #0002 SUB2
 	#01
 	;line-rect JSR2
 
-	.mixview/x1 PEK2 #0002 ADD2 
-	.mixview/y1 PEK2 #0000 SUB2 
-	.mixview/x2 PEK2 #0002 SUB2
-	.mixview/y2 PEK2 #0002 SUB2
+	.wav-view/x1 PEK2 #0000 SUB2 
+	.wav-view/y1 PEK2 #0002 SUB2 
+	.wav-view/x2 PEK2 #0002 SUB2
+	.wav-view/y2 PEK2 #0002 ADD2
 	#01
 	;line-rect JSR2
 
@@ -145,9 +173,6 @@ BRK
 	.Audio3/output DEI #04 SFT TOS #0008 MUL2 ;meter ADD2 .Screen/addr DEO2
 	#21 .Screen/color DEO
 
-	( TODO: draw in mixer )
-	( TODO: draw global )
-
 BRK
 
 @on-mouse ( -> )
@@ -156,9 +181,17 @@ BRK
 
 	.Mouse/state DEI #00 NEQ ,&on-touch JNZ BRK &on-touch
 
-	.Mouse/x DEI2 DUP2 .padview/x1 PEK2 GTH2 ROT ROT .padview/x2 PEK2 #0001 ADD2 LTH2 #0101 EQU2
-	.Mouse/y DEI2 DUP2 .padview/y1 PEK2 GTH2 ROT ROT .padview/y2 PEK2 LTH2 #0101 EQU2
+	.Mouse/x DEI2 DUP2 .pad-view/x1 PEK2 GTH2 ROT ROT .pad-view/x2 PEK2 #0001 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .pad-view/y1 PEK2 GTH2 ROT ROT .pad-view/y2 PEK2 LTH2 #0101 EQU2
 	#0101 EQU2 ;on-touch-pad JNZ2
+
+	.Mouse/x DEI2 DUP2 .mix-view/x1 PEK2 GTH2 ROT ROT .mix-view/x2 PEK2 #0001 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .mix-view/y1 PEK2 GTH2 ROT ROT .mix-view/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-mix JNZ2
+
+	.Mouse/x DEI2 DUP2 .oct-view/x1 PEK2 GTH2 ROT ROT .oct-view/x2 PEK2 #0001 ADD2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 DUP2 .oct-view/y1 PEK2 GTH2 ROT ROT .oct-view/y2 PEK2 LTH2 #0101 EQU2
+	#0101 EQU2 ;on-touch-oct JNZ2
 
 BRK
 
@@ -167,7 +200,7 @@ BRK
 	.Midi/note DEI #00 NEQ ,&note-on JNZ BRK &note-on
 
 	.Midi/channel DEI #90 NEQ ,&no-drum JNZ 
-		.Midi/note DEI DUP #80 ADD SWP #10 MOD ;play-pad JSR2
+		( .Midi/note DEI DUP #80 ADD SWP #10 MOD ;play-pad JSR2 )
 		BRK
 	&no-drum
 
@@ -182,47 +215,133 @@ BRK
 	.Controller/key DEI #00 NEQ ,&key-down JNZ BRK &key-down
 
 	.Controller/key DEI 
-	DUP #31 NEQ ,&no-0 JNZ #b0 #00 ;play-pad JSR2 &no-0
-	DUP #32 NEQ ,&no-1 JNZ #b0 #01 ;play-pad JSR2 &no-1
-	DUP #33 NEQ ,&no-2 JNZ #b0 #02 ;play-pad JSR2 &no-2
-	DUP #34 NEQ ,&no-3 JNZ #b0 #03 ;play-pad JSR2 &no-3
-	DUP #71 NEQ ,&no-4 JNZ #b0 #04 ;play-pad JSR2 &no-4
-	DUP #77 NEQ ,&no-5 JNZ #b0 #05 ;play-pad JSR2 &no-5
-	DUP #65 NEQ ,&no-6 JNZ #b0 #06 ;play-pad JSR2 &no-6
-	DUP #72 NEQ ,&no-7 JNZ #b0 #07 ;play-pad JSR2 &no-7
-	DUP #61 NEQ ,&no-8 JNZ #b0 #08 ;play-pad JSR2 &no-8
-	DUP #73 NEQ ,&no-9 JNZ #b0 #09 ;play-pad JSR2 &no-9
-	DUP #64 NEQ ,&no-a JNZ #b0 #0a ;play-pad JSR2 &no-a
-	DUP #66 NEQ ,&no-b JNZ #b0 #0b ;play-pad JSR2 &no-b
-	DUP #7a NEQ ,&no-c JNZ #b0 #0c ;play-pad JSR2 &no-c
-	DUP #78 NEQ ,&no-d JNZ #b0 #0d ;play-pad JSR2 &no-d
-	DUP #63 NEQ ,&no-e JNZ #b0 #0e ;play-pad JSR2 &no-e
-	DUP #76 NEQ ,&no-f JNZ #b0 #0f ;play-pad JSR2 &no-f
+	DUP #31 NEQ ,&no-0 JNZ #00 ;play-pad JSR2 &no-0
+	DUP #32 NEQ ,&no-1 JNZ #01 ;play-pad JSR2 &no-1
+	DUP #33 NEQ ,&no-2 JNZ #02 ;play-pad JSR2 &no-2
+	DUP #34 NEQ ,&no-3 JNZ #03 ;play-pad JSR2 &no-3
+	DUP #71 NEQ ,&no-4 JNZ #04 ;play-pad JSR2 &no-4
+	DUP #77 NEQ ,&no-5 JNZ #05 ;play-pad JSR2 &no-5
+	DUP #65 NEQ ,&no-6 JNZ #06 ;play-pad JSR2 &no-6
+	DUP #72 NEQ ,&no-7 JNZ #07 ;play-pad JSR2 &no-7
+	DUP #61 NEQ ,&no-8 JNZ #08 ;play-pad JSR2 &no-8
+	DUP #73 NEQ ,&no-9 JNZ #09 ;play-pad JSR2 &no-9
+	DUP #64 NEQ ,&no-a JNZ #0a ;play-pad JSR2 &no-a
+	DUP #66 NEQ ,&no-b JNZ #0b ;play-pad JSR2 &no-b
+	DUP #7a NEQ ,&no-c JNZ #0c ;play-pad JSR2 &no-c
+	DUP #78 NEQ ,&no-d JNZ #0d ;play-pad JSR2 &no-d
+	DUP #63 NEQ ,&no-e JNZ #0e ;play-pad JSR2 &no-e
+	DUP #76 NEQ ,&no-f JNZ #0f ;play-pad JSR2 &no-f
 	POP
 
 BRK
 
 @on-touch-pad ( -> )
 	
-	( x ) .Mouse/x DEI2 .padview/x1 PEK2 SUB2 PAD-WIDTH DIV2 SWP POP
-	( y ) .Mouse/y DEI2 .padview/y1 PEK2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
+	( x ) .Mouse/x DEI2 .pad-view/x1 PEK2 SUB2 PAD-WIDTH DIV2 SWP POP
+	( y ) .Mouse/y DEI2 .pad-view/y1 PEK2 SUB2 PAD-HEIGHT DIV2 SWP POP #04 MUL ADD
 	
-	DUP #b0 SWP ;play-pad JSR2
+	DUP SWP ;play-pad JSR2
 
-	DUP ;draw-editor JSR2
-	DUP ;draw-waveform JSR2
+	;draw-waveform JSR2
 
-	POP
 	( release ) #00 .Mouse/state DEO
 
 BRK
+
+@on-touch-mix ( -> )
+
+	( channel ) .Mouse/y DEI2 .mix-view/y1 PEK2 SUB2 PAD-HEIGHT DIV2 SWP POP STH
+
+	( knob ) .Mouse/x DEI2 .mix-view/x1 PEK2 SUB2 #0010 DIV2 SWP POP
+
+	DUP #00 NEQ ,&no-a JNZ
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEI
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEO &no-a
+	DUP #01 NEQ ,&no-d JNZ
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEI
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEO &no-d
+	DUP #02 NEQ ,&no-s JNZ
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEI
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEO &no-s
+	DUP #03 NEQ ,&no-r JNZ
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEI
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEO &no-r
+
+	DUP #04 NEQ ,&no-repeat JNZ
+		.modes [ DUPr STHr ADD ] PEK 
+		#00 EQU
+		.modes [ DUPr STHr ADD ] POK &no-repeat
+
+	DUP #05 NEQ ,&no-left JNZ
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEI 
+		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEO &no-left
+	DUP #06 NEQ ,&no-right JNZ
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEI
+		DUP #f0 AND STH #01 .Mouse/state DEI #10 EQU #0e MUL ADD ADD #0f AND STHr ADD
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEO &no-right
+	POP
+
+	( release ) #00 .Mouse/state DEO
+
+	DUPr STHr ;draw-mixer JSR2
+
+	POPr
+
+BRK
+
+@on-touch-oct ( -> )
+	
+	.Mouse/x DEI2 .oct-view/x1 PEK2 SUB2 8/ SWP POP #08 NEQ ,&no-mod JNZ
+		.Mouse/y DEI2 .oct-view/y1 PEK2 SUB2 8/ SWP POP 
+		DUP #00 NEQ ,&no-incr JNZ
+			.piano/octave PEK #01 ADD .piano/octave POK &no-incr
+		DUP #02 NEQ ,&no-decr JNZ
+			.piano/octave PEK #01 SUB .piano/octave POK &no-decr
+		POP
+		( release ) #00 .Mouse/state DEO
+		;draw-octave JSR2
+		BRK
+	&no-mod
+
+	.Mouse/x DEI2 .oct-view/x1 PEK2 SUB2 8/ SWP POP #06 GTH ,&no-key JNZ
+		.Mouse/x DEI2 .oct-view/x1 PEK2 SUB2 8/ 
+
+		( set pitch of pad )
+		DUP2 ;notes ADD2 LDA .last PEK SWP .piano/octave PEK #02 SUB #0c MUL ADD ;set-pitch JSR2
+
+		( record last note )
+		SWP POP .last-note POK 
+		.last PEK ;play-pad JSR2
+
+		( release ) #00 .Mouse/state DEO
+		;draw-octave JSR2
+	&no-key
+
+BRK
+
+@set-pitch ( pad pitch -- )
+	
+	SWP TOS ;pad-pitch ADD2 STA
+
+RTN
+
+@play ( pitch -- )
+	
+	DUP .piano/octave PEK .modes PEK MUL ADD .Audio0/pitch DEO
+
+RTN
 
 @load-samples ( -- )
 
 	#00 #10
 	&loop
 		( name ) OVR TOS #0019 MUL2 ;pad-path ADD2 .File/name DEO2
-		( length ) OVR TOS #0002 MUL2 ;pad-length ADD2 LDA2 .File/length DEO2
+		( length ) OVR #04 DIV #10 MUL .Audio0/length ADD DEI2 .File/length DEO2
 		( load ) OVR TOS #0002 MUL2 ;pad-addr ADD2 LDA2 .File/load DEO2
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
@@ -232,28 +351,19 @@ RTN
 
 @play-pad ( note pad -- )
 	
-	STH
-	( unseslect last )
+	( unselect last )
 	.last PEK #01 ;draw-pad JSR2
-	DUPr STHr .last POK 
-
+	DUP .last POK 
 	( highlight )
-	DUPr STHr #02 ;draw-pad JSR2
-
-	( length )
-	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 DUP2 LDA2 SWP2 #0002 ADD2 LDA2 SWP2 SUB2 
-	DUPr STHr #04 DIV #10 MUL .Audio0/length ADD DEO2	
-
+	DUP #02 ;draw-pad JSR2
 	( addr )
-	DUPr STHr TOS #0002 MUL2 ;pad-addr ADD2 LDA2
-	DUPr STHr #04 DIV #10 MUL .Audio0/addr ADD DEO2
-
+	DUP TOS #0002 MUL2 ;pad-addr ADD2 LDA2 STH2
+	DUP #04 DIV #10 MUL .Audio0/addr ADD STH2r ROT DEO2
 	( pitch )
-	DUPr STHr #04 DIV #10 MUL .Audio0/pitch ADD DEO
-
-	DUPr STHr #04 DIV ;draw-mixer JSR2
-
-	POPr
+	DUP TOS ;pad-pitch ADD2 LDA STH 
+	DUP #04 DIV .modes ADD PEK #00 EQU #80 MUL STH ADDr
+	DUP #04 DIV #10 MUL .Audio0/pitch ADD STHr SWP DEO
+	#04 DIV ;draw-mixer JSR2
 
 RTN
 
@@ -261,27 +371,27 @@ RTN
 	
 	#02 MUL #00 SWP ;pad-addr ADD2 LDA2 STH2
 
-	.wavview/x1 PEK2
-	.wavview/y1 PEK2
-	.wavview/x2 PEK2 ++
-	.wavview/y2 PEK2
+	.wav-view/x1 PEK2 #0002 ADD2
+	.wav-view/y1 PEK2
+	.wav-view/x2 PEK2 #0002 SUB2
+	.wav-view/y2 PEK2
 	#00 ;fill-rect JSR2
 
-	.wavview/x1 PEK2 .Screen/x DEO2
+	.wav-view/x1 PEK2 #0002 ADD2 .Screen/x DEO2
 
 	( waveform )
 	#00 #ff
 	&loop
 		( dotted line )
 		OVR #01 AND ,&no-dot JNZ 
-			.wavview/y1 PEK2 #0010 ADD2 .Screen/y DEO2
-			#03 .Screen/color DEO
+			.wav-view/y1 PEK2 #0010 ADD2 .Screen/y DEO2
+			#01 .Screen/color DEO
 		&no-dot
 		OVR TOS #0010 MUL2 [ DUP2r STH2r ] ADD2 LDA 
 		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
-		TOS #0004 DIV2 .wavview/y1 PEK2 ADD2 .Screen/y DEO2
+		TOS #0004 DIV2 .wav-view/y1 PEK2 ADD2 .Screen/y DEO2
 		.Screen/x DEI2 ++ .Screen/x DEO2
-		( draw ) OVR .Audio0/length DEI2 SWP POP GTH #02 MUL #01 ADD .Screen/color DEO
+		( draw ) #02 .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 LTH ,&loop JNZ
 	POP2
@@ -290,59 +400,35 @@ RTN
 
 RTN
 
-@draw-editor ( pad -- )
-
-	( get state )
-
-	.frame/y2 PEK2 #0008 ADD2 .Screen/y DEO2
-
-	.frame/x1 PEK2 .Screen/x DEO2
-	DUP #02 MUL TOS ;pad-addr ADD2 LDA2
-	( addr ) #21 ;draw-short JSR2
-
-	.frame/x1 PEK2 #0028 ADD2 .Screen/x DEO2
-	DUP #02 MUL TOS ;pad-length ADD2 LDA2
-	( addr ) #21 ;draw-short JSR2
-
-	POP
-
-RTN
-
 @draw-mixer ( mixer -- )
 
-	;cursor .Screen/addr DEO2
-
-	DUP #00 SWP PAD-HEIGHT MUL2 .mixview/y1 PEK2 ADD2 #0002 ADD2 STH2
+	DUP STH #00 SWP PAD-HEIGHT MUL2 .mix-view/y1 PEK2 ADD2 #0003 ADD2
 
 	( adsr )
-	.mixview/x1 PEK2 #0008 ADD2 DUP2r STH2r
-		.Audio0/adsr DEI #04 SFT
+	DUP2 .mix-view/x1 PEK2 SWP2
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEI #04 SFT
 		;draw-knob JSR2
-	.mixview/x1 PEK2 #0018 ADD2 DUP2r STH2r
-		.Audio0/adsr DEI #0f AND
+	DUP2 .mix-view/x1 PEK2 #0010 ADD2 SWP2
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] DEI #0f AND
 		;draw-knob JSR2
-	.mixview/x1 PEK2 #0028 ADD2 DUP2r STH2r
-		.Audio0/adsr #01 ADD DEI #04 SFT
+	DUP2 .mix-view/x1 PEK2 #0020 ADD2 SWP2
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEI #04 SFT
 		;draw-knob JSR2
-	.mixview/x1 PEK2 #0038 ADD2 DUP2r STH2r
-		.Audio0/adsr #01 ADD DEI #0f AND
+	DUP2 .mix-view/x1 PEK2 #0030 ADD2 SWP2
+		.Audio0/adsr [ DUPr STHr #10 MUL ADD ] #01 ADD DEI #0f AND
 		;draw-knob JSR2
-
-	.mixview/x1 PEK2 #0048 ADD2 DUP2r STH2r
-		#00 ;draw-switch JSR2
-
+	( once/repeat )
+	DUP2 .mix-view/x1 PEK2 #0040 ADD2 SWP2
+		.modes [ DUPr STHr ADD ] PEK ;draw-switch JSR2
 	( volume )
-	.mixview/x1 PEK2 #0058 ADD2 DUP2r STH2r
-		.Audio0/volume DEI #04 SFT
+	DUP2 .mix-view/x1 PEK2 #0050 ADD2 SWP2
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEI #04 SFT
 		;draw-knob JSR2
-	.mixview/x1 PEK2 #0068 ADD2 DUP2r STH2r
-		.Audio0/volume DEI #0f AND
+	DUP2 .mix-view/x1 PEK2 #0060 ADD2 SWP2
+		.Audio0/volume [ DUPr STHr #10 MUL ADD ] DEI #0f AND
 		;draw-knob JSR2
-
-
-	POP
-	POP2r
-	( once/repeat interface )
+	POP2
+	POPr
 
 RTN
 
@@ -351,13 +437,13 @@ RTN
 	( load ) .knob/value POK .knob/y POK2 .knob/x POK2
 
 	.knob/x PEK2 .Screen/x DEO2
-	.knob/y PEK2 .Screen/y DEO2 ;knob_icns .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/x PEK2 8+ .Screen/x DEO2 ;knob_icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/y PEK2 8+ .Screen/y DEO2 ;knob_icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
-	.knob/x PEK2 .Screen/x DEO2 ;knob_icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/y PEK2 .Screen/y DEO2 ;knob-icns .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 8+ .Screen/x DEO2 ;knob-icns 8+ .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/y PEK2 8+ .Screen/y DEO2 ;knob-icns #0018 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
+	.knob/x PEK2 .Screen/x DEO2 ;knob-icns #0010 ADD2 .Screen/addr DEO2 #21 .Screen/color DEO
 	.knob/x PEK2 #00 #00 .knob/value PEK ;knob-offsetx ADD2 LDA ADD2 .Screen/x DEO2
 	.knob/y PEK2 #00 #00 .knob/value PEK ;knob-offsety ADD2 LDA ADD2 .Screen/y DEO2
-	;knob_icns #0020 ADD2 .Screen/addr DEO2
+	;knob-icns #0020 ADD2 .Screen/addr DEO2
 	#25 .Screen/color DEO
 	.knob/x PEK2 #0004 ADD2 .Screen/x DEO2
 	.knob/y PEK2 #0010 ADD2 .Screen/y DEO2
@@ -368,24 +454,28 @@ RTN
 
 @draw-switch ( x* y* value -- )
 	
-	POP ( TODO: use value for toggle position )
+	STH 
+
 	.Screen/y DEO2
 	.Screen/x DEO2
-	;switch .Screen/addr DEO2
-	#21 .Screen/color DEO
+
+	DUPr STHr #20 MUL #00 SWP ;switch-icns ADD2 ( keep in stack )
+
+	DUP2 .Screen/addr DEO2
+	#21 DUPr STHr ADD .Screen/color DEO
 
 	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-	;switch #0008 ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
+	DUP2 #0008 ADD2 .Screen/addr DEO2
+	#21 DUPr STHr ADD .Screen/color DEO
 
 	.Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
 	.Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
-	;switch #0010 ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
+	DUP2 #0010 ADD2 .Screen/addr DEO2
+	#21 DUPr STHr ADD .Screen/color DEO
 
 	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-	;switch #0018 ADD2 .Screen/addr DEO2
-	#21 .Screen/color DEO
+	#0018 ADD2 .Screen/addr DEO2
+	#21 STHr ADD .Screen/color DEO
 
 RTN
 
@@ -417,8 +507,8 @@ RTN
 
 	DUPr STHr 
 
-	DUP #04 DIV SWP #04 MOD TOS PAD-WIDTH MUL2 ( center ) .padview/x1 PEK2 ADD2 
-	ROT TOS PAD-HEIGHT MUL2 ( center ) .padview/y1 PEK2 ADD2 
+	DUP #04 DIV SWP #04 MOD TOS PAD-WIDTH MUL2 ( center ) .pad-view/x1 PEK2 ADD2 
+	ROT TOS PAD-HEIGHT MUL2 ( center ) .pad-view/y1 PEK2 ADD2 
 
 	( draw outline )
 	OVR2 OVR2 
@@ -433,16 +523,75 @@ RTN
 	;pad-name DUPr STHr TOS #0005 MUL2 ADD2 
 	;draw-label-left JSR2
 
+	( draw note )
+	OVR2 #0002 ADD2 .Screen/x DEO2
+	DUP2 #0014 ADD2 .Screen/y DEO2
+	OVRr STHr TOS ;pad-pitch ADD2 LDA
+	#0c MOD TOS #0008 MUL2 ;font-num-uc #0030 ADD2 ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	( draw octave )
+	OVR2 #000a ADD2 .Screen/x DEO2
+	DUP2 #0014 ADD2 .Screen/y DEO2
+	OVRr STHr TOS ;pad-pitch ADD2 LDA
+	#0c DIV TOS #0008 MUL2 ;font-num-uc #0030 ADD2 ADD2 .Screen/addr DEO2
+	#21 .Screen/color DEO
+
 	POP2 POP2
 
 	POPr POPr
 
 RTN
 
+@draw-octave ( -- )
+	
+	.oct-view/x1 PEK2 .oct-view/y1 PEK2
+
+	OVR2 OVR2 ;keys-left-icns #21 .last-note PEK #00 EQU ADD ;draw-key JSR2
+	OVR2 8+ OVR2 ;keys-middle-icns #21 .last-note PEK #01 EQU ADD ;draw-key JSR2
+	OVR2 #0010 ADD2 OVR2 ;keys-right-icns #21 .last-note PEK #02 EQU ADD ;draw-key JSR2
+	OVR2 #0018 ADD2 OVR2 ;keys-left-icns #21 .last-note PEK #03 EQU ADD ;draw-key JSR2
+	OVR2 #0020 ADD2 OVR2 ;keys-middle-icns #21 .last-note PEK #04 EQU ADD ;draw-key JSR2
+	OVR2 #0028 ADD2 OVR2 ;keys-middle-icns #21 .last-note PEK #05 EQU ADD ;draw-key JSR2
+	SWP2 #0030 ADD2 SWP2 ;keys-right-icns #21 .last-note PEK #06 EQU ADD ;draw-key JSR2
+
+	.oct-view/x1 PEK2 #0040 ADD2 .Screen/x DEO2
+
+	;arrow-icns .Screen/addr DEO2
+	.oct-view/y1 PEK2 .Screen/y DEO2
+	#21 .Screen/color DEO
+
+	;arrow-icns 8+ .Screen/addr DEO2
+	.oct-view/y1 PEK2 #0010 ADD2 .Screen/y DEO2
+	#21 .Screen/color DEO
+
+	;font-hex .piano/octave PEK #03 ADD #00 SWP #0008 MUL2 ADD2 .Screen/addr DEO2
+	.oct-view/y1 PEK2 8+ .Screen/y DEO2
+	#23 .Screen/color DEO
+
+RTN
+
+@draw-key ( x* y* addr* color -- )
+		
+	STH
+	.Screen/addr DEO2 
+	SWP2 .Screen/x DEO2
+	DUP2 #0018 ADD2
+	&loop
+		( move ) OVR2 .Screen/y DEO2
+		( draw ) DUPr STHr .Screen/color DEO
+		( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2  
+		( incr ) SWP2 8+ SWP2
+		OVR2 OVR2 LTH2 ,&loop JNZ
+	POP2 POP2 
+	POPr
+
+RTN
+
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	;clear .Screen/addr DEO2 
+	#fff8 .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	#30 .Screen/color DEO
@@ -450,7 +599,7 @@ RTN
 	.Mouse/x DEI2 .pointer/x POK2 
 	.Mouse/y DEI2 .pointer/y POK2
 	( draw new cursor )
-	;cursor .Screen/addr DEO2 
+	;cursor-icn .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	( colorize on state )
@@ -533,31 +682,68 @@ RTN
 	"PAD1 $1 "SYN1 $1 "SYN2 $1 "CYM1 $1 ( short )
 	"HHAT $1 "OHAT $1 "CHAT $1 "RIDE $1
 	"SID1 $1 "SNR1 $1 "SNR2 $1 "SID2 $1 ( long )
-	"BDR1 $1 "KCK1 $1 "KCK2 $1 "BDR2 $1 ]
+	"BDR1 $1 "KCK1 $1 "KCK2 $1 "SUB1 $1 ]
 
 @pad-addr [
-	4000 4400 4800 4c00
+	5000 5400 5800 5c00
 	5000 5800 6000 6800
 	7000 7800 8000 8800
 	9000 b000 d000 f000 $2 ]
 
-@pad-length [
-	0800 0800 0800 0800
-	0800 0800 0800 0800
-	0800 0800 0800 0800
-	0800 0800 0800 0800 $2 ]
+@pad-pitch [
+	30 30 30 30
+	30 30 30 30
+	30 30 30 30
+	30 30 30 30 ]
 
 @pad-path [
-	"projects/sounds/pad1.ss8 $1 "projects/sounds/syn1.ss8 $1
-	"projects/sounds/syn2.ss8 $1 "projects/sounds/cym1.ss8 $1
-	"projects/sounds/hhat.ss8 $1 "projects/sounds/ohat.ss8 $1
-	"projects/sounds/chat.ss8 $1 "projects/sounds/ride.ss8 $1
-	"projects/sounds/sid1.ss8 $1 "projects/sounds/snr1.ss8 $1
-	"projects/sounds/snr2.ss8 $1 "projects/sounds/sid2.ss8 $1
-	"projects/sounds/bdr1.ss8 $1 "projects/sounds/kck1.ss8 $1
-	"projects/sounds/kck2.ss8 $1 "projects/sounds/bdr2.ss8 $1 ]
+	"projects/sounds/pad1.pcm $1 "projects/sounds/syn1.pcm $1
+	"projects/sounds/syn2.pcm $1 "projects/sounds/cym1.pcm $1
+	"projects/sounds/hhat.pcm $1 "projects/sounds/ohat.pcm $1
+	"projects/sounds/chat.pcm $1 "projects/sounds/ride.pcm $1
+	"projects/sounds/sid1.pcm $1 "projects/sounds/snr1.pcm $1
+	"projects/sounds/snr2.pcm $1 "projects/sounds/sid2.pcm $1
+	"projects/sounds/bdr1.pcm $1 "projects/sounds/kck1.pcm $1
+	"projects/sounds/kck2.pcm $1 "projects/sounds/sub1.pcm $1 ]
 
-@knob_icns [
+@notes [
+	3c 3e 40 41 43 45 47
+	48 4a 4c 4d 4f 51 53 ]
+
+@cursor-icn [ 
+	80c0 e0f0 f8e0 1000 ]
+
+@keys-left-icns [
+	7c7c 7c7c 7c7c 7c7c
+	7c7c 7c7c 7c7c 7e7f
+	7f7f 7f7f 7f7f 3e00 ]
+
+@keys-middle-icns [
+	1c1c 1c1c 1c1c 1c1c
+	1c1c 1c1c 1c1c 3e7f
+	7f7f 7f7f 7f7f 3e00 ]
+
+@keys-right-icns [
+	1f1f 1f1f 1f1f 1f1f
+	1f1f 1f1f 1f1f 3f7f
+	7f7f 7f7f 7f7f 3e00 ]
+
+@arrow-icns [
+	0010 387c fe10 1000
+	0010 1010 fe7c 3810 ]
+
+@switch-icns [
+	001f 2040 4040 4040
+	00f8 0402 0202 0202
+	404f 5f5f 4f20 1f00
+	02f2 fafa f204 f800
+	001f 204f 5f5f 4f40
+	00f8 04f2 fafa f202
+	4040 4040 4020 1f00
+	0202 0202 0204 f800
+]
+
+@knob-icns [
 	0003 0c10 2020 4040
 	00c0 3008 0404 0202
 	4040 2020 100c 0300
@@ -571,12 +757,6 @@ RTN
 @knob-offsety [
 	07 06 05 03 02 01 00 00
 	00 00 01 02 03 05 06 07 ]
-
-@clear  [ 
-	0000 0000 0000 0000 ]
-
-@cursor [ 
-	80c0 e0f0 f8e0 1000 ]
 
 @meter [
 	0000 0000 0000 0000
@@ -595,17 +775,6 @@ RTN
 	007e 7e7e 7e7e 7e7e
 	707e 7e7e 7e7e 7e7e
 	7e7e 7e7e 7e7e 7e7e ]
-
-@switch [
-	001f 204f 5f5f 4f40
-	00f8 04f2 fafa f202
-	4040 4040 4020 1f00
-	0202 0202 0204 f800
-	0000 0000 0000 0000
-	0000 0000 0000 0000
-	0000 0000 0000 0000
-	0000 0000 0000 0000
-]
 
 @font-hex ( 0-F )
 [
