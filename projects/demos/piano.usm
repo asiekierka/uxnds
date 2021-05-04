@@ -53,9 +53,12 @@
 	;on-frame   .Screen/vector DEO2
 
 	( load waveform )
-	;sin-path .File/name DEO2 #0100 .File/length DEO2 WAVEFORM .File/load DEO2
-	;tri-path .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0100 ++ .File/load DEO2
-	;sqr-path .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0200 ++ .File/load DEO2
+	;piano-path  .File/name DEO2 #0100 .File/length DEO2 WAVEFORM .File/load DEO2
+	;violin-path .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0100 ++  .File/load DEO2
+	;sin-path   .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0200 ++ .File/load DEO2
+	;tri-path   .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0300 ++ .File/load DEO2
+	;sqr-path   .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0400 ++ .File/load DEO2
+	;saw-path   .File/name DEO2 #0100 .File/length DEO2 WAVEFORM #0500 ++ .File/load DEO2
 
 	( find center )
 	.Screen/width DEI2 #0002 // .center/x POK2
@@ -81,7 +84,7 @@
 
 	( default settings )
 	#ff .last-note POK
-	#048c .Audio0/adsr DEO2
+	#041c .Audio0/adsr DEO2
 	#88 .Audio0/volume DEO
 	WAVEFORM .Audio0/addr DEO2
 	#0100 .Audio0/length DEO2
@@ -506,6 +509,9 @@ RTN
 	007c 8280 8080 827c 00fc 8282 8282 82fc
 	007c 8280 f080 827c 007c 8280 f080 8080 ]
 
+@piano-path "projects/sounds/piano.pcm $1
+@violin-path "projects/sounds/violin.pcm $1
 @sin-path "projects/sounds/sin.pcm $1
 @tri-path "projects/sounds/tri.pcm $1
 @sqr-path "projects/sounds/sqr.pcm $1
+@saw-path "projects/sounds/saw.pcm $1

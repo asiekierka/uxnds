@@ -69,7 +69,7 @@
 	( channel defaults )
 	#dd   .Audio0/volume DEO 
 	#023c .Audio0/adsr DEO2
-	#0400 .Audio0/length DEO2
+	#0200 .Audio0/length DEO2
 	#ce   .Audio1/volume DEO 
 	#1334 .Audio1/adsr DEO2
 	#0800 .Audio1/length DEO2
@@ -626,10 +626,10 @@ RTN
 	"BDR1 $1 "KCK1 $1 "KCK2 $1 "SUB1 $1 ]
 
 @pad-addr [
-	5000 5400 5800 5c00
-	5000 5800 6000 6800
+	6000 6400 6800 6c00
 	7000 7800 8000 8800
-	9000 b000 d000 f000 $2 ]
+	9000 9800 a000 a800
+	b000 c000 d000 e000 $2 ]
 
 @pad-pitch [
 	30 30 30 30
