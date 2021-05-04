@@ -53,7 +53,7 @@ apu_render(Apu *c, Sint16 *sample, Sint16 *end)
 			}
 			c->i %= c->len;
 		}
-		s = (Sint8)(c->addr[c->i]) * envelope(c, c->age++);
+		s = (Sint8)(c->addr[c->i] + 0x80) * envelope(c, c->age++);
 		*sample++ += s * c->volume[0] / 0x180;
 		*sample++ += s * c->volume[1] / 0x180;
 	}

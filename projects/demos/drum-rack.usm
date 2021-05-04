@@ -370,7 +370,7 @@ RTN
 			#01 .Screen/color DEO
 		&no-dot
 		OVR TOS #0010 MUL2 [ DUP2r STH2r ] ADD2 LDA 
-		#02 DIV #40 ADD DUP #07 SFT #80 MUL SUB 
+		#02 DIV
 		TOS #0004 DIV2 .wav-view/y1 PEK2 ADD2 .Screen/y DEO2
 		.Screen/x DEI2 ++ .Screen/x DEO2
 		( draw ) #02 .Screen/color DEO
