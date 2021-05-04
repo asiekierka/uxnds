@@ -30,7 +30,6 @@
 |80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
 |a0 @File       [ &vector $2 &success  $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
-|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
 
@@ -40,12 +39,11 @@
 @pointer  [ &x $2 &y $2 ]
 @piano    [ &last $1 &octave $1 ]
 @pads     [ &last $1 ]
+@frame    [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @pad-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @mix-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @oct-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 @wav-view [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
-
-@frame       [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 ]
 
 ( TODO: remove )
 @color $1
@@ -132,30 +130,19 @@
 	.wav-view/y2 PEK2 #0002 ++
 	#01 ;line-rect JSR2
 
-	( load samples )
-	#00 #10
-	&load-samples
-		( name ) OVR TOS #0019 ** ;pad-path ++ .File/name DEO2
-		( length ) OVR #04 / #10 * .Audio0/length + DEI2 .File/length DEO2
-		( load ) OVR TOS #0002 ** ;pad-addr ++ LDA2 .File/load DEO2
-		( incr ) SWP #01 + SWP
-		DUP2 < ,&load-samples JNZ
-	POP2
-
 	( initial draw )
-
 	#00 #10
 	&draw-pads
+		( load sample )
+		OVR TOS #0019 ** ;pad-path ++ .File/name DEO2
+		OVR #04 / #10 * .Audio0/length + DEI2 .File/length DEO2
+		OVR TOS #0002 ** ;pad-addr ++ LDA2 .File/load DEO2
+		( draw pad )
 		OVR #01 ;draw-pad JSR2
-		SWP #01 + SWP
+		( draw mixer )
+		OVR #04 / ;draw-mixer JSR2
+		( incr ) SWP #01 + SWP
 		DUP2 < ,&draw-pads JNZ
-	POP2
-
-	#00 #04
-	&draw-mixers
-		OVR ;draw-mixer JSR2
-		SWP #01 + SWP
-		DUP2 < ,&draw-mixers JNZ
 	POP2
 
 	;draw-octave JSR2
@@ -573,23 +560,6 @@ RTN
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	#0018 ++ .Screen/addr DEO2
 	( draw ) #21 STHr + .Screen/color DEO
-
-RTN
-
-@draw-short ( addr* color -- )
-
-	STH SWP 
-	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	( draw ) DUPr STHr .Screen/color DEO
-	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
-	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
-	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) STHr .Screen/color DEO
 
 RTN
 

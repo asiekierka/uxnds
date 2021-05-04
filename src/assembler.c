@@ -356,7 +356,7 @@ cleanup(char *filename)
 	for(i = 0; i < p.llen; ++i)
 		if(p.labels[i].name[0] >= 'A' && p.labels[i].name[0] <= 'Z')
 			continue; /* Ignore capitalized labels(devices) */
-		else if(!p.labels[i].refs && scin(p.labels[i].name, '/') > 0)
+		else if(!p.labels[i].refs)
 			printf("--- Unused label: %s\n", p.labels[i].name);
 	for(i = 0; i < p.mlen; ++i)
 		if(!p.macros[i].refs)
