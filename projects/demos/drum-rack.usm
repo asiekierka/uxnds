@@ -56,9 +56,9 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#0aff .System/r DEO2 
-	#0a2f .System/g DEO2 
-	#0a3f .System/b DEO2
+	#4ff2 .System/r DEO2 
+	#2f8c .System/g DEO2 
+	#afb6 .System/b DEO2
 
 	( vectors )
 	;on-control .Controller/vector DEO2
@@ -68,10 +68,10 @@
 
 	( channel defaults )
 	#dd   .Audio0/volume DEO 
-	#023c .Audio0/adsr DEO2
+	#0118 .Audio0/adsr DEO2
 	#0200 .Audio0/length DEO2
 	#ce   .Audio1/volume DEO 
-	#1334 .Audio1/adsr DEO2
+	#0334 .Audio1/adsr DEO2
 	#0800 .Audio1/length DEO2
 	#ec   .Audio2/volume DEO 
 	#0414 .Audio2/adsr DEO2
@@ -638,14 +638,10 @@ RTN
 	30 30 30 30 ]
 
 @pad-path [
-	"projects/sounds/pad1.pcm $1 "projects/sounds/syn1.pcm $1
-	"projects/sounds/syn2.pcm $1 "projects/sounds/cym1.pcm $1
-	"projects/sounds/hhat.pcm $1 "projects/sounds/ohat.pcm $1
-	"projects/sounds/chat.pcm $1 "projects/sounds/ride.pcm $1
-	"projects/sounds/sid1.pcm $1 "projects/sounds/snr1.pcm $1
-	"projects/sounds/snr2.pcm $1 "projects/sounds/sid2.pcm $1
-	"projects/sounds/bdr1.pcm $1 "projects/sounds/kck1.pcm $1
-	"projects/sounds/kck2.pcm $1 "projects/sounds/sub1.pcm $1 ]
+	"projects/sounds/pad1.pcm $1 "projects/sounds/syn1.pcm $1 "projects/sounds/syn2.pcm $1 "projects/sounds/pad2.pcm $1
+	"projects/sounds/hhat.pcm $1 "projects/sounds/ohat.pcm $1 "projects/sounds/chat.pcm $1 "projects/sounds/ride.pcm $1
+	"projects/sounds/sid1.pcm $1 "projects/sounds/snr1.pcm $1 "projects/sounds/snr2.pcm $1 "projects/sounds/sid2.pcm $1
+	"projects/sounds/bdr1.pcm $1 "projects/sounds/kck1.pcm $1 "projects/sounds/kck2.pcm $1 "projects/sounds/sub1.pcm $1 ]
 
 @notes [
 	3c 3e 40 41 43 45 47
