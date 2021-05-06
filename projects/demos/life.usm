@@ -1,0 +1,213 @@
+( game of life )
+
+%+  { ADD } %-   { SUB }  %*  { MUL } %/   { DIV }  
+%<  { LTH } %>   { GTH }  %=  { EQU } %!   { NEQ } 
+%++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 } 
+%<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }  
+
+%TOS { #00 SWP }
+%RTN { JMP2r }
+%MOD { DUP2 / * - }
+%SFL { #40 SFT SFT }
+
+%INCR { #01 + } %DECR { #01 - }
+
+%DEBUG { .Console/byte DEO #0a .Console/char DEO }
+%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
+
+%GET-SIZE { WIDTH TOS #0008 // HEIGHT TOS ** }
+
+(
+	The maximum grid is 256x256, 
+	each byte is 8 horizontal cells,
+	the memory is 32x256[8192 bytes long]
+
+	The universe of the Game of Life is an infinite, two-dimensional orthogonal grid of square cells, 
+	each of which is in one of two possible states, live or dead,. Every cell interacts with its eight 
+	neighbours, which are the cells that are horizontally, vertically, or diagonally adjacent. 
+	At each step in time, the following transitions occur:
+
+    Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+    Any live cell with two or three live neighbours lives on to the next generation.
+    Any live cell with more than three live neighbours dies, as if by overpopulation.
+    Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+
+)
+
+%WIDTH { #40 } %HEIGHT { #40 }
+%BANK1 { #8000 }
+%BANK2 { #a000 }
+
+( devices )
+
+|00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color $1 ]
+|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
+|90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
+
+( variables )
+
+|0000
+
+@timer $2
+@anchor [ &x $2 &y $2 ]
+
+( program )
+
+|0100 ( -> )
+
+	( theme ) 
+	#ef05 .System/r DEO2 
+	#cf05 .System/g DEO2 
+	#2f05 .System/b DEO2
+
+	( vectors )
+	;on-frame   .Screen/vector DEO2
+
+	( glider )
+	#07 #03 ;set-cell JSR2
+	#07 #04 ;set-cell JSR2
+	#05 #04 ;set-cell JSR2
+	#07 #05 ;set-cell JSR2
+	#06 #05 ;set-cell JSR2
+
+	.Screen/width DEI2 #0002 // WIDTH #02 / TOS SUB2 .anchor/x POK2
+	.Screen/height DEI2 #0002 // HEIGHT #02 / TOS SUB2 .anchor/y POK2
+
+BRK
+
+@on-frame ( -> )
+
+	.timer PEK #01 ADD [ DUP ] .timer POK
+
+	#08 MOD #00 ! #01 JNZ [ BRK ] 
+
+	( clear buffer )
+	BANK2 DUP2 GET-SIZE ++
+	&clear-loop
+		OVR2 #0000 SWP2 STA2
+		( incr ) SWP2 #0002 ADD2 SWP2
+		OVR2 OVR2 !! ,&clear-loop JNZ
+	POP2 POP2
+
+	;run-grid JSR2
+
+	( move buffer )
+	BANK2 DUP2 GET-SIZE ++
+	&copy-loop
+		OVR2 DUP2 LDA2 
+		SWP2 #2000 -- STA2
+		( incr ) SWP2 #0002 ADD2 SWP2
+		OVR2 OVR2 !! ,&copy-loop JNZ
+	POP2 POP2
+
+	( draw )
+	#00 HEIGHT
+	&ver
+		OVR TOS .anchor/y PEK2 ADD2 .Screen/y DEO2
+		OVR STH
+		#00 WIDTH
+		&hor
+			OVR TOS .anchor/x PEK2 ADD2 .Screen/x DEO2
+			OVR DUPr STHr ,get-cell JSR #01 + .Screen/color DEO
+			( incr ) SWP #01 + SWP
+			DUP2 ! ,&hor JNZ
+		POP2
+		POPr
+		( incr ) SWP #01 + SWP
+		DUP2 ! ,&ver JNZ
+	POP2
+
+BRK
+
+@get-index ( x y -- index* )
+	
+	HEIGHT MOD SWP WIDTH MOD SWP
+	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK1 ++ ]
+
+RTN
+
+@set-cell ( x y -- )
+	
+	DUP2 ,get-index JSR LDA STH
+	DUP2 POP #08 MOD #01 SWP SFL 
+	STHr SWP ORA STH
+	,get-index JSR STHr ROT ROT STA
+
+RTN
+
+@get-cell ( x y -- cell )
+	
+	DUP2 ,get-index JSR LDA 
+	SWP POP SWP
+	#08 MOD
+	SFT #01 AND
+
+RTN 
+
+@get-neighbours ( x y -- neighbours )
+	
+	( -1,-1 ) DUP2 DECR SWP DECR SWP ,get-cell JSR STH
+	(  0,-1 ) DUP2 DECR              ,get-cell JSR STH ADDr
+	( +1,-1 ) DUP2 DECR SWP INCR SWP ,get-cell JSR STH ADDr
+	( -1, 0 ) DUP2      SWP DECR SWP ,get-cell JSR STH ADDr
+	( +1, 0 ) DUP2      SWP INCR SWP ,get-cell JSR STH ADDr
+	( -1,+1 ) DUP2 INCR SWP DECR SWP ,get-cell JSR STH ADDr
+	(  0,+1 ) DUP2 INCR              ,get-cell JSR STH ADDr
+	( +1,+1 )      INCR SWP INCR SWP ,get-cell JSR STH ADDr
+	STHr
+
+RTN
+
+@run-grid ( -- )
+	
+	#00 HEIGHT
+	&ver
+		OVR STH
+		#00 WIDTH
+		&hor
+			OVR DUPr STHr STH2
+			( x y ) DUP2r STH2r
+			( neighbours ) DUP2r STH2r ,get-neighbours JSR
+			( state ) STH2r ;get-cell JSR2
+			,run-cell JSR
+			( incr ) SWP #01 + SWP
+			DUP2 ! ,&hor JNZ
+		POP2
+		POPr
+		( incr ) SWP #01 + SWP
+		DUP2 ! ,&ver JNZ
+	POP2
+
+RTN 
+
+@run-cell ( x y neighbours state -- )
+	
+	#00 = ,&dead JNZ
+	&alive
+		DUP #02 < ,&dies JNZ
+		DUP #03 > ,&dies JNZ
+		&lives POP ,save-cell JSR RTN
+		&dies POP POP2 RTN
+	&dead
+		DUP #03 = ,&birth JNZ POP POP2 RTN
+		&birth POP ,save-cell JSR RTN
+
+RTN
+
+@save-cell ( x y -- )
+	
+	,get-index-buffer JSR STH2
+	DUP2 POP #08 MOD #01 SWP SFL 
+	DUP2r LDAr STHr SWP ORA
+	STH2r STA
+
+RTN
+
+@get-index-buffer ( x y -- index* )
+	
+	HEIGHT MOD SWP WIDTH MOD SWP
+	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK2 ++ ]
+
+RTN
