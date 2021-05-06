@@ -1,5 +1,13 @@
 ( a blank file )
 
+%+  { ADD } %-   { SUB }  %*  { MUL } %/   { DIV }  
+%<  { LTH } %>   { GTH }  %=  { EQU } %!   { NEQ } 
+%++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 } 
+%<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }  
+
+%DEBUG  { .Console/byte DEO #0a .Console/char DEO }
+%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
+
 ( devices )
 
 |00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]

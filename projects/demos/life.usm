@@ -1,57 +1,38 @@
-( game of life )
+( game of life
+	Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+    Any live cell with two or three live neighbours lives on to the next generation.
+    Any live cell with more than three live neighbours dies, as if by overpopulation.
+    Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. )
 
 %+  { ADD } %-   { SUB }  %*  { MUL } %/   { DIV }  
 %<  { LTH } %>   { GTH }  %=  { EQU } %!   { NEQ } 
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 } 
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }  
 
-%TOS { #00 SWP }
+%INCR { #01 + }  %DECR { #01 - }
+%TOS { #00 SWP } %TOB { SWP POP }
 %RTN { JMP2r }
 %MOD { DUP2 / * - }
 %SFL { #40 SFT SFT }
 
-%INCR { #01 + } %DECR { #01 - }
-
-%DEBUG { .Console/byte DEO #0a .Console/char DEO }
-%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
+%WIDTH { #40 } %HEIGHT { #40 }
+%BANK1 { #8000 } %BANK2 { #a000 }
 
 %GET-SIZE { WIDTH TOS #0008 // HEIGHT TOS ** }
-
-(
-	The maximum grid is 256x256, 
-	each byte is 8 horizontal cells,
-	the memory is 32x256[8192 bytes long]
-
-	The universe of the Game of Life is an infinite, two-dimensional orthogonal grid of square cells, 
-	each of which is in one of two possible states, live or dead,. Every cell interacts with its eight 
-	neighbours, which are the cells that are horizontally, vertically, or diagonally adjacent. 
-	At each step in time, the following transitions occur:
-
-    Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-    Any live cell with two or three live neighbours lives on to the next generation.
-    Any live cell with more than three live neighbours dies, as if by overpopulation.
-    Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-
-)
-
-%WIDTH { #40 } %HEIGHT { #40 }
-%BANK1 { #8000 }
-%BANK2 { #a000 }
 
 ( devices )
 
 |00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color $1 ]
-|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
 
 ( variables )
 
 |0000
 
-@timer $2
+@timer $1
 @anchor [ &x $2 &y $2 ]
+@pointer [ &x $2 &y $2 ]
 
 ( program )
 
@@ -64,6 +45,7 @@
 
 	( vectors )
 	;on-frame   .Screen/vector DEO2
+	;on-mouse   .Mouse/vector DEO2
 
 	( glider )
 	#07 #03 ;set-cell JSR2
@@ -72,22 +54,22 @@
 	#07 #05 ;set-cell JSR2
 	#06 #05 ;set-cell JSR2
 
-	.Screen/width DEI2 #0002 // WIDTH #02 / TOS SUB2 .anchor/x POK2
-	.Screen/height DEI2 #0002 // HEIGHT #02 / TOS SUB2 .anchor/y POK2
+	.Screen/width DEI2 #0002 // WIDTH TOS -- .anchor/x POK2
+	.Screen/height DEI2 #0002 // HEIGHT TOS -- .anchor/y POK2
 
 BRK
 
 @on-frame ( -> )
 
-	.timer PEK #01 ADD [ DUP ] .timer POK
+	.timer PEK #01 + [ DUP ] .timer POK
 
-	#08 MOD #00 ! #01 JNZ [ BRK ] 
+	#10 MOD #00 ! #01 JNZ [ BRK ] 
 
 	( clear buffer )
 	BANK2 DUP2 GET-SIZE ++
 	&clear-loop
 		OVR2 #0000 SWP2 STA2
-		( incr ) SWP2 #0002 ADD2 SWP2
+		SWP2 #0002 ++ SWP2
 		OVR2 OVR2 !! ,&clear-loop JNZ
 	POP2 POP2
 
@@ -98,28 +80,68 @@ BRK
 	&copy-loop
 		OVR2 DUP2 LDA2 
 		SWP2 #2000 -- STA2
-		( incr ) SWP2 #0002 ADD2 SWP2
+		SWP2 #0002 ++ SWP2
 		OVR2 OVR2 !! ,&copy-loop JNZ
 	POP2 POP2
 
-	( draw )
+	;draw-grid JSR2
+
+BRK
+
+@on-mouse ( -> )
+	
+	( clear last cursor )
+	#fff8 .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+	#30 .Screen/color DEO
+
+	( record pointer positions )
+	.Mouse/x DEI2 .pointer/x POK2 
+	.Mouse/y DEI2 .pointer/y POK2
+
+	( draw new cursor )
+	;cursor .Screen/addr DEO2 
+	.pointer/x PEK2 .Screen/x DEO2 
+	.pointer/y PEK2 .Screen/y DEO2 
+
+	( colorize on state )
+	#32 [ .Mouse/state DEI #00 ! ] + .Screen/color DEO
+
+	.Mouse/state DEI #00 ! #01 JNZ [ BRK ]
+
+	.Mouse/x DEI2 DUP2 .anchor/x PEK2 >> ROT ROT .anchor/x PEK2 WIDTH #02 * TOS ++ #0001 ++ << #0101 ==
+	.Mouse/y DEI2 DUP2 .anchor/y PEK2 >> ROT ROT .anchor/y PEK2 HEIGHT #02 * TOS ++ << #0101 ==
+	#0101 == ;on-touch JNZ2
+
+BRK
+
+@on-touch ( -> )
+
+	.Mouse/x DEI2 .anchor/x PEK2 SUB2 #02 / TOB
+	.Mouse/y DEI2 .anchor/y PEK2 SUB2 #02 / TOB
+	;set-cell JSR2
+
+BRK
+
+@draw-grid ( -- )
+
 	#00 HEIGHT
 	&ver
-		OVR TOS .anchor/y PEK2 ADD2 .Screen/y DEO2
+		OVR TOS #0002 ** .anchor/y PEK2 ++ .Screen/y DEO2
 		OVR STH
 		#00 WIDTH
 		&hor
-			OVR TOS .anchor/x PEK2 ADD2 .Screen/x DEO2
+			OVR TOS #0002 ** .anchor/x PEK2 ++ .Screen/x DEO2
 			OVR DUPr STHr ,get-cell JSR #01 + .Screen/color DEO
-			( incr ) SWP #01 + SWP
+			SWP #01 + SWP
 			DUP2 ! ,&hor JNZ
-		POP2
-		POPr
-		( incr ) SWP #01 + SWP
+		POP2 POPr
+		SWP #01 + SWP
 		DUP2 ! ,&ver JNZ
 	POP2
 
-BRK
+RTN
 
 @get-index ( x y -- index* )
 	
@@ -130,10 +152,10 @@ RTN
 
 @set-cell ( x y -- )
 	
-	DUP2 ,get-index JSR LDA STH
-	DUP2 POP #08 MOD #01 SWP SFL 
-	STHr SWP ORA STH
-	,get-index JSR STHr ROT ROT STA
+	DUP2 ,get-index JSR STH2
+	POP #08 MOD #01 SWP SFL 
+	DUP2r LDAr STHr SWP ORA
+	STH2r STA
 
 RTN
 
@@ -172,11 +194,10 @@ RTN
 			( neighbours ) DUP2r STH2r ,get-neighbours JSR
 			( state ) STH2r ;get-cell JSR2
 			,run-cell JSR
-			( incr ) SWP #01 + SWP
+			SWP #01 + SWP
 			DUP2 ! ,&hor JNZ
-		POP2
-		POPr
-		( incr ) SWP #01 + SWP
+		POP2 POPr
+		SWP #01 + SWP
 		DUP2 ! ,&ver JNZ
 	POP2
 
@@ -198,16 +219,16 @@ RTN
 
 @save-cell ( x y -- )
 	
-	,get-index-buffer JSR STH2
+	( get index )
+	HEIGHT MOD SWP WIDTH MOD SWP
+	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK2 ++ ]
+	( save in buffer )
+	STH2
 	DUP2 POP #08 MOD #01 SWP SFL 
 	DUP2r LDAr STHr SWP ORA
 	STH2r STA
 
 RTN
 
-@get-index-buffer ( x y -- index* )
-	
-	HEIGHT MOD SWP WIDTH MOD SWP
-	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK2 ++ ]
-
-RTN
+@cursor [ 
+	80c0 e0f0 f8e0 1000 ]
