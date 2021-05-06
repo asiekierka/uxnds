@@ -60,6 +60,8 @@
 BRK
 
 @on-frame ( -> )
+	
+	.Mouse/state DEI #00 = #01 JNZ [ BRK ]
 
 	.timer PEK #01 + [ DUP ] .timer POK
 
@@ -112,15 +114,13 @@ BRK
 
 	.Mouse/x DEI2 DUP2 .anchor/x PEK2 >> ROT ROT .anchor/x PEK2 WIDTH #02 * TOS ++ #0001 ++ << #0101 ==
 	.Mouse/y DEI2 DUP2 .anchor/y PEK2 >> ROT ROT .anchor/y PEK2 HEIGHT #02 * TOS ++ << #0101 ==
-	#0101 == ;on-touch JNZ2
-
-BRK
-
-@on-touch ( -> )
+	#0101 == #01 JNZ [ BRK ]
 
 	.Mouse/x DEI2 .anchor/x PEK2 SUB2 #02 / TOB
 	.Mouse/y DEI2 .anchor/y PEK2 SUB2 #02 / TOB
 	;set-cell JSR2
+	
+	;draw-grid JSR2
 
 BRK
 
