@@ -239,7 +239,7 @@ RTN
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	#fff8 .Screen/addr DEO2
+	;pointer_icn .Screen/addr DEO2
 	.pointer/x PEK2 .Screen/x DEO2
 	.pointer/y PEK2 .Screen/y DEO2
 	#30 .Screen/color DEO
@@ -249,7 +249,6 @@ RTN
 	.Mouse/y DEI2 .pointer/y POK2
 
 	( draw new cursor )
-	;pointer_icn .Screen/addr DEO2
 	.pointer/x PEK2 .Screen/x DEO2
 	.pointer/y PEK2 .Screen/y DEO2
 	#33 .Mouse/state DEI #00 NEQ #02 MUL SUB .Screen/color DEO

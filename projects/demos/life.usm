@@ -1,21 +1,20 @@
-( game of life
+( Game Of Life
 	Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-    Any live cell with two or three live neighbours lives on to the next generation.
-    Any live cell with more than three live neighbours dies, as if by overpopulation.
-    Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. )
+	Any live cell with two or three live neighbours lives on to the next generation.
+	Any live cell with more than three live neighbours dies, as if by overpopulation.
+	Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. )
 
 %+  { ADD } %-   { SUB }  %*  { MUL } %/   { DIV }  
 %<  { LTH } %>   { GTH }  %=  { EQU } %!   { NEQ } 
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 } 
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }  
 
-%INCR { #01 + }  %DECR { #01 - }
-%TOS { #00 SWP } %TOB { SWP POP }
-%RTN { JMP2r }
-%MOD { DUP2 / * - }
-%SFL { #40 SFT SFT }
+%INCR { #01 + }   %DECR { #01 - }
+%TOS  { #00 SWP } %TOB  { SWP POP }
+%RTN  { JMP2r }   %MOD  { DUP2 / * - }
+%SFL  { #40 SFT SFT }
 
-%WIDTH { #40 } %HEIGHT { #40 }
+%WIDTH { #40 }   %HEIGHT { #40 }
 %BANK1 { #8000 } %BANK2 { #a000 }
 
 %GET-SIZE { WIDTH TOS #0008 // HEIGHT TOS ** }
@@ -24,14 +23,15 @@
 
 |00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]
 |20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color $1 ]
+|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
 |90 @Mouse      [ &vector $2 &x        $2 &y      $2 &state $1 &chord $1 ]
 
 ( variables )
 
 |0000
 
-@timer $1
-@anchor [ &x $2 &y $2 ]
+@world   [ &paused $1 &frame $1 &count $2 ]
+@anchor  [ &x $2 &y $2 ]
 @pointer [ &x $2 &y $2 ]
 
 ( program )
@@ -39,13 +39,14 @@
 |0100 ( -> )
 
 	( theme ) 
-	#ef05 .System/r DEO2 
-	#cf05 .System/g DEO2 
-	#2f05 .System/b DEO2
+	#02fe .System/r DEO2 
+	#02fc .System/g DEO2 
+	#02f2 .System/b DEO2
 
 	( vectors )
 	;on-frame   .Screen/vector DEO2
 	;on-mouse   .Mouse/vector DEO2
+	;on-control .Controller/vector DEO2
 
 	( glider )
 	#07 #03 ;set-cell JSR2
@@ -57,13 +58,17 @@
 	.Screen/width DEI2 #0002 // WIDTH TOS -- .anchor/x POK2
 	.Screen/height DEI2 #0002 // HEIGHT TOS -- .anchor/y POK2
 
+	#01 .world/paused POK
+
 BRK
 
 @on-frame ( -> )
 	
 	.Mouse/state DEI #00 = #01 JNZ [ BRK ]
+	.world/paused PEK #00 ! #01 JNZ [ BRK ]
 
-	.timer PEK #01 + [ DUP ] .timer POK
+	( incr frame ) .world/frame PEK INCR [ DUP ] .world/frame POK
+	( reset count ) #0000 .world/count POK2
 
 	#10 MOD #00 ! #01 JNZ [ BRK ] 
 
@@ -88,12 +93,17 @@ BRK
 
 	;draw-grid JSR2
 
+	( draw cell count )
+	.anchor/x PEK2 .Screen/x DEO2
+	.anchor/y PEK2 HEIGHT #02 * TOS ++ .Screen/y DEO2
+	.world/count PEK2 #22 ;draw-short JSR2
+
 BRK
 
 @on-mouse ( -> )
 	
 	( clear last cursor )
-	#fff8 .Screen/addr DEO2 
+	;cursor .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	#30 .Screen/color DEO
@@ -103,7 +113,6 @@ BRK
 	.Mouse/y DEI2 .pointer/y POK2
 
 	( draw new cursor )
-	;cursor .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 
@@ -124,6 +133,16 @@ BRK
 
 BRK
 
+@on-control ( -> )
+
+	.Controller/key DEI #00 ! #01 JNZ [ BRK ]
+
+	.Controller/key DEI #20 ! ,&no-toggle JNZ
+		.world/paused PEK #01 ! .world/paused POK
+	&no-toggle
+
+BRK
+
 @draw-grid ( -- )
 
 	#00 HEIGHT
@@ -133,11 +152,11 @@ BRK
 		#00 WIDTH
 		&hor
 			OVR TOS #0002 ** .anchor/x PEK2 ++ .Screen/x DEO2
-			OVR DUPr STHr ,get-cell JSR #01 + .Screen/color DEO
-			SWP #01 + SWP
+			OVR DUPr STHr ,get-cell JSR INCR .Screen/color DEO
+			SWP INCR SWP
 			DUP2 ! ,&hor JNZ
 		POP2 POPr
-		SWP #01 + SWP
+		SWP INCR SWP
 		DUP2 ! ,&ver JNZ
 	POP2
 
@@ -194,10 +213,10 @@ RTN
 			( neighbours ) DUP2r STH2r ,get-neighbours JSR
 			( state ) STH2r ;get-cell JSR2
 			,run-cell JSR
-			SWP #01 + SWP
+			SWP INCR SWP
 			DUP2 ! ,&hor JNZ
 		POP2 POPr
-		SWP #01 + SWP
+		SWP INCR SWP
 		DUP2 ! ,&ver JNZ
 	POP2
 
@@ -222,6 +241,8 @@ RTN
 	( get index )
 	HEIGHT MOD SWP WIDTH MOD SWP
 	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK2 ++ ]
+	( incr count )
+	.world/count PEK2 #0001 ADD2 .world/count POK2
 	( save in buffer )
 	STH2
 	DUP2 POP #08 MOD #01 SWP SFL 
@@ -229,6 +250,34 @@ RTN
 	STH2r STA
 
 RTN
+
+@draw-short ( short* color -- )
+
+	STH SWP 
+	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
+	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
+	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+	( draw ) DUPr STHr .Screen/color DEO
+	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
+	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+	( draw ) STHr .Screen/color DEO
+
+RTN
+
+@font-hex ( 0-F )
+[
+	007c 8282 8282 827c 0030 1010 1010 1010
+	007c 8202 7c80 80fe 007c 8202 1c02 827c
+	000c 1424 4484 fe04 00fe 8080 7c02 827c
+	007c 8280 fc82 827c 007c 8202 1e02 0202
+	007c 8282 7c82 827c 007c 8282 7e02 827c
+	007c 8202 7e82 827e 00fc 8282 fc82 82fc
+	007c 8280 8080 827c 00fc 8282 8282 82fc
+	007c 8280 f080 827c 007c 8280 f080 8080 ]
 
 @cursor [ 
 	80c0 e0f0 f8e0 1000 ]

@@ -256,7 +256,7 @@ RTN
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	#fff8 .Screen/addr DEO2 
+	;cursor .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	#30 .Screen/color DEO
@@ -264,7 +264,6 @@ RTN
 	.Mouse/x DEI2 .pointer/x POK2 
 	.Mouse/y DEI2 .pointer/y POK2
 	( draw new cursor )
-	;cursor .Screen/addr DEO2 
 	.pointer/x PEK2 .Screen/x DEO2 
 	.pointer/y PEK2 .Screen/y DEO2 
 	( colorize on state )
