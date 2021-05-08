@@ -23,11 +23,19 @@ initmpu(Mpu *m, Uint8 device)
 			Pm_GetDeviceInfo(i)->name,
 			i == device ? "[x]" : "[ ]");
 	Pm_OpenInput(&m->midi, device, NULL, 128, 0, NULL);
+	m->queue = 0;
+	m->error = pmNoError;
 	return 1;
 }
 
 void
 listenmpu(Mpu *m)
 {
-	m->queue = Pm_Read(m->midi, m->events, 32);
+	const int result = Pm_Read(m->midi, m->events, 32);
+	if(result < 0) {
+		m->error = (PmError)result;
+		m->queue = 0;
+		return;
+	}
+	m->queue = result;
 }

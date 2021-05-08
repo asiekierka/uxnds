@@ -20,6 +20,7 @@ typedef struct {
 	Uint8 queue;
 	PmStream *midi;
 	PmEvent events[32];
+	PmError error;
 } Mpu;
 
 int initmpu(Mpu *m, Uint8 device);

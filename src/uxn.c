@@ -99,7 +99,7 @@ void op_div16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->s
 void op_and16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b & a); }
 void op_ora16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b | a); }
 void op_eor16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b ^ a); }
-void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b >> (a & 0x000f) << ((a & 0x00f0) >> 4)); }
+void op_sft16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b >> (a & 0x0007) << ((a & 0x0070) >> 4)); }
 
 void (*ops[])(Uxn *u) = {
 	op_brk, op_lit, op_nop, op_pop, op_dup, op_swp, op_ovr, op_rot,
