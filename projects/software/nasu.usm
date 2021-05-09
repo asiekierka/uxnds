@@ -20,7 +20,7 @@
 %SFL { #40 SFT SFT }
 %MOD { DUP2 DIV MUL SUB }
 
-%TOB { SWP POP }
+%TOB { SWP POP } %TOS { #00 SWP }
 
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
@@ -55,7 +55,13 @@
 
 |0000
 
-@settings [ &blending $1 &depth $1 &brush $1 &page $2 &tile $2 ]
+@settings [ 
+	&blending $1 
+	&depth $1 
+	&brush $1 
+	&page $2 
+	&tile $2 
+	&ratio $1 ]
 
 @frame [ &x1 $2 &y1 $2 &x2 $2 &y2 $2 &width $2 &height $2 ]
 
@@ -75,7 +81,6 @@
 
 @color $1 
 @i     $1
-@ratio $1
 
 ( program )
 
@@ -95,6 +100,7 @@
 	#0130 .frame/width POK2
 	#00a8 .frame/height POK2
 	#01 .settings/brush POK
+	#44 .settings/ratio POK
 
 	.Screen/width DEI2 #0001 SFT2 .frame/width PEK2 #0001 SFT2 SUB2
 	.Screen/height DEI2 #0001 SFT2 .frame/height PEK2 #0001 SFT2 SUB2 #0010 ADD2
@@ -326,7 +332,7 @@ BRK
 	( x ) .Mouse/x DEI2 .preview/x1 PEK2 SUB2 #0008 DIV2 TOB
 
 	#40 SFT ADD #11 ADD
-	DEBUG
+	.settings/ratio POK
 
 	( release ) #00 .Mouse/state DEO
 	;redraw JSR2
@@ -634,7 +640,7 @@ RTN
 RTN
 
 @draw-colorview ( -- )
-	
+
 	.colorview/y1 PEK2 #18 ADD .Screen/y DEO2
 	.colorview/x1 PEK2 #08 ADD .Screen/x DEO2
 	.System/r DEI2 ;draw-color-code JSR2
@@ -662,6 +668,39 @@ RTN
 @draw-preview ( -- )
 
 	.preview/x1 PEK2 #0002 SUB2 .preview/y1 PEK2 #0002 SUB2 .preview/x2 PEK2 #0001 ADD2 .preview/y2 PEK2 #0001 ADD2 #03 ;line-rect JSR2
+	( stash address )
+	.settings/tile PEK2 DUP2 STH2 .Screen/addr DEO2
+	#00 #04
+	&ver
+		OVR #08 MUL TOS .preview/y1 PEK2 ADD2 .Screen/y DEO2
+		#00 #04
+		&hor
+			OVR #08 MUL TOS .preview/x1 PEK2 ADD2 .Screen/x DEO2
+			( get x,y )
+			SWP2 OVR STH SWP2 OVR STHr
+			( check if within ratio )
+			.settings/ratio PEK #0f AND LTH STH
+			.settings/ratio PEK #04 SFT LTH STHr
+			#0101 NEQ2 ,&outside JNZ 
+				( get blending ) .settings/blending PEK
+				( get depth ) .settings/depth PEK #20 MUL
+				( draw ) #20 ADD ADD .Screen/color DEO
+				( incr ) STH2r #0008 ADD2 DUP2 STH2 .Screen/addr DEO2
+				,&resume JMP
+			&outside
+			;halftone_icn .Screen/addr DEO2
+			#23 .Screen/color DEO
+			&resume
+			( incr ) SWP #01 ADD SWP
+			DUP2 LTH ,&hor JNZ
+		POP2
+		( incr ) SWP #01 ADD SWP
+		DUP2 LTH ;&ver JNZ2
+	POP2
+	POP2r
+	.preview/x1 PEK2 #0001 SUB2 .Screen/x DEO2
+	.preview/y2 PEK2 #0001 ADD2 .Screen/y DEO2
+	.settings/ratio PEK #23 ;draw-byte JSR2
 
 RTN
 
@@ -752,17 +791,14 @@ RTN
 
 RTN
 
+@halftone_icn [
+	aa55 aa55 aa55 aa55 ]
 @circle_icns
-	[ 0038 7cfe fefe 7c38 ] ( full )
-	[ 0038 4482 8282 4438 ] ( line )
+	0038 7cfe fefe 7c38 ( full )
+	0038 4482 8282 4438 ( line )
 @eye_icns
-	[ 0038 4492 2810 0000 ] ( open )
-	[ 0000 0082 4438 0000 ] ( closed )
-@tool_selector [ 80c0 e0f0 f8e0 1000 ]
-@tool_hand     [ 2020 20b8 7c7c 3838 ]
-@tool_eraser   [ 2050 b87c 3e1c 0800 ]
-@moveup_icn    [ 0010 387c fe10 1000 ]
-@movedown_icn  [ 0010 1010 fe7c 3810 ]
+	0038 4492 2810 0000 ( open )
+	0000 0082 4438 0000 ( closed )
 @blank_icn     [
 	0000 0000 0000 0000
 	7cfe fefe fefe 7c00
@@ -771,8 +807,14 @@ RTN
 	00fe 8282 fe82 82fe
 	00fe 9292 fe92 92fe
 ]
+@tool_selector [ 80c0 e0f0 f8e0 1000 ]
+@tool_hand     [ 2020 20b8 7c7c 3838 ]
+@tool_eraser   [ 2050 b87c 3e1c 0800 ]
+@moveup_icn    [ 0010 387c fe10 1000 ]
+@movedown_icn  [ 0010 1010 fe7c 3810 ]
+
 @filepath1     [ "projects/fonts/specter8.bit 00 ]
-@filepath2     [ "projects/pictures/cibo.bit 00 ]
+@filepath2     [ "projects/pictures/cyr10x8.chr 00 ]
 @filepath3     [ "projects/pictures/zerotwo10x10.chr 00 ]
 @filepath4     [ "projects/fonts/katahira8.bit 00 ]
 @filepath5     [ "projects/pictures/ako10x10.chr 00 ]
