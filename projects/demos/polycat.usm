@@ -53,12 +53,12 @@ BRK
 @on-frame ( -> )
 
 	.cat/timer PEK #01 ADD [ DUP ] .cat/timer POK
-		DUP #00 NEQ ,&skip0 JNZ #0000 ;draw-tail JSR2 &skip0
-		DUP #10 NEQ ,&skip1 JNZ #0001 ;draw-tail JSR2 &skip1
-		DUP #20 NEQ ,&skip2 JNZ #0002 ;draw-tail JSR2 &skip2
-		DUP #30 NEQ ,&skip3 JNZ #0003 ;draw-tail JSR2 &skip3
-		DUP #40 NEQ ,&skip4 JNZ #0002 ;draw-tail JSR2 &skip4
-		DUP #50 NEQ ,&skip5 JNZ #0001 ;draw-tail JSR2 &skip5
+		DUP #00 NEQ ,&skip0 JCN #0000 ;draw-tail JSR2 &skip0
+		DUP #10 NEQ ,&skip1 JCN #0001 ;draw-tail JSR2 &skip1
+		DUP #20 NEQ ,&skip2 JCN #0002 ;draw-tail JSR2 &skip2
+		DUP #30 NEQ ,&skip3 JCN #0003 ;draw-tail JSR2 &skip3
+		DUP #40 NEQ ,&skip4 JCN #0002 ;draw-tail JSR2 &skip4
+		DUP #50 NEQ ,&skip5 JCN #0001 ;draw-tail JSR2 &skip5
 	POP
 
 BRK
@@ -136,7 +136,7 @@ RTN
 		( sety ) .Screen/addr DEI2 #0008 + .Screen/addr DEO2
 		( setx ) .Screen/x DEI2 #0008 + .Screen/x DEO2
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&loop JNZ
+		DUP2 LTH ,&loop JCN
 	POP2
 
 RTN

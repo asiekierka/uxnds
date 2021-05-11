@@ -12,10 +12,10 @@
 @reset
 	;asma-init-assembler JSR2
 	;&filename ,asma-assemble-file-pass JSR
-	asma-IF-ERROR ,asma-print-error JNZ
+	asma-IF-ERROR ,asma-print-error JCN
 	;asma-init-assembler-pass JSR2
 	;&filename ,asma-assemble-file-pass JSR
-	asma-IF-ERROR ,asma-print-error JNZ
+	asma-IF-ERROR ,asma-print-error JCN
 	BRK
 
 	&filename
@@ -43,14 +43,14 @@
 	DUP2 .File/offset DEO2
 	#0100 .File/length DEO2
 	#fe00 DUP2 DUP2 .File/load DEO2
-	.File/success DEI2 DUP2 ORA ,&not-end JNZ
+	.File/success DEI2 DUP2 ORA ,&not-end JCN
 	POP2 POP2
 	&error
 	POP2 POP2 POP2
 	JMP2r
 
 	&not-end
-	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JNZ
+	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JCN
 	SUB2 SUB2
 	,&loop JMP
 
@@ -79,15 +79,15 @@
 	&next-char
 	#0001 ADD2
 	&loop ( last-ptr* ptr* / start-of-token* )
-	OVR2 OVR2 LTH2 ,&end JNZ
+	OVR2 OVR2 LTH2 ,&end JCN
 	DUP2 LDA ( last-ptr* ptr* char / start-of-token* )
-	DUP #20 GTH ,&next-char-pop JNZ
+	DUP #20 GTH ,&next-char-pop JCN
 
 	#00 OVR2 ( last-ptr* ptr* char 00 ptr* / start-of-token* )
 	STA
-	STH2r ,asma-assemble-token JSR asma-IF-ERROR ,&error JNZ
+	STH2r ,asma-assemble-token JSR asma-IF-ERROR ,&error JCN
 
-	#0a NEQ ,&not-newline JNZ
+	#0a NEQ ,&not-newline JCN
 	;asma/line LDA2 #0001 ADD2 ;asma/line STA2
 	&not-newline
 
@@ -108,7 +108,7 @@
 	DUP2 .Console/string DEO2 #0a .Console/char DEO
 	DUP2 ;asma/token STA2
 	DUP2 ;asma/orig-token STA2
-	DUP2 LDA ,&not-empty JNZ
+	DUP2 LDA ,&not-empty JCN
 	POP2
 	JMP2r
 
@@ -129,7 +129,7 @@
 	( restore truncated char )
 	STAr
 
-	,&not-found JNZ
+	,&not-found JCN
 
 	( tree-offset* token-routine-ptr* / end* )
 	STH2r ;asma/token STA2
@@ -153,8 +153,8 @@
 
 @asma-parse-hex-digit ( charcode -- 00-0f if valid hex
                                  OR 10-ff otherwise )
-	DUP #3a LTH ,&digit JNZ
-	DUP #60 GTH ,&letter JNZ
+	DUP #3a LTH ,&digit JCN
+	DUP #60 GTH ,&letter JCN
 	JMP2r
 
 	&digit
@@ -173,14 +173,14 @@
 
 	&loop
 	DUP2 LDA
-	DUP ,&not-end JNZ
+	DUP ,&not-end JCN
 	POP POP2
 	STH2r ROT #01 ADD #03 MUL
 	JMP2r
 
 	&not-end
 	,asma-parse-hex-digit JSR
-	DUP #f0 AND ,&fail JNZ
+	DUP #f0 AND ,&fail JCN
 	LIT2r 0010 MUL2r
 	#00 STH STH ADD2r
 	#0001 ADD2
@@ -196,7 +196,7 @@
 
 	&loop
 	DUP2 LDA
-	,&not-end JNZ
+	,&not-end JCN
 	POP2 STHr
 	JMP2r
 
@@ -211,7 +211,7 @@
 @asma-parse-opcode ( -- byte 00 if valid opcode
                      OR 01 otherwise )
 	;asma/token LDA2
-	DUP2 ,asma-strlen JSR #03 LTH ,&too-short JNZ
+	DUP2 ,asma-strlen JSR #03 LTH ,&too-short JCN
 
 	( truncate to three chars long )
 	#0003 ADD2 ( end* / )
@@ -222,22 +222,22 @@
 
 	;asma-trees/opcodes ;asma-traverse-tree JSR2
 	STAr
-	,&not-found JNZ
+	,&not-found JCN
 
 	;asma-opcodes/_disasm SUB2 #0003 SFT2 ( 00 byte / end* )
 	&loop
 	DUP2r LDAr STHr LIT2r 0001 ADD2r ( 00 byte char / end* )
-	DUP ,&not-end JNZ
+	DUP ,&not-end JCN
 	POP POP2r
 	SWP
 	JMP2r
 
 	&not-end
-	DUP LIT '2 NEQ ,&not-two JNZ
+	DUP LIT '2 NEQ ,&not-two JCN
 	POP asma-SHORT-FLAG ORA ,&loop JMP
 
 	&not-two
-	LIT 'r NEQ ,&not-return JNZ
+	LIT 'r NEQ ,&not-return JCN
 	asma-RETURN-FLAG ORA ,&loop JMP
 
 	&not-return ( 00 byte / end* )
@@ -275,7 +275,7 @@
 @asma-append-heap-string ( string* -- )
 	DUP2 LDA
 	DUP ,asma-append-heap-byte JSR
-	,&keep-going JNZ
+	,&keep-going JCN
 	POP2 JMP2r
 
 	&keep-going
@@ -293,13 +293,13 @@
 	#0a .Console/char DEO )
 
 	&loop ( incoming-ptr* )
-	DUP2 LDA2 ORA ,&valid-node JNZ
+	DUP2 LDA2 ORA ,&valid-node JCN
 	#01 JMP2r
 
 	&valid-node
 	LDA2 DUP2 STH2
 	#0004 ADD2 ,asma-strcmp-tree JSR
-	DUP ,&nomatch JNZ
+	DUP ,&nomatch JCN
 	POP2r JMP2r
 
 	&nomatch
@@ -315,7 +315,7 @@
 
 	&loop ( node-key* / token* )
 	DUP2 #0001 ADD2 SWP2 LDA DUP2r LDAr STHr
-	DUP2 ORA ,&not-end JNZ
+	DUP2 ORA ,&not-end JCN
 
 	( end of C strings, match found )
 	POP2r POP
@@ -323,7 +323,7 @@
 
 	&not-end
 	SUB
-	DUP ,&nomatch JNZ
+	DUP ,&nomatch JCN
 	POP
 	LIT2r 0001 ADD2r
 	,&loop JMP
@@ -347,9 +347,9 @@
 	JMP2r
 
 @asma-macro-define
-	;asma/pass LDA ,&ignore-macro JNZ
+	;asma/pass LDA ,&ignore-macro JCN
 
-	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-exist JNZ
+	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-exist JCN
 	POP2
 	;asma-msg-macro ;asma/error STA2
 	JMP2r
@@ -379,7 +379,7 @@
 @asma-label-define
 	#0000 ;asma/scope-addr STA2
 	;asma-trees/labels ,asma-label-helper JSR
-	,&already-existed JNZ
+	,&already-existed JCN
 
 	#0000 ;asma-append-heap-short JSR2 ( data2: subtree incoming ptr )
 
@@ -396,7 +396,7 @@
 @asma-label-helper ( incoming-ptr* -- binary-ptr* 00 if label existed already
                                    OR binary-ptr* 01 if label was created )
 	;asma-traverse-tree JSR2
-	,&new-label JNZ
+	,&new-label JCN
 
 	( label already exists )
 	( FIXME check label address )
@@ -424,7 +424,7 @@
 
 @asma-pad-helper ( offset* -- )
 	;asma-parse-hex-string JSR2
-	,&valid JNZ
+	,&valid JCN
 
 	;asma-msg-hex ;asma/error POK2
 	JMP2r
@@ -443,7 +443,7 @@
 
 	&loop
 	DUP2 LDA
-	DUP ,&not-end JNZ
+	DUP ,&not-end JCN
 
 	POP POP2
 	JMP2r
@@ -466,7 +466,7 @@
 	,asma-addr-helper JSR
 	;asma-write-byte JSR2
 
-	,&not-zero-page JNZ
+	,&not-zero-page JCN
 	JMP2r
 
 	&not-zero-page
@@ -478,7 +478,7 @@
 	,asma-addr-helper JSR ;asma/addr LDA2 SUB2 #0002 SUB2
 
 	DUP2 #0080 LTH2 STH
-	DUP2 #ff7f GTH2 STHr ORA ,&in-bounds JNZ
+	DUP2 #ff7f GTH2 STHr ORA ,&in-bounds JCN
 
 	POP2
 	;asma-msg-relative ;asma/error STA2
@@ -490,20 +490,20 @@
 	JMP2r
 
 @asma-addr-helper ( -- addr* )
-	;asma/token LDA2 DUP2 LDA #26 NEQ ,&not-local JNZ
+	;asma/token LDA2 DUP2 LDA #26 NEQ ,&not-local JCN
 	#0001 ADD2 ;asma/token STA2
 	;asma/scope-addr LDA2 ;asma-trees/scope LDA2
 	,&final-lookup JMP
 
 	&not-local ( token* )
 	DUP2 LDA
-	DUP ,&not-end JNZ
+	DUP ,&not-end JCN
 	POP POP2
 	#0000 ;asma-trees/labels
 	,&final-lookup JMP
 
 	&not-end ( token* char )
-	#2f EQU ,&found-slash JNZ
+	#2f EQU ,&found-slash JCN
 	#0001 ADD2
 	,&not-local JMP
 
@@ -511,19 +511,19 @@
 	DUP2 #00 ROT ROT STA
 	;asma-trees/labels ;asma-traverse-tree JSR2 STH
 	SWP2 DUP2 #2f ROT ROT STA
-	STHr ,&not-found JNZ
+	STHr ,&not-found JCN
 	( token* binary-ptr* )
 	#0001 ADD2 ;asma/token STA2
 	DUP2 LDA2 SWP2 #0002 ADD2
 
 	&final-lookup ( addr-offset* incoming-ptr* )
-	;asma-traverse-tree JSR2 ,&not-found JNZ
+	;asma-traverse-tree JSR2 ,&not-found JCN
 	LDA2 ADD2
 	JMP2r
 
 	&not-found ( dummy* dummy* )
 
-	;asma/pass LDA #00 EQU ,&ignore-error JNZ
+	;asma/pass LDA #00 EQU ,&ignore-error JCN
 	;asma-msg-label ;asma/error STA2
 	&ignore-error
 
@@ -556,7 +556,7 @@
 	;asma-write-short JMP2 ( tail call )
 
 @asma-normal-body
-	;asma-parse-opcode JSR2 ,&not-opcode JNZ
+	;asma-parse-opcode JSR2 ,&not-opcode JCN
 	;asma-write-byte JMP2 ( tail call )
 
 	&not-opcode
@@ -566,17 +566,17 @@
 	( hex short   ) ,asma-short-helper/raw JMP
 
 	&not-hex
-	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-macro JNZ
+	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-macro JCN
 
 	&macro-loop
-	DUP2 LDA ,&keep-going JNZ
+	DUP2 LDA ,&keep-going JCN
 	&error
 	POP2
 	JMP2r
 
 	&keep-going
 	DUP2 DUP2 ;asma-strlen JSR2 #00 SWP #0001 ADD2 ADD2
-	SWP2 ;asma-assemble-token JSR2 asma-IF-ERROR ,&error JNZ
+	SWP2 ;asma-assemble-token JSR2 asma-IF-ERROR ,&error JCN
 	,&macro-loop JMP
 
 	&not-macro
@@ -728,8 +728,8 @@
 	&NEQ        :&MUL      :&NOP        "NEQ 00
 	&GTH         $2         $2          "GTH 00
 	&_entry     :&EQU      :&POP        "LTH 00
-	&JMP        :&GTH      :&JNZ        "JMP 00
-	&JNZ         $2         $2          "JNZ 00
+	&JMP        :&GTH      :&JCN        "JMP 00
+	&JCN         $2         $2          "JCN 00
 	&JSR        :&JMP      :&LDR        "JSR 00
 	&STH        :&SFT      :&SUB        "STH 00
 	&PEK        :&OVR      :&POK        "PEK 00

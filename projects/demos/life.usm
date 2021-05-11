@@ -64,20 +64,20 @@ BRK
 
 @on-frame ( -> )
 	
-	.Mouse/state DEI #00 = #01 JNZ [ BRK ]
-	.world/paused PEK #00 ! #01 JNZ [ BRK ]
+	.Mouse/state DEI #00 = #01 JCN [ BRK ]
+	.world/paused PEK #00 ! #01 JCN [ BRK ]
 
 	( incr frame ) .world/frame PEK INCR [ DUP ] .world/frame POK
 	( reset count ) #0000 .world/count POK2
 
-	#10 MOD #00 ! #01 JNZ [ BRK ] 
+	#10 MOD #00 ! #01 JCN [ BRK ] 
 
 	( clear buffer )
 	BANK2 DUP2 GET-SIZE ++
 	&clear-loop
 		OVR2 #0000 SWP2 STA2
 		SWP2 #0002 ++ SWP2
-		OVR2 OVR2 !! ,&clear-loop JNZ
+		OVR2 OVR2 !! ,&clear-loop JCN
 	POP2 POP2
 
 	;run-grid JSR2
@@ -88,7 +88,7 @@ BRK
 		OVR2 DUP2 LDA2 
 		SWP2 #2000 -- STA2
 		SWP2 #0002 ++ SWP2
-		OVR2 OVR2 !! ,&copy-loop JNZ
+		OVR2 OVR2 !! ,&copy-loop JCN
 	POP2 POP2
 
 	;draw-grid JSR2
@@ -119,11 +119,11 @@ BRK
 	( colorize on state )
 	#32 [ .Mouse/state DEI #00 ! ] + .Screen/color DEO
 
-	.Mouse/state DEI #00 ! #01 JNZ [ BRK ]
+	.Mouse/state DEI #00 ! #01 JCN [ BRK ]
 
 	.Mouse/x DEI2 DUP2 .anchor/x PEK2 >> ROT ROT .anchor/x PEK2 WIDTH #02 * TOS ++ #0001 ++ << #0101 ==
 	.Mouse/y DEI2 DUP2 .anchor/y PEK2 >> ROT ROT .anchor/y PEK2 HEIGHT #02 * TOS ++ << #0101 ==
-	#0101 == #01 JNZ [ BRK ]
+	#0101 == #01 JCN [ BRK ]
 
 	.Mouse/x DEI2 .anchor/x PEK2 SUB2 #02 / TOB
 	.Mouse/y DEI2 .anchor/y PEK2 SUB2 #02 / TOB
@@ -135,9 +135,9 @@ BRK
 
 @on-control ( -> )
 
-	.Controller/key DEI #00 ! #01 JNZ [ BRK ]
+	.Controller/key DEI #00 ! #01 JCN [ BRK ]
 
-	.Controller/key DEI #20 ! ,&no-toggle JNZ
+	.Controller/key DEI #20 ! ,&no-toggle JCN
 		.world/paused PEK #01 ! .world/paused POK
 	&no-toggle
 
@@ -154,10 +154,10 @@ BRK
 			OVR TOS #0002 ** .anchor/x PEK2 ++ .Screen/x DEO2
 			OVR DUPr STHr ,get-cell JSR INCR .Screen/color DEO
 			SWP INCR SWP
-			DUP2 ! ,&hor JNZ
+			DUP2 ! ,&hor JCN
 		POP2 POPr
 		SWP INCR SWP
-		DUP2 ! ,&ver JNZ
+		DUP2 ! ,&ver JCN
 	POP2
 
 RTN
@@ -214,24 +214,24 @@ RTN
 			( state ) STH2r ;get-cell JSR2
 			,run-cell JSR
 			SWP INCR SWP
-			DUP2 ! ,&hor JNZ
+			DUP2 ! ,&hor JCN
 		POP2 POPr
 		SWP INCR SWP
-		DUP2 ! ,&ver JNZ
+		DUP2 ! ,&ver JCN
 	POP2
 
 RTN 
 
 @run-cell ( x y neighbours state -- )
 	
-	#00 = ,&dead JNZ
+	#00 = ,&dead JCN
 	&alive
-		DUP #02 < ,&dies JNZ
-		DUP #03 > ,&dies JNZ
+		DUP #02 < ,&dies JCN
+		DUP #03 > ,&dies JCN
 		&lives POP ,save-cell JSR RTN
 		&dies POP POP2 RTN
 	&dead
-		DUP #03 = ,&birth JNZ POP POP2 RTN
+		DUP #03 = ,&birth JCN POP POP2 RTN
 		&birth POP ,save-cell JSR RTN
 
 RTN

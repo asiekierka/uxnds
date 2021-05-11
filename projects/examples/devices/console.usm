@@ -19,7 +19,7 @@ BRK
 	&loop
 		( send ) DUP2 LDA .Console/char DEO
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDA #00 NEQ ,&loop JNZ
+		( loop ) DUP2 LDA #00 NEQ ,&loop JCN
 	POP2
 
 RTN

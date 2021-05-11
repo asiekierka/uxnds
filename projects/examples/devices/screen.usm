@@ -45,7 +45,7 @@ BRK
 			.center/y PEK2 #0040 SUB2 ADD2 .Screen/y DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 NEQ ,&loop JNZ
+		DUP2 NEQ ,&loop JCN
 	POP2
 	
 RTN
@@ -69,7 +69,7 @@ RTN
 		( draw ) #21 .Screen/color DEO
 
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&loop JNZ
+		DUP2 LTH ,&loop JCN
 	POP2
 
 RTN

@@ -20,7 +20,7 @@
 
 
 %RTN { JMP2r }
-%RTN? { #00 EQU #02 JNZ STH2r JMP2 }
+%RTN? { #00 EQU #02 JCN STH2r JMP2 }
 
 %++ { #0001 ADD2 } %-- { #0001 SUB2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
@@ -76,15 +76,15 @@ BRK
 @on-button ( -> )
 	
 	( alt + arrow )
-	.Controller/button DEI #0f AND #02 NEQ ,&no-alt JNZ
+	.Controller/button DEI #0f AND #02 NEQ ,&no-alt JCN
 		.Controller/button DEI #04 SFT
-		DUP #01 NEQ ,&no-aup JNZ
+		DUP #01 NEQ ,&no-aup JCN
 			( sel word ) ;find-wordstart JSR2 .selection/to POK2 &no-aup
-		DUP #02 NEQ ,&no-adown JNZ
+		DUP #02 NEQ ,&no-adown JCN
 			( sel word ) ;find-wordend JSR2 .selection/to POK2 &no-adown
-		DUP #04 NEQ ,&no-aleft JNZ
+		DUP #04 NEQ ,&no-aleft JCN
 			( sel decr ) .selection/to PEK2 -- .selection/to POK2 &no-aleft
-		DUP #08 NEQ ,&no-aright JNZ
+		DUP #08 NEQ ,&no-aright JCN
 			( sel incr ) .selection/to PEK2 ++ .selection/to POK2 &no-aright
 		POP
 		;clamp-selection JSR2
@@ -93,15 +93,15 @@ BRK
 	&no-alt
 
 	( ctrl + arrow )
-	.Controller/button DEI #0f AND #01 NEQ ,&no-ctrl JNZ
+	.Controller/button DEI #0f AND #01 NEQ ,&no-ctrl JCN
 		.Controller/button DEI #04 SFT
-		DUP #01 NEQ ,&no-cup JNZ
+		DUP #01 NEQ ,&no-cup JCN
 			( jump scroll ) #0004 ;scroll-up JSR2 &no-cup
-		DUP #02 NEQ ,&no-cdown JNZ
+		DUP #02 NEQ ,&no-cdown JCN
 			( jump scroll ) #0004 ;scroll-down JSR2 &no-cdown
-		DUP #04 NEQ ,&no-cleft JNZ
+		DUP #04 NEQ ,&no-cleft JCN
 			( jump line ) ;goto-linestart JSR2 &no-cleft
-		DUP #08 NEQ ,&no-cright JNZ
+		DUP #08 NEQ ,&no-cright JCN
 			( jump line ) ;goto-lineend JSR2 &no-cright
 		POP
 		;redraw JSR2
@@ -109,20 +109,20 @@ BRK
 	&no-ctrl
 
 	( arrow )
-	.Controller/button DEI #f0 AND #00 EQU ;&no-arrow JNZ2
+	.Controller/button DEI #f0 AND #00 EQU ;&no-arrow JCN2
 		.Controller/button DEI #f0 AND
-		DUP #10 NEQ ,&no-arrowup JNZ
-			( clamp ) .position/y PEK2 #0000 EQU2 ,&no-arrowup JNZ
+		DUP #10 NEQ ,&no-arrowup JCN
+			( clamp ) .position/y PEK2 #0000 EQU2 ,&no-arrowup JCN
 			;find-lineoffset JSR2 .position/x POK2 .position/y PEK2 -- .position/y POK2
 			;find-selection JSR2 DUP2 .selection/from POK2 ++ .selection/to POK2 &no-arrowup
-		DUP #20 NEQ ,&no-arrowdown JNZ
+		DUP #20 NEQ ,&no-arrowdown JCN
 			( clamp:TODO )
 			;find-lineoffset JSR2 .position/x POK2 .position/y PEK2 ++ .position/y POK2
 			;find-selection JSR2 DUP2 .selection/from POK2 ++ .selection/to POK2 &no-arrowdown
-		DUP #40 NEQ ,&no-arrowleft JNZ
-			( clamp ) .selection/from PEK2 ;document/body EQU2 ,&no-arrowleft JNZ
+		DUP #40 NEQ ,&no-arrowleft JCN
+			( clamp ) .selection/from PEK2 ;document/body EQU2 ,&no-arrowleft JCN
 			.selection/from PEK2 -- DUP2 .selection/from POK2 ++ .selection/to POK2 &no-arrowleft
-		DUP #80 NEQ ,&no-arrowright JNZ
+		DUP #80 NEQ ,&no-arrowright JCN
 			( clamp:TODO )
 			#aa .Console/byte DEO
 			.selection/from PEK2 ++ DUP2 .selection/from POK2 ++ .selection/to POK2 &no-arrowright
@@ -132,9 +132,9 @@ BRK
 		;redraw JSR2
 	&no-arrow
 
-	.Controller/key DEI #08 NEQ ,&no-backspace JNZ
+	.Controller/key DEI #08 NEQ ,&no-backspace JCN
 		( erase )
-		.selection/to PEK2 .selection/from PEK2 SUB2 #0001 NEQ2 ,&erase-multiple JNZ
+		.selection/to PEK2 .selection/from PEK2 SUB2 #0001 NEQ2 ,&erase-multiple JCN
 			.selection/to PEK2 .selection/from PEK2 SUB2 ;shift-left JSR2
 			;&erase-end JMP2
 		&erase-multiple
@@ -158,9 +158,9 @@ BRK
 
 @on-mouse ( -> )
 	
-	.Mouse/state DEI #00 EQU ,&touch-end JNZ
-		.Mouse/x DEI2 #0010 LTH2 ;touch-linebar JNZ2
-		.Mouse/x DEI2 .Screen/width DEI2 8- LTH2 ;touch-body JNZ2
+	.Mouse/state DEI #00 EQU ,&touch-end JCN
+		.Mouse/x DEI2 #0010 LTH2 ;touch-linebar JCN2
+		.Mouse/x DEI2 .Screen/width DEI2 8- LTH2 ;touch-body JCN2
 		;touch-scrollbar JMP2
 	&touch-end
 
@@ -186,18 +186,18 @@ BRK
 	.Mouse/y DEI2 8/ .scroll/y PEK2 ADD2 .position/y POK2
 	.Mouse/x DEI2 .textarea/x1 PEK2 SUB2 #0007 ADD2 #0007 DIV2 .position/x POK2
 	( chords )
-	.Mouse/chord DEI #00 EQU ,&no-chords JNZ
+	.Mouse/chord DEI #00 EQU ,&no-chords JCN
 		.Mouse/chord DEI
-		DUP #01 NEQ ,&no-chord-cut JNZ
+		DUP #01 NEQ ,&no-chord-cut JCN
 			;cut JSR2 ( release ) #00 DUP .Mouse/state DEO .Mouse/chord DEO &no-chord-cut
-		DUP #10 NEQ ,&no-chord-paste JNZ
+		DUP #10 NEQ ,&no-chord-paste JCN
 			;paste JSR2 ( release ) #00 DUP .Mouse/state DEO .Mouse/chord DEO &no-chord-paste
 		POP
 		;redraw JSR2
 		BRK
 	&no-chords
 	( drag )
-	.Mouse/state DEI .touch/state PEK NEQ .Controller/button DEI #0f AND #02 NEQ #0101 EQU2 ,&no-drag JNZ
+	.Mouse/state DEI .touch/state PEK NEQ .Controller/button DEI #0f AND #02 NEQ #0101 EQU2 ,&no-drag JCN
 		( on drag )
 		;find-selection JSR2 ++ .selection/to POK2
 		;clamp-selection JSR2
@@ -214,11 +214,11 @@ BRK
 
 @touch-scrollbar ( -- )
 
-	.Mouse/y DEI2 #0008 GTH2 ,&no-up JNZ
+	.Mouse/y DEI2 #0008 GTH2 ,&no-up JCN
 		( decr ) .scroll/y PEK2 #00 .scroll/y PEK2 #0000 NEQ2 SUB2 .scroll/y POK2
 		,&end JMP
 	&no-up
-	.Mouse/y DEI2 .Screen/height DEI2 8- LTH2 ,&no-down JNZ
+	.Mouse/y DEI2 .Screen/height DEI2 8- LTH2 ,&no-down JCN
 		( incr ) .scroll/y PEK2 ++ .scroll/y POK2
 		,&end JMP
 	&no-down
@@ -237,13 +237,13 @@ BRK
 	;document/body ;document/eof STA2
 	&loop
 		( incr ) ;document/eof LDA2 ++ ;document/eof STA2
-	;document/eof LDA2 LDA #00 NEQ ,&loop JNZ
+	;document/eof LDA2 LDA #00 NEQ ,&loop JCN
 
 RTN
 
 @scroll-up ( length -- )
 	
-	DUP2 .scroll/y PEK2 LTH2 ,&clamp JNZ
+	DUP2 .scroll/y PEK2 LTH2 ,&clamp JCN
 		#0000 .scroll/y POK2 POP2 RTN
 	&clamp
 	.scroll/y PEK2 SWP2 SUB2 .scroll/y POK2
@@ -264,7 +264,7 @@ RTN
 	&loop
 		( move ) .j PEK2 .i PEK2 ADD2 LDA .j PEK2 STA
 		( incr ) .j PEK2 ++ .j POK2
-		.j PEK2 ;document/eof LDA2 LTH2 ,&loop JNZ
+		.j PEK2 ;document/eof LDA2 LTH2 ,&loop JCN
 	;document/eof LDA2 .i PEK2 SUB2 ;document/eof STA2
 
 RTN
@@ -276,17 +276,17 @@ RTN
 	&loop
 		( move ) .j PEK2 .i PEK2 SUB2 LDA .j PEK2 STA
 		( decr ) .j PEK2 -- .j POK2
-		.j PEK2 .selection/from PEK2 GTH2 ,&loop JNZ
+		.j PEK2 .selection/from PEK2 GTH2 ,&loop JCN
 	;document/eof LDA2 .i PEK2 ADD2 ;document/eof STA2
 
 RTN
 
 @follow-selection ( -- )
 
-	.position/y PEK2 .scroll/y PEK2 GTH2 ,&no-up JNZ
+	.position/y PEK2 .scroll/y PEK2 GTH2 ,&no-up JCN
 		.position/y PEK2 .scroll/y POK2 RTN
 	&no-up
-	.position/y PEK2 .Screen/height DEI2 #0010 SUB2 8/ .scroll/y PEK2 ADD2 LTH2 ,&no-down JNZ
+	.position/y PEK2 .Screen/height DEI2 #0010 SUB2 8/ .scroll/y PEK2 ADD2 LTH2 ,&no-down JCN
 		.position/y PEK2 .Screen/height DEI2 #0010 SUB2 8/ SUB2 .scroll/y POK2 RTN
 	&no-down
 
@@ -305,7 +305,7 @@ RTN
 		.selection/from PEK2 -- LDA #0a EQU RTN?
 		.selection/from PEK2 -- LDA #0d EQU RTN?
 		( decr ) .selection/from PEK2 DUP2 .selection/to POK2 -- .selection/from POK2
-	.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
+	.selection/from PEK2 LDA #00 NEQ ,&loop JCN
 	( clamp at document body )
 	.selection/from PEK2 ;document/body GTH2 RTN?
 	;document/body DUP2 .selection/from POK2 ++ .selection/to POK2
@@ -318,7 +318,7 @@ RTN
 		.selection/from PEK2 LDA #0a EQU RTN?
 		.selection/from PEK2 LDA #0d EQU RTN?
 		( incr ) .selection/from PEK2 ++ DUP2 ++ .selection/to POK2 .selection/from POK2
-		.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
+		.selection/from PEK2 LDA #00 NEQ ,&loop JCN
 	( clamp at document body )
 	.selection/from PEK2 ;document/eof LTH2 RTN?
 	;document/eof -- DUP2 .selection/from POK2 ++ .selection/to POK2
@@ -330,10 +330,10 @@ RTN
 	.selection/to PEK2 .j POK2
 	&loop
 		( decr ) .j PEK2 -- .j POK2
-		.j PEK2 LDA #20 EQU ,&end JNZ
-		.j PEK2 LDA #0a EQU ,&end JNZ
-		.j PEK2 LDA #0d EQU ,&end JNZ
-		.j PEK2 ;document/body GTH2 ,&loop JNZ
+		.j PEK2 LDA #20 EQU ,&end JCN
+		.j PEK2 LDA #0a EQU ,&end JCN
+		.j PEK2 LDA #0d EQU ,&end JCN
+		.j PEK2 ;document/body GTH2 ,&loop JCN
 	&end
 	( return ) .j PEK2 --
 
@@ -344,10 +344,10 @@ RTN
 	.selection/to PEK2 .j POK2
 	&loop
 		( incr ) .j PEK2 ++ .j POK2
-		.j PEK2 LDA #20 EQU ,&end JNZ
-		.j PEK2 LDA #0a EQU ,&end JNZ
-		.j PEK2 LDA #0d EQU ,&end JNZ
-		.j PEK2 ;document/body GTH2 ,&loop JNZ
+		.j PEK2 LDA #20 EQU ,&end JCN
+		.j PEK2 LDA #0a EQU ,&end JCN
+		.j PEK2 LDA #0d EQU ,&end JCN
+		.j PEK2 ;document/body GTH2 ,&loop JCN
 	&end
 	( return ) .j PEK2 ++
 
@@ -358,9 +358,9 @@ RTN
 	#0000 .j POK2
 	&loop
 		( incr ) .j PEK2 ++ .j POK2
-		.selection/from PEK2 .j PEK2 SUB2 LDA #0a EQU ,&end JNZ
-		.selection/from PEK2 .j PEK2 SUB2 LDA #0d EQU ,&end JNZ
-		.selection/from PEK2 .j PEK2 SUB2 ;document/body GTH2 ,&loop JNZ
+		.selection/from PEK2 .j PEK2 SUB2 LDA #0a EQU ,&end JCN
+		.selection/from PEK2 .j PEK2 SUB2 LDA #0d EQU ,&end JCN
+		.selection/from PEK2 .j PEK2 SUB2 ;document/body GTH2 ,&loop JCN
 	&end
 	( return ) .j PEK2
 
@@ -370,12 +370,12 @@ RTN
 
 	;document/body .j POK2 #0000 .pt/y POK2
 	&loop
-		.pt/y PEK2 .position/y PEK2 -- GTH2 ,&end JNZ
-		.j PEK2 LDA #0a NEQ .j PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JNZ
+		.pt/y PEK2 .position/y PEK2 -- GTH2 ,&end JCN
+		.j PEK2 LDA #0a NEQ .j PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JCN
 			( incr ) .pt/y PEK2 ++ .pt/y POK2
 		&no-space
 		( incr ) .j PEK2 ++ .j POK2
-	.j PEK2 LDA #00 NEQ ,&loop JNZ
+	.j PEK2 LDA #00 NEQ ,&loop JCN
 	&end
 	( return ) .j PEK2
 
@@ -386,10 +386,10 @@ RTN
 	;find-line JSR2 ( find line )
 	#0000 .pt/x POK2
 	&loop
-		.j PEK2 .pt/x PEK2 ADD2 LDA #0a EQU ,&end JNZ
-		.j PEK2 .pt/x PEK2 ADD2 LDA #0d EQU ,&end JNZ
+		.j PEK2 .pt/x PEK2 ADD2 LDA #0a EQU ,&end JCN
+		.j PEK2 .pt/x PEK2 ADD2 LDA #0d EQU ,&end JCN
 		( incr ) .pt/x PEK2 ++ .pt/x POK2
-		.pt/x PEK2 .position/x PEK2 -- LTH2 ,&loop JNZ
+		.pt/x PEK2 .position/x PEK2 -- LTH2 ,&loop JCN
 	&end
 	( return ) .pt/x PEK2 ADD2
 
@@ -411,7 +411,7 @@ RTN
 	&loop
 		.selection/from PEK2 .i PEK2 ADD2 LDA ;clip/body .i PEK2 ADD2 STA
 		( incr ) .i PEK2 ++ .i POK2
-		.i PEK2 .j PEK2 LTH2 ,&loop JNZ
+		.i PEK2 .j PEK2 LTH2 ,&loop JCN
 
 RTN
 
@@ -423,7 +423,7 @@ RTN
 	&loop
 		;clip/body .i PEK2 ADD2 LDA .selection/from PEK2 .i PEK2 ADD2 STA
 		( incr ) .i PEK2 ++ .i POK2
-		.i PEK2 .j PEK2 LTH2 ,&loop JNZ
+		.i PEK2 .j PEK2 LTH2 ,&loop JCN
 
 RTN
 
@@ -431,17 +431,17 @@ RTN
 	
 	;document/body .selection/from POK2 #0000 .pt/x POK2 #0000 .pt/y POK2
 	&loop
-		.selection/from PEK2 LDA #0a NEQ .selection/from PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JNZ
+		.selection/from PEK2 LDA #0a NEQ .selection/from PEK2 LDA #0d NEQ #0101 EQU2 ,&no-space JCN
 			( incr ) .pt/y PEK2 ++ .pt/y POK2
 			#0000 .pt/x POK2
 		&no-space
-		.pt/y PEK2 .position/y PEK2 -- GTH2 .pt/x PEK2 .position/x PEK2 -- GTH2 #0101 NEQ2 ,&no-reached JNZ
+		.pt/y PEK2 .position/y PEK2 -- GTH2 .pt/x PEK2 .position/x PEK2 -- GTH2 #0101 NEQ2 ,&no-reached JCN
 			.selection/from PEK2 ++ .selection/to POK2
 			RTN
 		&no-reached
 		( incr ) .pt/x PEK2 ++ .pt/x POK2
 		( incr ) .selection/from PEK2 ++ .selection/from POK2
-	.selection/from PEK2 LDA #00 NEQ ,&loop JNZ
+	.selection/from PEK2 LDA #00 NEQ ,&loop JCN
 
 RTN
 
@@ -518,11 +518,11 @@ RTN
 	( scroll to position )
 	#0000 .j POK2 ( j is linebreaks )
 	&find-offset
-		.scroll/y PEK2 .j PEK2 EQU2 ,&find-offset-end JNZ
-		.textarea/addr PEK2 LDA #0a NEQ .textarea/addr PEK2 LDA #0d NEQ #0101 EQU2 ,&no-break JNZ
+		.scroll/y PEK2 .j PEK2 EQU2 ,&find-offset-end JCN
+		.textarea/addr PEK2 LDA #0a NEQ .textarea/addr PEK2 LDA #0d NEQ #0101 EQU2 ,&no-break JCN
 			( incr ) .j PEK2 ++ .j POK2 &no-break
 		( incr ) .textarea/addr PEK2 ++ .textarea/addr POK2
-	.textarea/addr PEK2 LDA #00 NEQ ,&find-offset JNZ
+	.textarea/addr PEK2 LDA #00 NEQ ,&find-offset JCN
 	&find-offset-end
 
 	#0018 .Screen/x DEO2 #0000 .Screen/y DEO2
@@ -530,10 +530,10 @@ RTN
 
 	&loop
 
-		.Screen/y DEI2 .Screen/height DEI2 #0010 SUB2 GTH2 ;&end JNZ2
+		.Screen/y DEI2 .Screen/height DEI2 #0010 SUB2 GTH2 ;&end JCN2
 
 
-		.i PEK2 LDA #0a NEQ .i PEK2 LDA #0d NEQ #0101 EQU2 ;&no-linebreak JNZ2
+		.i PEK2 LDA #0a NEQ .i PEK2 LDA #0d NEQ #0101 EQU2 ;&no-linebreak JCN2
 			( draw linebreak )
 			;linebreak_icn .Screen/addr DEO2
 			( draw ) #02
@@ -545,7 +545,7 @@ RTN
 				( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 				;font .Screen/addr DEO2
 				#21 .Screen/color DEO
-				.Screen/x DEI2 .Screen/width DEI2 8- LTH2 ,&fill-clear JNZ
+				.Screen/x DEI2 .Screen/width DEI2 8- LTH2 ,&fill-clear JCN
 
 			( draw line number )
 			#0000 .Screen/x DEO2
@@ -565,7 +565,7 @@ RTN
 		( get character )
 		;font #00 .i PEK2 LDA #20 SUB 8* ADD2 .Screen/addr DEO2
 		( is a special character )
-		.i PEK2 LDA #20 GTH ,&no-tab JNZ ;font .Screen/addr DEO2 &no-tab
+		.i PEK2 LDA #20 GTH ,&no-tab JCN ;font .Screen/addr DEO2 &no-tab
 
 		( draw ) #21
 		.i PEK2 .selection/from PEK2 -- GTH2
@@ -575,7 +575,7 @@ RTN
 		( incr ) .i PEK2 ++ .i POK2
 		( incr ) .Screen/x DEI2 #0007 ADD2 .Screen/x DEO2
 
-	.i PEK2 LDA #00 NEQ ;&loop JNZ2
+	.i PEK2 LDA #00 NEQ ;&loop JCN2
 
 	&end
 
@@ -593,7 +593,7 @@ RTN
 	&loop
 		( draw ) #21 .Screen/color DEO
 		( incr ) SWP2 8+ DUP2 .Screen/y DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&loop JNZ
+		OVR2 OVR2 LTH2 ,&loop JCN
 	POP2 POP2
 
 	.scroll/y PEK2 8+ .Screen/y DEO2
@@ -619,7 +619,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP #20 SUB 8* ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JNZ
+		DUP2 LDA #00 NEQ ,&loop JCN
 	POP2
 	( selection )
 	.selection/from PEK2 ;document/body SUB2 ;draw-short JSR2

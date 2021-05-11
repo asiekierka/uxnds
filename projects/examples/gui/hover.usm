@@ -40,22 +40,22 @@
 	( matrix comparison )
 	.Mouse/x DEI2 .r1/x1 PEK2 GTH2 .Mouse/x DEI2 .r1/x2 PEK2 LTH2 #0101 EQU2
 	.Mouse/y DEI2 .r1/y1 PEK2 GTH2 .Mouse/y DEI2 .r1/y2 PEK2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,&draw1 JNZ #02 .color POK ;hand_icn .pointer/sprite POK2
+	#0101 NEQ2 ,&draw1 JCN #02 .color POK ;hand_icn .pointer/sprite POK2
 	&draw1 .r1/x1 PEK2 .r1/y1 PEK2 .r1/x2 PEK2 .r1/y2 PEK2 .color PEK ;line-rect JSR2
 	
 	#01 .color POK
 	( 2-step comparison )
-	.Mouse/x DEI2 .r2/x1 PEK2 GTH2 .Mouse/x DEI2 .r2/x2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JNZ
-		.Mouse/y DEI2 .r2/y1 PEK2 GTH2 .Mouse/y DEI2 .r2/y2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JNZ
+	.Mouse/x DEI2 .r2/x1 PEK2 GTH2 .Mouse/x DEI2 .r2/x2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JCN
+		.Mouse/y DEI2 .r2/y1 PEK2 GTH2 .Mouse/y DEI2 .r2/y2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JCN
 			#03 .color POK ;hand_icn .pointer/sprite POK2
 	&draw2 .r2/x1 PEK2 .r2/y1 PEK2 .r2/x2 PEK2 .r2/y2 PEK2 .color PEK ;line-rect JSR2
 	
 	#01 .color POK
 	( 4-step comparison )
-	.Mouse/x DEI2 .r3/x1 PEK2 LTH2 ,&draw3 JNZ
-		.Mouse/x DEI2 .r3/x2 PEK2 GTH2 ,&draw3 JNZ
-			.Mouse/y DEI2 .r3/y1 PEK2 LTH2 ,&draw3 JNZ
-				.Mouse/y DEI2 .r3/y2 PEK2 GTH2 ,&draw3 JNZ
+	.Mouse/x DEI2 .r3/x1 PEK2 LTH2 ,&draw3 JCN
+		.Mouse/x DEI2 .r3/x2 PEK2 GTH2 ,&draw3 JCN
+			.Mouse/y DEI2 .r3/y1 PEK2 LTH2 ,&draw3 JCN
+				.Mouse/y DEI2 .r3/y2 PEK2 GTH2 ,&draw3 JCN
 					#02 .color POK ;hand_icn .pointer/sprite POK2
 	&draw3 .r3/x1 PEK2 .r3/y1 PEK2 .r3/x2 PEK2 .r3/y2 PEK2 .color PEK ;line-rect JSR2
 
@@ -89,13 +89,13 @@ RTN
 		( incr ) .Screen/x DEI2 #0001 ADD2 .Screen/x DEO2
 		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
 		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JNZ
+		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JCN
 	.rect/y1 PEK2 .Screen/y DEO2
 	&ver
 		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
 		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
 		( incr ) .Screen/y DEI2 #0001 ADD2 .Screen/y DEO2
-		.Screen/y DEI2 .rect/y2 PEK2 #0001 ADD2 LTH2 ,&ver JNZ
+		.Screen/y DEI2 .rect/y2 PEK2 #0001 ADD2 LTH2 ,&ver JCN
 
 RTN
 

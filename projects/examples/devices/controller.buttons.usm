@@ -44,27 +44,27 @@ BRK
 
 	( hold ctrl key to change slime color )
 	.Controller/button DEI #0f AND
-		DUP #01 NEQ ,&no-ctrl JNZ #25 .slime POK &no-ctrl
-		DUP #02 NEQ ,&no-alt JNZ #2f .slime POK &no-alt
+		DUP #01 NEQ ,&no-ctrl JCN #25 .slime POK &no-ctrl
+		DUP #02 NEQ ,&no-alt JCN #2f .slime POK &no-alt
 	POP
 
 	( clear ) #30 .Screen/color DEO
 
 	( detect movement )
 	.Controller/button DEI #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ 
+		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN 
 			( move ) 
 			.Screen/y DEI2 -- .Screen/y DEO2 
 			;up_icn .Screen/addr DEO2 &no-up
-		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ 
+		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN 
 			( move ) 
 			.Screen/y DEI2 ++ .Screen/y DEO2 
 			;down_icn .Screen/addr DEO2 &no-down
-		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ 
+		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN 
 			( move ) 
 			.Screen/x DEI2 -- .Screen/x DEO2 
 			;left_icn .Screen/addr DEO2 &no-left
-		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ 
+		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN 
 			( move ) 
 			.Screen/x DEI2 ++ .Screen/x DEO2 
 			;right_icn .Screen/addr DEO2 &no-right

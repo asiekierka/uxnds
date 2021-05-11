@@ -151,7 +151,7 @@
 	&h ( number* -- )
 	,scale JSR
 	.neralie/h PEK2 ;mul2hi JSR2
-	DUP2 #0000 NEQ2 #02 JNZ POP2 JMP2r
+	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
 	DUP2 .neralie/y PEK2 ADD2 .neralie/y POK2
 	.neralie/h PEK2 SWP2 SUB2 .neralie/h POK2
 	.neralie/x PEK2 DUP2 .neralie/w PEK2 ADD2 .neralie/y PEK2 ,h JMP
@@ -159,7 +159,7 @@
 	&v ( number* -- )
 	,scale JSR
 	.neralie/w PEK2 ;mul2hi JSR2
-	DUP2 #0000 NEQ2 #02 JNZ POP2 JMP2r
+	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
 	DUP2 .neralie/x PEK2 ADD2 .neralie/x POK2
 	.neralie/w PEK2 SWP2 SUB2 .neralie/w POK2
 	.neralie/y PEK2 DUP2 .neralie/h PEK2 ADD2 .neralie/x PEK2 ,v JMP
@@ -179,12 +179,12 @@
 	.Screen/y .lines/addr POK
 
 	&draw-line ( v1* v2* -- )
-	OVR2 OVR2 LTH2 #01 JNZ SWP2
+	OVR2 OVR2 LTH2 #01 JCN SWP2
 	STH2
 
 	&loop
 	LIT2 [ 00 ] &spacing [ 01 ] ADD2
-	DUP2 DUP2r STH2r LTH2 ,&keep-going JNZ
+	DUP2 DUP2r STH2r LTH2 ,&keep-going JCN
 	POP2 POP2r
 	JMP2r
 
@@ -239,7 +239,7 @@
 
 	&adc ( 31..24 a* b* -- 31..24 sum* )
 	OVR2 ADD2 SWP2 OVR2
-	GTH2 ,&carry JNZ
+	GTH2 ,&carry JCN
 	JMP2r
 	&carry
 	ROT #01 ADD ROT ROT

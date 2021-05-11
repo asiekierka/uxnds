@@ -32,11 +32,11 @@ BRK
 	( clear ) #20 ;draw-dvd JSR2
 	( case: hit-right ) .dvd/x PEK2 .Screen/width DEI2 #0020 SUB2 EQU2
 	( case: hit-left ) .dvd/x PEK2 #0000 EQU2 
-	#0000 EQU2 ,&no-flipx JNZ 
+	#0000 EQU2 ,&no-flipx JCN 
 		.dvd/dx PEK #00 EQU .dvd/dx POK &no-flipx
 	( case: hit-bottom ) .dvd/y PEK2 .Screen/height DEI2 #0010 SUB2 EQU2
 	( case: hit-top ) .dvd/y PEK2 #0000 EQU2 
-	#0000 EQU2 ,&no-flipy JNZ 
+	#0000 EQU2 ,&no-flipy JCN 
 		.dvd/dy PEK #00 EQU .dvd/dy POK &no-flipy
 	( incr ) .dvd/x PEK2 #0001 #00 .dvd/dx PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/x POK2
 	( incr ) .dvd/y PEK2 #0001 #00 .dvd/dy PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/y POK2
@@ -57,10 +57,10 @@ BRK
 			( draw ) DUPr STHr .Screen/color DEO
 			( next ) .Screen/addr DEI2 #0008 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 #0008 ADD2 SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 #0008 ADD2 SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2
 	( destroy ) POPr
 

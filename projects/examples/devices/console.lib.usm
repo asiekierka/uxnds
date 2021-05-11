@@ -35,7 +35,7 @@ BRK
 	&loop
 		( send ) DUP2 LDA .Console/char DEO
 		( incr ) #0001 ADD2
-		( loop ) DUP2 LDA ,&loop JNZ
+		( loop ) DUP2 LDA ,&loop JCN
 	POP2
 
 RTN
@@ -50,7 +50,7 @@ RTN
 RTN
 
 	&digit
-	#0f AND DUP #0a LTH ,&not-alpha JNZ
+	#0f AND DUP #0a LTH ,&not-alpha JCN
 		#27 ADD
 	&not-alpha
 	LIT '0 ADD .Console/char DEO
@@ -64,14 +64,14 @@ RTN
 	DUP2 #0064 DIV2 DUP2 ,&digit JSR #0064 MUL2 SUB2
 	DUP2 #000a DIV2 DUP2 ,&digit JSR #000a MUL2 SUB2
 	                     ,&digit JSR
-	.number/started PEK ,&end JNZ
+	.number/started PEK ,&end JCN
 	LIT '0 .Console/char DEO
 	&end
 RTN
 
 	&digit
 	SWP POP
-	DUP .number/started PEK ORA #02 JNZ
+	DUP .number/started PEK ORA #02 JCN
 	POP JMP2r
 	LIT '0 ADD .Console/char DEO
 	#01 .number/started POK

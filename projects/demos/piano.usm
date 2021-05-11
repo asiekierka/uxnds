@@ -108,14 +108,14 @@ BRK
 		OVR #10 SWP - .Audio0/output DEI #04 SFT < .Screen/color DEO
 		.Screen/y DEI2 #0002 ++ .Screen/y DEO2
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JNZ
+		DUP2 < ,&loop JCN
 	POP2
 
 BRK
 
 @on-midi ( -> )
 	
-	.Midi/note DEI #00 ! #01 JNZ [ BRK ]
+	.Midi/note DEI #00 ! #01 JCN [ BRK ]
 	.Midi/note DEI .Audio0/pitch .Midi/channel DEI #04 MOD #10 * + DEO
 
 BRK
@@ -123,19 +123,19 @@ BRK
 @on-mouse ( -> )
 
 	;draw-cursor JSR2 
-	.Mouse/state DEI #00 ! #01 JNZ [ BRK ]
+	.Mouse/state DEI #00 ! #01 JCN [ BRK ]
 	( wave-view )
 	.Mouse/x DEI2 DUP2 .wave-view/x1 PEK2 >> ROT ROT .wave-view/x2 PEK2 #0001 ++ << #0101 ==
 	.Mouse/y DEI2 DUP2 .wave-view/y1 PEK2 >> ROT ROT .wave-view/y2 PEK2 << #0101 ==
-	#0101 == ;on-touch-wave-view JNZ2
+	#0101 == ;on-touch-wave-view JCN2
 	( adsr-view )
 	.Mouse/x DEI2 DUP2 .adsr-view/x1 PEK2 >> ROT ROT .adsr-view/x2 PEK2 << #0101 ==
 	.Mouse/y DEI2 DUP2 .adsr-view/y1 PEK2 >> ROT ROT .adsr-view/y2 PEK2 << #0101 ==
-	#0101 == ;on-touch-adsr-view JNZ2
+	#0101 == ;on-touch-adsr-view JCN2
 	( octave-view )
 	.Mouse/x DEI2 DUP2 .octave-view/x1 PEK2 >> ROT ROT .octave-view/x2 PEK2 << #0101 ==
 	.Mouse/y DEI2 DUP2 .octave-view/y1 PEK2 >> ROT ROT .octave-view/y2 PEK2 << #0101 ==
-	#0101 == ;on-touch-octave-view JNZ2
+	#0101 == ;on-touch-octave-view JCN2
 
 BRK
 
@@ -149,11 +149,11 @@ BRK
 
 @on-touch-octave-view ( -> )
 
-	.Mouse/x DEI2 .octave-view/x1 PEK2 -- #0008 // SWP POP #09 ! ,&no-mod JNZ
+	.Mouse/x DEI2 .octave-view/x1 PEK2 -- #0008 // SWP POP #09 ! ,&no-mod JCN
 		.Mouse/y DEI2 .octave-view/y1 PEK2 -- #0008 // SWP POP 
-		DUP #00 ! ,&no-incr JNZ
+		DUP #00 ! ,&no-incr JCN
 			.octave PEK #01 + .octave POK &no-incr
-		DUP #02 ! ,&no-decr JNZ
+		DUP #02 ! ,&no-decr JCN
 			.octave PEK #01 - .octave POK &no-decr
 		POP
 		( release ) #00 .Mouse/state DEO
@@ -161,7 +161,7 @@ BRK
 		BRK
 	&no-mod
 
-	.Mouse/x DEI2 .octave-view/x1 PEK2 -- #0008 // SWP POP #06 > ,&no-key JNZ
+	.Mouse/x DEI2 .octave-view/x1 PEK2 -- #0008 // SWP POP #06 > ,&no-key JCN
 		.Mouse/x DEI2 .octave-view/x1 PEK2 -- #0008 // DUP2 SWP POP .last-note POK ;notes ++ LDA ;play JSR2
 		( release ) #00 .Mouse/state DEO
 		;draw-octave JSR2
@@ -172,27 +172,27 @@ BRK
 @on-touch-adsr-view ( -> )
 
 	.Mouse/x DEI2 .adsr-view/x1 PEK2 -- #0008 // SWP POP #03 /
-	DUP #00 ! ,&no-a JNZ
+	DUP #00 ! ,&no-a JCN
 		.Audio0/adsr DEI
 		#10 .Mouse/state DEI #10 = #e0 * + +
 		.Audio0/adsr DEO &no-a
-	DUP #01 ! ,&no-d JNZ
+	DUP #01 ! ,&no-d JCN
 		.Audio0/adsr DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
 		.Audio0/adsr DEO &no-d
-	DUP #02 ! ,&no-s JNZ
+	DUP #02 ! ,&no-s JCN
 		.Audio0/adsr #01 + DEI
 		#10 .Mouse/state DEI #10 = #e0 * + +
 		.Audio0/adsr #01 + DEO &no-s
-	DUP #03 ! ,&no-r JNZ
+	DUP #03 ! ,&no-r JCN
 		.Audio0/adsr #01 + DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
 		.Audio0/adsr #01 + DEO &no-r
-	DUP #05 ! ,&no-left JNZ
+	DUP #05 ! ,&no-left JCN
 		.Audio0/volume DEI 
 		#10 .Mouse/state DEI #10 = #e0 * + +
 		.Audio0/volume DEO &no-left
-	DUP #06 ! ,&no-right JNZ
+	DUP #06 ! ,&no-right JCN
 		.Audio0/volume DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
 		.Audio0/volume DEO &no-right
@@ -213,32 +213,32 @@ BRK
 	#30 .Screen/color DEO
 
 	.Controller/key DEI
-	DUP #61 ! ,&no-c JNZ
+	DUP #61 ! ,&no-c JCN
 		#00 .last-note POK ;notes LDA ;play JSR2 &no-c
-	DUP #73 ! ,&no-d JNZ
+	DUP #73 ! ,&no-d JCN
 		#01 .last-note POK ;notes #0001 ++ LDA ;play JSR2 &no-d
-	DUP #64 ! ,&no-e JNZ
+	DUP #64 ! ,&no-e JCN
 		#02 .last-note POK ;notes #0002 ++ LDA ;play JSR2 &no-e
-	DUP #66 ! ,&no-f JNZ
+	DUP #66 ! ,&no-f JCN
 		#03 .last-note POK ;notes #0003 ++ LDA ;play JSR2 &no-f
-	DUP #67 ! ,&no-g JNZ
+	DUP #67 ! ,&no-g JCN
 		#04 .last-note POK ;notes #0004 ++ LDA ;play JSR2 &no-g
-	DUP #68 ! ,&no-a JNZ
+	DUP #68 ! ,&no-a JCN
 		#05 .last-note POK ;notes #0005 ++ LDA ;play JSR2 &no-a
-	DUP #6a ! ,&no-b JNZ
+	DUP #6a ! ,&no-b JCN
 		#06 .last-note POK ;notes #0006 ++ LDA ;play JSR2 &no-b
-	DUP #6b ! ,&no-c2 JNZ
+	DUP #6b ! ,&no-c2 JCN
 		#07 .last-note POK ;notes #0007 ++ LDA ;play JSR2 &no-c2
 	POP
 
 	.Controller/button DEI #f0 AND
-	DUP #04 SFT #01 AND #01 ! ,&no-up JNZ
+	DUP #04 SFT #01 AND #01 ! ,&no-up JCN
 		( move ) .Audio0/addr DEI2 #0001 -- .Audio0/addr DEO2 &no-up
-	DUP #05 SFT #01 AND #01 ! ,&no-down JNZ
+	DUP #05 SFT #01 AND #01 ! ,&no-down JCN
 		( move ) .Audio0/addr DEI2 #0001 ++ .Audio0/addr DEO2 &no-down
-	DUP #06 SFT #01 AND #01 ! ,&no-left JNZ
+	DUP #06 SFT #01 AND #01 ! ,&no-left JCN
 		( move ) .Audio0/addr DEI2 #0010 -- .Audio0/addr DEO2 &no-left
-	DUP #07 SFT #01 AND #01 ! ,&no-right JNZ
+	DUP #07 SFT #01 AND #01 ! ,&no-right JCN
 		( move ) .Audio0/addr DEI2 #0010 ++ .Audio0/addr DEO2 &no-right
 	POP
 
@@ -310,7 +310,7 @@ RTN
 		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) .Screen/addr DEI2 #0008 ++ .Screen/addr DEO2  
 		( incr ) SWP2 #0008 ++ SWP2
-		OVR2 OVR2 << ,&loop JNZ
+		OVR2 OVR2 << ,&loop JCN
 	POP2 POP2 
 	POPr
 
@@ -358,7 +358,7 @@ RTN
 	#00 #ff
 	&loop
 		( dotted line )
-		OVR #01 AND ,&no-dot JNZ 
+		OVR #01 AND ,&no-dot JCN 
 			.wave-view/y1 PEK2 #0010 ++ .Screen/y DEO2
 			#03 .Screen/color DEO
 		&no-dot
@@ -368,7 +368,7 @@ RTN
 		.Screen/x DEI2 #0001 ++ .Screen/x DEO2
 		( draw ) OVR .Audio0/length DEI2 SWP POP > #02 * #01 + .Screen/color DEO
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JNZ
+		DUP2 < ,&loop JCN
 	POP2
 
 	( range )
@@ -389,7 +389,7 @@ RTN
 		OVR2 .Screen/y DEO2
 		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) SWP2 #0001 ++ SWP2
-		OVR2 OVR2 << ,&loop JNZ
+		OVR2 OVR2 << ,&loop JCN
 	POP2 POP2
 	POPr
 
@@ -448,10 +448,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 #0001 ++ SWP2
-			OVR2 OVR2 LTS2 ,&hor JNZ
+			OVR2 OVR2 LTS2 ,&hor JCN
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 #0001 ++ SWP2
-		OVR2 OVR2 LTS2 ,&ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2 POP2 POP2
 
 RTN

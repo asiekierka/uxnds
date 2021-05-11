@@ -73,7 +73,7 @@ BRK
 
 	.timer PEK ++ DUP .timer POK
 
-	( skip ) #08 EQU ,&tick JNZ BRK &tick
+	( skip ) #08 EQU ,&tick JCN BRK &tick
 
 	.timer/frame PEK ++ .timer/frame POK
 
@@ -85,32 +85,32 @@ BRK
 
 @on-button
 	
-	.Controller/key DEI #00 EQU ,&no-key JNZ
+	.Controller/key DEI #00 EQU ,&no-key JCN
 		.selection/x1 PEK .selection/y1 PEK .Controller/key DEI SET-CELL
 		;redraw JSR2
 	&no-key
 
 	( arrows )
 	.Controller/button DEI #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ,&no-up JNZ
-			.selection/y1 PEK #00 EQU ,&no-up JNZ
+		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
+			.selection/y1 PEK #00 EQU ,&no-up JCN
 			.selection/y1 PEK -- .selection/y1 POK
 			.selection/y2 PEK -- .selection/y2 POK &no-up
-		DUP #05 SFT #01 AND #01 NEQ ,&no-down JNZ
-			.selection/y1 PEK .grid/height PEK -- EQU ,&no-down JNZ
+		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
+			.selection/y1 PEK .grid/height PEK -- EQU ,&no-down JCN
 			.selection/y1 PEK ++ .selection/y1 POK
 			.selection/y2 PEK ++ .selection/y2 POK &no-down
-		DUP #06 SFT #01 AND #01 NEQ ,&no-left JNZ
-			.selection/x1 PEK #00 EQU ,&no-left JNZ
+		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
+			.selection/x1 PEK #00 EQU ,&no-left JCN
 			.selection/x1 PEK -- .selection/x1 POK
 			.selection/x2 PEK -- .selection/x2 POK &no-left
-		DUP #07 SFT #01 AND #01 NEQ ,&no-right JNZ
-			.selection/x1 PEK .grid/width PEK -- EQU ,&no-right JNZ
+		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
+			.selection/x1 PEK .grid/width PEK -- EQU ,&no-right JCN
 			.selection/x1 PEK ++ .selection/x1 POK
 			.selection/x2 PEK ++ .selection/x2 POK &no-right
 	POP
 
-	.Controller/key DEI #08 NEQ ,&no-backspace JNZ
+	.Controller/key DEI #08 NEQ ,&no-backspace JCN
 		.selection/x1 PEK .selection/y1 PEK #2e SET-CELL ( put . char )
 	&no-backspace
 
@@ -120,7 +120,7 @@ BRK
 
 @on-mouse
 	
-	.Mouse/state DEI #00 EQU ,&no-touch JNZ
+	.Mouse/state DEI #00 EQU ,&no-touch JCN
 		.Mouse/x DEI2 8/ SWP POP .selection/x1 POK
 		.Mouse/y DEI2 8/ SWP POP .selection/y1 POK
 		;redraw JSR2
@@ -153,10 +153,10 @@ BRK
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
 			#2e SET-CELL
 			( incr ) SWP ++ SWP
-			DUP2 LTH ,&hor JNZ
+			DUP2 LTH ,&hor JCN
 		POP2
 		( incr ) SWP ++ SWP
-		DUP2 LTH ,&ver JNZ
+		DUP2 LTH ,&ver JCN
 	POP2
 
 	#9a .timer/speed POK
@@ -179,7 +179,7 @@ RTN
 @get-port ( x y lock -- value )
 	
 	(
-	DUP #01 NEQ ^$no-lock JNZ
+	DUP #01 NEQ ^$no-lock JCN
 		DUP2 #01 SET-LOCK
 	$no-lock
 	STH DUP2 #02 #02 STHr MUL ADD ,set-type JSR2
@@ -192,11 +192,11 @@ RTN
 	
 	DUP2 LDA-CELL
 	( if character is dot )
-	DUP #2e NEQ ,&no-bar JNZ
+	DUP #2e NEQ ,&no-bar JCN
 		( check if x,y is grid )
 		POP
-		DUP2 #08 MOD #00 EQU SWP #08 MOD #00 EQU #0101 NEQ2 ,&no-marker8 JNZ POP2 ;marker8_icn RTN &no-marker8
-		DUP2 #02 MOD #00 EQU SWP #02 MOD #00 EQU #0101 NEQ2 ,&no-marker4 JNZ POP2 ;marker4_icn RTN &no-marker4
+		DUP2 #08 MOD #00 EQU SWP #08 MOD #00 EQU #0101 NEQ2 ,&no-marker8 JCN POP2 ;marker8_icn RTN &no-marker8
+		DUP2 #02 MOD #00 EQU SWP #02 MOD #00 EQU #0101 NEQ2 ,&no-marker4 JCN POP2 ;marker4_icn RTN &no-marker4
 		POP2 ;font RTN
 	&no-bar
 	STH POP2 STHr
@@ -304,11 +304,11 @@ RTN
 	
 	STH
 	( limit )
-	DUP #00 NEQ ,&not-edge JNZ
+	DUP #00 NEQ ,&not-edge JCN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 -- LDA-CELL #2e EQU ,&not-collide JNZ
+	DUP2 -- LDA-CELL #2e EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -373,11 +373,11 @@ RTN
 
 	STH
 	( limit )
-	OVR #00 NEQ ,&not-edge JNZ
+	OVR #00 NEQ ,&not-edge JCN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 SWP -- SWP LDA-CELL #2e EQU ,&not-collide JNZ
+	DUP2 SWP -- SWP LDA-CELL #2e EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -415,30 +415,30 @@ RTN
 @run-char ( x y char -- )
 	
 	( skip dot )
-	DUP #2e NEQ ,&not-dot JNZ
+	DUP #2e NEQ ,&not-dot JCN
 		POP POP2 RTN
 	&not-dot
 
 	( skip locked )
-	ROT ROT DUP2 LDA-LOCK #00 EQU ,&not-locked JNZ
+	ROT ROT DUP2 LDA-LOCK #00 EQU ,&not-locked JCN
 		POP POP2 RTN
 	&not-locked
 	ROT
 
-	( A ) DUP #41 EQU ;op-a JNZ2 ( B ) DUP #42 EQU ;op-b JNZ2
-	( C ) DUP #43 EQU ;op-c JNZ2 ( D ) DUP #44 EQU ;op-d JNZ2
-	( E ) DUP #45 EQU ;op-e JNZ2 ( F ) DUP #46 EQU ;op-f JNZ2
-	( G ) DUP #47 EQU ;op-g JNZ2 ( H ) DUP #48 EQU ;op-h JNZ2
-	( I ) DUP #49 EQU ;op-i JNZ2 ( J ) DUP #4a EQU ;op-j JNZ2
-	( K ) DUP #4b EQU ;op-k JNZ2 ( L ) DUP #4c EQU ;op-l JNZ2
-	( M ) DUP #4d EQU ;op-m JNZ2 ( N ) DUP #4e EQU ;op-n JNZ2
-	( O ) DUP #4f EQU ;op-o JNZ2 ( P ) DUP #50 EQU ;op-p JNZ2
-	( Q ) DUP #51 EQU ;op-q JNZ2 ( R ) DUP #52 EQU ;op-r JNZ2
-	( S ) DUP #53 EQU ;op-s JNZ2 ( T ) DUP #54 EQU ;op-t JNZ2
-	( U ) DUP #55 EQU ;op-u JNZ2 ( V ) DUP #56 EQU ;op-v JNZ2
-	( W ) DUP #57 EQU ;op-w JNZ2 ( X ) DUP #58 EQU ;op-x JNZ2
-	( Y ) DUP #59 EQU ;op-y JNZ2 ( Z ) DUP #5a EQU ;op-z JNZ2
-	( * ) DUP #2a EQU ;op-bang JNZ2
+	( A ) DUP #41 EQU ;op-a JCN2 ( B ) DUP #42 EQU ;op-b JCN2
+	( C ) DUP #43 EQU ;op-c JCN2 ( D ) DUP #44 EQU ;op-d JCN2
+	( E ) DUP #45 EQU ;op-e JCN2 ( F ) DUP #46 EQU ;op-f JCN2
+	( G ) DUP #47 EQU ;op-g JCN2 ( H ) DUP #48 EQU ;op-h JCN2
+	( I ) DUP #49 EQU ;op-i JCN2 ( J ) DUP #4a EQU ;op-j JCN2
+	( K ) DUP #4b EQU ;op-k JCN2 ( L ) DUP #4c EQU ;op-l JCN2
+	( M ) DUP #4d EQU ;op-m JCN2 ( N ) DUP #4e EQU ;op-n JCN2
+	( O ) DUP #4f EQU ;op-o JCN2 ( P ) DUP #50 EQU ;op-p JCN2
+	( Q ) DUP #51 EQU ;op-q JCN2 ( R ) DUP #52 EQU ;op-r JCN2
+	( S ) DUP #53 EQU ;op-s JCN2 ( T ) DUP #54 EQU ;op-t JCN2
+	( U ) DUP #55 EQU ;op-u JCN2 ( V ) DUP #56 EQU ;op-v JCN2
+	( W ) DUP #57 EQU ;op-w JCN2 ( X ) DUP #58 EQU ;op-x JCN2
+	( Y ) DUP #59 EQU ;op-y JCN2 ( Z ) DUP #5a EQU ;op-z JCN2
+	( * ) DUP #2a EQU ;op-bang JCN2
 	POP POP2
 
 RTN
@@ -452,10 +452,10 @@ RTN
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
 			( unlock ) #00 SET-LOCK
 			( incr ) SWP ++ SWP
-			DUP2 LTH ,&hor JNZ
+			DUP2 LTH ,&hor JCN
 		POP2
 		( incr ) SWP ++ SWP
-		DUP2 LTH ,&ver JNZ
+		DUP2 LTH ,&ver JCN
 	POP2
 
 RTN
@@ -471,10 +471,10 @@ RTN
 			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
 			DUP2 LDA-CELL ;run-char JSR2
 			( incr ) SWP ++ SWP
-			DUP2 LTH ,&hor JNZ
+			DUP2 LTH ,&hor JCN
 		POP2
 		( incr ) SWP ++ SWP
-		DUP2 LTH ,&ver JNZ
+		DUP2 LTH ,&ver JCN
 	POP2
 	;redraw JSR2
 
@@ -551,10 +551,10 @@ RTN
 			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
 			( draw ) ;is-selected JSR2 #0d MUL #21 ADD .Screen/color DEO
 			( incr ) SWP ++ SWP
-			DUP2 LTH ,&hor JNZ
+			DUP2 LTH ,&hor JCN
 		POP2
 		( incr ) SWP ++ SWP
-		DUP2 LTH ,&ver JNZ
+		DUP2 LTH ,&ver JCN
 	POP2
 
 	;draw-interface JSR2

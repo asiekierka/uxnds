@@ -32,7 +32,7 @@ BRK
 @on-frame ( -> )
 
 	( incr ) .timer PEK #01 ADD .timer POK 
-	( skip ) .timer PEK #10 EQU #01 JNZ [ BRK ]
+	( skip ) .timer PEK #10 EQU #01 JCN [ BRK ]
 
 	( get note )
 	;melody #00 .progress PEK ADD2 LDA 

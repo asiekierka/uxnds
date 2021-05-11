@@ -4,7 +4,7 @@
 %++  { #0001 ADD2 }
 %--  { #0001 SUB2 }
 %8+  { #0008 ADD2 }
-%ABS2 { DUP2 #000f SFT2 EQU #04 JNZ #ffff MUL2 }
+%ABS2 { DUP2 #000f SFT2 EQU #04 JCN #ffff MUL2 }
 %LTS2  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 }
 %GTS2  { #8000 ADD2 SWP2 #8000 ADD2 LTH2 }
 
@@ -54,13 +54,13 @@ BRK
 	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
 	&loop
 		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JNZ
+		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JCN
 		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
-		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JNZ
+		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JCN
 			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
 			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
 		&skipy
-		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JNZ
+		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JCN
 			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
 			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
 		&skipx
@@ -79,7 +79,7 @@ RTN
 		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
 		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTS2 ,&ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2
 	.rect/x1 PEK2 .rect/x2 PEK2
 	&hor
@@ -87,7 +87,7 @@ RTN
 		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
 		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 ++ LTS2 ,&hor JNZ
+		OVR2 OVR2 ++ LTS2 ,&hor JCN
 	POP2 POP2
 
 RTN
@@ -103,10 +103,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 ++ SWP2
-			OVR2 OVR2 LTS2 ,&hor JNZ
+			OVR2 OVR2 LTS2 ,&hor JCN
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 ++ SWP2
-		OVR2 OVR2 LTS2 ,&ver JNZ
+		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2 POP2 POP2
 
 RTN
@@ -119,7 +119,7 @@ RTN
 	( draw ) ;&seg JSR2
 	&loop
 		( incr ) .circle/x PEK2 ++ .circle/x POK2
-		.circle/d PEK2 #0001 LTS2 ,&else JNZ
+		.circle/d PEK2 #0001 LTS2 ,&else JCN
 			( decr ) .circle/y PEK2 -- .circle/y POK2
 			.circle/x PEK2 .circle/y PEK2 SUB2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
 			;&end JMP2
@@ -127,7 +127,7 @@ RTN
 			.circle/x PEK2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
 		&end
 		( draw ) ;&seg JSR2
-		.circle/y PEK2 .circle/x PEK2 -- GTS2 ,&loop JNZ
+		.circle/y PEK2 .circle/x PEK2 -- GTS2 ,&loop JCN
 	RTN
 	&seg
 		.circle/xc PEK2 .circle/x PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
@@ -152,10 +152,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2
 
 RTN

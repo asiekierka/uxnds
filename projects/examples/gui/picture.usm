@@ -52,10 +52,10 @@ BRK
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2
 
 RTN
@@ -72,10 +72,10 @@ RTN
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) .Screen/addr DEI2 #0010 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2
 
 RTN
@@ -91,10 +91,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2
 
 RTN

@@ -70,27 +70,27 @@ BRK
 	
 	;draw-cursor JSR2
 
-	.Mouse/state DEI #00 NEQ #01 JNZ [ BRK ]
+	.Mouse/state DEI #00 NEQ #01 JCN [ BRK ]
 
 	.Mouse/y DEI2 .window/y1 PEK2 SUB2 STEP8
-	DUP2 #0010 NEQ2 ,&no-touch-red JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-red JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-red JNZ
+	DUP2 #0010 NEQ2 ,&no-touch-red JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-red JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-red JCN
 		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/r1 #00 .selection PEK ADD2 STA
 	&no-touch-red
-	DUP2 #0020 NEQ2 ,&no-touch-green JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-green JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-green JNZ
+	DUP2 #0020 NEQ2 ,&no-touch-green JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-green JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-green JCN
 		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/g1 #00 .selection PEK ADD2 STA
 	&no-touch-green
-	DUP2 #0030 NEQ2 ,&no-touch-blue JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-blue JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-blue JNZ
+	DUP2 #0030 NEQ2 ,&no-touch-blue JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #0060 ADD2 LTH2 ,&no-touch-blue JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #009c ADD2 GTH2 ,&no-touch-blue JCN
 		( get new value ) .Mouse/x DEI2 .window/x1 PEK2 SUB2 #0060 SUB2 #0004 DIV2 SWP POP ;theme/b1 #00 .selection PEK ADD2 STA
 	&no-touch-blue
-	DUP2 #0040 NEQ2 ,&no-touch-radio JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #0050 ADD2 LTH2 ,&no-touch-radio JNZ
-		.Mouse/x DEI2 .window/x1 PEK2 #008c ADD2 GTH2 ,&no-touch-radio JNZ
+	DUP2 #0040 NEQ2 ,&no-touch-radio JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #0050 ADD2 LTH2 ,&no-touch-radio JCN
+		.Mouse/x DEI2 .window/x1 PEK2 #008c ADD2 GTH2 ,&no-touch-radio JCN
 		.Mouse/x DEI2 .window/x1 PEK2 SUB2 #0050 SUB2 STEP8 2/ #0008 DIV2 SWP POP .selection POK
 	&no-touch-radio
 	POP2
@@ -125,7 +125,7 @@ RTN
 	&draw-hor
 		( draw ) #01 .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-hor JNZ
+		OVR2 OVR2 LTH2 ,&draw-hor JCN
 	POP2 POP2
 
 	( draw ver line )
@@ -134,7 +134,7 @@ RTN
 	&draw-ver
 		( draw ) #02 .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-ver JNZ
+		OVR2 OVR2 LTH2 ,&draw-ver JCN
 	POP2 POP2
 
 	( draw blending modes )
@@ -145,7 +145,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel1 JNZ
+		DUP2 LTH ,&draw-pixel1 JCN
 	POP POP
 	#0018 .Screen/y DEO2
 	#00 #08
@@ -153,7 +153,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #08 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel2 JNZ
+		DUP2 LTH ,&draw-pixel2 JCN
 	POP POP
 	#0020 .Screen/y DEO2
 	#00 #08
@@ -161,7 +161,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #20 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn1 JNZ
+		DUP2 LTH ,&draw-icn1 JCN
 	POP POP
 	#0028 .Screen/y DEO2
 	#00 #08
@@ -169,7 +169,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #28 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn2 JNZ
+		DUP2 LTH ,&draw-icn2 JCN
 	POP POP
 	#0030 .Screen/y DEO2
 	#00 #08
@@ -177,7 +177,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #40 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr1 JNZ
+		DUP2 LTH ,&draw-chr1 JCN
 	POP POP
 	#0038 .Screen/y DEO2
 	#00 #08
@@ -185,7 +185,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #48 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr2 JNZ
+		DUP2 LTH ,&draw-chr2 JCN
 	POP POP
 
 RTN
@@ -270,7 +270,7 @@ RTN
 	&loop
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( draw ) #25 .Screen/color DEO
-		.Screen/x DEI2 .slider/x2 PEK2 #0008 ADD2 LTH2 ,&loop JNZ
+		.Screen/x DEI2 .slider/x2 PEK2 #0008 ADD2 LTH2 ,&loop JCN
 
 	( incr ) .Screen/x DEI2 #0004 ADD2 .Screen/x DEO2
 	;sliderc_icn .Screen/addr DEO2
@@ -293,10 +293,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color PEK .Screen/color DEO
 			( incr ) SWP2 #0001 ADD2 SWP2
-			OVR2 OVR2 LTH2 ,&hor JNZ
+			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 #0001 ADD2 SWP2
-		OVR2 OVR2 LTH2 ,&ver JNZ
+		OVR2 OVR2 LTH2 ,&ver JCN
 	POP2 POP2 POP2 POP2
 
 RTN
@@ -308,13 +308,13 @@ RTN
 		( incr ) .Screen/x DEI2 ++ .Screen/x DEO2
 		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
 		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JNZ
+		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JCN
 	.rect/y1 PEK2 .Screen/y DEO2
 	&ver
 		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
 		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
 		( incr ) .Screen/y DEI2 ++ .Screen/y DEO2
-		.Screen/y DEI2 .rect/y2 PEK2 ++ LTH2 ,&ver JNZ
+		.Screen/y DEI2 .rect/y2 PEK2 ++ LTH2 ,&ver JCN
 
 RTN
 
@@ -330,7 +330,7 @@ RTN
 		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JNZ
+		DUP2 LDA #00 NEQ ,&loop JCN
 	POP2 POPr
 
 RTN

@@ -22,9 +22,9 @@
 	&loop
 	DUP2 ,row JSR
 	#0001 ADD2
-	DUP2 .Screen/height DEI2 LTH2 ,&loop JNZ
+	DUP2 .Screen/height DEI2 LTH2 ,&loop JCN
 	POP2
-	.scroll/wait PEK ,&noscroll JNZ
+	.scroll/wait PEK ,&noscroll JCN
 	.scroll/y PEK2 #0001 ADD2 .scroll/y POK2
 	BRK
 
@@ -40,11 +40,11 @@
 	&loop
 	#0001 SUB2
 	OVR2 OVR2 .scroll/x PEK2 ADD2 EOR2 DUP2 #0013 DIV2 #0013 MUL2 SUB2
-	DUP #00 EQU ,&draw JNZ
-	DUP #05 EQU ,&draw JNZ
+	DUP #00 EQU ,&draw JCN
+	DUP #05 EQU ,&draw JCN
 	POP2
 	&rest
-	DUP2 ORA ,&loop JNZ
+	DUP2 ORA ,&loop JCN
 	POP2 POP2
 	JMP2r
 

@@ -27,9 +27,9 @@ BRK
 
 @on-button ( -> )
 	
-	( skip ) .Controller/key DEI #00 NEQ #01 JNZ [ BRK ] 
+	( skip ) .Controller/key DEI #00 NEQ #01 JCN [ BRK ] 
 
-	.Controller/key DEI #0d NEQ ,&no-return JNZ 
+	.Controller/key DEI #0d NEQ ,&no-return JCN 
 		( draw ) #20 .Screen/color DEO
 		( reset ) #0000 .Screen/x DEO2
 		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
