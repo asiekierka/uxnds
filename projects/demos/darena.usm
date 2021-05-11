@@ -1,0 +1,550 @@
+( darena.usm )
+( an open-ended game of rocks and sand )
+( contributed by and cc0 sejo 12021 )
+
+%DEBUG  { .Console/byte DEO #0a .Console/char DEO }
+%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
+
+( parameters )
+%nrocks { #1f }
+%nrocks-1 { #1e }
+%nrocks_mask { #1f }
+%minposx { #0f }
+%minposy { #0f }
+%maxposx { #f1 }
+%maxposy { #f1 }
+%anispeedmask_normal { #03 }
+%anispeedmask_slow { #07 }
+
+%c_color_normal { #33 }
+%c_color_flipx { #73 }
+%index_norock { #ff }
+
+( output macros )
+%out_screen_x { LDA #00 SWP .Screen/x DEO2 } ( ;addr )
+%out_screen_y { LDA #00 SWP .Screen/y DEO2 } ( ;addr )
+
+( helper macros )
+%get_bit_n { SFT #01 AND }
+%get_nibble_h { #04 SFT #0f AND }
+%get_nibble_l { #0f AND }
+
+%is_bit_n_set { get_bit_n #01 EQU }
+
+%set_animate { #01 ;c_state LDA ORA ;c_state STA }
+%rst_animate { #00 ;c_state STA }
+
+( devices )
+
+|00 @System     [ &vector $2 &wst      $1 &rst    $1 &pad   $4 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    [ &pad    $8 &char     $1 &byte   $1 &short $2 &string $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color $1 ]
+|80 @Controller [ &vector $2 &button   $1 &key    $1 ]
+
+( variables )
+
+|0000
+
+@c_pos [ &x $1 &y $1 ] ( character position )
+@c_speed [ &x $1 &y $1 ] ( character speed )
+@c_color [ $1 ] ( character color )
+@c_sprite [ $2 ] ( character sprite addr )
+@c_state [ $1 ] ( high_nibble: animation pointer, bit0: is_animated )
+
+@f_count [ $1 ] ( frame counter )
+@ani_speedmask [ $1 ] ( animation speed mask )
+
+@r_speed_x [ $f ]
+@r_speed_y [ $f ]
+
+@tog [ &x $1 &y $1 &state $1 ] ( toggle station state )
+
+( program )
+
+|0100 @reset ( -> )
+	#f396 .System/r DEO2
+	#e263 .System/g DEO2
+	#9030 .System/b DEO2
+
+	;on_frame .Screen/vector DEO2
+
+	( init character )
+	#50 ;c_pos/x STA
+	#10 ;c_pos/y STA
+	#00 ;c_speed/x STA
+	#00 ;c_speed/y STA
+	c_color_normal ;c_color STA
+	;s_monitx_stepfront0 ;c_sprite STA2
+	rst_animate
+
+	anispeedmask_normal ;ani_speedmask STA
+
+	( init toggler )
+	#27 ;tog/x STA
+	#27 ;tog/y STA
+	#00 ;tog/state STA
+
+
+	( init background )
+	;init_bg JSR2
+BRK
+
+
+@on_frame ( -> )
+	;f_count LDA #01 ADD DUP ;f_count STA ( increase frame counter )
+	;ani_speedmask LDA ( mask with animation speed mask )
+	AND #00 EQU ,update_frame JNZ ( jump to update if it's time )
+BRK
+
+@update_frame
+	( check keyboard )
+	;check_keys JSR2
+
+	( animate character sprite )
+	;animate_c JSR2
+
+	( clear sprites )
+	;clear JSR2
+
+	( update character vars )
+	;update_c/run JSR2
+
+	( update rocks + stand )
+	;update_r/run JSR2
+
+	( draw )
+	;draw JSR2
+
+BRK
+
+@clear
+	( clear rocks )
+	;s_clear .Screen/addr DEO2
+
+	nrocks #00
+	&rocks_loop
+		DUP ( get rocks_x[i] )
+		;rocks_x ROT #00 SWP ADD2 out_screen_x
+
+		DUP ( get rocks_y[i] )
+		;rocks_y ROT #00 SWP ADD2 out_screen_y
+
+		#30 .Screen/color DEO
+
+		#01 ADD
+		DUP2
+		NEQ ,&rocks_loop JNZ
+	POP2
+
+	( clear character )
+	;clear_c JSR2
+JMP2r
+
+@draw
+	( draw toggler )
+
+	;tog/x out_screen_x
+	;tog/x out_screen_y
+	;s_stand .Screen/addr DEO2
+	#23 .Screen/color DEO
+
+	( draw rocks )
+	;s_bola .Screen/addr DEO2
+
+	nrocks #00
+
+	&rocks_loop
+		DUP ( get rocks_x[i] )
+		;rocks_x ROT #00 SWP ADD2 out_screen_x
+
+		DUP ( get rocks_y[i] )
+		;rocks_y ROT #00 SWP ADD2 out_screen_y
+
+		( DUP ( get color bitwise ) )
+		( ;r_color LDA SWP get_bit_n #31 ADD .Screen/color DEO )
+
+		DUP
+		;r_color ROT #00 SWP ADD2 LDA #31 ADD .Screen/color DEO
+
+		#01 ADD
+
+		DUP2
+		NEQ ,&rocks_loop JNZ
+	POP2
+
+	( draw character )
+	;draw_c JSR2
+JMP2r
+
+@check_keys
+	#00 ;c_speed/x STA
+	#00 ;c_speed/y STA
+
+	.Controller/button DEI #07 is_bit_n_set ,&der JNZ
+	.Controller/button DEI #06 is_bit_n_set ,&izq JNZ
+	.Controller/button DEI #05 is_bit_n_set ,&aba JNZ
+	.Controller/button DEI #04 is_bit_n_set ,&arr JNZ
+
+	rst_animate
+
+	JMP2r
+
+	&der
+		#01 ;c_speed/x STA
+		set_animate
+		c_color_normal ;c_color STA
+		;s_monitx_stepside0 ;c_sprite STA2
+	JMP2r
+
+	&izq
+		#ff ;c_speed/x STA
+		set_animate
+		c_color_flipx ;c_color STA
+		;s_monitx_stepside0 ;c_sprite STA2
+	JMP2r
+
+	&aba
+		#01 ;c_speed/y STA
+		set_animate
+		c_color_normal ;c_color STA
+		;s_monitx_stepfront0 ;c_sprite STA2
+	JMP2r
+
+	&arr
+		#ff ;c_speed/y STA
+		set_animate
+		c_color_normal ;c_color STA
+		;s_monitx_stepback0 ;c_sprite STA2
+	JMP2r
+
+	&end
+JMP2r
+
+( sub-routines )
+
+( in: sourcex, source y, index, rangex, rangey )
+( puts in the stack the index of rock collisioned with )
+@collision_rocks
+	&range_y $1
+	&range_x $1
+	&src_i $1
+	&src_x  $1
+	&src_y $1
+
+	&rock_x $1
+	&rock_y $1
+
+	&run
+		,&range_y STR
+		,&range_x STR
+		,&src_i STR
+		,&src_y STR
+		,&src_x STR
+
+		( check collision with rocks )
+		( nrocks #00 )
+		,&src_i LDR nrocks_mask AND DUP #01 ADD nrocks_mask AND
+
+		&rocks_loop
+			DUP ( get rocks_x[i] )
+			;rocks_x ROT #00 SWP ADD2 LDA ,&rock_x STR
+
+			DUP ( get rocks_y[i] )
+			;rocks_y ROT #00 SWP ADD2 LDA ,&rock_y STR
+
+			,&src_x LDR ,&rock_x LDR ,&range_x LDR SUB GTH ( if sx > rx - 8  )
+			,&src_x LDR ,&rock_x LDR ,&range_x LDR ADD LTH ( if sx < rx + 8  )
+			,&src_y LDR ,&rock_y LDR ,&range_y LDR SUB GTH ( if sy > ry - 8  )
+			,&src_y LDR ,&rock_y LDR ,&range_y LDR ADD LTH ( if sy < ry + 8  )
+			ADD ADD ADD #04 EQU ,&found JNZ
+
+			#01 ADD nrocks_mask AND
+			DUP2
+			NEQ ,&rocks_loop JNZ
+		POP2
+		#ff
+		JMP2r
+	&found
+		SWP POP ( remove loop limit )
+		DUP ;&src_i LDA NEQ ,&end JNZ ( check if result is the same as index )
+		POP #ff
+		JMP2r
+
+	&end
+
+JMP2r
+
+@update_c ( update character position )
+	&new_x $1
+	&new_y $1
+
+	&rock_i $1
+	&rock_x $1
+	&rock_y $1
+
+
+	&run
+		;c_speed/x LDA ;c_pos/x LDA ADD
+		,&new_x STR
+		;c_speed/y LDA ;c_pos/y LDA ADD
+		,&new_y STR
+
+		anispeedmask_normal ;ani_speedmask STA
+
+	&check_x
+		( check collision with borders )
+		,&new_x LDR minposx EQU ;&noup_x JNZ2
+		,&new_x LDR maxposx EQU ;&noup_x JNZ2
+
+
+		( check collision with rocks )
+		,&new_x LDR ,&new_y LDR index_norock #09 #06
+		;collision_rocks/run JSR2
+
+		( if it is colliding with rock, check further )
+		DUP #ff NEQ ,&check_x_collision JNZ
+		POP
+		,&update_x JMP
+
+	&check_x_collision
+		( DUP DEBUG )
+		( slow down and save rock index )
+		anispeedmask_slow ;ani_speedmask STA
+		,&rock_i STR
+
+		( check if rock collides with others )
+		;rocks_x #00 ,&rock_i LDR ADD2 LDA ,&rock_x STR
+		;rocks_y #00 ,&rock_i LDR ADD2 LDA ,&rock_y STR
+
+		,&rock_x LDR ,&rock_y LDR ,&rock_i LDR #09 #06
+		;collision_rocks/run JSR2
+
+		( DUP DEBUG )
+
+		( if it is colliding, then skip adding x )
+		DUP #ff NEQ ,&check_y JNZ
+		POP
+
+
+		( if not, check for borders )
+		;&rock_x LDA minposx EQU ;&noup_x JNZ2
+		;&rock_x LDA maxposx EQU ;&noup_x JNZ2
+
+		( move rock with same speed as c )
+		;&rock_x LDA ;c_speed/x LDA ADD
+		;rocks_x #00 ;&rock_i LDA ADD2
+		STA
+
+
+	&update_x
+		;&new_x LDA ;c_pos/x STA
+
+	,&check_y JMP
+
+	&noup_x
+
+	&check_y
+		( check collision with borders )
+		;&new_y LDA minposy EQU ;&noup_y JNZ2
+		;&new_y LDA maxposy EQU ;&noup_y JNZ2
+
+		( check collision with rocks )
+		;&new_x LDA ;&new_y LDA index_norock #06 #09
+		;collision_rocks/run JSR2
+
+		( if it is colliding with rock, check further )
+		DUP #ff NEQ ,&check_y_collision JNZ
+		POP
+		,&update_y JMP
+
+	&check_y_collision
+		( DUP DEBUG )
+		anispeedmask_slow ;ani_speedmask STA
+		;&rock_i STA
+
+		( check if rock collides with others )
+		;rocks_x #00 ;&rock_i LDA ADD2 LDA ;&rock_x STA
+		;rocks_y #00 ;&rock_i LDA ADD2 LDA ;&rock_y STA
+
+		;&rock_x LDA ;&rock_y LDA ;&rock_i LDA #06 #09
+		;collision_rocks/run JSR2
+
+		( DUP DEBUG )
+
+		( if it is colliding, then skip adding y )
+		DUP #ff NEQ ,&noup_y JNZ
+		POP
+
+		( if not, check for borders )
+		;&rock_y LDA minposx EQU ;&noup_y JNZ2
+		;&rock_y LDA maxposx EQU ;&noup_y JNZ2
+
+		( if not colliding, then move rock with same speed as c )
+		;&rock_y LDA ;c_speed/y LDA ADD
+		;rocks_y #00 ;&rock_i LDA ADD2
+		STA
+
+
+	&update_y
+		;&new_y LDA ;c_pos/y STA
+	JMP2r
+
+	&noup_y
+JMP2r
+
+@update_r
+	&rock_i $1
+
+	&run
+
+		( check collision with rocks )
+		;tog/x LDA ;tog/y LDA index_norock #02 #02
+		;collision_rocks/run JSR2
+
+		( if it is colliding with rock, check if it needs to change state )
+		DUP #ff NEQ ,&change_state JNZ
+
+		( DUP DEBUG )
+
+		( if there's no collision, reset toggler )
+		POP
+		#00 ;tog/state STA
+		JMP2r
+
+	&change_state
+		( DUP DEBUG )
+		,&rock_i STR
+		;tog/state LDA ,&done JNZ ( don't toggle if state is active )
+
+		;r_color #00 ,&rock_i LDR ADD2 DUP2 STH2
+		LDA #01 EOR STH2r STA
+		#01 ;tog/state STA
+	&done
+
+JMP2r
+
+@animate_c
+	( is bit0 -animate- on? )
+	;c_state LDA DUP #00 get_bit_n #01 NEQ ,&s_no_animate JNZ
+
+	( increment and save animation pointer )
+	&s_animate
+		DUP
+		get_nibble_h #01 ADD #03 AND #40 SFT
+		SWP get_nibble_l ORA
+		;c_state STA
+	JMP2r
+
+	&s_no_animate
+		get_nibble_h #0f AND ;c_state STA
+JMP2r
+
+@draw_c ( draw character  )
+	#00 ;c_state LDA get_nibble_h #08 MUL
+	;c_sprite LDA2 ADD2 .Screen/addr DEO2
+	;c_pos/x out_screen_x
+	;c_pos/y out_screen_y
+	;c_color LDA .Screen/color DEO
+JMP2r
+
+@clear_c ( clear character )
+	;s_clear .Screen/addr DEO2
+	;c_pos/x out_screen_x
+	;c_pos/y out_screen_y
+	#30 .Screen/color DEO
+JMP2r
+
+@init_bg
+	( init bg )
+	;s_border .Screen/addr DEO2
+
+	.Screen/height DEI2 #0000 STH2
+	&vertical0loop
+		DUP2
+		STH2r
+		DUP2 .Screen/y DEO2
+
+
+		.Screen/width DEI2 #0000 STH2
+		&horizontal0loop
+			DUP2
+			STH2r
+			DUP2 .Screen/x DEO2
+
+			#23 .Screen/color DEO
+
+			#0008 ADD2 DUP2 STH2
+			GTH2 ,&horizontal0loop JNZ
+
+		STH2r POP2 POP2
+
+
+		#0008 ADD2 DUP2 STH2
+		GTH2 ,&vertical0loop JNZ
+	STH2r
+	POP2 POP2
+
+	( arena )
+
+	;s_clear .Screen/addr DEO2
+
+	 #00 maxposy  #00 minposy STH2
+	&vertical0loop_clear
+		DUP2
+		STH2r
+		DUP2 .Screen/y DEO2
+
+
+		 #00 maxposx  #00 minposx  STH2
+		&horizontal0loop_clear
+			DUP2
+			STH2r
+			DUP2 .Screen/x DEO2
+
+			#20 .Screen/color DEO
+
+			#0008 ADD2 DUP2 STH2
+			GTH2 ,&horizontal0loop_clear JNZ
+
+		STH2r POP2 POP2
+
+		#0008 ADD2 DUP2 STH2 GTH2 ,&vertical0loop_clear JNZ
+	STH2r
+	POP2 POP2
+
+JMP2r
+
+( rocks )
+@rocks_x [ 25 30 42 50  67 90 98 e8  20 43 43 57  5a 7f bc a5
+           e5 dd a2 20  b7 9b 38 e8  33 43 63 b7  aa cf bc    ]
+@rocks_y [ 60 48 34 56  23 65 65 65  ba e9 24 22  72 91 22 c5
+           25 30 42 50  67 90 98 e8  20 43 43 57  5a 7f bc    ]
+@r_color [ 00 01 01 00  00 00 01 01  01 01 00 00  01 01 00 00
+           01 00 01 00  00 01 00 01  01 01 01 01  00 00 00    ]
+
+( sprites )
+
+@s_clear          [ 0000 0000 0000 0000 ]
+@s_border         [ 3288 7e83 780d e013 ]
+@s_bola           [ 3c4e 9ffd f962 3c00 ]
+@s_stand          [ 0000 0000 0024 7eff ]
+@s_stand_original [ 0000 0000 0000 3c7e ]
+
+@s_monitx      [ 3c7e 5a7f 1b3c 5a18 ]
+@s_monitx_back [ 3c7e 7efe d83c 5a18 ]
+
+@s_monitx_stepfront0 [ 3c7e 5a7f 1b3c 5a18 ]
+@s_monitx_stepfront1 [ 3c7e 5a7f 1b3c 5a10 ]
+@s_monitx_stepfront2 [ 3c7e 5a7f 1b3c 5a18 ]
+@s_monitx_stepfront3 [ 3c7e 5a7f 1b3c 5a08 ]
+
+@s_monitx_stepback0 [ 3c7e 7efe d83c 5a18 ]
+@s_monitx_stepback1 [ 3c7e 7efe d83c 5a10 ]
+@s_monitx_stepback2 [ 3c7e 7efe d83c 5a18 ]
+@s_monitx_stepback3 [ 3c7e 7efe d83c 5a08 ]
+
+@s_monitx_stepside0 [ 1c3c 7afc d81c 1818 ]
+@s_monitx_stepside1 [ 1c3c 7afc d81c 1828 ]
+@s_monitx_stepside2 [ 1c3c 7afc d81c 3810 ]
+@s_monitx_stepside3 [ 1c3c 7afc d81c 1814 ]
+
