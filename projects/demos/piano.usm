@@ -47,10 +47,10 @@
 	#0f25 .System/b DEO2
 
 	( vectors ) 
+	;on-frame   .Screen/vector DEO2
 	;on-control .Controller/vector DEO2
 	;on-mouse   .Mouse/vector DEO2
 	;on-midi    .Midi/vector DEO2
-	;on-frame   .Screen/vector DEO2
 
 	( load waveform )
 	;piano-path  .File/name DEO2 #0100 .File/length DEO2 WAVEFORM .File/load DEO2
@@ -110,6 +110,52 @@ BRK
 		( incr ) SWP #01 + SWP
 		DUP2 < ,&loop JCN
 	POP2
+
+BRK
+
+@on-control ( -> )
+
+	( clear last cursor )
+	#fff8 .Screen/addr DEO2 
+	.pointer/x LDZ2 .Screen/x DEO2 
+	.pointer/y LDZ2 .Screen/y DEO2 
+	#30 .Screen/color DEO
+
+	.Controller/key DEI
+	DUP #61 ! ,&no-c JCN
+		#00 .last-note STZ ;notes LDA ;play JSR2 &no-c
+	DUP #73 ! ,&no-d JCN
+		#01 .last-note STZ ;notes #0001 ++ LDA ;play JSR2 &no-d
+	DUP #64 ! ,&no-e JCN
+		#02 .last-note STZ ;notes #0002 ++ LDA ;play JSR2 &no-e
+	DUP #66 ! ,&no-f JCN
+		#03 .last-note STZ ;notes #0003 ++ LDA ;play JSR2 &no-f
+	DUP #67 ! ,&no-g JCN
+		#04 .last-note STZ ;notes #0004 ++ LDA ;play JSR2 &no-g
+	DUP #68 ! ,&no-a JCN
+		#05 .last-note STZ ;notes #0005 ++ LDA ;play JSR2 &no-a
+	DUP #6a ! ,&no-b JCN
+		#06 .last-note STZ ;notes #0006 ++ LDA ;play JSR2 &no-b
+	DUP #6b ! ,&no-c2 JCN
+		#07 .last-note STZ ;notes #0007 ++ LDA ;play JSR2 &no-c2
+	POP
+
+	( release )
+	#00 .Controller/key DEO
+
+	.Controller/button DEI #f0 AND
+	DUP #04 SFT #01 AND #01 ! ,&no-up JCN
+		( move ) .Audio0/addr DEI2 #0001 -- .Audio0/addr DEO2 &no-up
+	DUP #05 SFT #01 AND #01 ! ,&no-down JCN
+		( move ) .Audio0/addr DEI2 #0001 ++ .Audio0/addr DEO2 &no-down
+	DUP #06 SFT #01 AND #01 ! ,&no-left JCN
+		( move ) .Audio0/addr DEI2 #0010 -- .Audio0/addr DEO2 &no-left
+	DUP #07 SFT #01 AND #01 ! ,&no-right JCN
+		( move ) .Audio0/addr DEI2 #0010 ++ .Audio0/addr DEO2 &no-right
+	POP
+
+	;draw-octave JSR2
+	;draw-wave JSR2
 
 BRK
 
@@ -201,49 +247,6 @@ BRK
 	( release ) #00 .Mouse/state DEO
 	;draw-adsr JSR2
 	;draw-cursor JSR2 
-
-BRK
-
-@on-control ( -> )
-
-	( clear last cursor )
-	#fff8 .Screen/addr DEO2 
-	.pointer/x LDZ2 .Screen/x DEO2 
-	.pointer/y LDZ2 .Screen/y DEO2 
-	#30 .Screen/color DEO
-
-	.Controller/key DEI
-	DUP #61 ! ,&no-c JCN
-		#00 .last-note STZ ;notes LDA ;play JSR2 &no-c
-	DUP #73 ! ,&no-d JCN
-		#01 .last-note STZ ;notes #0001 ++ LDA ;play JSR2 &no-d
-	DUP #64 ! ,&no-e JCN
-		#02 .last-note STZ ;notes #0002 ++ LDA ;play JSR2 &no-e
-	DUP #66 ! ,&no-f JCN
-		#03 .last-note STZ ;notes #0003 ++ LDA ;play JSR2 &no-f
-	DUP #67 ! ,&no-g JCN
-		#04 .last-note STZ ;notes #0004 ++ LDA ;play JSR2 &no-g
-	DUP #68 ! ,&no-a JCN
-		#05 .last-note STZ ;notes #0005 ++ LDA ;play JSR2 &no-a
-	DUP #6a ! ,&no-b JCN
-		#06 .last-note STZ ;notes #0006 ++ LDA ;play JSR2 &no-b
-	DUP #6b ! ,&no-c2 JCN
-		#07 .last-note STZ ;notes #0007 ++ LDA ;play JSR2 &no-c2
-	POP
-
-	.Controller/button DEI #f0 AND
-	DUP #04 SFT #01 AND #01 ! ,&no-up JCN
-		( move ) .Audio0/addr DEI2 #0001 -- .Audio0/addr DEO2 &no-up
-	DUP #05 SFT #01 AND #01 ! ,&no-down JCN
-		( move ) .Audio0/addr DEI2 #0001 ++ .Audio0/addr DEO2 &no-down
-	DUP #06 SFT #01 AND #01 ! ,&no-left JCN
-		( move ) .Audio0/addr DEI2 #0010 -- .Audio0/addr DEO2 &no-left
-	DUP #07 SFT #01 AND #01 ! ,&no-right JCN
-		( move ) .Audio0/addr DEI2 #0010 ++ .Audio0/addr DEO2 &no-right
-	POP
-
-	;draw-octave JSR2
-	;draw-wave JSR2
 
 BRK
 

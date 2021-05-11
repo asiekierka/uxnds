@@ -14,9 +14,9 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 #include "uxn.h"
-#include "ppu.h"
-#include "apu.h"
-#include "mpu.h"
+#include "devices/ppu.h"
+#include "devices/apu.h"
+#include "devices/mpu.h"
 
 static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
@@ -328,11 +328,10 @@ start(Uxn *u)
 				quit();
 				break;
 			case SDL_TEXTINPUT:
-				if(event.text.text[0] >= ' ' || event.text.text[0] <= '~')
-					devctrl->dat[3] = event.text.text[0];
-				break;
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
+				if(event.text.text[0] >= ' ' || event.text.text[0] <= '~')
+					devctrl->dat[3] = event.text.text[0];
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
 				evaluxn(u, mempeek16(devctrl->dat, 0));
 				devctrl->dat[3] = 0;
