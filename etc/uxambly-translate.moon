@@ -7,10 +7,10 @@ import P, R, S, C, Ct, Cp, V from require 'lpeg'
 local labels, filename
 
 opcode_translate =
-    PEK2: 'LDA'
-    POK2: 'STA'
-    LDR: 'PEK2'
-    STR: 'POK2'
+    LDZ2: 'LDA'
+    STZ2: 'STA'
+    LDR: 'LDZ2'
+    STR: 'STZ2'
     LDR2: 'LDA2'
     STR2: 'STA2'
 
@@ -26,7 +26,7 @@ grammar = P {
         r, w = if var\sub(1, 1) == var\sub(1, 1)\upper!
             ' DEI', ' DEO'
         else
-            ' PEK', ' POK'
+            ' LDZ', ' STZ'
         for i = 7, select('#', ...), 6
             k = select i, ...
             rr, ww = if '2' == select i + 3, ...

@@ -31,11 +31,11 @@ BRK
 
 @on-frame ( -> )
 
-	( incr ) .timer PEK #01 ADD .timer POK 
-	( skip ) .timer PEK #10 EQU #01 JCN [ BRK ]
+	( incr ) .timer LDZ #01 ADD .timer STZ 
+	( skip ) .timer LDZ #10 EQU #01 JCN [ BRK ]
 
 	( get note )
-	;melody #00 .progress PEK ADD2 LDA 
+	;melody #00 .progress LDZ ADD2 LDA 
 
 	( play note )
 	DUP .Audio0/pitch DEO
@@ -45,13 +45,13 @@ BRK
 
 	( draw note )
 	#00 SWP #0004 MUL2 #0100 SUB2 .Screen/y DEO2
-	#00 .progress PEK #0008 MUL2 .Screen/x DEO2
+	#00 .progress LDZ #0008 MUL2 .Screen/x DEO2
 	;dot .Screen/addr DEO2
 	#21 .Screen/color DEO
 
-	( incr ) .progress PEK #01 ADD #20 MOD .progress POK
+	( incr ) .progress LDZ #01 ADD #20 MOD .progress STZ
 
-	#00 .timer POK
+	#00 .timer STZ
 
 BRK
 

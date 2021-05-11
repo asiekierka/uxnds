@@ -33,19 +33,19 @@
 
 	;default_icn .Screen/addr DEO2
 	#31 .Screen/color DEO
-	#2a .slime POK
+	#2a .slime STZ
 
 BRK
 
 @on-frame ( -> )
 
-	#2a .slime POK
+	#2a .slime STZ
 	;default_icn .Screen/addr DEO2
 
 	( hold ctrl key to change slime color )
 	.Controller/button DEI #0f AND
-		DUP #01 NEQ ,&no-ctrl JCN #25 .slime POK &no-ctrl
-		DUP #02 NEQ ,&no-alt JCN #2f .slime POK &no-alt
+		DUP #01 NEQ ,&no-ctrl JCN #25 .slime STZ &no-ctrl
+		DUP #02 NEQ ,&no-alt JCN #2f .slime STZ &no-alt
 	POP
 
 	( clear ) #30 .Screen/color DEO
@@ -75,7 +75,7 @@ BRK
 
 	( draw slime )
 	;slime_icn .Screen/addr DEO2
-	.slime PEK .Screen/color DEO
+	.slime LDZ .Screen/color DEO
 
 BRK
 

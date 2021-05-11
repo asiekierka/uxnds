@@ -41,8 +41,8 @@
 	;on-mouse .Mouse/vector DEO2
 
 	( find center )
-	.Screen/width DEI2 2/ .center/x POK2
-	.Screen/height DEI2 2/ .center/y POK2
+	.Screen/width DEI2 2/ .center/x STZ2
+	.Screen/height DEI2 2/ .center/y STZ2
 
 	( background ) 
 	;tiles ;cover-pattern JSR2
@@ -53,9 +53,9 @@ BRK
 @on-frame ( -> )
 
 	( only draw once per second )
-	.DateTime/second DEI .last PEK NEQ #01 JCN [ BRK ]
+	.DateTime/second DEI .last LDZ NEQ #01 JCN [ BRK ]
 
-	.DateTime/second DEI .last POK
+	.DateTime/second DEI .last STZ
 
 	;redraw JSR2
 
@@ -66,8 +66,8 @@ BRK
 	;draw-cursor JSR2
 
 	.Mouse/state DEI #00 EQU ,&no-touch JCN
-		( incr ) .style PEK INC #03 MOD .style POK
-		( bg ) ;tiles .style PEK #10 MUL TOS ADD2 ;cover-pattern JSR2
+		( incr ) .style LDZ INC #03 MOD .style STZ
+		( bg ) ;tiles .style LDZ #10 MUL TOS ADD2 ;cover-pattern JSR2
 		( fg ) ;redraw JSR2
 		( release ) #00 .Mouse/state DEO
 	&no-touch
@@ -77,26 +77,26 @@ BRK
 @redraw ( -- )
 	
 	( hrs )
-	[ .center/x PEK2 #0018 SUB2 ] 
-	[ .center/y PEK2 #0048 SUB2 ] 
+	[ .center/x LDZ2 #0018 SUB2 ] 
+	[ .center/y LDZ2 #0048 SUB2 ] 
 	.DateTime/hour DEI #0a DIV ;draw-number JSR2
-	[ .center/x PEK2 #0008 ADD2 ] 
-	[ .center/y PEK2 #0048 SUB2 ] 
+	[ .center/x LDZ2 #0008 ADD2 ] 
+	[ .center/y LDZ2 #0048 SUB2 ] 
 	.DateTime/hour DEI #0a MOD ;draw-number JSR2
 	( min )
-	[ .center/x PEK2 #0018 SUB2 ] 
-	[ .center/y PEK2 #0018 SUB2 ] 
+	[ .center/x LDZ2 #0018 SUB2 ] 
+	[ .center/y LDZ2 #0018 SUB2 ] 
 	.DateTime/minute DEI #0a DIV ;draw-number JSR2
-	[ .center/x PEK2 #0008 ADD2 ] 
-	[ .center/y PEK2 #0018 SUB2 ] 
+	[ .center/x LDZ2 #0008 ADD2 ] 
+	[ .center/y LDZ2 #0018 SUB2 ] 
 	.DateTime/minute DEI #0a MOD ;draw-number JSR2
 	( sec )
-	[ .center/x PEK2 #0018 SUB2 ] 
-	[ .center/y PEK2 #0018 ADD2 ]
+	[ .center/x LDZ2 #0018 SUB2 ] 
+	[ .center/y LDZ2 #0018 ADD2 ]
 	.DateTime/second DEI #0a DIV 
 	;draw-number JSR2
-	[ .center/x PEK2 #0008 ADD2 ] 
-	[ .center/y PEK2 #0018 ADD2 ] 
+	[ .center/x LDZ2 #0008 ADD2 ] 
+	[ .center/y LDZ2 #0018 ADD2 ] 
 	.DateTime/second DEI #0a MOD 
 	;draw-number JSR2
 
@@ -105,15 +105,15 @@ RTN
 @draw-number ( x y n -- )
 	
 	STH
-	( save pos ) .anchor/y POK2 .anchor/x POK2
+	( save pos ) .anchor/y STZ2 .anchor/x STZ2
 	#00 #0f
 	&loop
-		( save-x ) OVR #03 MOD TOS #0008 MUL2 .anchor/x PEK2 ADD2 .Screen/x DEO2
-		( save-y ) OVR #03 DIV TOS #0008 MUL2 .anchor/y PEK2 ADD2 .Screen/y DEO2
+		( save-x ) OVR #03 MOD TOS #0008 MUL2 .anchor/x LDZ2 ADD2 .Screen/x DEO2
+		( save-y ) OVR #03 DIV TOS #0008 MUL2 .anchor/y LDZ2 ADD2 .Screen/y DEO2
 		( get digit* ) OVR DUPr STHr #02 MUL TOS ;digits ADD2 LDA2 
 		( get bit ) ROT #0e SWP SUB TOS SFT2 #0001 AND2 
 		( set tile ) #0008 MUL2 ;tiles ADD2 
-		( set style ) .style PEK #10 MUL TOS ADD2
+		( set style ) .style LDZ #10 MUL TOS ADD2
 		.Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
 		( incr ) SWP INC SWP 
@@ -146,15 +146,15 @@ RTN
 	
 	( clear last cursor )
 	;cursor .Screen/addr DEO2 
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	.pointer/x LDZ2 .Screen/x DEO2 
+	.pointer/y LDZ2 .Screen/y DEO2 
 	#30 .Screen/color DEO
 	( record pointer positions )
-	.Mouse/x DEI2 .pointer/x POK2 
-	.Mouse/y DEI2 .pointer/y POK2
+	.Mouse/x DEI2 .pointer/x STZ2 
+	.Mouse/y DEI2 .pointer/y STZ2
 	( draw new cursor )
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	.pointer/x LDZ2 .Screen/x DEO2 
+	.pointer/y LDZ2 .Screen/y DEO2 
 	( colorize on state )
 	#31 [ .Mouse/state DEI #00 NEQ ] ADD .Screen/color DEO
 

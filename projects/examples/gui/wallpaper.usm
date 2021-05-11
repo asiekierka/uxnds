@@ -11,10 +11,10 @@
 
 |0100 ( -> )
 	#90ff .System/r DEO2 #9000 .System/g DEO2 #900f .System/b DEO2
-	#08e0 .Screen/width DEI2 #0001 SFT2 SUB2 .scroll/x POK2
-	#09b0 .scroll/y POK2
+	#08e0 .Screen/width DEI2 #0001 SFT2 SUB2 .scroll/x STZ2
+	#09b0 .scroll/y STZ2
 	;frame .Screen/vector DEO2
-	#30 .scroll/wait POK
+	#30 .scroll/wait STZ
 	BRK
 
 @frame ( -> )
@@ -24,22 +24,22 @@
 	#0001 ADD2
 	DUP2 .Screen/height DEI2 LTH2 ,&loop JCN
 	POP2
-	.scroll/wait PEK ,&noscroll JCN
-	.scroll/y PEK2 #0001 ADD2 .scroll/y POK2
+	.scroll/wait LDZ ,&noscroll JCN
+	.scroll/y LDZ2 #0001 ADD2 .scroll/y STZ2
 	BRK
 
 	&noscroll
-	.scroll/wait PEK #01 SUB .scroll/wait POK
+	.scroll/wait LDZ #01 SUB .scroll/wait STZ
 	BRK
 
 @row ( y* -- )
 	DUP2 .Screen/y DEO2
-	.scroll/y PEK2 ADD2
+	.scroll/y LDZ2 ADD2
 
 	.Screen/width DEI2
 	&loop
 	#0001 SUB2
-	OVR2 OVR2 .scroll/x PEK2 ADD2 EOR2 DUP2 #0013 DIV2 #0013 MUL2 SUB2
+	OVR2 OVR2 .scroll/x LDZ2 ADD2 EOR2 DUP2 #0013 DIV2 #0013 MUL2 SUB2
 	DUP #00 EQU ,&draw JCN
 	DUP #05 EQU ,&draw JCN
 	POP2

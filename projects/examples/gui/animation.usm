@@ -20,8 +20,8 @@
 	;on-frame .Screen/vector DEO2
 
 	( starting position )
-	.Screen/width DEI2 #0002 DIV2 .dvd/x POK2
-	.Screen/height DEI2 #0002 DIV2 .dvd/y POK2
+	.Screen/width DEI2 #0002 DIV2 .dvd/x STZ2
+	.Screen/height DEI2 #0002 DIV2 .dvd/y STZ2
 	
 	#21 ;draw-dvd JSR2
 	
@@ -30,16 +30,16 @@ BRK
 @on-frame ( -> )
 
 	( clear ) #20 ;draw-dvd JSR2
-	( case: hit-right ) .dvd/x PEK2 .Screen/width DEI2 #0020 SUB2 EQU2
-	( case: hit-left ) .dvd/x PEK2 #0000 EQU2 
+	( case: hit-right ) .dvd/x LDZ2 .Screen/width DEI2 #0020 SUB2 EQU2
+	( case: hit-left ) .dvd/x LDZ2 #0000 EQU2 
 	#0000 EQU2 ,&no-flipx JCN 
-		.dvd/dx PEK #00 EQU .dvd/dx POK &no-flipx
-	( case: hit-bottom ) .dvd/y PEK2 .Screen/height DEI2 #0010 SUB2 EQU2
-	( case: hit-top ) .dvd/y PEK2 #0000 EQU2 
+		.dvd/dx LDZ #00 EQU .dvd/dx STZ &no-flipx
+	( case: hit-bottom ) .dvd/y LDZ2 .Screen/height DEI2 #0010 SUB2 EQU2
+	( case: hit-top ) .dvd/y LDZ2 #0000 EQU2 
 	#0000 EQU2 ,&no-flipy JCN 
-		.dvd/dy PEK #00 EQU .dvd/dy POK &no-flipy
-	( incr ) .dvd/x PEK2 #0001 #00 .dvd/dx PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/x POK2
-	( incr ) .dvd/y PEK2 #0001 #00 .dvd/dy PEK #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/y POK2
+		.dvd/dy LDZ #00 EQU .dvd/dy STZ &no-flipy
+	( incr ) .dvd/x LDZ2 #0001 #00 .dvd/dx LDZ #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/x STZ2
+	( incr ) .dvd/y LDZ2 #0001 #00 .dvd/dy LDZ #00 EQU #fffe MUL2 ADD2 ADD2 .dvd/y STZ2
 	( draw ) #21 ;draw-dvd JSR2
 
 BRK
@@ -48,10 +48,10 @@ BRK
 	
 	( stash ) STH 
 	;dvd_icn .Screen/addr DEO2
-	.dvd/y PEK2 [ .dvd/y PEK2 #0010 ADD2 ]
+	.dvd/y LDZ2 [ .dvd/y LDZ2 #0010 ADD2 ]
 	&ver
 		OVR2 .Screen/y DEO2
-		.dvd/x PEK2 [ .dvd/x PEK2 #0020 ADD2 ]
+		.dvd/x LDZ2 [ .dvd/x LDZ2 #0020 ADD2 ]
 		&hor
 			OVR2 .Screen/x DEO2
 			( draw ) DUPr STHr .Screen/color DEO

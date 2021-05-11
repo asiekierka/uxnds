@@ -25,7 +25,7 @@
 %2/ { #0001 SFT2 }
 %8/ { #0003 SFT2 } %8* { #0030 SFT2 }
 %8+ { #0008 ADD2 }
-%FILESIZE { .canvas/w PEK2 .canvas/h PEK2 MUL2 #0008 MUL2 }
+%FILESIZE { .canvas/w LDZ2 .canvas/h LDZ2 MUL2 #0008 MUL2 }
 
 ( devices )
 
@@ -66,28 +66,28 @@
 |0100
 	
 	( theme )
-	#e0fa .theme/r0 POK2 #30fa .theme/g0 POK2 #30fa .theme/b0 POK2 ( normal mode )
-	#00fe .theme/r1 POK2 #00f3 .theme/g1 POK2 #00f3 .theme/b1 POK2 ( presentation mode )
+	#e0fa .theme/r0 STZ2 #30fa .theme/g0 STZ2 #30fa .theme/b0 STZ2 ( normal mode )
+	#00fe .theme/r1 STZ2 #00f3 .theme/g1 STZ2 #00f3 .theme/b1 STZ2 ( presentation mode )
 	( vectors ) ;on-screen .Screen/vector DEO2
 	( vectors ) ;on-button .Controller/vector DEO2
 	( vectors ) ;on-mouse .Mouse/vector DEO2
 
-	.theme/r0 PEK2 .System/r DEO2 .theme/g0 PEK2 .System/g DEO2 .theme/b0 PEK2 .System/b DEO2
+	.theme/r0 LDZ2 .System/r DEO2 .theme/g0 LDZ2 .System/g DEO2 .theme/b0 LDZ2 .System/b DEO2
 
 	( default canvas )
-	#002a .canvas/w POK2 #0018 .canvas/h POK2
+	#002a .canvas/w STZ2 #0018 .canvas/h STZ2
 
 	( default brush )
-	#04 .brush/size POK #00 .brush/patt POK #00 .brush/tool POK
+	#04 .brush/size STZ #00 .brush/patt STZ #00 .brush/tool STZ
 
 	( load file )
 	;untitled_txt ;path/name ;strcpy JSR2
 
 	( setup panes )
-	#0010 .toolpane/x1 POK2 #0010 .toolpane/y1 POK2 .toolpane/x1 PEK2 #0028 ADD2 .toolpane/x2 POK2 .toolpane/y1 PEK2 #0008 ADD2 .toolpane/y2 POK2
-	#0040 .sizepane/x1 POK2 #0010 .sizepane/y1 POK2 .sizepane/x1 PEK2 #0040 ADD2 .sizepane/x2 POK2 .sizepane/y1 PEK2 #0008 ADD2 .sizepane/y2 POK2
-	.Screen/width DEI2 #0078 SUB2 .viewpane/x1 POK2 #0010 .viewpane/y1 POK2 .viewpane/x1 PEK2 #0020 ADD2 .viewpane/x2 POK2 .viewpane/y1 PEK2 #0008 ADD2 .viewpane/y2 POK2
-	.Screen/width DEI2 #0050 SUB2 .pattpane/x1 POK2 #0010 .pattpane/y1 POK2 .pattpane/x1 PEK2 #0040 ADD2 .pattpane/x2 POK2 .pattpane/y1 PEK2 #0008 ADD2 .pattpane/y2 POK2
+	#0010 .toolpane/x1 STZ2 #0010 .toolpane/y1 STZ2 .toolpane/x1 LDZ2 #0028 ADD2 .toolpane/x2 STZ2 .toolpane/y1 LDZ2 #0008 ADD2 .toolpane/y2 STZ2
+	#0040 .sizepane/x1 STZ2 #0010 .sizepane/y1 STZ2 .sizepane/x1 LDZ2 #0040 ADD2 .sizepane/x2 STZ2 .sizepane/y1 LDZ2 #0008 ADD2 .sizepane/y2 STZ2
+	.Screen/width DEI2 #0078 SUB2 .viewpane/x1 STZ2 #0010 .viewpane/y1 STZ2 .viewpane/x1 LDZ2 #0020 ADD2 .viewpane/x2 STZ2 .viewpane/y1 LDZ2 #0008 ADD2 .viewpane/y2 STZ2
+	.Screen/width DEI2 #0050 SUB2 .pattpane/x1 STZ2 #0010 .pattpane/y1 STZ2 .pattpane/x1 LDZ2 #0040 ADD2 .pattpane/x2 STZ2 .pattpane/y1 LDZ2 #0008 ADD2 .pattpane/y2 STZ2
 
 	( ready. )
 	;center JSR2
@@ -100,15 +100,15 @@ BRK
 
 @on-screen ( -> )
 	
-	.document/edit PEK #01 NEQ ,&no-edit JCN
+	.document/edit LDZ #01 NEQ ,&no-edit JCN
 		#0008 .Screen/x DEO2
 		.Screen/height DEI2 #0010 SUB2 .Screen/y DEO2
-		;path/name #01 .timer PEK #04 DIV #03 AND #03 MUL ADD ;draw-label JSR2
+		;path/name #01 .timer LDZ #04 DIV #03 AND #03 MUL ADD ;draw-label JSR2
 		&clear
 			#20 .Screen/color DEO
 			.Screen/x DEI2 8+ DUP2 .Screen/x DEO2
 			.Screen/width DEI2 LTH2 ,&clear JCN
-		( blink ) .timer PEK #01 ADD .timer POK
+		( blink ) .timer LDZ #01 ADD .timer STZ
 	&no-edit
 
 BRK
@@ -118,32 +118,32 @@ BRK
 	;draw-cursor JSR2
 
 	( release drag )
-	.Mouse/state DEI #00 EQU .brush/drag PEK #01 EQU #0101 NEQ2 ,&no-release JCN
-		.origin/x1 PEK2 #0002 SUB2 .origin/y1 PEK2 #0002 SUB2 .origin/x2 PEK2 #0002 ADD2 .origin/y2 PEK2 #0002 ADD2 #00 ;fill-rect JSR2
-		.canvas/x1 PEK2 -- .canvas/y1 PEK2 -- .canvas/x2 PEK2 .canvas/y2 PEK2 #10 ;line-rect JSR2
+	.Mouse/state DEI #00 EQU .brush/drag LDZ #01 EQU #0101 NEQ2 ,&no-release JCN
+		.origin/x1 LDZ2 #0002 SUB2 .origin/y1 LDZ2 #0002 SUB2 .origin/x2 LDZ2 #0002 ADD2 .origin/y2 LDZ2 #0002 ADD2 #00 ;fill-rect JSR2
+		.canvas/x1 LDZ2 -- .canvas/y1 LDZ2 -- .canvas/x2 LDZ2 .canvas/y2 LDZ2 #10 ;line-rect JSR2
 		;draw-background JSR2
 		;fit-canvas JSR2
 		;draw-foreground JSR2
-		#00 .brush/drag POK
+		#00 .brush/drag STZ
 	&no-release
 
 	( operations on release line/rect )
-	.Mouse/state DEI .brush/last PEK EQU ;&no-touch-change JCN2
-	.Mouse/x DEI2 CLN2r .canvas/x1 PEK2 GTS2 STH2r .canvas/x2 PEK2 LTS2 #0101 NEQ2 ;&no-touch-change JCN2
-	.Mouse/y DEI2 CLN2r .canvas/y1 PEK2 GTS2 STH2r .canvas/y2 PEK2 LTS2 #0101 NEQ2 ;&no-touch-change JCN2
+	.Mouse/state DEI .brush/last LDZ EQU ;&no-touch-change JCN2
+	.Mouse/x DEI2 CLN2r .canvas/x1 LDZ2 GTS2 STH2r .canvas/x2 LDZ2 LTS2 #0101 NEQ2 ;&no-touch-change JCN2
+	.Mouse/y DEI2 CLN2r .canvas/y1 LDZ2 GTS2 STH2r .canvas/y2 LDZ2 LTS2 #0101 NEQ2 ;&no-touch-change JCN2
 		.Mouse/state DEI #00 EQU ,&no-touch-ondown JCN
 			( on down )
-			.Mouse/x DEI2 .cursor/dx POK2
-			.Mouse/y DEI2 .cursor/dy POK2
+			.Mouse/x DEI2 .cursor/dx STZ2
+			.Mouse/y DEI2 .cursor/dy STZ2
 		&no-touch-ondown
 		.Mouse/state DEI #00 NEQ ,&no-touch-onup JCN
 			( on up )
-			.brush/tool PEK #02 NEQ ,&no-touch-line JCN
-				.cursor/dx PEK2 .canvas/x1 PEK2 SUB2 .cursor/dy PEK2 .canvas/y1 PEK2 SUB2 .Mouse/x DEI2 .canvas/x1 PEK2 SUB2 .Mouse/y DEI2 .canvas/y1 PEK2 SUB2 ;paint-line JSR2
+			.brush/tool LDZ #02 NEQ ,&no-touch-line JCN
+				.cursor/dx LDZ2 .canvas/x1 LDZ2 SUB2 .cursor/dy LDZ2 .canvas/y1 LDZ2 SUB2 .Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-line JSR2
 				;&touch-end JMP2
 			&no-touch-line
-			.brush/tool PEK #03 NEQ ,&no-touch-rect JCN
-				.cursor/dx PEK2 .canvas/x1 PEK2 SUB2 .cursor/dy PEK2 .canvas/y1 PEK2 SUB2 .Mouse/x DEI2 .canvas/x1 PEK2 SUB2 .Mouse/y DEI2 .canvas/y1 PEK2 SUB2 ;paint-rect JSR2
+			.brush/tool LDZ #03 NEQ ,&no-touch-rect JCN
+				.cursor/dx LDZ2 .canvas/x1 LDZ2 SUB2 .cursor/dy LDZ2 .canvas/y1 LDZ2 SUB2 .Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-rect JSR2
 				;&touch-end JMP2
 			&no-touch-rect
 		&no-touch-onup
@@ -153,69 +153,69 @@ BRK
 
 		( drag )
 		.Controller/button DEI #02 NEQ ;&no-drag JCN2
-			.brush/drag PEK #00 NEQ ,&no-drag-start JCN
-				.canvas/x1 PEK2 .origin/x1 POK2
-				.canvas/y1 PEK2 .origin/y1 POK2
-				.canvas/x2 PEK2 .origin/x2 POK2
-				.canvas/y2 PEK2 .origin/y2 POK2
+			.brush/drag LDZ #00 NEQ ,&no-drag-start JCN
+				.canvas/x1 LDZ2 .origin/x1 STZ2
+				.canvas/y1 LDZ2 .origin/y1 STZ2
+				.canvas/x2 LDZ2 .origin/x2 STZ2
+				.canvas/y2 LDZ2 .origin/y2 STZ2
 			&no-drag-start
-			.canvas/x1 PEK2 -- .canvas/y1 PEK2 -- .canvas/x2 PEK2 .canvas/y2 PEK2 #10 ;line-rect JSR2
-			.canvas/x1 PEK2 .Mouse/x DEI2 .cursor/x0 PEK2 SUB2 ADD2 .canvas/x1 POK2
-			.canvas/y1 PEK2 .Mouse/y DEI2 .cursor/y0 PEK2 SUB2 ADD2 .canvas/y1 POK2
-			.canvas/w PEK2 8* .canvas/x1 PEK2 ADD2 .canvas/x2 POK2
-			.canvas/h PEK2 8* .canvas/y1 PEK2 ADD2 .canvas/y2 POK2
-			.canvas/x1 PEK2 -- .canvas/y1 PEK2 -- .canvas/x2 PEK2 .canvas/y2 PEK2 #13 ;line-rect JSR2
-			#01 .brush/drag POK
+			.canvas/x1 LDZ2 -- .canvas/y1 LDZ2 -- .canvas/x2 LDZ2 .canvas/y2 LDZ2 #10 ;line-rect JSR2
+			.canvas/x1 LDZ2 .Mouse/x DEI2 .cursor/x0 LDZ2 SUB2 ADD2 .canvas/x1 STZ2
+			.canvas/y1 LDZ2 .Mouse/y DEI2 .cursor/y0 LDZ2 SUB2 ADD2 .canvas/y1 STZ2
+			.canvas/w LDZ2 8* .canvas/x1 LDZ2 ADD2 .canvas/x2 STZ2
+			.canvas/h LDZ2 8* .canvas/y1 LDZ2 ADD2 .canvas/y2 STZ2
+			.canvas/x1 LDZ2 -- .canvas/y1 LDZ2 -- .canvas/x2 LDZ2 .canvas/y2 LDZ2 #13 ;line-rect JSR2
+			#01 .brush/drag STZ
 			;&touch-end JMP2
 		&no-drag
 
 		( in sizepane )
-		.Mouse/x DEI2 CLN2r .sizepane/x1 PEK2 GTH2 STH2r .sizepane/x2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-sizepane JCN
-		.Mouse/y DEI2 CLN2r .sizepane/y1 PEK2 GTH2 STH2r .sizepane/y2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-sizepane JCN
+		.Mouse/x DEI2 CLN2r .sizepane/x1 LDZ2 GTH2 STH2r .sizepane/x2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-sizepane JCN
+		.Mouse/y DEI2 CLN2r .sizepane/y1 LDZ2 GTH2 STH2r .sizepane/y2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-sizepane JCN
 			( release ) #00 .Mouse/state DEO
-			#01 .brush/tool POK
-			.Mouse/x DEI2 .sizepane/x1 PEK2 SUB2 8/ SWP POP .brush/size POK
+			#01 .brush/tool STZ
+			.Mouse/x DEI2 .sizepane/x1 LDZ2 SUB2 8/ SWP POP .brush/size STZ
 			( draw ) ;draw-sizepane JSR2
 			( draw ) ;draw-toolpane JSR2
 			;&touch-end JMP2
 		&no-touch-sizepane
 
 		( in pattpane )
-		.Mouse/x DEI2 CLN2r .pattpane/x1 PEK2 GTH2 STH2r .pattpane/x2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-pattpane JCN
-		.Mouse/y DEI2 CLN2r .pattpane/y1 PEK2 GTH2 STH2r .pattpane/y2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-pattpane JCN
+		.Mouse/x DEI2 CLN2r .pattpane/x1 LDZ2 GTH2 STH2r .pattpane/x2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-pattpane JCN
+		.Mouse/y DEI2 CLN2r .pattpane/y1 LDZ2 GTH2 STH2r .pattpane/y2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-pattpane JCN
 			( release ) #00 .Mouse/state DEO
-			.Mouse/x DEI2 .pattpane/x1 PEK2 SUB2 8/ SWP POP .brush/patt POK
+			.Mouse/x DEI2 .pattpane/x1 LDZ2 SUB2 8/ SWP POP .brush/patt STZ
 			( draw ) ;draw-pattpane JSR2
 			;&touch-end JMP2
 		&no-touch-pattpane
 
 		( in toolpane )
-		.Mouse/x DEI2 CLN2r .toolpane/x1 PEK2 GTH2 STH2r .toolpane/x2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-toolpane JCN
-		.Mouse/y DEI2 CLN2r .toolpane/y1 PEK2 GTH2 STH2r .toolpane/y2 PEK2 LTH2 #0101 NEQ2 ,&no-touch-toolpane JCN
+		.Mouse/x DEI2 CLN2r .toolpane/x1 LDZ2 GTH2 STH2r .toolpane/x2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-toolpane JCN
+		.Mouse/y DEI2 CLN2r .toolpane/y1 LDZ2 GTH2 STH2r .toolpane/y2 LDZ2 LTH2 #0101 NEQ2 ,&no-touch-toolpane JCN
 			( release ) #00 .Mouse/state DEO
-			.Mouse/x DEI2 .toolpane/x1 PEK2 SUB2 8/ SWP POP .brush/tool POK
+			.Mouse/x DEI2 .toolpane/x1 LDZ2 SUB2 8/ SWP POP .brush/tool STZ
 			( draw ) ;draw-toolpane JSR2
 			;&touch-end JMP2
 		&no-touch-toolpane
 
 		( in viewpane )
-		.Mouse/x DEI2 CLN2r .viewpane/x1 PEK2 GTH2 STH2r .viewpane/x2 PEK2 LTH2 #0101 NEQ2 ;&no-touch-viewpane JCN2
-		.Mouse/y DEI2 CLN2r .viewpane/y1 PEK2 GTH2 STH2r .viewpane/y2 PEK2 LTH2 #0101 NEQ2 ;&no-touch-viewpane JCN2
+		.Mouse/x DEI2 CLN2r .viewpane/x1 LDZ2 GTH2 STH2r .viewpane/x2 LDZ2 LTH2 #0101 NEQ2 ;&no-touch-viewpane JCN2
+		.Mouse/y DEI2 CLN2r .viewpane/y1 LDZ2 GTH2 STH2r .viewpane/y2 LDZ2 LTH2 #0101 NEQ2 ;&no-touch-viewpane JCN2
 			( release ) #00 .Mouse/state DEO
-			( clear ) .canvas/x1 PEK2 #0002 SUB2 .canvas/y1 PEK2 #0002 SUB2 .canvas/x2 PEK2 #0002 ADD2 .canvas/y2 PEK2 #0002 ADD2 #00 ;fill-rect JSR2
+			( clear ) .canvas/x1 LDZ2 #0002 SUB2 .canvas/y1 LDZ2 #0002 SUB2 .canvas/x2 LDZ2 #0002 ADD2 .canvas/y2 LDZ2 #0002 ADD2 #00 ;fill-rect JSR2
 			;draw-background JSR2
-			.Mouse/x DEI2 .viewpane/x1 PEK2 SUB2 8/ SWP POP
+			.Mouse/x DEI2 .viewpane/x1 LDZ2 SUB2 8/ SWP POP
 			DUP #00 NEQ ,&no-incwidth JCN
-				.canvas/w PEK2 ++ .canvas/w POK2
+				.canvas/w LDZ2 ++ .canvas/w STZ2
 			&no-incwidth
 			DUP #01 NEQ ,&no-decwidth JCN
-				.canvas/w PEK2 -- .canvas/w POK2
+				.canvas/w LDZ2 -- .canvas/w STZ2
 			&no-decwidth
 			DUP #02 NEQ ,&no-incheight JCN
-				.canvas/h PEK2 ++ .canvas/h POK2
+				.canvas/h LDZ2 ++ .canvas/h STZ2
 			&no-incheight
 			DUP #03 NEQ ,&no-decheight JCN
-				.canvas/h PEK2 -- .canvas/h POK2
+				.canvas/h LDZ2 -- .canvas/h STZ2
 			&no-decheight
 			POP
 			;fit-canvas JSR2
@@ -224,27 +224,27 @@ BRK
 		&no-touch-viewpane
 
 		( in canvas )
-		.Mouse/x DEI2 CLN2r .canvas/x1 PEK2 GTS2 STH2r .canvas/x2 PEK2 LTS2 #0101 NEQ2 ;&no-touch-canvas JCN2
-		.Mouse/y DEI2 CLN2r .canvas/y1 PEK2 GTS2 STH2r .canvas/y2 PEK2 LTS2 #0101 NEQ2 ;&no-touch-canvas JCN2
+		.Mouse/x DEI2 CLN2r .canvas/x1 LDZ2 GTS2 STH2r .canvas/x2 LDZ2 LTS2 #0101 NEQ2 ;&no-touch-canvas JCN2
+		.Mouse/y DEI2 CLN2r .canvas/y1 LDZ2 GTS2 STH2r .canvas/y2 LDZ2 LTS2 #0101 NEQ2 ;&no-touch-canvas JCN2
 
 			( set cursor operation )
-			;add-pixel .Mouse/state DEI #01 EQU ;&no-oper JCN2 POP2 ;remove-pixel &no-oper .brush/oper POK2
+			;add-pixel .Mouse/state DEI #01 EQU ;&no-oper JCN2 POP2 ;remove-pixel &no-oper .brush/oper STZ2
 
-			.brush/tool PEK #00 NEQ ,&no-touch-pen JCN
-				.cursor/x0 PEK2 .canvas/x1 PEK2 SUB2 .cursor/y0 PEK2 .canvas/y1 PEK2 SUB2 .Mouse/x DEI2 .canvas/x1 PEK2 SUB2 .Mouse/y DEI2 .canvas/y1 PEK2 SUB2 ;paint-line JSR2
+			.brush/tool LDZ #00 NEQ ,&no-touch-pen JCN
+				.cursor/x0 LDZ2 .canvas/x1 LDZ2 SUB2 .cursor/y0 LDZ2 .canvas/y1 LDZ2 SUB2 .Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-line JSR2
 				;&touch-end JMP2
 			&no-touch-pen
 
-			.brush/tool PEK #01 NEQ ,&no-touch-brush JCN
-				.Mouse/x DEI2 .canvas/x1 PEK2 SUB2 .Mouse/y DEI2 .canvas/y1 PEK2 SUB2 ;paint-brush JSR2
+			.brush/tool LDZ #01 NEQ ,&no-touch-brush JCN
+				.Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-brush JSR2
 				;&touch-end JMP2
 			&no-touch-brush
 
-			.brush/tool PEK #04 NEQ ,&no-touch-zoom JCN
-				.zoom/active PEK #00 EQU .zoom/active POK
+			.brush/tool LDZ #04 NEQ ,&no-touch-zoom JCN
+				.zoom/active LDZ #00 EQU .zoom/active STZ
 				( release ) #00 .Mouse/state DEO
-				.Mouse/x DEI2 .canvas/x1 PEK2 SUB2 .canvas/w PEK2 2/ SUB2 .zoom/x POK2
-				.Mouse/y DEI2 .canvas/y1 PEK2 SUB2 .canvas/h PEK2 2/ SUB2 .zoom/y POK2
+				.Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .canvas/w LDZ2 2/ SUB2 .zoom/x STZ2
+				.Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 .canvas/h LDZ2 2/ SUB2 .zoom/y STZ2
 				;redraw JSR2
 				;&touch-end JMP2
 			&no-touch-zoom
@@ -260,7 +260,7 @@ BRK
 			&no-eye-button
 			DUP #01 NEQ ,&no-rename-button JCN
 				;rename JSR2
-				#01 .document/edit POK
+				#01 .document/edit STZ
 				( release ) #00 .Mouse/state DEO
 			&no-rename-button
 			DUP #02 NEQ ,&no-load-button JCN
@@ -280,71 +280,71 @@ BRK
 
 	&no-touch
 
-	.Mouse/x DEI2 .cursor/x0 POK2
-	.Mouse/y DEI2 .cursor/y0 POK2
-	.Mouse/state DEI .brush/last POK
+	.Mouse/x DEI2 .cursor/x0 STZ2
+	.Mouse/y DEI2 .cursor/y0 STZ2
+	.Mouse/state DEI .brush/last STZ
 
 BRK
 
 @on-button ( -> )
 
 	( if in renaming mode )
-	.document/edit PEK #01 NEQ ;&no-edit JCN2
+	.document/edit LDZ #01 NEQ ;&no-edit JCN2
 	.Controller/key DEI #00 EQU ;&no-edit JCN2
 		( enter )
 		.Controller/key DEI #0d NEQ ,&no-edit-enter JCN
-			#00 .document/edit POK
+			#00 .document/edit STZ
 			;redraw JSR2
 			BRK
 			&no-edit-enter
 		( backspace )
 		.Controller/key DEI #08 NEQ ,&no-edit-backspace JCN
-			.path/length PEK #00 EQU ,&edit-end JCN
-			.path/length PEK #01 SUB .path/length POK
-			#00 ;path/name #00 .path/length PEK ADD2 STA
+			.path/length LDZ #00 EQU ,&edit-end JCN
+			.path/length LDZ #01 SUB .path/length STZ
+			#00 ;path/name #00 .path/length LDZ ADD2 STA
 			BRK
 			&no-edit-backspace
 		( default )
-		.path/length PEK #1f EQU ,&edit-end JCN
-			.Controller/key DEI ;path/name #00 .path/length PEK ADD2 STA
-			.path/length PEK #01 ADD .path/length POK
+		.path/length LDZ #1f EQU ,&edit-end JCN
+			.Controller/key DEI ;path/name #00 .path/length LDZ ADD2 STA
+			.path/length LDZ #01 ADD .path/length STZ
 		&edit-end
-		#00 ;path/name #00 .path/length PEK ADD2 STA
+		#00 ;path/name #00 .path/length LDZ ADD2 STA
 		BRK
 	&no-edit
 	
 	( control zoom )
-	.zoom/active PEK #00 EQU ,&skip-zoom JCN
+	.zoom/active LDZ #00 EQU ,&skip-zoom JCN
 		.Controller/button DEI #f0 AND
 			DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
-				( move ) .zoom/y PEK2 -- .zoom/y POK2 &no-up
+				( move ) .zoom/y LDZ2 -- .zoom/y STZ2 &no-up
 			DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
-				( move ) .zoom/y PEK2 ++ .zoom/y POK2 &no-down
+				( move ) .zoom/y LDZ2 ++ .zoom/y STZ2 &no-down
 			DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
-				( move ) .zoom/x PEK2 -- .zoom/x POK2 &no-left
+				( move ) .zoom/x LDZ2 -- .zoom/x STZ2 &no-left
 			DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
-				( move ) .zoom/x PEK2 ++ .zoom/x POK2 &no-right
+				( move ) .zoom/x LDZ2 ++ .zoom/x STZ2 &no-right
 		#00 EQU #04 JCN ;draw-canvas JSR2
 	&skip-zoom
 
 	.Controller/key DEI
 	DUP #20 NEQ ,&no-space JCN
-		( toggle zoom ) .zoom/active PEK #00 EQU .zoom/active POK ;redraw JSR2 &no-space
+		( toggle zoom ) .zoom/active LDZ #00 EQU .zoom/active STZ ;redraw JSR2 &no-space
 	DUP #08 NEQ ,&no-backspace JCN
 		( erase ) ;clear JSR2 &no-backspace
 	DUP #71 NEQ ,&no-qkey JCN
-		( tool0 ) #00 .brush/tool POK ;draw-toolpane JSR2 &no-qkey
+		( tool0 ) #00 .brush/tool STZ ;draw-toolpane JSR2 &no-qkey
 	DUP #77 NEQ ,&no-wkey JCN
-		( tool0 ) #01 .brush/tool POK ;draw-toolpane JSR2 &no-wkey
+		( tool0 ) #01 .brush/tool STZ ;draw-toolpane JSR2 &no-wkey
 	DUP #65 NEQ ,&no-ekey JCN
-		( tool0 ) #02 .brush/tool POK ;draw-toolpane JSR2 &no-ekey
+		( tool0 ) #02 .brush/tool STZ ;draw-toolpane JSR2 &no-ekey
 	DUP #72 NEQ ,&no-rkey JCN
-		( tool0 ) #03 .brush/tool POK ;draw-toolpane JSR2 &no-rkey
+		( tool0 ) #03 .brush/tool STZ ;draw-toolpane JSR2 &no-rkey
 	DUP #74 NEQ ,&no-tkey JCN
-		( tool0 ) #04 .brush/tool POK ;draw-toolpane JSR2 &no-tkey
+		( tool0 ) #04 .brush/tool STZ ;draw-toolpane JSR2 &no-tkey
 	DUP
 		DUP #30 GTH SWP #39 LTH #0101 NEQ2 ,&no-numkey JCN
-		( size ) .Controller/key DEI #31 SUB .brush/size POK ;draw-sizepane JSR2 &no-numkey
+		( size ) .Controller/key DEI #31 SUB .brush/size STZ ;draw-sizepane JSR2 &no-numkey
 	POP
 
 BRK
@@ -352,12 +352,12 @@ BRK
 @center ( -- )
 	
 	( clear old )
-	.canvas/x1 PEK2 #0002 SUB2 .canvas/y1 PEK2 #0002 SUB2 .canvas/x2 PEK2 #0002 ADD2 .canvas/y2 PEK2 #0002 ADD2 #00 ;fill-rect JSR2
+	.canvas/x1 LDZ2 #0002 SUB2 .canvas/y1 LDZ2 #0002 SUB2 .canvas/x2 LDZ2 #0002 ADD2 .canvas/y2 LDZ2 #0002 ADD2 #00 ;fill-rect JSR2
 
 	;draw-background JSR2
 
-	.Screen/width DEI2 #0002 DIV2 .canvas/w PEK2 8* 2/ SUB2 .canvas/x1 POK2
-	.Screen/height DEI2 #0002 DIV2 .canvas/h PEK2 8* 2/ SUB2 .canvas/y1 POK2
+	.Screen/width DEI2 #0002 DIV2 .canvas/w LDZ2 8* 2/ SUB2 .canvas/x1 STZ2
+	.Screen/height DEI2 #0002 DIV2 .canvas/h LDZ2 8* 2/ SUB2 .canvas/y1 STZ2
 
 	;fit-canvas JSR2
 	;draw-foreground JSR2
@@ -367,7 +367,7 @@ RTN
 @rename
 	
 	;untitled_txt ;path/name ;strcpy JSR2
-	#00 .path/length POK
+	#00 .path/length STZ
 
 RTN
 
@@ -385,21 +385,21 @@ RTN
 
 @present
 
-	.document/presentation PEK #00 EQU .document/presentation POK
+	.document/presentation LDZ #00 EQU .document/presentation STZ
 
-	.document/presentation PEK
+	.document/presentation LDZ
 	DUP #00 NEQ ,&skip0 JCN
-		.theme/r0 PEK2 .System/r DEO2 .theme/g0 PEK2 .System/g DEO2 .theme/b0 PEK2 .System/b DEO2
+		.theme/r0 LDZ2 .System/r DEO2 .theme/g0 LDZ2 .System/g DEO2 .theme/b0 LDZ2 .System/b DEO2
 	&skip0
 	DUP #01 NEQ ,&skip1 JCN
-		.theme/r1 PEK2 .System/r DEO2 .theme/g1 PEK2 .System/g DEO2 .theme/b1 PEK2 .System/b DEO2
+		.theme/r1 LDZ2 .System/r DEO2 .theme/g1 LDZ2 .System/g DEO2 .theme/b1 LDZ2 .System/b DEO2
 	&skip1
 	POP
 
-	.toolpane/x1 PEK2 #0002 SUB2 .toolpane/y1 PEK2 #0002 SUB2 .toolpane/x2 PEK2 ++ .toolpane/y2 PEK2 ++ #00 ;fill-rect JSR2
-	.pattpane/x1 PEK2 #0002 SUB2 .pattpane/y1 PEK2 #0002 SUB2 .pattpane/x2 PEK2 ++ .pattpane/y2 PEK2 ++ #00 ;fill-rect JSR2
-	.sizepane/x1 PEK2 #0002 SUB2 .sizepane/y1 PEK2 #0002 SUB2 .sizepane/x2 PEK2 ++ .sizepane/y2 PEK2 ++ #00 ;fill-rect JSR2
-	.viewpane/x1 PEK2 #0002 SUB2 .viewpane/y1 PEK2 #0002 SUB2 .viewpane/x2 PEK2 ++ .viewpane/y2 PEK2 ++ #00 ;fill-rect JSR2
+	.toolpane/x1 LDZ2 #0002 SUB2 .toolpane/y1 LDZ2 #0002 SUB2 .toolpane/x2 LDZ2 ++ .toolpane/y2 LDZ2 ++ #00 ;fill-rect JSR2
+	.pattpane/x1 LDZ2 #0002 SUB2 .pattpane/y1 LDZ2 #0002 SUB2 .pattpane/x2 LDZ2 ++ .pattpane/y2 LDZ2 ++ #00 ;fill-rect JSR2
+	.sizepane/x1 LDZ2 #0002 SUB2 .sizepane/y1 LDZ2 #0002 SUB2 .sizepane/x2 LDZ2 ++ .sizepane/y2 LDZ2 ++ #00 ;fill-rect JSR2
+	.viewpane/x1 LDZ2 #0002 SUB2 .viewpane/y1 LDZ2 #0002 SUB2 .viewpane/x2 LDZ2 ++ .viewpane/y2 LDZ2 ++ #00 ;fill-rect JSR2
 
 	( clear panes )
 	;redraw JSR2
@@ -408,41 +408,41 @@ RTN
 
 @fit-canvas
 	
-	.canvas/w PEK2 8* .canvas/x1 PEK2 ADD2 .canvas/x2 POK2
-	.canvas/h PEK2 8* .canvas/y1 PEK2 ADD2 .canvas/y2 POK2
-	.canvas/x1 PEK2 -- .canvas/y1 PEK2 -- .canvas/x2 PEK2 .canvas/y2 PEK2 #01 ;line-rect JSR2
+	.canvas/w LDZ2 8* .canvas/x1 LDZ2 ADD2 .canvas/x2 STZ2
+	.canvas/h LDZ2 8* .canvas/y1 LDZ2 ADD2 .canvas/y2 STZ2
+	.canvas/x1 LDZ2 -- .canvas/y1 LDZ2 -- .canvas/x2 LDZ2 .canvas/y2 LDZ2 #01 ;line-rect JSR2
 	;draw-canvas JSR2
 
 RTN
 
 @paint-line ( x1 y1 x2 y2 -- )
 	
-	( load ) .line/y1 POK2 .line/x1 POK2 .line/y2 POK2 .line/x2 POK2
+	( load ) .line/y1 STZ2 .line/x1 STZ2 .line/y2 STZ2 .line/x2 STZ2
 
 	( trim if zoomed )
-	.zoom/active PEK #01 NEQ ,&no-zoom JCN
-		.line/x1 PEK2 8/ .zoom/x PEK2 ADD2 .line/x1 POK2
-		.line/y1 PEK2 8/ .zoom/y PEK2 ADD2 .line/y1 POK2
-		.line/x2 PEK2 8/ .zoom/x PEK2 ADD2 .line/x2 POK2
-		.line/y2 PEK2 8/ .zoom/y PEK2 ADD2 .line/y2 POK2
+	.zoom/active LDZ #01 NEQ ,&no-zoom JCN
+		.line/x1 LDZ2 8/ .zoom/x LDZ2 ADD2 .line/x1 STZ2
+		.line/y1 LDZ2 8/ .zoom/y LDZ2 ADD2 .line/y1 STZ2
+		.line/x2 LDZ2 8/ .zoom/x LDZ2 ADD2 .line/x2 STZ2
+		.line/y2 LDZ2 8/ .zoom/y LDZ2 ADD2 .line/y2 STZ2
 	&no-zoom
 
-	.line/x1 PEK2 .line/x2 PEK2 SUB2 ABS2 .line/dx POK2
-	.line/y1 PEK2 .line/y2 PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
-	#ffff #00 .line/x2 PEK2 .line/x1 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
-	#ffff #00 .line/y2 PEK2 .line/y1 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
-	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	.line/x1 LDZ2 .line/x2 LDZ2 SUB2 ABS2 .line/dx STZ2
+	.line/y1 LDZ2 .line/y2 LDZ2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy STZ2
+	#ffff #00 .line/x2 LDZ2 .line/x1 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sx STZ2
+	#ffff #00 .line/y2 LDZ2 .line/y1 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sy STZ2
+	.line/dx LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
 	&loop
-		( paint ) .line/x2 PEK2 .line/y2 PEK2 .brush/oper PEK2 JSR2
-		.line/x2 PEK2 .line/x1 PEK2 EQU2 .line/y2 PEK2 .line/y1 PEK2 EQU2 #0101 EQU2 ,&end JCN
-		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
-		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JCN
-			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
-			.line/x2 PEK2 .line/sx PEK2 ADD2 .line/x2 POK2
+		( paint ) .line/x2 LDZ2 .line/y2 LDZ2 .brush/oper LDZ2 JSR2
+		.line/x2 LDZ2 .line/x1 LDZ2 EQU2 .line/y2 LDZ2 .line/y1 LDZ2 EQU2 #0101 EQU2 ,&end JCN
+		.line/e1 LDZ2 #0002 MUL2 .line/e2 STZ2
+		.line/e2 LDZ2 .line/dy LDZ2 LTS2 ,&skipy JCN
+			.line/e1 LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
+			.line/x2 LDZ2 .line/sx LDZ2 ADD2 .line/x2 STZ2
 		&skipy
-		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JCN
-			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
-			.line/y2 PEK2 .line/sy PEK2 ADD2 .line/y2 POK2
+		.line/e2 LDZ2 .line/dx LDZ2 GTS2 ,&skipx JCN
+			.line/e1 LDZ2 .line/dx LDZ2 ADD2 .line/e1 STZ2
+			.line/y2 LDZ2 .line/sy LDZ2 ADD2 .line/y2 STZ2
 		&skipx
 		;&loop JMP2
 	&end
@@ -454,29 +454,29 @@ RTN
 
 @paint-rect ( x1 y1 x2 y2 -- )
 
-	( load ) .rect/y2 POK2 .rect/x2 POK2 .rect/y1 POK2 .rect/x1 POK2
+	( load ) .rect/y2 STZ2 .rect/x2 STZ2 .rect/y1 STZ2 .rect/x1 STZ2
 
 	( trim if zoomed )
-	.zoom/active PEK #01 NEQ ,&no-zoom JCN
-		.rect/x1 PEK2 8/ .zoom/x PEK2 ADD2 .rect/x1 POK2
-		.rect/y1 PEK2 8/ .zoom/y PEK2 ADD2 .rect/y1 POK2
-		.rect/x2 PEK2 8/ .zoom/x PEK2 ADD2 #0001 ADD2 .rect/x2 POK2
-		.rect/y2 PEK2 8/ .zoom/y PEK2 ADD2 #0001 ADD2 .rect/y2 POK2
+	.zoom/active LDZ #01 NEQ ,&no-zoom JCN
+		.rect/x1 LDZ2 8/ .zoom/x LDZ2 ADD2 .rect/x1 STZ2
+		.rect/y1 LDZ2 8/ .zoom/y LDZ2 ADD2 .rect/y1 STZ2
+		.rect/x2 LDZ2 8/ .zoom/x LDZ2 ADD2 #0001 ADD2 .rect/x2 STZ2
+		.rect/y2 LDZ2 8/ .zoom/y LDZ2 ADD2 #0001 ADD2 .rect/y2 STZ2
 	&no-zoom
 
-	.rect/x1 PEK2 .pt2/x POK2
-	.rect/y1 PEK2 .pt2/y POK2
+	.rect/x1 LDZ2 .pt2/x STZ2
+	.rect/y1 LDZ2 .pt2/y STZ2
 
 	&ver
-		.rect/x1 PEK2 .pt2/x POK2
+		.rect/x1 LDZ2 .pt2/x STZ2
 		&hor
-			.pt2/x PEK2 SWP POP .px/x POK .pt2/y PEK2 SWP POP .px/y POK
+			.pt2/x LDZ2 SWP POP .px/x STZ .pt2/y LDZ2 SWP POP .px/y STZ
 			;patternize JSR2 #00 EQU ,&no-pixel JCN
-				( draw ) .pt2/x PEK2 .pt2/y PEK2 .brush/oper PEK2 JSR2 &no-pixel
-			( incr ) .pt2/x PEK2 ++ .pt2/x POK2
-			.pt2/x PEK2 .rect/x2 PEK2 LTS2 ,&hor JCN
-		.pt2/y PEK2 ++ .pt2/y POK2
-		.pt2/y PEK2 .rect/y2 PEK2 LTS2 ,&ver JCN
+				( draw ) .pt2/x LDZ2 .pt2/y LDZ2 .brush/oper LDZ2 JSR2 &no-pixel
+			( incr ) .pt2/x LDZ2 ++ .pt2/x STZ2
+			.pt2/x LDZ2 .rect/x2 LDZ2 LTS2 ,&hor JCN
+		.pt2/y LDZ2 ++ .pt2/y STZ2
+		.pt2/y LDZ2 .rect/y2 LDZ2 LTS2 ,&ver JCN
 
 	;draw-canvas JSR2
 	;draw-foreground JSR2
@@ -485,27 +485,27 @@ RTN
 
 @paint-brush ( x y -- )
 
-	#0003 SUB2 .pt0/y POK2 #0003 SUB2 .pt0/x POK2 ( cursor offset )
+	#0003 SUB2 .pt0/y STZ2 #0003 SUB2 .pt0/x STZ2 ( cursor offset )
 
 	( trim if zoomed )
-	.zoom/active PEK #01 NEQ ,&no-zoom JCN
-		.pt0/x PEK2 8/ .zoom/x PEK2 ADD2 #0003 SUB2 .pt0/x POK2
-		.pt0/y PEK2 8/ .zoom/y PEK2 ADD2 #0003 SUB2 .pt0/y POK2
+	.zoom/active LDZ #01 NEQ ,&no-zoom JCN
+		.pt0/x LDZ2 8/ .zoom/x LDZ2 ADD2 #0003 SUB2 .pt0/x STZ2
+		.pt0/y LDZ2 8/ .zoom/y LDZ2 ADD2 #0003 SUB2 .pt0/y STZ2
 	&no-zoom
 
-	#00 .px/x POK #00 .px/y POK
+	#00 .px/x STZ #00 .px/y STZ
 	&ver
-		#00 .px/x POK
+		#00 .px/x STZ
 		&hor
-			( addr ) ;size_icns #00 .brush/size PEK 8* ADD2
-			( byte ) #00 .px/y PEK ADD2 LDA #07 .px/x PEK SUB SFT #01 AND
+			( addr ) ;size_icns #00 .brush/size LDZ 8* ADD2
+			( byte ) #00 .px/y LDZ ADD2 LDA #07 .px/x LDZ SUB SFT #01 AND
 			#00 EQU ,&no-pixel JCN
 			;patternize JSR2 #00 EQU ,&no-pixel JCN
-				.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 .brush/oper PEK2 JSR2 &no-pixel
-			( incr ) .px/x PEK #01 ADD .px/x POK
-			.px/x PEK #08 LTH ,&hor JCN
-		( incr ) .px/y PEK #01 ADD .px/y POK
-		.px/y PEK #08 LTH ,&ver JCN
+				.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 .brush/oper LDZ2 JSR2 &no-pixel
+			( incr ) .px/x LDZ #01 ADD .px/x STZ
+			.px/x LDZ #08 LTH ,&hor JCN
+		( incr ) .px/y LDZ #01 ADD .px/y STZ
+		.px/y LDZ #08 LTH ,&ver JCN
 
 	;draw-canvas JSR2
 	;draw-foreground JSR2
@@ -514,38 +514,38 @@ RTN
 
 @patternize ( -- )
 
-	.brush/patt PEK #00 NEQ ,&noplain JCN
+	.brush/patt LDZ #00 NEQ ,&noplain JCN
 		#01 RTN &noplain
 
-	.brush/patt PEK #01 NEQ ,&notone1 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 ADD2 #0001 AND2 #0000 EQU2
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 SUB2 #0001 AND2 #0000 EQU2
+	.brush/patt LDZ #01 NEQ ,&notone1 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 ADD2 #0001 AND2 #0000 EQU2
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 SUB2 #0001 AND2 #0000 EQU2
 		#0101 EQU2
 		RTN &notone1
 
-	.brush/patt PEK #02 NEQ ,&notone2 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 ADD2 #0003 AND2 #0000 EQU2
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 SUB2 #0003 AND2 #0000 EQU2
+	.brush/patt LDZ #02 NEQ ,&notone2 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 ADD2 #0003 AND2 #0000 EQU2
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 SUB2 #0003 AND2 #0000 EQU2
 		#0101 EQU2
 		RTN &notone2
 
-	.brush/patt PEK #03 NEQ ,&notone3 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 ADD2 #0005 AND2 #0000 EQU2
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 SUB2 #0005 AND2 #0000 EQU2
+	.brush/patt LDZ #03 NEQ ,&notone3 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 ADD2 #0005 AND2 #0000 EQU2
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 SUB2 #0005 AND2 #0000 EQU2
 		#0101 EQU2
 		RTN &notone3
 
-	.brush/patt PEK #04 NEQ ,&notone4 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 ADD2 #0003 AND2 #0000 EQU2 RTN &notone4
+	.brush/patt LDZ #04 NEQ ,&notone4 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 ADD2 #0003 AND2 #0000 EQU2 RTN &notone4
 
-	.brush/patt PEK #05 NEQ ,&notone5 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 .pt0/y PEK2 #00 .px/y PEK ADD2 SUB2 #0003 AND2 #0000 EQU2 RTN &notone5
+	.brush/patt LDZ #05 NEQ ,&notone5 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 .pt0/y LDZ2 #00 .px/y LDZ ADD2 SUB2 #0003 AND2 #0000 EQU2 RTN &notone5
 
-	.brush/patt PEK #06 NEQ ,&notone6 JCN
-		.pt0/x PEK2 #00 .px/x PEK ADD2 #0001 AND2 SWP POP RTN &notone6
+	.brush/patt LDZ #06 NEQ ,&notone6 JCN
+		.pt0/x LDZ2 #00 .px/x LDZ ADD2 #0001 AND2 SWP POP RTN &notone6
 
-	.brush/patt PEK #07 NEQ ,&notone7 JCN
-		.pt0/y PEK2 #00 .px/y PEK ADD2 #0001 AND2 SWP POP RTN &notone7
+	.brush/patt LDZ #07 NEQ ,&notone7 JCN
+		.pt0/y LDZ2 #00 .px/y LDZ ADD2 #0001 AND2 SWP POP RTN &notone7
 
 	#00
 
@@ -553,30 +553,30 @@ RTN
 
 @get-pixel ( x y -- b )
 
-	SWP POP #07 AND .px/y POK
-	SWP POP #07 AND .px/x POK
-	( get tile ) .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8*
+	SWP POP #07 AND .px/y STZ
+	SWP POP #07 AND .px/x STZ
+	( get tile ) .pt1/x LDZ2 8/ .pt1/y LDZ2 8/ .canvas/w LDZ2 MUL2 ADD2 8*
 	( add addr ) ;data ADD2
-	#00 .px/y PEK ADD2 LDA #07 .px/x PEK SUB SFT #01 AND
+	#00 .px/y LDZ ADD2 LDA #07 .px/x LDZ SUB SFT #01 AND
 
 RTN
 
 @add-pixel ( x y -- )
 
-	.pt1/y POK2 .pt1/x POK2
-	( get tile addr ) ;data .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8* .pt1/y PEK2 MOD8 ADD2 ADD2
+	.pt1/y STZ2 .pt1/x STZ2
+	( get tile addr ) ;data .pt1/x LDZ2 8/ .pt1/y LDZ2 8/ .canvas/w LDZ2 MUL2 ADD2 8* .pt1/y LDZ2 MOD8 ADD2 ADD2
 	( load ) DUP2 LDA
-	( mask ) #01 #07 .pt1/x PEK2 MOD8 SWP POP SUB SFL ORA
+	( mask ) #01 #07 .pt1/x LDZ2 MOD8 SWP POP SUB SFL ORA
 	( save ) ROT ROT STA
 
 RTN
 
 @remove-pixel ( x y -- )
 
-	.pt1/y POK2 .pt1/x POK2
-	( get tile addr ) ;data .pt1/x PEK2 8/ .pt1/y PEK2 8/ .canvas/w PEK2 MUL2 ADD2 8* .pt1/y PEK2 MOD8 ADD2 ADD2
+	.pt1/y STZ2 .pt1/x STZ2
+	( get tile addr ) ;data .pt1/x LDZ2 8/ .pt1/y LDZ2 8/ .canvas/w LDZ2 MUL2 ADD2 8* .pt1/y LDZ2 MOD8 ADD2 ADD2
 	( load ) DUP2 LDA
-	( mask ) #01 #07 .pt1/x PEK2 MOD8 SWP POP SUB SFL #ff EOR AND
+	( mask ) #01 #07 .pt1/x LDZ2 MOD8 SWP POP SUB SFL #ff EOR AND
 	( save ) ROT ROT STA
 
 RTN
@@ -609,39 +609,39 @@ RTN
 
 @draw-canvas ( -- )
 	
-	.zoom/active PEK #01 EQU ;draw-canvas-zoom JCN2
+	.zoom/active LDZ #01 EQU ;draw-canvas-zoom JCN2
 
-	.canvas/y1 PEK2 .Screen/y DEO2
+	.canvas/y1 LDZ2 .Screen/y DEO2
 	;data .Screen/addr DEO2
 	&ver
-		.canvas/x1 PEK2 .Screen/x DEO2
+		.canvas/x1 LDZ2 .Screen/x DEO2
 		&hor
 			( draw ) #29 .Screen/color DEO
 			( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 			( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
-		.Screen/x DEI2 .canvas/x2 PEK2 NEQ2 ,&hor JCN
+		.Screen/x DEI2 .canvas/x2 LDZ2 NEQ2 ,&hor JCN
 		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
-	.Screen/y DEI2 .canvas/y2 PEK2 NEQ2 ,&ver JCN
+	.Screen/y DEI2 .canvas/y2 LDZ2 NEQ2 ,&ver JCN
 
 RTN
 
 @draw-canvas-zoom ( -- )
 	
-	.zoom/y PEK2 .pt1/y POK2
-	.canvas/y1 PEK2 .Screen/y DEO2
+	.zoom/y LDZ2 .pt1/y STZ2
+	.canvas/y1 LDZ2 .Screen/y DEO2
 	;data .Screen/addr DEO2
 	&ver
-		.canvas/x1 PEK2 .Screen/x DEO2
-		.zoom/x PEK2 .pt1/x POK2
+		.canvas/x1 LDZ2 .Screen/x DEO2
+		.zoom/x LDZ2 .pt1/x STZ2
 		&hor
-			( incr ) ;bigpixel_icn #0008 #00 .pt1/x PEK2 .pt1/y PEK2 ;get-pixel JSR2 MUL2 ADD2 .Screen/addr DEO2
+			( incr ) ;bigpixel_icn #0008 #00 .pt1/x LDZ2 .pt1/y LDZ2 ;get-pixel JSR2 MUL2 ADD2 .Screen/addr DEO2
 			( draw ) #29 .Screen/color DEO
 			( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-			( incr ) .pt1/x PEK2 ++ .pt1/x POK2
-		.Screen/x DEI2 .canvas/x2 PEK2 NEQ2 ,&hor JCN
+			( incr ) .pt1/x LDZ2 ++ .pt1/x STZ2
+		.Screen/x DEI2 .canvas/x2 LDZ2 NEQ2 ,&hor JCN
 		( incr ) .Screen/y DEI2 8+ .Screen/y DEO2
-		( incr ) .pt1/y PEK2 ++ .pt1/y POK2
-	.Screen/y DEI2 .canvas/y2 PEK2 NEQ2 ,&ver JCN
+		( incr ) .pt1/y LDZ2 ++ .pt1/y STZ2
+	.Screen/y DEI2 .canvas/y2 LDZ2 NEQ2 ,&ver JCN
 
 RTN
 
@@ -649,28 +649,28 @@ RTN
 
 	;blank_icn .Screen/addr DEO2
 	( clear brush size )
-	.cursor/x PEK2 #0003 SUB2 .Screen/x DEO2 .cursor/y PEK2 #0003 SUB2 .Screen/y DEO2 #30 .Screen/color DEO
+	.cursor/x LDZ2 #0003 SUB2 .Screen/x DEO2 .cursor/y LDZ2 #0003 SUB2 .Screen/y DEO2 #30 .Screen/color DEO
 	( clear last cursor )
-	.cursor/x PEK2 .Screen/x DEO2 .cursor/y PEK2 .Screen/y DEO2 #30 .Screen/color DEO
+	.cursor/x LDZ2 .Screen/x DEO2 .cursor/y LDZ2 .Screen/y DEO2 #30 .Screen/color DEO
 	( record cursor positions )
-	.Mouse/x DEI2 .cursor/x POK2 .Mouse/y DEI2 .cursor/y POK2
+	.Mouse/x DEI2 .cursor/x STZ2 .Mouse/y DEI2 .cursor/y STZ2
 	( draw size cursor )
-	.brush/tool PEK #01 NEQ ;&outside-canvas JCN2
+	.brush/tool LDZ #01 NEQ ;&outside-canvas JCN2
 	( do not draw size when holding alt )
 	.Controller/button DEI #02 EQU ;&outside-canvas JCN2
-	.Mouse/x DEI2 CLN2r .canvas/x1 PEK2 GTH2 STH2r .canvas/x2 PEK2 LTH2 #0101 NEQ2 ;&outside-canvas JCN2
-	.Mouse/y DEI2 CLN2r .canvas/y1 PEK2 GTH2 STH2r .canvas/y2 PEK2 LTH2 #0101 NEQ2 ;&outside-canvas JCN2	
+	.Mouse/x DEI2 CLN2r .canvas/x1 LDZ2 GTH2 STH2r .canvas/x2 LDZ2 LTH2 #0101 NEQ2 ;&outside-canvas JCN2
+	.Mouse/y DEI2 CLN2r .canvas/y1 LDZ2 GTH2 STH2r .canvas/y2 LDZ2 LTH2 #0101 NEQ2 ;&outside-canvas JCN2	
 	( do not draw size in toolpane )
-	.Mouse/x DEI2 CLN2r .toolpane/x1 PEK2 GTH2 STH2r .toolpane/x2 PEK2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .toolpane/y1 PEK2 GTH2 STH2r .toolpane/y2 PEK2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
-	.Mouse/x DEI2 CLN2r .sizepane/x1 PEK2 GTH2 STH2r .sizepane/x2 PEK2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .sizepane/y1 PEK2 GTH2 STH2r .sizepane/y2 PEK2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
-	.Mouse/x DEI2 CLN2r .pattpane/x1 PEK2 GTH2 STH2r .pattpane/x2 PEK2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .pattpane/y1 PEK2 GTH2 STH2r .pattpane/y2 PEK2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
-		.cursor/x PEK2 #0003 SUB2 .Screen/x DEO2 .cursor/y PEK2 #0003 SUB2 .Screen/y DEO2
-		;brush_icns #00 .brush/size PEK 8* ADD2 .Screen/addr DEO2
+	.Mouse/x DEI2 CLN2r .toolpane/x1 LDZ2 GTH2 STH2r .toolpane/x2 LDZ2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .toolpane/y1 LDZ2 GTH2 STH2r .toolpane/y2 LDZ2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
+	.Mouse/x DEI2 CLN2r .sizepane/x1 LDZ2 GTH2 STH2r .sizepane/x2 LDZ2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .sizepane/y1 LDZ2 GTH2 STH2r .sizepane/y2 LDZ2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
+	.Mouse/x DEI2 CLN2r .pattpane/x1 LDZ2 GTH2 STH2r .pattpane/x2 LDZ2 LTH2 #0101 EQU2 .Mouse/y DEI2 CLN2r .pattpane/y1 LDZ2 GTH2 STH2r .pattpane/y2 LDZ2 LTH2 #0101 EQU2 #0101 EQU2 ;&outside-canvas JCN2
+		.cursor/x LDZ2 #0003 SUB2 .Screen/x DEO2 .cursor/y LDZ2 #0003 SUB2 .Screen/y DEO2
+		;brush_icns #00 .brush/size LDZ 8* ADD2 .Screen/addr DEO2
 		#31 .Mouse/state DEI #02 MUL ADD .Screen/color DEO
 		.Mouse/state DEI #00 EQU ,&outside-canvas JCN RTN
 	&outside-canvas
 	( draw new cursor )
-	.cursor/x PEK2 .Screen/x DEO2 .cursor/y PEK2 .Screen/y DEO2
+	.cursor/x LDZ2 .Screen/x DEO2 .cursor/y LDZ2 .Screen/y DEO2
 	;pointers_icn #00 .Controller/button DEI #02 EQU 8* ADD2 .Screen/addr DEO2
 	#3f .Mouse/state DEI #01 EQU #0a MUL SUB .Screen/color DEO
 
@@ -678,79 +678,79 @@ RTN
 
 @draw-toolpane ( -- )
 
-	.document/presentation PEK #00 EQU ,&skip JCN RTN &skip
+	.document/presentation LDZ #00 EQU ,&skip JCN RTN &skip
 
 	( frame ) 	
-	.toolpane/x1 PEK2 -- .toolpane/y1 PEK2 -- .toolpane/x2 PEK2 .toolpane/y2 PEK2 #00 ;line-rect JSR2
-	.toolpane/x1 PEK2 #0002 SUB2 .toolpane/y1 PEK2 #0002 SUB2 .toolpane/x2 PEK2 .toolpane/y2 PEK2 #01 ;line-rect JSR2
+	.toolpane/x1 LDZ2 -- .toolpane/y1 LDZ2 -- .toolpane/x2 LDZ2 .toolpane/y2 LDZ2 #00 ;line-rect JSR2
+	.toolpane/x1 LDZ2 #0002 SUB2 .toolpane/y1 LDZ2 #0002 SUB2 .toolpane/x2 LDZ2 .toolpane/y2 LDZ2 #01 ;line-rect JSR2
 
-	.toolpane/x1 PEK2 .Screen/x DEO2 .toolpane/y1 PEK2 .Screen/y DEO2 ;tool_icns .Screen/addr DEO2
+	.toolpane/x1 LDZ2 .Screen/x DEO2 .toolpane/y1 LDZ2 .Screen/y DEO2 ;tool_icns .Screen/addr DEO2
 
 	&loop
-		( draw ) #21 .Screen/x DEI2 .toolpane/x1 PEK2 SUB2 8/ SWP POP .brush/tool PEK EQU #02 MUL ADD .Screen/color DEO
+		( draw ) #21 .Screen/x DEI2 .toolpane/x1 LDZ2 SUB2 8/ SWP POP .brush/tool LDZ EQU #02 MUL ADD .Screen/color DEO
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
-		.Screen/x DEI2 .toolpane/x2 PEK2 LTH2 ,&loop JCN
+		.Screen/x DEI2 .toolpane/x2 LDZ2 LTH2 ,&loop JCN
 
-	.zoom/active PEK #01 NEQ ,&no-zoom JCN
+	.zoom/active LDZ #01 NEQ ,&no-zoom JCN
 		.Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
 		;tool_icns #0028 ADD2 .Screen/addr DEO2
-		#21 #04 .brush/tool PEK EQU #02 MUL ADD .Screen/color DEO
+		#21 #04 .brush/tool LDZ EQU #02 MUL ADD .Screen/color DEO
 		&no-zoom
 
 RTN
 
 @draw-pattpane ( -- )
 
-	.document/presentation PEK #00 EQU ,&skip JCN RTN &skip
+	.document/presentation LDZ #00 EQU ,&skip JCN RTN &skip
 
 	( frame ) 	
-	.pattpane/x1 PEK2 -- .pattpane/y1 PEK2 -- .pattpane/x2 PEK2 .pattpane/y2 PEK2 #00 ;line-rect JSR2
-	.pattpane/x1 PEK2 #0002 SUB2 .pattpane/y1 PEK2 #0002 SUB2 .pattpane/x2 PEK2 .pattpane/y2 PEK2 #01 ;line-rect JSR2
+	.pattpane/x1 LDZ2 -- .pattpane/y1 LDZ2 -- .pattpane/x2 LDZ2 .pattpane/y2 LDZ2 #00 ;line-rect JSR2
+	.pattpane/x1 LDZ2 #0002 SUB2 .pattpane/y1 LDZ2 #0002 SUB2 .pattpane/x2 LDZ2 .pattpane/y2 LDZ2 #01 ;line-rect JSR2
 
-	.pattpane/x1 PEK2 .Screen/x DEO2 .pattpane/y1 PEK2 .Screen/y DEO2 ;patt_icns .Screen/addr DEO2
+	.pattpane/x1 LDZ2 .Screen/x DEO2 .pattpane/y1 LDZ2 .Screen/y DEO2 ;patt_icns .Screen/addr DEO2
 
 	&loop
-		( draw ) #21 .Screen/x DEI2 .pattpane/x1 PEK2 SUB2 8/ SWP POP .brush/patt PEK EQU #02 MUL ADD .Screen/color DEO
+		( draw ) #21 .Screen/x DEI2 .pattpane/x1 LDZ2 SUB2 8/ SWP POP .brush/patt LDZ EQU #02 MUL ADD .Screen/color DEO
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
-		.Screen/x DEI2 .pattpane/x2 PEK2 LTH2 ,&loop JCN
+		.Screen/x DEI2 .pattpane/x2 LDZ2 LTH2 ,&loop JCN
 
 RTN
 
 @draw-sizepane ( -- )
 
-	.document/presentation PEK #00 EQU ,&skip JCN RTN &skip
+	.document/presentation LDZ #00 EQU ,&skip JCN RTN &skip
 
 	( frame )
-	.sizepane/x1 PEK2 -- .sizepane/y1 PEK2 -- .sizepane/x2 PEK2 .sizepane/y2 PEK2 #00 ;line-rect JSR2
-	.sizepane/x1 PEK2 #0002 SUB2 .sizepane/y1 PEK2 #0002 SUB2 .sizepane/x2 PEK2 .sizepane/y2 PEK2 #01 ;line-rect JSR2
+	.sizepane/x1 LDZ2 -- .sizepane/y1 LDZ2 -- .sizepane/x2 LDZ2 .sizepane/y2 LDZ2 #00 ;line-rect JSR2
+	.sizepane/x1 LDZ2 #0002 SUB2 .sizepane/y1 LDZ2 #0002 SUB2 .sizepane/x2 LDZ2 .sizepane/y2 LDZ2 #01 ;line-rect JSR2
 
-	.sizepane/x1 PEK2 .Screen/x DEO2 .sizepane/y1 PEK2 .Screen/y DEO2 ;size_icns .Screen/addr DEO2
+	.sizepane/x1 LDZ2 .Screen/x DEO2 .sizepane/y1 LDZ2 .Screen/y DEO2 ;size_icns .Screen/addr DEO2
 
 	&loop
-		( draw ) #21 .Screen/x DEI2 .sizepane/x1 PEK2 SUB2 8/ SWP POP .brush/size PEK EQU #02 MUL ADD .Screen/color DEO
+		( draw ) #21 .Screen/x DEI2 .sizepane/x1 LDZ2 SUB2 8/ SWP POP .brush/size LDZ EQU #02 MUL ADD .Screen/color DEO
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
-		.Screen/x DEI2 .sizepane/x2 PEK2 LTH2 ,&loop JCN
+		.Screen/x DEI2 .sizepane/x2 LDZ2 LTH2 ,&loop JCN
 
 RTN
 
 @draw-viewpane ( -- )
 	
-	.document/presentation PEK #00 EQU ,&skip JCN RTN &skip
+	.document/presentation LDZ #00 EQU ,&skip JCN RTN &skip
 
 	( frame )
-	.viewpane/x1 PEK2 -- .viewpane/y1 PEK2 -- .viewpane/x2 PEK2 .viewpane/y2 PEK2 #00 ;line-rect JSR2
-	.viewpane/x1 PEK2 #0002 SUB2 .viewpane/y1 PEK2 #0002 SUB2 .viewpane/x2 PEK2 .viewpane/y2 PEK2 #01 ;line-rect JSR2
+	.viewpane/x1 LDZ2 -- .viewpane/y1 LDZ2 -- .viewpane/x2 LDZ2 .viewpane/y2 LDZ2 #00 ;line-rect JSR2
+	.viewpane/x1 LDZ2 #0002 SUB2 .viewpane/y1 LDZ2 #0002 SUB2 .viewpane/x2 LDZ2 .viewpane/y2 LDZ2 #01 ;line-rect JSR2
 
-	.viewpane/x1 PEK2 .Screen/x DEO2 .viewpane/y1 PEK2 .Screen/y DEO2 ;view_icns .Screen/addr DEO2
+	.viewpane/x1 LDZ2 .Screen/x DEO2 .viewpane/y1 LDZ2 .Screen/y DEO2 ;view_icns .Screen/addr DEO2
 
 	&loop
 		( draw ) #21 .Screen/color DEO
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
-		.Screen/x DEI2 .viewpane/x2 PEK2 LTH2 ,&loop JCN
+		.Screen/x DEI2 .viewpane/x2 LDZ2 LTH2 ,&loop JCN
 
 RTN
 
@@ -766,29 +766,29 @@ RTN
 @draw-background
 	
 	( draw hor line )
-	#0000 .Screen/width DEI2 .Screen/height DEI2 #0002 DIV2 .document/presentation PEK #00 EQU ;line-horizontal-dotted JSR2
+	#0000 .Screen/width DEI2 .Screen/height DEI2 #0002 DIV2 .document/presentation LDZ #00 EQU ;line-horizontal-dotted JSR2
 	( draw ver line )
-	.Screen/width DEI2 #0002 DIV2 #0000 .Screen/height DEI2 .document/presentation PEK #00 EQU ;line-vertical-dotted JSR2
+	.Screen/width DEI2 #0002 DIV2 #0000 .Screen/height DEI2 .document/presentation LDZ #00 EQU ;line-vertical-dotted JSR2
 
-	.document/presentation PEK #01 EQU ;&skip-size JCN2
+	.document/presentation LDZ #01 EQU ;&skip-size JCN2
 		( draw size )
 		#0010 .Screen/y DEO2
 		( draw width )
-		.Screen/width DEI2 #00a0 SUB2 .Screen/x DEO2 ;font_hex .canvas/w PEK2 #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+		.Screen/width DEI2 #00a0 SUB2 .Screen/x DEO2 ;font_hex .canvas/w LDZ2 #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
-		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/w PEK2 #0f AND #08 MUL ADD2 .Screen/addr DEO2
+		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/w LDZ2 #0f AND #08 MUL ADD2 .Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
 		( draw height )
-		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/h PEK2 #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
+		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/h LDZ2 #f0 AND #04 SFT #08 MUL ADD2 .Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
-		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/h PEK2 #0f AND #08 MUL ADD2 .Screen/addr DEO2
+		.Screen/x DEI2 8+ .Screen/x DEO2 ;font_hex .canvas/h LDZ2 #0f AND #08 MUL ADD2 .Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
 	&skip-size
 
 	( draw save/load/guides icons )
 	.Screen/height DEI2 #0010 SUB2 .Screen/y DEO2
 	.Screen/width DEI2 #0028 SUB2 .Screen/x DEO2
-	;eye_icn #00 .document/presentation PEK #08 MUL ADD2 .Screen/addr DEO2
+	;eye_icn #00 .document/presentation LDZ #08 MUL ADD2 .Screen/addr DEO2
 	#23 .Screen/color DEO
 	.Screen/x DEI2 8+ .Screen/x DEO2
 	;filestate_icn .Screen/addr DEO2
@@ -809,20 +809,20 @@ RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) .color POK DUP2 STH2 .rect/y2 POK2 .rect/x2 POK2 DUP2 STH2 .rect/y1 POK2 .rect/x1 POK2
+	( load ) .color STZ DUP2 STH2 .rect/y2 STZ2 .rect/x2 STZ2 DUP2 STH2 .rect/y1 STZ2 .rect/x1 STZ2
 	STH2r STH2r
 	&ver
 		( save ) OVR2 .Screen/y DEO2
-		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
-		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
+		( draw ) .rect/x1 LDZ2 .Screen/x DEO2 .color LDZ DUP .Screen/color DEO
+		( draw ) .rect/x2 LDZ2 .Screen/x DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2
-	.rect/x1 PEK2 .rect/x2 PEK2
+	.rect/x1 LDZ2 .rect/x2 LDZ2
 	&hor
 		( save ) OVR2 .Screen/x DEO2
-		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
-		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
+		( draw ) .rect/y1 LDZ2 .Screen/y DEO2 .color LDZ DUP .Screen/color DEO
+		( draw ) .rect/y2 LDZ2 .Screen/y DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 ++ LTS2 ,&hor JCN
 	POP2 POP2
@@ -831,14 +831,14 @@ RTN
 
 @fill-rect ( x1 y1 x2 y2 color -- )
 	
-	.color POK
+	.color STZ
 	( x1 x2 y1 y2 ) ROT2 SWP2
 	&ver
 		( save ) OVR2 .Screen/y DEO2
 		STH2 STH2 OVR2 OVR2
 		&hor
 			( save ) OVR2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) SWP2 ++ SWP2
 			OVR2 OVR2 LTS2 ,&hor JCN
 		POP2 POP2 STH2r STH2r
@@ -850,10 +850,10 @@ RTN
 
 @draw-label ( addr color -- )
 	
-	.color POK
+	.color STZ
 	&loop
 		DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2
-		( draw ) .color PEK #20 ADD .Screen/color DEO
+		( draw ) .color LDZ #20 ADD .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		( loop ) DUP2 LDA #00 NEQ ,&loop JCN
@@ -863,9 +863,9 @@ RTN
 
 @line-horizontal-dotted ( x0 x1 y color -- )
 	
-	.color POK .Screen/y DEO2 OVR2 .Screen/x DEO2
+	.color STZ .Screen/y DEO2 OVR2 .Screen/x DEO2
 	&draw-hor
-		( draw ) .color PEK .Screen/color DEO
+		( draw ) .color LDZ .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
 		OVR2 OVR2 LTH2 ,&draw-hor JCN
 	POP2 POP2
@@ -874,9 +874,9 @@ RTN
 
 @line-vertical-dotted ( x y0 y1 color -- )
 	
-	.color POK STH2 SWP2 .Screen/x DEO2 STH2r OVR2 .Screen/y DEO2
+	.color STZ STH2 SWP2 .Screen/x DEO2 STH2r OVR2 .Screen/y DEO2
 	&draw-ver
-		( draw ) .color PEK .Screen/color DEO
+		( draw ) .color LDZ .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
 		OVR2 OVR2 LTH2 ,&draw-ver JCN
 	POP2 POP2

@@ -24,8 +24,8 @@
 	#0da4 .System/b DEO2 
 
 	( find screen center )
-	.Screen/width DEI2 #0002 DIV2 .center/x POK2
-	.Screen/height DEI2 #0002 DIV2 .center/y POK2
+	.Screen/width DEI2 #0002 DIV2 .center/x STZ2
+	.Screen/height DEI2 #0002 DIV2 .center/y STZ2
 
 	( draw )
 	;draw-table JSR2
@@ -40,9 +40,9 @@ BRK
 	#00 #00
 	&loop
 		( move ) OVR #0f AND #40 SFT #02 DIV #00 SWP 
-			.center/x PEK2 #0040 SUB2 ADD2 .Screen/x DEO2
+			.center/x LDZ2 #0040 SUB2 ADD2 .Screen/x DEO2
 		( move ) OVR #f0 AND #02 DIV #00 SWP 
-			.center/y PEK2 #0040 SUB2 ADD2 .Screen/y DEO2
+			.center/y LDZ2 #0040 SUB2 ADD2 .Screen/y DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
 		DUP2 NEQ ,&loop JCN
@@ -58,14 +58,14 @@ RTN
 
 		( x-axis ) 
 		OVR #08 MUL #00 SWP 
-		.center/x PEK2 #0040 SUB2 ADD2 .Screen/x DEO2
-		.center/y PEK2 #0050 SUB2 .Screen/y DEO2
+		.center/x LDZ2 #0040 SUB2 ADD2 .Screen/x DEO2
+		.center/y LDZ2 #0050 SUB2 .Screen/y DEO2
 		( draw ) #21 .Screen/color DEO
 
 		( y-axis )
 		OVR #08 MUL #00 SWP 
-		.center/y PEK2 #0040 SUB2 ADD2 .Screen/y DEO2
-		.center/x PEK2 #0050 SUB2 .Screen/x DEO2
+		.center/y LDZ2 #0040 SUB2 ADD2 .Screen/y DEO2
+		.center/x LDZ2 #0050 SUB2 .Screen/x DEO2
 		( draw ) #21 .Screen/color DEO
 
 		( incr ) SWP #01 ADD SWP
@@ -78,15 +78,15 @@ RTN
 	
 	;preview_icn .Screen/addr DEO2
 
-	.center/x PEK2 #0048 ADD2 .Screen/x DEO2
-	.center/y PEK2 #0030 ADD2 .Screen/y DEO2
+	.center/x LDZ2 #0048 ADD2 .Screen/x DEO2
+	.center/y LDZ2 #0030 ADD2 .Screen/y DEO2
 	#21 .Screen/color DEO
-	.center/x PEK2 #0050 ADD2 .Screen/x DEO2
+	.center/x LDZ2 #0050 ADD2 .Screen/x DEO2
 	#61 .Screen/color DEO
-	.center/x PEK2 #0048 ADD2 .Screen/x DEO2
-	.center/y PEK2 #0038 ADD2 .Screen/y DEO2
+	.center/x LDZ2 #0048 ADD2 .Screen/x DEO2
+	.center/y LDZ2 #0038 ADD2 .Screen/y DEO2
 	#a1 .Screen/color DEO
-	.center/x PEK2 #0050 ADD2 .Screen/x DEO2
+	.center/x LDZ2 #0050 ADD2 .Screen/x DEO2
 	#f1 .Screen/color DEO
 
 RTN

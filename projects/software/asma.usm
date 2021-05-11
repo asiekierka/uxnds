@@ -426,7 +426,7 @@
 	;asma-parse-hex-string JSR2
 	,&valid JCN
 
-	;asma-msg-hex ;asma/error POK2
+	;asma-msg-hex ;asma/error STZ2
 	JMP2r
 
 	&valid
@@ -732,8 +732,8 @@
 	&JCN         $2         $2          "JCN 00
 	&JSR        :&JMP      :&LDR        "JSR 00
 	&STH        :&SFT      :&SUB        "STH 00
-	&PEK        :&OVR      :&POK        "PEK 00
-	&POK         $2         $2          "POK 00
+	&LDZ        :&OVR      :&STZ        "LDZ 00
+	&STZ         $2         $2          "STZ 00
 	&LDR        :&LDA      :&LIT        "LDR 00
 	&STR         $2         $2          "STR 00
 	&LDA         $2         $2          "LDA 00
@@ -745,7 +745,7 @@
 	&MUL         $2         $2          "MUL 00
 	&DIV         $2         $2          "DIV 00
 	&AND        :&ADD       $2          "AND 00
-	&ORA        :&NEQ      :&PEK        "ORA 00
+	&ORA        :&NEQ      :&LDZ        "ORA 00
 	&EOR         $2         $2          "EOR 00
 	&SFT        :&ROT      :&STA        "SFT 00
 

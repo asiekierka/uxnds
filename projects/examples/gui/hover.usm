@@ -26,38 +26,38 @@
 	( theme ) #0f0f .System/r DEO2 #0fff .System/g DEO2 #0ff0 .System/b DEO2
 	( vectors ) ;on-mouse .Mouse/vector DEO2
 	
-	#0020 #0030 #0060 #0060 .r1/y2 POK2 .r1/x2 POK2 .r1/y1 POK2 .r1/x1 POK2
-	#0058 #0050 #0090 #0080 .r2/y2 POK2 .r2/x2 POK2 .r2/y1 POK2 .r2/x1 POK2
-	#0048 #0048 #0080 #0098 .r3/y2 POK2 .r3/x2 POK2 .r3/y1 POK2 .r3/x1 POK2
+	#0020 #0030 #0060 #0060 .r1/y2 STZ2 .r1/x2 STZ2 .r1/y1 STZ2 .r1/x1 STZ2
+	#0058 #0050 #0090 #0080 .r2/y2 STZ2 .r2/x2 STZ2 .r2/y1 STZ2 .r2/x1 STZ2
+	#0048 #0048 #0080 #0098 .r3/y2 STZ2 .r3/x2 STZ2 .r3/y1 STZ2 .r3/x1 STZ2
 
 ( no BRK, run through to on-mouse )
 
 @on-mouse
 
-	;pointer_icn .pointer/sprite POK2
+	;pointer_icn .pointer/sprite STZ2
 
-	#01 .color POK
+	#01 .color STZ
 	( matrix comparison )
-	.Mouse/x DEI2 .r1/x1 PEK2 GTH2 .Mouse/x DEI2 .r1/x2 PEK2 LTH2 #0101 EQU2
-	.Mouse/y DEI2 .r1/y1 PEK2 GTH2 .Mouse/y DEI2 .r1/y2 PEK2 LTH2 #0101 EQU2
-	#0101 NEQ2 ,&draw1 JCN #02 .color POK ;hand_icn .pointer/sprite POK2
-	&draw1 .r1/x1 PEK2 .r1/y1 PEK2 .r1/x2 PEK2 .r1/y2 PEK2 .color PEK ;line-rect JSR2
+	.Mouse/x DEI2 .r1/x1 LDZ2 GTH2 .Mouse/x DEI2 .r1/x2 LDZ2 LTH2 #0101 EQU2
+	.Mouse/y DEI2 .r1/y1 LDZ2 GTH2 .Mouse/y DEI2 .r1/y2 LDZ2 LTH2 #0101 EQU2
+	#0101 NEQ2 ,&draw1 JCN #02 .color STZ ;hand_icn .pointer/sprite STZ2
+	&draw1 .r1/x1 LDZ2 .r1/y1 LDZ2 .r1/x2 LDZ2 .r1/y2 LDZ2 .color LDZ ;line-rect JSR2
 	
-	#01 .color POK
+	#01 .color STZ
 	( 2-step comparison )
-	.Mouse/x DEI2 .r2/x1 PEK2 GTH2 .Mouse/x DEI2 .r2/x2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JCN
-		.Mouse/y DEI2 .r2/y1 PEK2 GTH2 .Mouse/y DEI2 .r2/y2 PEK2 LTH2 #0101 NEQ2 ,&draw2 JCN
-			#03 .color POK ;hand_icn .pointer/sprite POK2
-	&draw2 .r2/x1 PEK2 .r2/y1 PEK2 .r2/x2 PEK2 .r2/y2 PEK2 .color PEK ;line-rect JSR2
+	.Mouse/x DEI2 .r2/x1 LDZ2 GTH2 .Mouse/x DEI2 .r2/x2 LDZ2 LTH2 #0101 NEQ2 ,&draw2 JCN
+		.Mouse/y DEI2 .r2/y1 LDZ2 GTH2 .Mouse/y DEI2 .r2/y2 LDZ2 LTH2 #0101 NEQ2 ,&draw2 JCN
+			#03 .color STZ ;hand_icn .pointer/sprite STZ2
+	&draw2 .r2/x1 LDZ2 .r2/y1 LDZ2 .r2/x2 LDZ2 .r2/y2 LDZ2 .color LDZ ;line-rect JSR2
 	
-	#01 .color POK
+	#01 .color STZ
 	( 4-step comparison )
-	.Mouse/x DEI2 .r3/x1 PEK2 LTH2 ,&draw3 JCN
-		.Mouse/x DEI2 .r3/x2 PEK2 GTH2 ,&draw3 JCN
-			.Mouse/y DEI2 .r3/y1 PEK2 LTH2 ,&draw3 JCN
-				.Mouse/y DEI2 .r3/y2 PEK2 GTH2 ,&draw3 JCN
-					#02 .color POK ;hand_icn .pointer/sprite POK2
-	&draw3 .r3/x1 PEK2 .r3/y1 PEK2 .r3/x2 PEK2 .r3/y2 PEK2 .color PEK ;line-rect JSR2
+	.Mouse/x DEI2 .r3/x1 LDZ2 LTH2 ,&draw3 JCN
+		.Mouse/x DEI2 .r3/x2 LDZ2 GTH2 ,&draw3 JCN
+			.Mouse/y DEI2 .r3/y1 LDZ2 LTH2 ,&draw3 JCN
+				.Mouse/y DEI2 .r3/y2 LDZ2 GTH2 ,&draw3 JCN
+					#02 .color STZ ;hand_icn .pointer/sprite STZ2
+	&draw3 .r3/x1 LDZ2 .r3/y1 LDZ2 .r3/x2 LDZ2 .r3/y2 LDZ2 .color LDZ ;line-rect JSR2
 
 	;draw-cursor JSR2
 
@@ -67,35 +67,35 @@ BRK
 
 	( clear last cursor )
 	;clear_icn .Screen/addr DEO2
-	.pointer/x PEK2 .Screen/x DEO2
-	.pointer/y PEK2 .Screen/y DEO2
+	.pointer/x LDZ2 .Screen/x DEO2
+	.pointer/y LDZ2 .Screen/y DEO2
 	#30 .Screen/color DEO
 
 	( record pointer positions )
-	.Mouse/x DEI2 .pointer/x POK2 .Mouse/y DEI2 .pointer/y POK2
+	.Mouse/x DEI2 .pointer/x STZ2 .Mouse/y DEI2 .pointer/y STZ2
 
 	( draw new cursor )
-	.pointer/sprite PEK2 .Screen/addr DEO2
-	.pointer/x PEK2 .Screen/x DEO2
-	.pointer/y PEK2 .Screen/y DEO2
+	.pointer/sprite LDZ2 .Screen/addr DEO2
+	.pointer/x LDZ2 .Screen/x DEO2
+	.pointer/y LDZ2 .Screen/y DEO2
 	#31 .Screen/color DEO
 
 RTN
 
 @line-rect ( x1* y1* x2* y2* color -- )
 
-	( load ) .color POK .rect/y2 POK2 .rect/x2 POK2 DUP2 .Screen/y DEO2 .rect/y1 POK2 DUP2 .Screen/x DEO2 .rect/x1 POK2
+	( load ) .color STZ .rect/y2 STZ2 .rect/x2 STZ2 DUP2 .Screen/y DEO2 .rect/y1 STZ2 DUP2 .Screen/x DEO2 .rect/x1 STZ2
 	&hor
 		( incr ) .Screen/x DEI2 #0001 ADD2 .Screen/x DEO2
-		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.Screen/x DEI2 .rect/x2 PEK2 LTH2 ,&hor JCN
-	.rect/y1 PEK2 .Screen/y DEO2
+		( draw ) .rect/y1 LDZ2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		( draw ) .rect/y2 LDZ2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.Screen/x DEI2 .rect/x2 LDZ2 LTH2 ,&hor JCN
+	.rect/y1 LDZ2 .Screen/y DEO2
 	&ver
-		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
-		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .color PEK .Screen/color DEO
+		( draw ) .rect/x1 LDZ2 .Screen/x DEO2 .color LDZ .Screen/color DEO
+		( draw ) .rect/x2 LDZ2 .Screen/x DEO2 .color LDZ .Screen/color DEO
 		( incr ) .Screen/y DEI2 #0001 ADD2 .Screen/y DEO2
-		.Screen/y DEI2 .rect/y2 PEK2 #0001 ADD2 LTH2 ,&ver JCN
+		.Screen/y DEI2 .rect/y2 LDZ2 #0001 ADD2 LTH2 ,&ver JCN
 
 RTN
 

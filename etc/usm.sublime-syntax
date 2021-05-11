@@ -18,10 +18,10 @@ contexts:
     - match: '\.(\S+)\sDEO'
       scope:  constant.numeric
       pop: true
-    - match: '\.(\S+)\sPOK2'
+    - match: '\.(\S+)\sSTZ2'
       scope:  constant.numeric
       pop: true
-    - match: '\.(\S+)\sPOK'
+    - match: '\.(\S+)\sSTZ'
       scope:  constant.numeric
       pop: true
     - match: '\.(\S+)\sLDA2'
@@ -37,10 +37,10 @@ contexts:
     - match: '\.(\S+)\sDEI'
       scope:  entity.name.type.typedef
       pop: true
-    - match: '\.(\S+)\sPEK2'
+    - match: '\.(\S+)\sLDZ2'
       scope:  entity.name.type.typedef
       pop: true
-    - match: '\.(\S+)\sPEK'
+    - match: '\.(\S+)\sLDZ'
       scope:  entity.name.type.typedef
       pop: true
     - match: '\.(\S+)\sSTA2'

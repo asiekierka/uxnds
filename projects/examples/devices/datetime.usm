@@ -41,30 +41,30 @@ BRK
 @on-frame ( -> )
 
 	( only draw once per second )
-	( skip ) .DateTime/second DEI .current PEK NEQ #01 JCN [ BRK ]
+	( skip ) .DateTime/second DEI .current LDZ NEQ #01 JCN [ BRK ]
 
-	.DateTime/second DEI .current POK
+	.DateTime/second DEI .current STZ
 
 	( clear )
-	#0080 SCALEX #0080 SCALEY .needles/sx PEK2 .needles/sy PEK2 #00 ;draw-line JSR2
-	#0080 SCALEX #0080 SCALEY .needles/mx PEK2 .needles/my PEK2 #00 ;draw-line JSR2
-	#0080 SCALEX #0080 SCALEY .needles/hx PEK2 .needles/hy PEK2 #00 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/sx LDZ2 .needles/sy LDZ2 #00 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/mx LDZ2 .needles/my LDZ2 #00 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/hx LDZ2 .needles/hy LDZ2 #00 ;draw-line JSR2
 
 	( place )
 	#00 .DateTime/second DEI #0002 MUL2 ;table ADD2 LDA2
-		#00 SWP SCALEY .needles/sy POK2
-		#00 SWP SCALEX .needles/sx POK2
+		#00 SWP SCALEY .needles/sy STZ2
+		#00 SWP SCALEX .needles/sx STZ2
 	#00 .DateTime/minute DEI #0002 MUL2 ;table ADD2 LDA2
-		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY .needles/my POK2
-		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX .needles/mx POK2
+		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEY .needles/my STZ2
+		#00 SWP #0004 DIV2 #0003 MUL2 #0020 ADD2 SCALEX .needles/mx STZ2
 	#00 .DateTime/hour DEI 12HOURS #05 MUL #0002 MUL2 ;table ADD2 LDA2
-		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY .needles/hy POK2
-		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX .needles/hx POK2
+		#00 SWP #0002 DIV2 #0040 ADD2 SCALEY .needles/hy STZ2
+		#00 SWP #0002 DIV2 #0040 ADD2 SCALEX .needles/hx STZ2
 
 	( needles )
-	#0080 SCALEX #0080 SCALEY .needles/sx PEK2 .needles/sy PEK2 #02 ;draw-line JSR2
-	#0080 SCALEX #0080 SCALEY .needles/mx PEK2 .needles/my PEK2 #01 ;draw-line JSR2
-	#0080 SCALEX #0080 SCALEY .needles/hx PEK2 .needles/hy PEK2 #03 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/sx LDZ2 .needles/sy LDZ2 #02 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/mx LDZ2 .needles/my LDZ2 #01 ;draw-line JSR2
+	#0080 SCALEX #0080 SCALEY .needles/hx LDZ2 .needles/hy LDZ2 #03 ;draw-line JSR2
 
 	( circle )
 	#00 #3c
@@ -109,26 +109,26 @@ RTN
 
 @draw-line ( x1 y1 x2 y2 color -- )
 	
-	( load ) .color POK .line/y0 POK2 .line/x0 POK2 .line/y POK2 .line/x POK2
-	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
-	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
-	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
-	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
-	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	( load ) .color STZ .line/y0 STZ2 .line/x0 STZ2 .line/y STZ2 .line/x STZ2
+	.line/x0 LDZ2 .line/x LDZ2 SUB2 ABS2 .line/dx STZ2
+	.line/y0 LDZ2 .line/y LDZ2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy STZ2
+	#ffff #00 .line/x LDZ2 .line/x0 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sx STZ2
+	#ffff #00 .line/y LDZ2 .line/y0 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sy STZ2
+	.line/dx LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
 	&loop
-		.line/x PEK2 .Screen/x DEO2 
-		.line/y PEK2 .Screen/y DEO2 
-		.color PEK .Screen/color DEO
-		[ .line/x PEK2 .line/x0 PEK2 EQU2 ] 
-		[ .line/y PEK2 .line/y0 PEK2 EQU2 ] #0101 EQU2 ,&end JCN
-		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
-		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JCN
-			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
-			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
+		.line/x LDZ2 .Screen/x DEO2 
+		.line/y LDZ2 .Screen/y DEO2 
+		.color LDZ .Screen/color DEO
+		[ .line/x LDZ2 .line/x0 LDZ2 EQU2 ] 
+		[ .line/y LDZ2 .line/y0 LDZ2 EQU2 ] #0101 EQU2 ,&end JCN
+		.line/e1 LDZ2 #0002 MUL2 .line/e2 STZ2
+		.line/e2 LDZ2 .line/dy LDZ2 LTS2 ,&skipy JCN
+			.line/e1 LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
+			.line/x LDZ2 .line/sx LDZ2 ADD2 .line/x STZ2
 		&skipy
-		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JCN
-			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
-			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
+		.line/e2 LDZ2 .line/dx LDZ2 GTS2 ,&skipx JCN
+			.line/e1 LDZ2 .line/dx LDZ2 ADD2 .line/e1 STZ2
+			.line/y LDZ2 .line/sy LDZ2 ADD2 .line/y STZ2
 		&skipx
 		;&loop JMP2
 	&end

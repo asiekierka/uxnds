@@ -32,55 +32,55 @@
 
 	( theme )  #03fd .System/r DEO2 #0ef3 .System/g DEO2 #0bf2 .System/b DEO2
 	( vectors )  ;on-screen .Screen/vector DEO2
-	#01 .fps/current POK
+	#01 .fps/current STZ
 
 	#000c
-	DUP2 .lines/x1 POK2
-	DUP2 .lines/y1 POK2
-	DUP2 .Screen/width DEI2 SWP2 SUB2 #0001 SUB2 .lines/x2 POK2
-	     .Screen/height DEI2 SWP2 SUB2 .lines/y2 POK2
+	DUP2 .lines/x1 STZ2
+	DUP2 .lines/y1 STZ2
+	DUP2 .Screen/width DEI2 SWP2 SUB2 #0001 SUB2 .lines/x2 STZ2
+	     .Screen/height DEI2 SWP2 SUB2 .lines/y2 STZ2
 
-	#02 .neralie/color POK
-	.lines/x1 PEK2 .lines/x2 PEK2
-	OVR2 OVR2 .lines/y1 PEK2 ;h JSR2
-	          .lines/y2 PEK2 ;h JSR2
-	.lines/y1 PEK2 #0001 SUB2 .lines/y2 PEK2 #0001 ADD2
-	OVR2 OVR2 .lines/x1 PEK2 ;v JSR2
-	          .lines/x2 PEK2 ;v JSR2
+	#02 .neralie/color STZ
+	.lines/x1 LDZ2 .lines/x2 LDZ2
+	OVR2 OVR2 .lines/y1 LDZ2 ;h JSR2
+	          .lines/y2 LDZ2 ;h JSR2
+	.lines/y1 LDZ2 #0001 SUB2 .lines/y2 LDZ2 #0001 ADD2
+	OVR2 OVR2 .lines/x1 LDZ2 ;v JSR2
+	          .lines/x2 LDZ2 ;v JSR2
 
 @on-screen
 	;update-fps JSR2
-	#00 .neralie/color POK
+	#00 .neralie/color STZ
 	;neralie-lines JSR2
 	;neralie-calc JSR2
-	#02 .neralie/color POK
+	#02 .neralie/color STZ
 	;arvelie-text JSR2
 	;neralie-text JSR2
 	;neralie-lines JSR2
 	BRK
 
 	#22 .Screen/color DEO
-	#0000 #00 .number/count PEK DUP2 ;h JSR2
-	.number/count PEK #01 ADD .number/count POK
+	#0000 #00 .number/count LDZ DUP2 ;h JSR2
+	.number/count LDZ #01 ADD .number/count STZ
 
 @neralie-calc ( -- )
 	( add up fractions of a pulse, store tenths in n6 )
 	#0120 #00 h MUL2
 	#00c0 #00 m MUL2 ADD2
 	#00f8 #00 s MUL2 ADD2
-	#0271 #00 .fps/next PEK MUL2 #00 .fps/current PEK DIV2 #0008 MUL2 ADD2
-	#01b0 ;modf JSR2 SWP2 #0017 MUL2 #03e8 DIV2 .neralie/n6 POK POP
+	#0271 #00 .fps/next LDZ MUL2 #00 .fps/current LDZ DIV2 #0008 MUL2 ADD2
+	#01b0 ;modf JSR2 SWP2 #0017 MUL2 #03e8 DIV2 .neralie/n6 STZ POP
 
 	( add up units and tens of pulses, store in n5 and n4 )
 	#0042 #00 h MUL2 ADD2
 	#005e #00 m MUL2 ADD2
 	#000b #00 s MUL2 ADD2
-	#000a ;modf JSR2 SWP2 .neralie/n5 POK POP
-	#000a ;modf JSR2 SWP2 .neralie/n4 POK POP
+	#000a ;modf JSR2 SWP2 .neralie/n5 STZ POP
+	#000a ;modf JSR2 SWP2 .neralie/n4 STZ POP
 
 	( add up hundreds of pulses + 10 x beats, store in n0123 )
 	#01a0 #00 h MUL2 ADD2
-	#0006 #00 m MUL2 ADD2 .neralie/n0123 POK2
+	#0006 #00 m MUL2 ADD2 .neralie/n0123 STZ2
 
 	JMP2r
 
@@ -98,14 +98,14 @@
 
 @neralie-text ( -- )
 	.Screen/width DEI2 #0002 DIV2 #0004 SUB2 .Screen/x DEO2
-	.neralie/n0123 PEK2
+	.neralie/n0123 LDZ2
 	#03e8 ;modf JSR2 ,digit JSR
 	#0064 ;modf JSR2 ,digit JSR
 	#000a ;modf JSR2 ,digit JSR
 	           #000b ,digit JSR ( the colon )
 	                 ,digit JSR
-	#00 .neralie/n4 PEK  ,digit JSR
-	#00 .neralie/n5 PEK  ,digit JSR
+	#00 .neralie/n4 LDZ  ,digit JSR
+	#00 .neralie/n5 LDZ  ,digit JSR
 	JMP2r
 
 @letter ( index* -- )
@@ -115,24 +115,24 @@
 @digit ( index* -- )
 	#0008 MUL2 ;font-numbers ADD2 .Screen/addr DEO2
 	&middle
-	.neralie/color PEK #20 ADD .Screen/color DEO
+	.neralie/color LDZ #20 ADD .Screen/color DEO
 	.Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
 	JMP2r
 
 @neralie-lines ( -- )
-	.lines/x2 PEK2 .lines/x1 PEK2 DUP2 .neralie/x POK2 SUB2 .neralie/w POK2
-	.lines/y2 PEK2 .lines/y1 PEK2 DUP2 .neralie/y POK2 SUB2 .neralie/h POK2
+	.lines/x2 LDZ2 .lines/x1 LDZ2 DUP2 .neralie/x STZ2 SUB2 .neralie/w STZ2
+	.lines/y2 LDZ2 .lines/y1 LDZ2 DUP2 .neralie/y STZ2 SUB2 .neralie/h STZ2
 
-	;neralie/n4 SWP POP .neralie/n0123 PEK2
+	;neralie/n4 SWP POP .neralie/n0123 LDZ2
 	DUP2 ;&h JSR2
-	;&next JSR2 #0001 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ,digit JSR
+	;&next JSR2 #0001 .Screen/x DEO2 .neralie/y LDZ2 #0003 SUB2 .Screen/y DEO2 ,digit JSR
 	DUP2 ;&v JSR2
 	#04 ;v/spacing STA
-	.lines/y1 PEK2 #0003 SUB2 .neralie/y PEK2 .neralie/x PEK2 ;v JSR2
+	.lines/y1 LDZ2 #0003 SUB2 .neralie/y LDZ2 .neralie/x LDZ2 ;v JSR2
 	#01 ;v/spacing STA
-	,&next JSR #0001 .Screen/y DEO2 .neralie/x PEK2 #0003 SUB2 .Screen/x DEO2 ;digit JSR2
+	,&next JSR #0001 .Screen/y DEO2 .neralie/x LDZ2 #0003 SUB2 .Screen/x DEO2 ;digit JSR2
 	DUP2 ,&h JSR
-	,&next JSR .Screen/width DEI2 #0009 SUB2 .Screen/x DEO2 .neralie/y PEK2 #0003 SUB2 .Screen/y DEO2 ;digit JSR2
+	,&next JSR .Screen/width DEI2 #0009 SUB2 .Screen/x DEO2 .neralie/y LDZ2 #0003 SUB2 .Screen/y DEO2 ;digit JSR2
 	DUP2 ,&v JSR
 	,&next JSR POP2
 	DUP2 ,&h JSR
@@ -144,25 +144,25 @@
 	&next ( digit-addr number* -- next-digit-addr next-number* prev-digit* )
 	#03e8 ;modf JSR2 STH2 #000a MUL2
 	ROT DUP STH #01 ADD ROT ROT
-	#00 STHr PEK ADD2
+	#00 STHr LDZ ADD2
 	STH2r
 	JMP2r
 
 	&h ( number* -- )
 	,scale JSR
-	.neralie/h PEK2 ;mul2hi JSR2
+	.neralie/h LDZ2 ;mul2hi JSR2
 	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
-	DUP2 .neralie/y PEK2 ADD2 .neralie/y POK2
-	.neralie/h PEK2 SWP2 SUB2 .neralie/h POK2
-	.neralie/x PEK2 DUP2 .neralie/w PEK2 ADD2 .neralie/y PEK2 ,h JMP
+	DUP2 .neralie/y LDZ2 ADD2 .neralie/y STZ2
+	.neralie/h LDZ2 SWP2 SUB2 .neralie/h STZ2
+	.neralie/x LDZ2 DUP2 .neralie/w LDZ2 ADD2 .neralie/y LDZ2 ,h JMP
 
 	&v ( number* -- )
 	,scale JSR
-	.neralie/w PEK2 ;mul2hi JSR2
+	.neralie/w LDZ2 ;mul2hi JSR2
 	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
-	DUP2 .neralie/x PEK2 ADD2 .neralie/x POK2
-	.neralie/w PEK2 SWP2 SUB2 .neralie/w POK2
-	.neralie/y PEK2 DUP2 .neralie/h PEK2 ADD2 .neralie/x PEK2 ,v JMP
+	DUP2 .neralie/x LDZ2 ADD2 .neralie/x STZ2
+	.neralie/w LDZ2 SWP2 SUB2 .neralie/w STZ2
+	.neralie/y LDZ2 DUP2 .neralie/h LDZ2 ADD2 .neralie/x LDZ2 ,v JMP
 
 @scale ( 0..10000* -- 0..65535* )
 	DUP2 #8db8 ;mul2hi JSR2
@@ -171,12 +171,12 @@
 
 @h ( x1* x2* y* -- )
 	.Screen/y DEO2
-	.Screen/x .lines/addr POK
+	.Screen/x .lines/addr STZ
 	,v/draw-line JMP
 
 @v ( y1* y2* x* -- )
 	.Screen/x DEO2
-	.Screen/y .lines/addr POK
+	.Screen/y .lines/addr STZ
 
 	&draw-line ( v1* v2* -- )
 	OVR2 OVR2 LTH2 #01 JCN SWP2
@@ -189,20 +189,20 @@
 	JMP2r
 
 	&keep-going
-	DUP2 .lines/addr PEK DEO2
-	.neralie/color PEK .Screen/color DEO
+	DUP2 .lines/addr LDZ DEO2
+	.neralie/color LDZ .Screen/color DEO
 	,&loop JMP
 
 @update-fps ( -- )
-	.fps/next PEK #01 ADD .fps/next POK
-	s .fps/second PEK NEQ JMP JMP2r
-	s .fps/second POK
-	.fps/next PEK .fps/current POK
+	.fps/next LDZ #01 ADD .fps/next STZ
+	s .fps/second LDZ NEQ JMP JMP2r
+	s .fps/second STZ
+	.fps/next LDZ .fps/current STZ
 
 	( ~fps.next ^print-byte-decimal JSR
 	,strings-fps ^print-string JSR )
 
-	#00 .fps/next POK
+	#00 .fps/next STZ
 	JMP2r
 
 @modf ( dividend* divisor* -- remainder* quotient* )
@@ -229,12 +229,12 @@
 	;mul/bhi STA2 ;mul/ahi STA2
 	#00
 		#00
-			#00 .mul/alo PEK #00 .mul/blo PEK MUL2
+			#00 .mul/alo LDZ #00 .mul/blo LDZ MUL2
 		POP
-		#00 .mul/ahi PEK #00 .mul/blo PEK MUL2 ,&adc JSR
-		#00 .mul/alo PEK #00 .mul/bhi PEK MUL2 ,&adc JSR
+		#00 .mul/ahi LDZ #00 .mul/blo LDZ MUL2 ,&adc JSR
+		#00 .mul/alo LDZ #00 .mul/bhi LDZ MUL2 ,&adc JSR
 	POP
-	#00 .mul/ahi PEK #00 .mul/bhi PEK MUL2 ADD2
+	#00 .mul/ahi LDZ #00 .mul/bhi LDZ MUL2 ADD2
 	JMP2r
 
 	&adc ( 31..24 a* b* -- 31..24 sum* )

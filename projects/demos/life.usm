@@ -55,20 +55,20 @@
 	#07 #05 ;set-cell JSR2
 	#06 #05 ;set-cell JSR2
 
-	.Screen/width DEI2 #0002 // WIDTH TOS -- .anchor/x POK2
-	.Screen/height DEI2 #0002 // HEIGHT TOS -- .anchor/y POK2
+	.Screen/width DEI2 #0002 // WIDTH TOS -- .anchor/x STZ2
+	.Screen/height DEI2 #0002 // HEIGHT TOS -- .anchor/y STZ2
 
-	#01 .world/paused POK
+	#01 .world/paused STZ
 
 BRK
 
 @on-frame ( -> )
 	
 	.Mouse/state DEI #00 = #01 JCN [ BRK ]
-	.world/paused PEK #00 ! #01 JCN [ BRK ]
+	.world/paused LDZ #00 ! #01 JCN [ BRK ]
 
-	( incr frame ) .world/frame PEK INCR [ DUP ] .world/frame POK
-	( reset count ) #0000 .world/count POK2
+	( incr frame ) .world/frame LDZ INCR [ DUP ] .world/frame STZ
+	( reset count ) #0000 .world/count STZ2
 
 	#10 MOD #00 ! #01 JCN [ BRK ] 
 
@@ -94,9 +94,9 @@ BRK
 	;draw-grid JSR2
 
 	( draw cell count )
-	.anchor/x PEK2 .Screen/x DEO2
-	.anchor/y PEK2 HEIGHT #02 * TOS ++ .Screen/y DEO2
-	.world/count PEK2 #22 ;draw-short JSR2
+	.anchor/x LDZ2 .Screen/x DEO2
+	.anchor/y LDZ2 HEIGHT #02 * TOS ++ .Screen/y DEO2
+	.world/count LDZ2 #22 ;draw-short JSR2
 
 BRK
 
@@ -104,29 +104,29 @@ BRK
 	
 	( clear last cursor )
 	;cursor .Screen/addr DEO2 
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	.pointer/x LDZ2 .Screen/x DEO2 
+	.pointer/y LDZ2 .Screen/y DEO2 
 	#30 .Screen/color DEO
 
 	( record pointer positions )
-	.Mouse/x DEI2 .pointer/x POK2 
-	.Mouse/y DEI2 .pointer/y POK2
+	.Mouse/x DEI2 .pointer/x STZ2 
+	.Mouse/y DEI2 .pointer/y STZ2
 
 	( draw new cursor )
-	.pointer/x PEK2 .Screen/x DEO2 
-	.pointer/y PEK2 .Screen/y DEO2 
+	.pointer/x LDZ2 .Screen/x DEO2 
+	.pointer/y LDZ2 .Screen/y DEO2 
 
 	( colorize on state )
 	#32 [ .Mouse/state DEI #00 ! ] + .Screen/color DEO
 
 	.Mouse/state DEI #00 ! #01 JCN [ BRK ]
 
-	.Mouse/x DEI2 DUP2 .anchor/x PEK2 >> ROT ROT .anchor/x PEK2 WIDTH #02 * TOS ++ #0001 ++ << #0101 ==
-	.Mouse/y DEI2 DUP2 .anchor/y PEK2 >> ROT ROT .anchor/y PEK2 HEIGHT #02 * TOS ++ << #0101 ==
+	.Mouse/x DEI2 DUP2 .anchor/x LDZ2 >> ROT ROT .anchor/x LDZ2 WIDTH #02 * TOS ++ #0001 ++ << #0101 ==
+	.Mouse/y DEI2 DUP2 .anchor/y LDZ2 >> ROT ROT .anchor/y LDZ2 HEIGHT #02 * TOS ++ << #0101 ==
 	#0101 == #01 JCN [ BRK ]
 
-	.Mouse/x DEI2 .anchor/x PEK2 SUB2 #02 / TOB
-	.Mouse/y DEI2 .anchor/y PEK2 SUB2 #02 / TOB
+	.Mouse/x DEI2 .anchor/x LDZ2 SUB2 #02 / TOB
+	.Mouse/y DEI2 .anchor/y LDZ2 SUB2 #02 / TOB
 	;set-cell JSR2
 	
 	;draw-grid JSR2
@@ -138,7 +138,7 @@ BRK
 	.Controller/key DEI #00 ! #01 JCN [ BRK ]
 
 	.Controller/key DEI #20 ! ,&no-toggle JCN
-		.world/paused PEK #01 ! .world/paused POK
+		.world/paused LDZ #01 ! .world/paused STZ
 	&no-toggle
 
 BRK
@@ -147,11 +147,11 @@ BRK
 
 	#00 HEIGHT
 	&ver
-		OVR TOS #0002 ** .anchor/y PEK2 ++ .Screen/y DEO2
+		OVR TOS #0002 ** .anchor/y LDZ2 ++ .Screen/y DEO2
 		OVR STH
 		#00 WIDTH
 		&hor
-			OVR TOS #0002 ** .anchor/x PEK2 ++ .Screen/x DEO2
+			OVR TOS #0002 ** .anchor/x LDZ2 ++ .Screen/x DEO2
 			OVR DUPr STHr ,get-cell JSR INCR .Screen/color DEO
 			SWP INCR SWP
 			DUP2 ! ,&hor JCN
@@ -242,7 +242,7 @@ RTN
 	HEIGHT MOD SWP WIDTH MOD SWP
 	WIDTH #08 / TOS ROT TOS ** ROT #08 / TOS ++ [ BANK2 ++ ]
 	( incr count )
-	.world/count PEK2 #0001 ADD2 .world/count POK2
+	.world/count LDZ2 #0001 ADD2 .world/count STZ2
 	( save in buffer )
 	STH2
 	DUP2 POP #08 MOD #01 SWP SFL 

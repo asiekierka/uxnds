@@ -58,23 +58,23 @@ RTN
 RTN
 
 @print-decimal ( short -- )
-	#00 .number/started POK
+	#00 .number/started STZ
 	DUP2 #2710 DIV2 DUP2 ,&digit JSR #2710 MUL2 SUB2
 	DUP2 #03e8 DIV2 DUP2 ,&digit JSR #03e8 MUL2 SUB2
 	DUP2 #0064 DIV2 DUP2 ,&digit JSR #0064 MUL2 SUB2
 	DUP2 #000a DIV2 DUP2 ,&digit JSR #000a MUL2 SUB2
 	                     ,&digit JSR
-	.number/started PEK ,&end JCN
+	.number/started LDZ ,&end JCN
 	LIT '0 .Console/char DEO
 	&end
 RTN
 
 	&digit
 	SWP POP
-	DUP .number/started PEK ORA #02 JCN
+	DUP .number/started LDZ ORA #02 JCN
 	POP JMP2r
 	LIT '0 ADD .Console/char DEO
-	#01 .number/started POK
+	#01 .number/started STZ
 RTN
 
 @char-txt "char: 20 $1

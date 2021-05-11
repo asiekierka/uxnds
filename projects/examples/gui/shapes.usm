@@ -46,23 +46,23 @@ BRK
 
 @line-slow ( x1 y1 x2 y2 color -- )
 	
-	( load ) .color POK -- .line/y0 POK2 -- .line/x0 POK2 .line/y POK2 .line/x POK2
-	.line/x0 PEK2 .line/x PEK2 SUB2 ABS2 .line/dx POK2
-	.line/y0 PEK2 .line/y PEK2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy POK2
-	#ffff #00 .line/x PEK2 .line/x0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sx POK2
-	#ffff #00 .line/y PEK2 .line/y0 PEK2 LTS2 #0002 MUL2 ADD2 .line/sy POK2
-	.line/dx PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
+	( load ) .color STZ -- .line/y0 STZ2 -- .line/x0 STZ2 .line/y STZ2 .line/x STZ2
+	.line/x0 LDZ2 .line/x LDZ2 SUB2 ABS2 .line/dx STZ2
+	.line/y0 LDZ2 .line/y LDZ2 SUB2 ABS2 #0000 SWP2 SUB2 .line/dy STZ2
+	#ffff #00 .line/x LDZ2 .line/x0 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sx STZ2
+	#ffff #00 .line/y LDZ2 .line/y0 LDZ2 LTS2 #0002 MUL2 ADD2 .line/sy STZ2
+	.line/dx LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
 	&loop
-		.line/x PEK2 .Screen/x DEO2 .line/y PEK2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.line/x PEK2 .line/x0 PEK2 EQU2 .line/y PEK2 .line/y0 PEK2 EQU2 #0101 EQU2 ,&end JCN
-		.line/e1 PEK2 #0002 MUL2 .line/e2 POK2
-		.line/e2 PEK2 .line/dy PEK2 LTS2 ,&skipy JCN
-			.line/e1 PEK2 .line/dy PEK2 ADD2 .line/e1 POK2
-			.line/x PEK2 .line/sx PEK2 ADD2 .line/x POK2
+		.line/x LDZ2 .Screen/x DEO2 .line/y LDZ2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.line/x LDZ2 .line/x0 LDZ2 EQU2 .line/y LDZ2 .line/y0 LDZ2 EQU2 #0101 EQU2 ,&end JCN
+		.line/e1 LDZ2 #0002 MUL2 .line/e2 STZ2
+		.line/e2 LDZ2 .line/dy LDZ2 LTS2 ,&skipy JCN
+			.line/e1 LDZ2 .line/dy LDZ2 ADD2 .line/e1 STZ2
+			.line/x LDZ2 .line/sx LDZ2 ADD2 .line/x STZ2
 		&skipy
-		.line/e2 PEK2 .line/dx PEK2 GTS2 ,&skipx JCN
-			.line/e1 PEK2 .line/dx PEK2 ADD2 .line/e1 POK2
-			.line/y PEK2 .line/sy PEK2 ADD2 .line/y POK2
+		.line/e2 LDZ2 .line/dx LDZ2 GTS2 ,&skipx JCN
+			.line/e1 LDZ2 .line/dx LDZ2 ADD2 .line/e1 STZ2
+			.line/y LDZ2 .line/sy LDZ2 ADD2 .line/y STZ2
 		&skipx
 		;&loop JMP2
 
@@ -72,20 +72,20 @@ RTN
 
 @line-rect ( x1 y1 x2 y2 color -- )
 
-	( load ) .color POK DUP2 STH2 -- .rect/y2 POK2 -- .rect/x2 POK2 DUP2 STH2 .rect/y1 POK2 .rect/x1 POK2
+	( load ) .color STZ DUP2 STH2 -- .rect/y2 STZ2 -- .rect/x2 STZ2 DUP2 STH2 .rect/y1 STZ2 .rect/x1 STZ2
 	STH2r STH2r
 	&ver
 		( save ) OVR2 .Screen/y DEO2
-		( draw ) .rect/x1 PEK2 .Screen/x DEO2 .color PEK DUP .Screen/color DEO
-		( draw ) .rect/x2 PEK2 .Screen/x DEO2 .Screen/color DEO
+		( draw ) .rect/x1 LDZ2 .Screen/x DEO2 .color LDZ DUP .Screen/color DEO
+		( draw ) .rect/x2 LDZ2 .Screen/x DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2
-	.rect/x1 PEK2 .rect/x2 PEK2
+	.rect/x1 LDZ2 .rect/x2 LDZ2
 	&hor
 		( save ) OVR2 .Screen/x DEO2
-		( draw ) .rect/y1 PEK2 .Screen/y DEO2 .color PEK DUP .Screen/color DEO
-		( draw ) .rect/y2 PEK2 .Screen/y DEO2 .Screen/color DEO
+		( draw ) .rect/y1 LDZ2 .Screen/y DEO2 .color LDZ DUP .Screen/color DEO
+		( draw ) .rect/y2 LDZ2 .Screen/y DEO2 .Screen/color DEO
 		( incr ) SWP2 ++ SWP2
 		OVR2 OVR2 ++ LTS2 ,&hor JCN
 	POP2 POP2
@@ -94,14 +94,14 @@ RTN
 
 @fill-rect ( x1 y1 x2 y2 color -- )
 	
-	.color POK
+	.color STZ
 	( x1 x2 y1 y2 ) ROT2 SWP2
 	&ver
 		( save ) OVR2 .Screen/y DEO2
 		STH2 STH2 OVR2 OVR2
 		&hor
 			( save ) OVR2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) SWP2 ++ SWP2
 			OVR2 OVR2 LTS2 ,&hor JCN
 		POP2 POP2 STH2r STH2r
@@ -113,44 +113,44 @@ RTN
 
 @draw-circle ( xc yc r color -- )
 
-	( load ) .color POK .circle/r POK2 .circle/yc POK2 .circle/xc POK2
-	#0000 .circle/x POK2 .circle/r PEK2 .circle/y POK2
-	.circle/r PEK2 #0002 MUL2 .circle/d POK2
+	( load ) .color STZ .circle/r STZ2 .circle/yc STZ2 .circle/xc STZ2
+	#0000 .circle/x STZ2 .circle/r LDZ2 .circle/y STZ2
+	.circle/r LDZ2 #0002 MUL2 .circle/d STZ2
 	( draw ) ;&seg JSR2
 	&loop
-		( incr ) .circle/x PEK2 ++ .circle/x POK2
-		.circle/d PEK2 #0001 LTS2 ,&else JCN
-			( decr ) .circle/y PEK2 -- .circle/y POK2
-			.circle/x PEK2 .circle/y PEK2 SUB2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
+		( incr ) .circle/x LDZ2 ++ .circle/x STZ2
+		.circle/d LDZ2 #0001 LTS2 ,&else JCN
+			( decr ) .circle/y LDZ2 -- .circle/y STZ2
+			.circle/x LDZ2 .circle/y LDZ2 SUB2 #0004 MUL2 .circle/d LDZ2 ADD2 .circle/d STZ2
 			;&end JMP2
 		&else
-			.circle/x PEK2 #0004 MUL2 .circle/d PEK2 ADD2 .circle/d POK2
+			.circle/x LDZ2 #0004 MUL2 .circle/d LDZ2 ADD2 .circle/d STZ2
 		&end
 		( draw ) ;&seg JSR2
-		.circle/y PEK2 .circle/x PEK2 -- GTS2 ,&loop JCN
+		.circle/y LDZ2 .circle/x LDZ2 -- GTS2 ,&loop JCN
 	RTN
 	&seg
-		.circle/xc PEK2 .circle/x PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/x PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/x PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/x PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/y PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/y PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/y PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 ADD2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/y PEK2 ADD2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
-		.circle/xc PEK2 .circle/y PEK2 SUB2 .Screen/x DEO2 .circle/yc PEK2 .circle/x PEK2 SUB2 .Screen/y DEO2 .color PEK .Screen/color DEO
+		.circle/xc LDZ2 .circle/x LDZ2 ADD2 .Screen/x DEO2 .circle/yc LDZ2 .circle/y LDZ2 ADD2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/x LDZ2 SUB2 .Screen/x DEO2 .circle/yc LDZ2 .circle/y LDZ2 ADD2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/x LDZ2 ADD2 .Screen/x DEO2 .circle/yc LDZ2 .circle/y LDZ2 SUB2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/x LDZ2 SUB2 .Screen/x DEO2 .circle/yc LDZ2 .circle/y LDZ2 SUB2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/y LDZ2 ADD2 .Screen/x DEO2 .circle/yc LDZ2 .circle/x LDZ2 ADD2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/y LDZ2 SUB2 .Screen/x DEO2 .circle/yc LDZ2 .circle/x LDZ2 ADD2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/y LDZ2 ADD2 .Screen/x DEO2 .circle/yc LDZ2 .circle/x LDZ2 SUB2 .Screen/y DEO2 .color LDZ .Screen/color DEO
+		.circle/xc LDZ2 .circle/y LDZ2 SUB2 .Screen/x DEO2 .circle/yc LDZ2 .circle/x LDZ2 SUB2 .Screen/y DEO2 .color LDZ .Screen/color DEO
 
 RTN
 
 @cover-pattern ( addr color -- )
 	
-	( load ) .color POK .Screen/addr DEO2
+	( load ) .color STZ .Screen/addr DEO2
 	#0000 .Screen/height DEI2
 	&ver
 		( save ) OVR2 .Screen/y DEO2
 		#0000 .Screen/width DEI2
 		&hor
 			( save ) OVR2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2

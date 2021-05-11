@@ -27,30 +27,30 @@ BRK
 @draw ( -- )
 	
 	( find screen center )
-	.Screen/width DEI2 #0002 DIV2 .center/x POK2
-	.Screen/height DEI2 #0002 DIV2 .center/y POK2
+	.Screen/width DEI2 #0002 DIV2 .center/x STZ2
+	.Screen/height DEI2 #0002 DIV2 .center/y STZ2
 
 	( draw ver line )
-	.center/x PEK2 .Screen/x DEO2 #0000 .Screen/y DEO2
+	.center/x LDZ2 .Screen/x DEO2 #0000 .Screen/y DEO2
 	&draw-ver
 		( draw ) #02 .Screen/color DEO
 		( incr ) .Screen/y DEI2 #0002 ADD2 .Screen/y DEO2
 		.Screen/y DEI2 .Screen/height DEI2 LTH2 ,&draw-ver JCN
 
-	.center/x PEK2 .center/y PEK2 #0010 SUB2 #2c ;text1 ;draw-label-left JSR2
-	.center/x PEK2 .center/y PEK2 #2c ;text2 ;draw-label-middle JSR2
-	.center/x PEK2 .center/y PEK2 #0010 ADD2 #2c ;text3 ;draw-label-right JSR2
-	.center/x PEK2 .center/y PEK2 #0020 ADD2 #2c ;text4 ;draw-label-middle JSR2
-	.center/x PEK2 .center/y PEK2 #0030 ADD2 #2c ;text5 ;draw-label-middle JSR2
+	.center/x LDZ2 .center/y LDZ2 #0010 SUB2 #2c ;text1 ;draw-label-left JSR2
+	.center/x LDZ2 .center/y LDZ2 #2c ;text2 ;draw-label-middle JSR2
+	.center/x LDZ2 .center/y LDZ2 #0010 ADD2 #2c ;text3 ;draw-label-right JSR2
+	.center/x LDZ2 .center/y LDZ2 #0020 ADD2 #2c ;text4 ;draw-label-middle JSR2
+	.center/x LDZ2 .center/y LDZ2 #0030 ADD2 #2c ;text5 ;draw-label-middle JSR2
 
 RTN
 
 @draw-label-left ( x y color addr -- )
 	
-	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2 .Screen/x DEO2
-	.label/addr PEK2
+	( load ) .label/addr STZ2 .label/color STZ .Screen/y DEO2 .Screen/x DEO2
+	.label/addr LDZ2
 	&loop
-		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
 		DUP2 LDA #00 NEQ ,&loop JCN
@@ -60,11 +60,11 @@ RTN
 
 @draw-label-middle ( x y color addr -- )
 	
-	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2
-	( align ) .label/addr PEK2 ;get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 .Screen/x DEO2
-	.label/addr PEK2
+	( load ) .label/addr STZ2 .label/color STZ .Screen/y DEO2
+	( align ) .label/addr LDZ2 ;get-text-length JSR2 #0008 MUL2 #0002 DIV2 SUB2 .Screen/x DEO2
+	.label/addr LDZ2
 	&loop
-		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
 		DUP2 LDA #00 NEQ ,&loop JCN
@@ -74,11 +74,11 @@ RTN
 
 @draw-label-right ( x y color addr -- )
 	
-	( load ) .label/addr POK2 .label/color POK .Screen/y DEO2
-	( align ) .label/addr PEK2 ;get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 .Screen/x DEO2
-	.label/addr PEK2
+	( load ) .label/addr STZ2 .label/color STZ .Screen/y DEO2
+	( align ) .label/addr LDZ2 ;get-text-length JSR2 #0008 MUL2 SUB2 #0008 SUB2 .Screen/x DEO2
+	.label/addr LDZ2
 	&loop
-		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color PEK .Screen/color DEO
+		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
 		DUP2 LDA #00 NEQ ,&loop JCN

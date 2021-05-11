@@ -42,14 +42,14 @@ BRK
 
 @draw-icn ( x y width height color addr -- )
 	
-	( load ) .Screen/addr DEO2 .color POK .size/height POK2 .size/width POK2 .position/y POK2 .position/x POK2
-	#0000 .size/height PEK2
+	( load ) .Screen/addr DEO2 .color STZ .size/height STZ2 .size/width STZ2 .position/y STZ2 .position/x STZ2
+	#0000 .size/height LDZ2
 	&ver
-		( save ) OVR2 .position/y PEK2 ADD2 .Screen/y DEO2
-		#0000 .size/width PEK2
+		( save ) OVR2 .position/y LDZ2 ADD2 .Screen/y DEO2
+		#0000 .size/width LDZ2
 		&hor
-			( save ) OVR2 .position/x PEK2 ADD2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( save ) OVR2 .position/x LDZ2 ADD2 .Screen/x DEO2
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) .Screen/addr DEI2 8+ .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JCN
@@ -62,14 +62,14 @@ RTN
 
 @draw-chr ( x y width height color addr -- )
 	
-	( load ) .Screen/addr DEO2 .color POK .size/height POK2 .size/width POK2 .position/y POK2 .position/x POK2
-	#0000 .size/height PEK2
+	( load ) .Screen/addr DEO2 .color STZ .size/height STZ2 .size/width STZ2 .position/y STZ2 .position/x STZ2
+	#0000 .size/height LDZ2
 	&ver
-		( save ) OVR2 .position/y PEK2 ADD2 .Screen/y DEO2
-		#0000 .size/width PEK2
+		( save ) OVR2 .position/y LDZ2 ADD2 .Screen/y DEO2
+		#0000 .size/width LDZ2
 		&hor
-			( save ) OVR2 .position/x PEK2 ADD2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( save ) OVR2 .position/x LDZ2 ADD2 .Screen/x DEO2
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) .Screen/addr DEI2 #0010 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JCN
@@ -82,14 +82,14 @@ RTN
 
 @cover-pattern ( addr color -- )
 	
-	( load ) .color POK .Screen/addr DEO2
+	( load ) .color STZ .Screen/addr DEO2
 	#0000 .Screen/height DEI2
 	&ver
 		( save ) OVR2 .Screen/y DEO2
 		#0000 .Screen/width DEI2
 		&hor
 			( save ) OVR2 .Screen/x DEO2
-			( draw ) .color PEK .Screen/color DEO
+			( draw ) .color LDZ .Screen/color DEO
 			( incr ) SWP2 8+ SWP2
 			OVR2 OVR2 LTH2 ,&hor JCN
 		POP2 POP2
