@@ -334,6 +334,7 @@ BRK
 	#40 SFT ADD #11 ADD
 	.settings/ratio POK
 
+	( release ) #00 .Mouse/state DEO
 	;redraw JSR2
 
 BRK
@@ -555,14 +556,6 @@ RTN
 
 	.editview/x1 PEK2 #0002 SUB2 .editview/y1 PEK2 #0002 SUB2 .editview/x2 PEK2 #0001 ADD2 .editview/y2 PEK2 #0001 ADD2 #03 ;line-rect JSR2
 
-	( grid )
-	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0020 ADD2 #03 ;line-hor JSR2
-	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0040 ADD2 #03 ;line-hor JSR2
-	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0060 ADD2 #03 ;line-hor JSR2
-	.editview/x1 PEK2 #0020 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
-	.editview/x1 PEK2 #0040 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
-	.editview/x1 PEK2 #0060 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
-
 	( position )
 
 	.editview/x1 PEK2 .Screen/x DEO2
@@ -584,21 +577,17 @@ RTN
 			.settings/ratio PEK #04 SFT LTH STHr
 			#0101 NEQ2 ,&outside JNZ 
 
-				( draw zoomed tile )
-				.Screen/x DEI2
-				.Screen/y DEI2
-				#01 ;draw-tile JSR2
-
 				( get tile ) DUP2r STH2r .Screen/addr DEO2
-				( get blending ) .settings/blending PEK
-				( get depth ) .settings/depth PEK #20 MUL
-				( draw ) #20 ADD ADD .Screen/color DEO
+
+				( draw zoomed tile )
+				#01 ;draw-tile JSR2
 
 				( incr ) STH2r #0008 ADD2 STH2
 				,&resume JMP
 			&outside
 			;halftone_icn .Screen/addr DEO2
 			#23 .Screen/color DEO
+			#00 ;draw-tile JSR2
 			&resume
 			( incr ) SWP #01 ADD SWP
 			DUP2 LTH ,&hor JNZ
@@ -608,19 +597,44 @@ RTN
 	POP2
 	POP2r
 
+	( grid )
+	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0020 ADD2 #03 ;line-hor JSR2
+	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0040 ADD2 #03 ;line-hor JSR2
+	.editview/x1 PEK2 DUP2 #0080 ADD2 .editview/y1 PEK2 #0060 ADD2 #03 ;line-hor JSR2
+	.editview/x1 PEK2 #0020 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
+	.editview/x1 PEK2 #0040 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
+	.editview/x1 PEK2 #0060 ADD2 .editview/y1 PEK2 DUP2 #0080 ADD2 #03 ;line-ver JSR2
+
 RTN
 
-@draw-tile ( x* y* color -- )
+@draw-tile ( color -- )
 	
 	( TODO: complete )
 	STH
-	.Screen/y DEO2 
-	.Screen/x DEO2 
 	#00 #20
 	&ver
 		#00 #20
 		&hor
-			DUPr STHr .Screen/color DEO
+
+			( get x,y )
+			SWP2 OVR STH SWP2 OVR STHr
+
+			( get address )
+			.Screen/addr DEI2 
+
+			( after this, ADDR XY )
+			SWP2 SWP STH
+
+
+			( got sprite line )
+			#04 DIV TOS ADD2 LDA
+
+			( get pixel )
+			STHr #04 DIV
+			#07 SWP SUB SFT #01 AND
+
+			.Screen/color DEO
+
 			#0001 .Screen/x DEI2 ADD2 .Screen/x DEO2
 			( incr ) SWP #01 ADD SWP
 			DUP2 LTH ,&hor JNZ
@@ -748,8 +762,6 @@ RTN
 
 @draw-preview ( -- )
 
-	( .preview/x1 PEK2 #0002 SUB2 .preview/y1 PEK2 #0002 SUB2 .preview/x2 PEK2 #0001 ADD2 .preview/y2 PEK2 #0001 ADD2 #03 ;line-rect JSR2 )
-	
 	( stash address )
 	.settings/tile PEK2 DUP2 STH2 .Screen/addr DEO2
 	#00 #04
@@ -768,7 +780,7 @@ RTN
 				( get blending ) .settings/blending PEK
 				( get depth ) .settings/depth PEK #20 MUL
 				( draw ) #20 ADD ADD .Screen/color DEO
-				( incr ) STH2r #0008 ADD2 STH2
+				( incr ) STH2r #0008 [ .settings/depth PEK #08 MUL TOS ADD2 ] ADD2 STH2
 				,&resume JMP
 			&outside
 			;halftone_icn .Screen/addr DEO2
