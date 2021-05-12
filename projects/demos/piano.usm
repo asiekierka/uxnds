@@ -108,7 +108,7 @@ BRK
 		OVR #10 SWP - .Audio0/output DEI #04 SFT < .Screen/color DEO
 		.Screen/y DEI2 #0002 ++ .Screen/y DEO2
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 BRK
@@ -310,7 +310,7 @@ RTN
 	DUP2 #0018 ++
 	&loop
 		( move ) OVR2 .Screen/y DEO2
-		( draw ) DUPr STHr .Screen/color DEO
+		( draw ) STHrk .Screen/color DEO
 		( incr ) .Screen/addr DEI2 #0008 ++ .Screen/addr DEO2  
 		( incr ) SWP2 #0008 ++ SWP2
 		OVR2 OVR2 << ,&loop JCN
@@ -371,7 +371,7 @@ RTN
 		.Screen/x DEI2 #0001 ++ .Screen/x DEO2
 		( draw ) OVR .Audio0/length DEI2 SWP POP > #02 * #01 + .Screen/color DEO
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 	( range )
@@ -390,7 +390,7 @@ RTN
 	.wave-view/y1 LDZ2 DUP2 #0020 ++
 	&loop
 		OVR2 .Screen/y DEO2
-		( draw ) DUPr STHr .Screen/color DEO
+		( draw ) STHrk .Screen/color DEO
 		( incr ) SWP2 #0001 ++ SWP2
 		OVR2 OVR2 << ,&loop JCN
 	POP2 POP2
@@ -414,9 +414,9 @@ RTN
 	( draw ) #21 .Screen/color DEO
 	.Screen/x DEI2 #0004 ++ .Screen/x DEO2
 	.Screen/y DEI2 #0008 ++ .Screen/y DEO2
-	;font-hex #00 DUPr STHr #08 * ++ .Screen/addr DEO2
+	;font-hex #00 STHrk #08 * ++ .Screen/addr DEO2
 	( draw ) #21 .Screen/color DEO
-	.Screen/x DEI2 #0004 -- #00 #00 DUPr STHr ;knob-offsetx ++ LDA ++ .Screen/x DEO2
+	.Screen/x DEI2 #0004 -- #00 #00 STHrk ;knob-offsetx ++ LDA ++ .Screen/x DEO2
 	.Screen/y DEI2 #0010 -- #00 #00 STHr ;knob-offsety ++ LDA ++ .Screen/y DEO2
 	;knob-icns #0020 ++ .Screen/addr DEO2
 	( draw ) #25 .Screen/color DEO
@@ -427,13 +427,13 @@ RTN
 
 	STH SWP 
 	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHrk .Screen/color DEO
 	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHrk .Screen/color DEO
 	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHrk .Screen/color DEO
 	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	( draw ) STHr .Screen/color DEO

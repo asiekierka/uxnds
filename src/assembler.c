@@ -119,6 +119,8 @@ findopcode(char *s)
 				i |= (1 << 5); /* mode: short */
 			else if(s[3 + m] == 'r')
 				i |= (1 << 6); /* mode: return */
+			else if(s[3 + m] == 'k')
+				i |= (1 << 7); /* mode: keep */
 			else
 				return 0; /* failed to match */
 			m++;
