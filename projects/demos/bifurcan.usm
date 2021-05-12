@@ -63,7 +63,7 @@ BRK
 	;draw-cursor JSR2
 
 	.Mouse/state DEI #00 EQU ,&no-touch JCN
-		( incr ) .style LDZ #01 ADD #04 MOD .style STZ
+		( incr ) .style LDZ #01 ADD #03 MOD .style STZ
 		( bg ) ;tiles .style LDZ #10 MUL TOS ADD2 ;cover-pattern JSR2
 		( fg ) ;redraw JSR2
 		( release ) #00 .Mouse/state DEO
@@ -114,7 +114,7 @@ RTN
 		.Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
 		( incr ) SWP #01 ADD SWP 
-		DUP2 LTH ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 	POPr
 
@@ -171,6 +171,4 @@ RTN
 	0718 2040 4080 8080
 	0101 0102 0204 18e0
 	0808 0810 e304 0808
-	0808 0804 e310 0808
-	0000 0000 0000 0001
-	ffff ffff ffff ffff ]
+	0808 0804 e310 0808 ]
