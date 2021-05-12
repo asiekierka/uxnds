@@ -35,9 +35,9 @@ void op_nop(Uxn *u) { (void)u; }
 void op_lit(Uxn *u) { push8(u->src, mempeek8(u->ram.dat, u->ram.ptr++)); }
 void op_pop(Uxn *u) { pop8(u->src); }
 void op_dup(Uxn *u) { Uint8 a = pop8(u->src); push8(u->src, a); push8(u->src, a); }
-void op_swp(Uxn *u) { Uint8 b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, a); }
+void op_swp(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, a); push8(u->src, b); }
 void op_ovr(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b); push8(u->src, a); push8(u->src, b); }
-void op_rot(Uxn *u) { Uint8 c = pop8(u->src), b = pop8(u->src), a = pop8(u->src); push8(u->src, b); push8(u->src, c); push8(u->src, a); }
+void op_rot(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src), c = pop8(u->src); push8(u->src, b); push8(u->src, a); push8(u->src, c); }
 /* Logic */
 void op_equ(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b == a); }
 void op_neq(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b != a); }
@@ -69,9 +69,9 @@ void op_sft(Uxn *u) { Uint8 a = pop8(u->src), b = pop8(u->src); push8(u->src, b 
 void op_lit16(Uxn *u) { push16(u->src, mempeek16(u->ram.dat, u->ram.ptr++)); u->ram.ptr++; }
 void op_pop16(Uxn *u) { pop16(u->src); }
 void op_dup16(Uxn *u) { Uint16 a = pop16(u->src); push16(u->src, a); push16(u->src, a); }
-void op_swp16(Uxn *u) { Uint16 b = pop16(u->src), a = pop16(u->src); push16(u->src, b); push16(u->src, a); }
+void op_swp16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, a); push16(u->src, b); }
 void op_ovr16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push16(u->src, b); push16(u->src, a); push16(u->src, b); }
-void op_rot16(Uxn *u) { Uint16 c = pop16(u->src), b = pop16(u->src), a = pop16(u->src); push16(u->src, b); push16(u->src, c); push16(u->src, a); }
+void op_rot16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src), c = pop16(u->src); push16(u->src, b); push16(u->src, a); push16(u->src, c); }
 /* Logic(16-bits) */
 void op_equ16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b == a); }
 void op_neq16(Uxn *u) { Uint16 a = pop16(u->src), b = pop16(u->src); push8(u->src, b != a); }
