@@ -19,7 +19,7 @@ typedef signed short Sint16;
 #define PAGE_PROGRAM 0x0100
 
 typedef struct {
-	Uint8 ptr, error;
+	Uint8 ptr, kptr, error;
 	Uint8 dat[256];
 } Stack;
 
