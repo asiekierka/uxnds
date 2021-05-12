@@ -54,13 +54,13 @@ BRK
 		.dvd/x LDZ2 [ .dvd/x LDZ2 #0020 ADD2 ]
 		&hor
 			OVR2 .Screen/x DEO2
-			( draw ) DUPr STHr .Screen/color DEO
+			( draw ) STHkr .Screen/color DEO
 			( next ) .Screen/addr DEI2 #0008 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 #0008 ADD2 SWP2
-			OVR2 OVR2 LTH2 ,&hor JCN
+			LTH2k ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 #0008 ADD2 SWP2
-		OVR2 OVR2 LTH2 ,&ver JCN
+		LTH2k ,&ver JCN
 	POP2 POP2
 	( destroy ) POPr
 

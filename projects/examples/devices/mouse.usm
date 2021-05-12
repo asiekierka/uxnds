@@ -73,7 +73,6 @@ BRK
 @draw-cursor ( -- )
 	
 	( clear last cursor )
-	#fff8 .Screen/addr DEO2
 	.pointer/x LDZ2 .Screen/x DEO2
 	.pointer/y LDZ2 .Screen/y DEO2
 	#30 .Screen/color DEO

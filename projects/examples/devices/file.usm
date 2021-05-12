@@ -49,10 +49,10 @@ BRK
 			( draw ) #41 .Screen/color DEO
 			( incr ) .Screen/addr DEI2 #0010 ADD2 .Screen/addr DEO2
 			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JCN
+			LTH2k ,&hor JCN
 		POP2 POP2
 		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JCN
+		LTH2k ,&ver JCN
 	POP2 POP2
 	
 	( save file )
