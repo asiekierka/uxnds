@@ -4,10 +4,7 @@
 )
 
 %RTN { JMP2r }
-%8+ { #0008 ADD2 }
-%2/ { #0002 DIV2 }
 %MOD { DUP2 DIV MUL SUB }
-%INC { #01 ADD }
 %TOS { #00 SWP }
 
 ( devices )
@@ -41,8 +38,8 @@
 	;on-mouse .Mouse/vector DEO2
 
 	( find center )
-	.Screen/width DEI2 2/ .center/x STZ2
-	.Screen/height DEI2 2/ .center/y STZ2
+	.Screen/width DEI2 #0002 DIV2 .center/x STZ2
+	.Screen/height DEI2 #0002 DIV2 .center/y STZ2
 
 	( background ) 
 	;tiles ;cover-pattern JSR2
@@ -66,7 +63,7 @@ BRK
 	;draw-cursor JSR2
 
 	.Mouse/state DEI #00 EQU ,&no-touch JCN
-		( incr ) .style LDZ INC #03 MOD .style STZ
+		( incr ) .style LDZ #01 ADD #04 MOD .style STZ
 		( bg ) ;tiles .style LDZ #10 MUL TOS ADD2 ;cover-pattern JSR2
 		( fg ) ;redraw JSR2
 		( release ) #00 .Mouse/state DEO
@@ -102,7 +99,7 @@ BRK
 
 RTN
 
-@draw-number ( x y n -- )
+@draw-number ( x* y* n -- )
 	
 	STH
 	( save pos ) .anchor/y STZ2 .anchor/x STZ2
@@ -116,14 +113,14 @@ RTN
 		( set style ) .style LDZ #10 MUL TOS ADD2
 		.Screen/addr DEO2
 		( draw ) #21 .Screen/color DEO
-		( incr ) SWP INC SWP 
+		( incr ) SWP #01 ADD SWP 
 		DUP2 LTH ,&loop JCN
 	POP2
 	POPr
 
 RTN
 
-@cover-pattern ( addr -- )
+@cover-pattern ( addr* -- )
 	
 	( load ) .Screen/addr DEO2
 	#0000 .Screen/height DEI2
@@ -133,11 +130,11 @@ RTN
 		&hor
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) #21 .Screen/color DEO
-			( incr ) SWP2 8+ SWP2
-			OVR2 OVR2 LTH2 ,&hor JCN
+			( incr ) SWP2 #0008 ADD2 SWP2
+			LTH2k ,&hor JCN
 		POP2 POP2
-		( incr ) SWP2 8+ SWP2
-		OVR2 OVR2 LTH2 ,&ver JCN
+		( incr ) SWP2 #0008 ADD2 SWP2
+		LTH2k ,&ver JCN
 	POP2 POP2
 
 RTN
@@ -174,4 +171,6 @@ RTN
 	0718 2040 4080 8080
 	0101 0102 0204 18e0
 	0808 0810 e304 0808
-	0808 0804 e310 0808 ]
+	0808 0804 e310 0808
+	0000 0000 0000 0001
+	ffff ffff ffff ffff ]

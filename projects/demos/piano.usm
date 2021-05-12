@@ -5,11 +5,12 @@
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 } 
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }  
 
-%RTN { JMP2r }
-%TOS { #00 SWP }
-%MOD { DUP2 / * - }
-%LTS2  { #8000 ++ SWP2 #8000 ++ >> }
-%GTS2  { #8000 ++ SWP2 #8000 ++ << }
+%RTN  { JMP2r }
+%TOS  { #00 SWP }
+%MOD  { DUP2 / * - }
+%LTS2 { #8000 ++ SWP2 #8000 ++ >> }
+%GTS2 { #8000 ++ SWP2 #8000 ++ << }
+%INCR { SWP #01 + SWP }
 
 %WAVEFORM { #1000 }
 
@@ -107,7 +108,7 @@ BRK
 		.adsr-view/x2 LDZ2 #003a -- #0002 ++ .Screen/x DEO2
 		OVR #10 SWP - .Audio0/output DEI #04 SFT < .Screen/color DEO
 		.Screen/y DEI2 #0002 ++ .Screen/y DEO2
-		( incr ) SWP #01 + SWP
+		( incr ) INCR
 		LTHk ,&loop JCN
 	POP2
 
@@ -116,7 +117,6 @@ BRK
 @on-control ( -> )
 
 	( clear last cursor )
-	#fff8 .Screen/addr DEO2 
 	.pointer/x LDZ2 .Screen/x DEO2 
 	.pointer/y LDZ2 .Screen/y DEO2 
 	#30 .Screen/color DEO
@@ -252,7 +252,7 @@ BRK
 
 @play ( pitch -- )
 	
-	DUP .octave LDZ #0c * + .Audio0/pitch DEO
+	.octave LDZ #0c * + .Audio0/pitch DEO
 
 RTN
 
@@ -313,7 +313,7 @@ RTN
 		( draw ) STHrk .Screen/color DEO
 		( incr ) .Screen/addr DEI2 #0008 ++ .Screen/addr DEO2  
 		( incr ) SWP2 #0008 ++ SWP2
-		OVR2 OVR2 << ,&loop JCN
+		LTH2k ,&loop JCN
 	POP2 POP2 
 	POPr
 
@@ -370,7 +370,7 @@ RTN
 		TOS #0004 // .wave-view/y1 LDZ2 ++ .Screen/y DEO2
 		.Screen/x DEI2 #0001 ++ .Screen/x DEO2
 		( draw ) OVR .Audio0/length DEI2 SWP POP > #02 * #01 + .Screen/color DEO
-		( incr ) SWP #01 + SWP
+		( incr ) INCR
 		LTHk ,&loop JCN
 	POP2
 
@@ -392,7 +392,7 @@ RTN
 		OVR2 .Screen/y DEO2
 		( draw ) STHrk .Screen/color DEO
 		( incr ) SWP2 #0001 ++ SWP2
-		OVR2 OVR2 << ,&loop JCN
+		LTH2k ,&loop JCN
 	POP2 POP2
 	POPr
 
