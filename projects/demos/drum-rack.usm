@@ -56,9 +56,9 @@
 |0100 ( -> )
 	
 	( theme ) 
-	#4ff2 .System/r DEO2 
-	#2f8c .System/g DEO2 
-	#afb6 .System/b DEO2
+	#0fe5 .System/r DEO2 
+	#0fc5 .System/g DEO2 
+	#0f25 .System/b DEO2
 
 	( vectors )
 	;on-control .Controller/vector DEO2
@@ -142,7 +142,7 @@
 		( draw mixer )
 		OVR #04 / ;draw-mixer JSR2
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&draw-pads JCN
+		LTHk ,&draw-pads JCN
 	POP2
 
 	;draw-octave JSR2
@@ -160,7 +160,7 @@ BRK
 		( output ) .Audio0/output STHr #10 * + DEI 
 		;draw-monitor JSR2
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 BRK
@@ -359,7 +359,7 @@ RTN
 		.Screen/x DEI2 #0001 ++ .Screen/x DEO2
 		( draw ) #02 .Screen/color DEO
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 	POP2r
 
@@ -476,7 +476,7 @@ RTN
 		.Screen/x DEI2 #0002 -- .Screen/x DEO2
 		.Screen/y DEI2 #0002 ++ .Screen/y DEO2
 		( incr ) SWP #01 + SWP
-		DUP2 < ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 	POPr
@@ -494,7 +494,7 @@ RTN
 		( draw ) DUPr STHr .Screen/color DEO
 		( incr ) .Screen/addr DEI2 #0008 ++ .Screen/addr DEO2  
 		( incr ) SWP2 #0008 ++ SWP2
-		OVR2 OVR2 << ,&loop JCN
+		LTH2k ,&loop JCN
 	POP2 POP2 
 	POPr
 

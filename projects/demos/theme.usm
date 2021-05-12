@@ -125,7 +125,7 @@ RTN
 	&draw-hor
 		( draw ) #01 .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/x DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-hor JCN
+		LTH2k ,&draw-hor JCN
 	POP2 POP2
 
 	( draw ver line )
@@ -134,7 +134,7 @@ RTN
 	&draw-ver
 		( draw ) #02 .Screen/color DEO
 		( incr ) SWP2 #0002 ADD2 DUP2 .Screen/y DEO2 SWP2
-		OVR2 OVR2 LTH2 ,&draw-ver JCN
+		LTH2k ,&draw-ver JCN
 	POP2 POP2
 
 	( draw blending modes )
@@ -145,7 +145,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel1 JCN
+		LTHk ,&draw-pixel1 JCN
 	POP POP
 	#0018 .Screen/y DEO2
 	#00 #08
@@ -153,7 +153,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #08 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-pixel2 JCN
+		LTHk ,&draw-pixel2 JCN
 	POP POP
 	#0020 .Screen/y DEO2
 	#00 #08
@@ -161,7 +161,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #20 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn1 JCN
+		LTHk ,&draw-icn1 JCN
 	POP POP
 	#0028 .Screen/y DEO2
 	#00 #08
@@ -169,7 +169,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #28 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-icn2 JCN
+		LTHk ,&draw-icn2 JCN
 	POP POP
 	#0030 .Screen/y DEO2
 	#00 #08
@@ -177,7 +177,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #40 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr1 JCN
+		LTHk ,&draw-chr1 JCN
 	POP POP
 	#0038 .Screen/y DEO2
 	#00 #08
@@ -185,7 +185,7 @@ RTN
 		( move ) OVR #08 MUL #00 SWP #0010 ADD2 .Screen/x DEO2
 		( draw ) OVR #48 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&draw-chr2 JCN
+		LTHk ,&draw-chr2 JCN
 	POP POP
 
 RTN
@@ -293,10 +293,10 @@ RTN
 			( save ) OVR2 .Screen/x DEO2
 			( draw ) .color LDZ .Screen/color DEO
 			( incr ) SWP2 #0001 ADD2 SWP2
-			OVR2 OVR2 LTH2 ,&hor JCN
+			LTH2k ,&hor JCN
 		POP2 POP2 STH2r STH2r
 		( incr ) SWP2 #0001 ADD2 SWP2
-		OVR2 OVR2 LTH2 ,&ver JCN
+		LTH2k ,&ver JCN
 	POP2 POP2 POP2 POP2
 
 RTN

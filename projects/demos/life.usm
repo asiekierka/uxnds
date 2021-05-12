@@ -77,7 +77,7 @@ BRK
 	&clear-loop
 		OVR2 #0000 SWP2 STA2
 		SWP2 #0002 ++ SWP2
-		OVR2 OVR2 !! ,&clear-loop JCN
+		NEQ2k ,&clear-loop JCN
 	POP2 POP2
 
 	;run-grid JSR2
@@ -88,7 +88,7 @@ BRK
 		OVR2 DUP2 LDA2 
 		SWP2 #2000 -- STA2
 		SWP2 #0002 ++ SWP2
-		OVR2 OVR2 !! ,&copy-loop JCN
+		NEQ2k ,&copy-loop JCN
 	POP2 POP2
 
 	;draw-grid JSR2
@@ -154,10 +154,10 @@ BRK
 			OVR TOS #0002 ** .anchor/x LDZ2 ++ .Screen/x DEO2
 			OVR DUPr STHr ,get-cell JSR INCR .Screen/color DEO
 			SWP INCR SWP
-			DUP2 ! ,&hor JCN
+			NEQk ,&hor JCN
 		POP2 POPr
 		SWP INCR SWP
-		DUP2 ! ,&ver JCN
+		NEQk ,&ver JCN
 	POP2
 
 RTN
@@ -214,10 +214,10 @@ RTN
 			( state ) STH2r ;get-cell JSR2
 			,run-cell JSR
 			SWP INCR SWP
-			DUP2 ! ,&hor JCN
+			NEQk ,&hor JCN
 		POP2 POPr
 		SWP INCR SWP
-		DUP2 ! ,&ver JCN
+		NEQk ,&ver JCN
 	POP2
 
 RTN 

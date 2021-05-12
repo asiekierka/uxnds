@@ -1,9 +1,6 @@
 ( polycat )
 
 %RTN { JMP2r }
-%+ { ADD2 } %- { SUB2 } 
-%* { MUL2 } %/ { DIV2 } 
-%> { GTH2 }
 
 ( devices )
 
@@ -28,8 +25,8 @@
 	#0caf .System/b DEO2
 
 	( find center )
-	.Screen/width DEI2 #0002 / #0008 - .cat/x STZ2
-	.Screen/height DEI2 #0004 / #0003 * #0018 - .cat/y STZ2
+	.Screen/width DEI2 #0002 DIV2 #0008 SUB2 .cat/x STZ2
+	.Screen/height DEI2 #0004 DIV2 #0003 MUL2 #0018 SUB2 .cat/y STZ2
 
 	( vectors )
 	;on-mouse .Mouse/vector DEO2
@@ -44,8 +41,8 @@ BRK
 	
 	;draw-cursor JSR2
 
-	.Mouse/x DEI2 .cat/x LDZ2 > #20 MUL
-	.Mouse/y DEI2 .cat/y LDZ2 > #40 MUL
+	.Mouse/x DEI2 .cat/x LDZ2 GTH2 #20 MUL
+	.Mouse/y DEI2 .cat/y LDZ2 GTH2 #40 MUL
 		ADD #00 SWP ;draw-eye JSR2
 
 BRK
@@ -67,11 +64,11 @@ BRK
 
 	( ears )
 	.cat/y LDZ2 .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 - .Screen/x DEO2
+	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
 	;ears .Screen/addr DEO2
 	#41 .Screen/color DEO
 	STH2r .Screen/x DEO2
-	;ears #0010 + .Screen/addr DEO2
+	;ears #0010 ADD2 .Screen/addr DEO2
 	#41 .Screen/color DEO
 
 	#0000 ,draw-eye JSR
@@ -81,24 +78,24 @@ RTN
 
 @draw-eye ( quad* -- )
 	
-	.cat/y LDZ2 #0008 + .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 - .Screen/x DEO2
-	DUP2 ;eye + .Screen/addr DEO2
+	.cat/y LDZ2 #0008 ADD2 .Screen/y DEO2
+	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
+	DUP2 ;eye ADD2 .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 	STH2r .Screen/x DEO2
-	;eye #0010 + + .Screen/addr DEO2
+	;eye #0010 ADD2 ADD2 .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 
 RTN
 
 @draw-tail ( frame* -- )
 
-	.cat/y LDZ2 #0010 + .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 - .Screen/x DEO2
+	.cat/y LDZ2 #0010 ADD2 .Screen/y DEO2
+	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
 	;body .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 	STH2r .Screen/x DEO2
-	#0010 * ;body #0010 + + .Screen/addr DEO2
+	#0010 MUL2 ;body #0010 ADD2 ADD2 .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 
 RTN
@@ -126,17 +123,17 @@ RTN
 
 @draw-ground ( -- )
 
-	.cat/y LDZ2 #0018 + .Screen/y DEO2
-	.cat/x LDZ2 #0010 - .Screen/x DEO2
+	.cat/y LDZ2 #0018 ADD2 .Screen/y DEO2
+	.cat/x LDZ2 #0010 SUB2 .Screen/x DEO2
 	;ground .Screen/addr DEO2
 
 	#00 #10
 	&loop
 		( draw ) #21 .Screen/color DEO
-		( sety ) .Screen/addr DEI2 #0008 + .Screen/addr DEO2
-		( setx ) .Screen/x DEI2 #0008 + .Screen/x DEO2
+		( sety ) .Screen/addr DEI2 #0008 ADD2 .Screen/addr DEO2
+		( setx ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 RTN
