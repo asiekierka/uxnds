@@ -15,7 +15,7 @@ clang-format -i src/debugger.c
 
 echo "Cleaning.."
 rm -f ./bin/uxnasm
-rm -f ./bin/emulator
+rm -f ./bin/uxnemu
 rm -f ./bin/debugger
 rm -f ./bin/boot.rom
 
@@ -25,12 +25,20 @@ if [ "${1}" = '--debug' ];
 then
 	echo "[debug]"
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/assembler.c -o bin/uxnasm
-	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/devices/ppu.c src/devices/apu.c src/devices/mpu.c src/emulator.c -L/usr/local/lib -lSDL2 -lportmidi -o bin/emulator
+	cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/devices/ppu.c src/devices/apu.c src/devices/mpu.c src/emulator.c -L/usr/local/lib -lSDL2 -lportmidi -o bin/uxnemu
     cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined src/uxn.c src/debugger.c -o bin/debugger
 else
 	cc src/assembler.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/uxnasm
 	cc src/uxn.c src/debugger.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -o bin/debugger
-	cc src/uxn.c src/devices/ppu.c src/devices/apu.c src/devices/mpu.c src/emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -lportmidi -o bin/emulator
+	cc src/uxn.c src/devices/ppu.c src/devices/apu.c src/devices/mpu.c src/emulator.c -std=c89 -Os -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -lportmidi -o bin/uxnemu
+fi
+
+echo "Installing.."
+if [ -d "$HOME/bin" ] && [ -e ./bin/uxnemu ] && [ -e ./bin/uxnasm ]
+then
+	cp ./bin/uxnemu $HOME/bin
+	cp ./bin/uxnasm $HOME/bin
+    echo "Installed in $HOME/bin" 
 fi
 
 echo "Assembling.."
@@ -42,7 +50,7 @@ then
 	echo "[cli]"
 	./bin/debugger bin/boot.rom
 else
-	./bin/emulator bin/boot.rom
+	./bin/uxnemu bin/boot.rom
 fi
 
 echo "Done."
