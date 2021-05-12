@@ -20,7 +20,7 @@
 
 	&filename
 		( "test.usm 00 )
-		"projects/software/noodle.usm 00
+		"projects/demos/piano.usm 00
 
 @asma-print-error ( -- )
 	;asma/error LDA2 .Console/string DEO2
@@ -207,6 +207,7 @@
 
 %asma-SHORT-FLAG { #20 }
 %asma-RETURN-FLAG { #40 }
+%asma-KEEP-FLAG { #80 }
 
 @asma-parse-opcode ( -- byte 00 if valid opcode
                      OR 01 otherwise )
@@ -237,10 +238,14 @@
 	POP asma-SHORT-FLAG ORA ,&loop JMP
 
 	&not-two
-	LIT 'r NEQ ,&not-return JCN
-	asma-RETURN-FLAG ORA ,&loop JMP
+	DUP LIT 'r NEQ ,&not-return JCN
+	POP asma-RETURN-FLAG ORA ,&loop JMP
 
-	&not-return ( 00 byte / end* )
+	&not-return
+	LIT 'k NEQ ,&not-keep JCN
+	asma-KEEP-FLAG ORA ,&loop JMP
+
+	&not-keep ( 00 byte / end* )
 	&not-found ( incoming-ptr* / end* )
 	POP2r
 	&too-short ( token* / )
