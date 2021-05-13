@@ -42,8 +42,8 @@
 	OVR2 .File/name DEO2
 	DUP2 .File/offset DEO2
 	#0100 .File/length DEO2
-	#fe00 DUP2 DUP2 .File/load DEO2
-	.File/success DEI2 DUP2 ORA ,&not-end JCN
+	#fe00 DUP2k .File/load DEO2
+	.File/success DEI2 ORAk ,&not-end JCN
 	POP2 POP2
 	&error
 	POP2 POP2 POP2
@@ -71,7 +71,7 @@
 	JMP2r
 
 @asma-assemble-chunk ( ptr* len* -- assembled-up-to-ptr* )
-	OVR2 ADD2 #0001 SUB2 SWP2 DUP2 STH2
+	OVR2 ADD2 #0001 SUB2 SWP2 STH2k
 	,&loop JMP
 
 	&next-char-pop
@@ -80,7 +80,7 @@
 	#0001 ADD2
 	&loop ( last-ptr* ptr* / start-of-token* )
 	OVR2 OVR2 LTH2 ,&end JCN
-	DUP2 LDA ( last-ptr* ptr* char / start-of-token* )
+	LDAk ( last-ptr* ptr* char / start-of-token* )
 	DUP #20 GTH ,&next-char-pop JCN
 
 	#00 OVR2 ( last-ptr* ptr* char 00 ptr* / start-of-token* )
@@ -108,21 +108,21 @@
 	DUP2 .Console/string DEO2 #0a .Console/char DEO
 	DUP2 ;asma/token STA2
 	DUP2 ;asma/orig-token STA2
-	DUP2 LDA ,&not-empty JCN
+	LDAk ,&not-empty JCN
 	POP2
 	JMP2r
 
 	&not-empty ( token* / )
 	( truncate to one char long )
 	#0001 ADD2 ( end* / )
-	DUP2 STH2 DUP2r LDAr ( end* / end* char )
-	DUP2 STH2 ( end* / end* char end* )
+	STH2k LDAkr ( end* / end* char )
+	STH2k ( end* / end* char end* )
 	LITr 00 STH2 ( / end* char end* 00 end* )
 	STAr ( / end* char end* )
 
 	( find lowest set bit of assembler/state
 	  in C, this would be i & -i )
-	#00 ;asma/state LDA DUP2 SUB AND ( tree-offset* / end* )
+	#00 ;asma/state LDA SUBk AND ( tree-offset* / end* )
 	DUP2 ;&first-char-trees ADD2 ( tree-offset* incoming-ptr* / end* )
 	;asma-traverse-tree JSR2
 
@@ -172,7 +172,7 @@
 	LIT2r 0000
 
 	&loop
-	DUP2 LDA
+	LDAk
 	DUP ,&not-end JCN
 	POP POP2
 	STH2r ROT #01 ADD #03 MUL
@@ -195,7 +195,7 @@
 	LITr 00
 
 	&loop
-	DUP2 LDA
+	LDAk
 	,&not-end JCN
 	POP2 STHr
 	JMP2r
@@ -216,8 +216,8 @@
 
 	( truncate to three chars long )
 	#0003 ADD2 ( end* / )
-	DUP2 STH2 DUP2r LDAr ( end* / end* char )
-	DUP2 STH2 ( end* / end* char end* )
+	STH2k LDAkr ( end* / end* char )
+	STH2k ( end* / end* char end* )
 	LITr 00 STH2 ( / end* char end* 00 end* )
 	STAr ( / end* char end* )
 
@@ -227,7 +227,7 @@
 
 	;asma-opcodes/_disasm SUB2 #0003 SFT2 ( 00 byte / end* )
 	&loop
-	DUP2r LDAr STHr LIT2r 0001 ADD2r ( 00 byte char / end* )
+	LDAkr STHr LIT2r 0001 ADD2r ( 00 byte char / end* )
 	DUP ,&not-end JCN
 	POP POP2r
 	SWP
@@ -278,7 +278,7 @@
 	,asma-append-heap-byte JMP ( tail call )
 
 @asma-append-heap-string ( string* -- )
-	DUP2 LDA
+	LDAk
 	DUP ,asma-append-heap-byte JSR
 	,&keep-going JCN
 	POP2 JMP2r
@@ -298,11 +298,11 @@
 	#0a .Console/char DEO )
 
 	&loop ( incoming-ptr* )
-	DUP2 LDA2 ORA ,&valid-node JCN
+	LDA2k ORA ,&valid-node JCN
 	#01 JMP2r
 
 	&valid-node
-	LDA2 DUP2 STH2
+	LDA2 STH2k
 	#0004 ADD2 ,asma-strcmp-tree JSR
 	DUP ,&nomatch JCN
 	POP2r JMP2r
@@ -319,8 +319,8 @@
 	;asma/token LDA2 STH2
 
 	&loop ( node-key* / token* )
-	DUP2 #0001 ADD2 SWP2 LDA DUP2r LDAr STHr
-	DUP2 ORA ,&not-end JCN
+	DUP2 #0001 ADD2 SWP2 LDA LDAkr STHr
+	ORAk ,&not-end JCN
 
 	( end of C strings, match found )
 	POP2r POP
@@ -447,7 +447,7 @@
 	;asma/token LDA2
 
 	&loop
-	DUP2 LDA
+	LDAk
 	DUP ,&not-end JCN
 
 	POP POP2
@@ -495,13 +495,13 @@
 	JMP2r
 
 @asma-addr-helper ( -- addr* )
-	;asma/token LDA2 DUP2 LDA #26 NEQ ,&not-local JCN
+	;asma/token LDA2 LDAk #26 NEQ ,&not-local JCN
 	#0001 ADD2 ;asma/token STA2
 	;asma/scope-addr LDA2 ;asma-trees/scope LDA2
 	,&final-lookup JMP
 
 	&not-local ( token* )
-	DUP2 LDA
+	LDAk
 	DUP ,&not-end JCN
 	POP POP2
 	#0000 ;asma-trees/labels
@@ -519,7 +519,7 @@
 	STHr ,&not-found JCN
 	( token* binary-ptr* )
 	#0001 ADD2 ;asma/token STA2
-	DUP2 LDA2 SWP2 #0002 ADD2
+	LDA2k SWP2 #0002 ADD2
 
 	&final-lookup ( addr-offset* incoming-ptr* )
 	;asma-traverse-tree JSR2 ,&not-found JCN
@@ -574,13 +574,13 @@
 	;asma-trees/macros ;asma-traverse-tree JSR2 ,&not-macro JCN
 
 	&macro-loop
-	DUP2 LDA ,&keep-going JCN
+	LDAk ,&keep-going JCN
 	&error
 	POP2
 	JMP2r
 
 	&keep-going
-	DUP2 DUP2 ;asma-strlen JSR2 #00 SWP #0001 ADD2 ADD2
+	DUP2k ;asma-strlen JSR2 #00 SWP #0001 ADD2 ADD2
 	SWP2 ;asma-assemble-token JSR2 asma-IF-ERROR ,&error JCN
 	,&macro-loop JMP
 
