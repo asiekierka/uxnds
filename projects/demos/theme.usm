@@ -70,7 +70,7 @@ BRK
 	
 	;draw-cursor JSR2
 
-	.Mouse/state DEI #00 NEQ #01 JCN [ BRK ]
+	.Mouse/state DEI #01 JCN [ BRK ]
 
 	.Mouse/y DEI2 .window/y1 LDZ2 SUB2 STEP8
 	DUP2 #0010 NEQ2 ,&no-touch-red JCN
@@ -330,7 +330,7 @@ RTN
 		( draw ) STHkr .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2 POPr
 
 RTN

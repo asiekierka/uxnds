@@ -136,7 +136,7 @@ BRK
 			.Mouse/x DEI2 .cursor/dx STZ2
 			.Mouse/y DEI2 .cursor/dy STZ2
 		&no-touch-ondown
-		.Mouse/state DEI #00 NEQ ,&no-touch-onup JCN
+		.Mouse/state DEI ,&no-touch-onup JCN
 			( on up )
 			.brush/tool LDZ #02 NEQ ,&no-touch-line JCN
 				.cursor/dx LDZ2 .canvas/x1 LDZ2 SUB2 .cursor/dy LDZ2 .canvas/y1 LDZ2 SUB2 .Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-line JSR2
@@ -153,7 +153,7 @@ BRK
 
 		( drag )
 		.Controller/button DEI #02 NEQ ;&no-drag JCN2
-			.brush/drag LDZ #00 NEQ ,&no-drag-start JCN
+			.brush/drag LDZ ,&no-drag-start JCN
 				.canvas/x1 LDZ2 .origin/x1 STZ2
 				.canvas/y1 LDZ2 .origin/y1 STZ2
 				.canvas/x2 LDZ2 .origin/x2 STZ2
@@ -205,7 +205,7 @@ BRK
 			( clear ) .canvas/x1 LDZ2 #0002 SUB2 .canvas/y1 LDZ2 #0002 SUB2 .canvas/x2 LDZ2 #0002 ADD2 .canvas/y2 LDZ2 #0002 ADD2 #00 ;fill-rect JSR2
 			;draw-background JSR2
 			.Mouse/x DEI2 .viewpane/x1 LDZ2 SUB2 8/ SWP POP
-			DUP #00 NEQ ,&no-incwidth JCN
+			DUP ,&no-incwidth JCN
 				.canvas/w LDZ2 ++ .canvas/w STZ2
 			&no-incwidth
 			DUP #01 NEQ ,&no-decwidth JCN
@@ -230,7 +230,7 @@ BRK
 			( set cursor operation )
 			;add-pixel .Mouse/state DEI #01 EQU ;&no-oper JCN2 POP2 ;remove-pixel &no-oper .brush/oper STZ2
 
-			.brush/tool LDZ #00 NEQ ,&no-touch-pen JCN
+			.brush/tool LDZ ,&no-touch-pen JCN
 				.cursor/x0 LDZ2 .canvas/x1 LDZ2 SUB2 .cursor/y0 LDZ2 .canvas/y1 LDZ2 SUB2 .Mouse/x DEI2 .canvas/x1 LDZ2 SUB2 .Mouse/y DEI2 .canvas/y1 LDZ2 SUB2 ;paint-line JSR2
 				;&touch-end JMP2
 			&no-touch-pen
@@ -254,7 +254,7 @@ BRK
 		( background interface )
 		.Mouse/y DEI2 STEP8 .Screen/height DEI2 #0010 SUB2 NEQ2 ,&no-touch-background JCN
 			.Mouse/x DEI2 .Screen/width DEI2 #0028 SUB2 SUB2 8/ SWP POP
-			DUP #00 NEQ ,&no-eye-button JCN
+			DUP ,&no-eye-button JCN
 				;present JSR2
 				( release ) #00 .Mouse/state DEO
 			&no-eye-button
@@ -388,7 +388,7 @@ RTN
 	.document/presentation LDZ #00 EQU .document/presentation STZ
 
 	.document/presentation LDZ
-	DUP #00 NEQ ,&skip0 JCN
+	DUP ,&skip0 JCN
 		.theme/r0 LDZ2 .System/r DEO2 .theme/g0 LDZ2 .System/g DEO2 .theme/b0 LDZ2 .System/b DEO2
 	&skip0
 	DUP #01 NEQ ,&skip1 JCN
@@ -514,7 +514,7 @@ RTN
 
 @patternize ( -- )
 
-	.brush/patt LDZ #00 NEQ ,&noplain JCN
+	.brush/patt LDZ ,&noplain JCN
 		#01 RTN &noplain
 
 	.brush/patt LDZ #01 NEQ ,&notone1 JCN
@@ -856,7 +856,7 @@ RTN
 		( draw ) .color LDZ #20 ADD .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		( loop ) DUP2 LDA #00 NEQ ,&loop JCN
+		( loop ) DUP2 LDA ,&loop JCN
 	POP2
 
 RTN
@@ -889,7 +889,7 @@ RTN
 		( copy src->dst ) OVR2 OVR2 SWP2 LDA ROT ROT STA
 		( incr dst ) ++
 		( incr src ) SWP2 ++ SWP2
-		OVR2 LDA #00 NEQ ,&loop JCN
+		OVR2 LDA ,&loop JCN
 	#00 ROT ROT STA POP2
 	
 RTN

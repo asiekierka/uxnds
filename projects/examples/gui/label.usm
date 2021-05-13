@@ -53,7 +53,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2
 
 RTN
@@ -67,7 +67,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2
 
 RTN
@@ -81,7 +81,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP #0008 MUL2 ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) #0001 ADD2
 		( incr ) .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2
 
 RTN
@@ -91,7 +91,7 @@ RTN
 	#0000 ( counter )
 	&loop
 		( incr ) #0001 ADD2 OVR2 OVR2 ADD2
-		LDA #00 NEQ ,&loop JCN
+		LDA ,&loop JCN
 	SWP2 POP2
 
 RTN

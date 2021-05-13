@@ -79,7 +79,7 @@ BRK
 	
 	;move-head JSR2
 	;draw-vu JSR2
-	.head/pos LDZ #08 MOD #00 NEQ ,&skip JCN
+	.head/pos LDZ #08 MOD ,&skip JCN
 		;bang JSR2
 	&skip
 
@@ -159,7 +159,7 @@ BRK
 @touch-ctl ( -- )
 	
 	.Mouse/x DEI2 .ctlframe/x1 LDZ2 SUB2 8- 8/ SWP POP #02 DIV
-	DUP #00 NEQ ,&no-a JCN
+	DUP ,&no-a JCN
 		.Audio0/adsr .track/active LDZ #10 MUL ADD DEI
 		#10 .Mouse/state DEI #10 EQU #e0 MUL ADD ADD
 		.Audio0/adsr .track/active LDZ #10 MUL ADD DEO &no-a
@@ -279,7 +279,7 @@ RTN
 	;font_hex .Screen/addr DEO2
 	#0000 #0100
 	&loop
-		OVR2 SWP POP #02 DIV #0f AND #00 NEQ ,&skip JCN
+		OVR2 SWP POP #02 DIV #0f AND ,&skip JCN
 			OVR2 .trkframe/x1 LDZ2 ADD2 .Screen/x DEO2
 			.trkframe/y1 LDZ2 #0010 SUB2 .Screen/y DEO2
 			#22 .Screen/color DEO
@@ -456,7 +456,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP 8* ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2
 
 RTN

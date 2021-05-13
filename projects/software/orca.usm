@@ -304,7 +304,7 @@ RTN
 	
 	STH
 	( limit )
-	DUP #00 NEQ ,&not-edge JCN
+	DUP ,&not-edge JCN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
@@ -373,7 +373,7 @@ RTN
 
 	STH
 	( limit )
-	OVR #00 NEQ ,&not-edge JCN
+	OVR ,&not-edge JCN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )

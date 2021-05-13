@@ -237,7 +237,7 @@ BRK
 	;document/body ;document/eof STA2
 	&loop
 		( incr ) ;document/eof LDA2 ++ ;document/eof STA2
-	;document/eof LDA2 LDA #00 NEQ ,&loop JCN
+	;document/eof LDA2 LDA ,&loop JCN
 
 RTN
 
@@ -305,7 +305,7 @@ RTN
 		.selection/from LDZ2 -- LDA #0a EQU RTN?
 		.selection/from LDZ2 -- LDA #0d EQU RTN?
 		( decr ) .selection/from LDZ2 DUP2 .selection/to STZ2 -- .selection/from STZ2
-	.selection/from LDZ2 LDA #00 NEQ ,&loop JCN
+	.selection/from LDZ2 LDA ,&loop JCN
 	( clamp at document body )
 	.selection/from LDZ2 ;document/body GTH2 RTN?
 	;document/body DUP2 .selection/from STZ2 ++ .selection/to STZ2
@@ -318,7 +318,7 @@ RTN
 		.selection/from LDZ2 LDA #0a EQU RTN?
 		.selection/from LDZ2 LDA #0d EQU RTN?
 		( incr ) .selection/from LDZ2 ++ DUP2 ++ .selection/to STZ2 .selection/from STZ2
-		.selection/from LDZ2 LDA #00 NEQ ,&loop JCN
+		.selection/from LDZ2 LDA ,&loop JCN
 	( clamp at document body )
 	.selection/from LDZ2 ;document/eof LTH2 RTN?
 	;document/eof -- DUP2 .selection/from STZ2 ++ .selection/to STZ2
@@ -375,7 +375,7 @@ RTN
 			( incr ) .pt/y LDZ2 ++ .pt/y STZ2
 		&no-space
 		( incr ) .j LDZ2 ++ .j STZ2
-	.j LDZ2 LDA #00 NEQ ,&loop JCN
+	.j LDZ2 LDA ,&loop JCN
 	&end
 	( return ) .j LDZ2
 
@@ -441,7 +441,7 @@ RTN
 		&no-reached
 		( incr ) .pt/x LDZ2 ++ .pt/x STZ2
 		( incr ) .selection/from LDZ2 ++ .selection/from STZ2
-	.selection/from LDZ2 LDA #00 NEQ ,&loop JCN
+	.selection/from LDZ2 LDA ,&loop JCN
 
 RTN
 
@@ -522,7 +522,7 @@ RTN
 		.textarea/addr LDZ2 LDA #0a NEQ .textarea/addr LDZ2 LDA #0d NEQ #0101 EQU2 ,&no-break JCN
 			( incr ) .j LDZ2 ++ .j STZ2 &no-break
 		( incr ) .textarea/addr LDZ2 ++ .textarea/addr STZ2
-	.textarea/addr LDZ2 LDA #00 NEQ ,&find-offset JCN
+	.textarea/addr LDZ2 LDA ,&find-offset JCN
 	&find-offset-end
 
 	#0018 .Screen/x DEO2 #0000 .Screen/y DEO2
@@ -575,7 +575,7 @@ RTN
 		( incr ) .i LDZ2 ++ .i STZ2
 		( incr ) .Screen/x DEI2 #0007 ADD2 .Screen/x DEO2
 
-	.i LDZ2 LDA #00 NEQ ;&loop JCN2
+	.i LDZ2 LDA ;&loop JCN2
 
 	&end
 
@@ -619,7 +619,7 @@ RTN
 		( draw ) DUP2 LDA #00 SWP #20 SUB 8* ;font ADD2 .Screen/addr DEO2 .label/color LDZ .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
-		DUP2 LDA #00 NEQ ,&loop JCN
+		DUP2 LDA ,&loop JCN
 	POP2
 	( selection )
 	.selection/from LDZ2 ;document/body SUB2 ;draw-short JSR2

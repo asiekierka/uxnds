@@ -39,7 +39,7 @@ BRK
 	.Mouse/state DEI #00 NEQ .pointer/state LDZ #00 EQU #0101 EQU2 ,on-mouse-down JCN
 
 	( on drag )
-	.Mouse/state DEI #00 NEQ ,on-mouse-drag JCN
+	.Mouse/state DEI ,on-mouse-drag JCN
 	.Mouse/state DEI .pointer/state STZ
 
 BRK 

@@ -27,7 +27,7 @@ BRK
 
 @on-button ( -> )
 	
-	( skip ) .Controller/key DEI #00 NEQ #01 JCN [ BRK ] 
+	( skip ) .Controller/key DEI #01 JCN [ BRK ] 
 
 	.Controller/key DEI #0d NEQ ,&no-return JCN 
 		( draw ) #20 .Screen/color DEO

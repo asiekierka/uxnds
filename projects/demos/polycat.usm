@@ -50,7 +50,7 @@ BRK
 @on-frame ( -> )
 
 	.cat/timer LDZ #01 ADD [ DUP ] .cat/timer STZ
-		DUP #00 NEQ ,&skip0 JCN #0000 ;draw-tail JSR2 &skip0
+		DUP ,&skip0 JCN #0000 ;draw-tail JSR2 &skip0
 		DUP #10 NEQ ,&skip1 JCN #0001 ;draw-tail JSR2 &skip1
 		DUP #20 NEQ ,&skip2 JCN #0002 ;draw-tail JSR2 &skip2
 		DUP #30 NEQ ,&skip3 JCN #0003 ;draw-tail JSR2 &skip3
