@@ -34,19 +34,15 @@ Read more in the [Uxambly Guide](https://wiki.xxiivv.com/site/uxambly.html).
 
 |0100 ( -> )
 	
-	;hello-word ,print JSR
+	,hello-word 
+
+	&loop
+		( send ) LDRk .Console/char DEO
+		( incr ) #01 ADD
+		( loop ) DUP ,&loop JCN
+	POP
 	
 BRK
-
-@print ( addr* -- )
-	
-	&loop
-		( send ) DUP2 LDA .Console/char DEO
-		( incr ) #0001 ADD2
-		( loop ) DUP2 LDA #00 NEQ ,&loop JCN
-	POP2
-
-RTN
 
 @hello-word "hello 20 "World!
 ```
