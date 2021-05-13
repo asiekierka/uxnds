@@ -9,7 +9,8 @@
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
 
-%INCR { #01 + }   %DECR { #01 - }
+%INCR { SWP #01 + SWP }
+%DECR { SWP #01 - SWP }
 %TOS  { #00 SWP } %TOB  { SWP POP }
 %RTN  { JMP2r }   %MOD  { DUP2 / * - }
 %SFL  { #40 SFT SFT }
@@ -18,6 +19,7 @@
 %BANK1 { #8000 } %BANK2 { #a000 }
 
 %GET-SIZE { WIDTH TOS #0008 // HEIGHT TOS ** }
+%GET-ITERATORS { SWP2k POP SWP POP }
 
 ( devices )
 
@@ -67,10 +69,10 @@ BRK
 	.Mouse/state DEI #00 = #01 JCN [ BRK ]
 	.world/paused LDZ #00 ! #01 JCN [ BRK ]
 
-	( incr frame ) .world/frame LDZ INCR [ DUP ] .world/frame STZ
+	( incr frame ) .world/frame LDZ #01 + [ DUP ] .world/frame STZ
 	( reset count ) #0000 .world/count STZ2
 
-	#10 MOD #00 ! #01 JCN [ BRK ] 
+	#02 MOD #00 = #01 JCN [ BRK ] 
 
 	( clear buffer )
 	BANK2 DUP2 GET-SIZE ++
@@ -148,15 +150,14 @@ BRK
 	#00 HEIGHT
 	&ver
 		OVR TOS #0002 ** .anchor/y LDZ2 ++ .Screen/y DEO2
-		OVR STH
 		#00 WIDTH
 		&hor
 			OVR TOS #0002 ** .anchor/x LDZ2 ++ .Screen/x DEO2
-			OVR DUPr STHr ,get-cell JSR INCR .Screen/color DEO
-			SWP INCR SWP
+			GET-ITERATORS ,get-cell JSR #01 + .Screen/color DEO
+			INCR
 			NEQk ,&hor JCN
-		POP2 POPr
-		SWP INCR SWP
+		POP2
+		INCR
 		NEQk ,&ver JCN
 	POP2
 
@@ -173,7 +174,7 @@ RTN
 	
 	DUP2 ,get-index JSR STH2
 	POP #08 MOD #01 SWP SFL 
-	DUP2r LDAr STHr SWP ORA
+	LDAkr STHr SWP ORA
 	STH2r STA
 
 RTN
@@ -189,14 +190,14 @@ RTN
 
 @get-neighbours ( x y -- neighbours )
 	
-	( -1,-1 ) DUP2 DECR SWP DECR SWP ,get-cell JSR STH
-	(  0,-1 ) DUP2 DECR              ,get-cell JSR STH ADDr
-	( +1,-1 ) DUP2 DECR SWP INCR SWP ,get-cell JSR STH ADDr
-	( -1, 0 ) DUP2      SWP DECR SWP ,get-cell JSR STH ADDr
-	( +1, 0 ) DUP2      SWP INCR SWP ,get-cell JSR STH ADDr
-	( -1,+1 ) DUP2 INCR SWP DECR SWP ,get-cell JSR STH ADDr
-	(  0,+1 ) DUP2 INCR              ,get-cell JSR STH ADDr
-	( +1,+1 )      INCR SWP INCR SWP ,get-cell JSR STH ADDr
+	( -1,-1 ) DUP2 #01 - DECR ,get-cell JSR STH
+	(  0,-1 ) DUP2 #01 -      ,get-cell JSR STH ADDr
+	( +1,-1 ) DUP2 #01 - INCR ,get-cell JSR STH ADDr
+	( -1, 0 ) DUP2       DECR ,get-cell JSR STH ADDr
+	( +1, 0 ) DUP2       INCR ,get-cell JSR STH ADDr
+	( -1,+1 ) DUP2 #01 + DECR ,get-cell JSR STH ADDr
+	(  0,+1 ) DUP2 #01 +      ,get-cell JSR STH ADDr
+	( +1,+1 )      #01 + INCR ,get-cell JSR STH ADDr
 	STHr
 
 RTN
@@ -205,18 +206,17 @@ RTN
 	
 	#00 HEIGHT
 	&ver
-		OVR STH
 		#00 WIDTH
 		&hor
-			OVR DUPr STHr STH2
-			( x y ) DUP2r STH2r
-			( neighbours ) DUP2r STH2r ,get-neighbours JSR
-			( state ) STH2r ;get-cell JSR2
+			GET-ITERATORS
+			( x y ) DUP2
+			( neighbours ) DUP2 ,get-neighbours JSR
+			( state ) ROT ROT ;get-cell JSR2
 			,run-cell JSR
-			SWP INCR SWP
+			INCR
 			NEQk ,&hor JCN
-		POP2 POPr
-		SWP INCR SWP
+		POP2
+		INCR
 		NEQk ,&ver JCN
 	POP2
 
@@ -246,7 +246,7 @@ RTN
 	( save in buffer )
 	STH2
 	DUP2 POP #08 MOD #01 SWP SFL 
-	DUP2r LDAr STHr SWP ORA
+	LDAkr STHr SWP ORA
 	STH2r STA
 
 RTN
@@ -255,21 +255,23 @@ RTN
 
 	STH SWP 
 	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	DUP #04 SFT TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	#0f AND TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	( draw ) STHr .Screen/color DEO
 
 RTN
 
-@font-hex ( 0-F )
-[
+@cursor 
+	80c0 e0f0 f8e0 1000
+
+@font-hex
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
@@ -277,7 +279,4 @@ RTN
 	007c 8282 7c82 827c 007c 8282 7e02 827c
 	007c 8202 7e82 827e 00fc 8282 fc82 82fc
 	007c 8280 8080 827c 00fc 8282 8282 82fc
-	007c 8280 f080 827c 007c 8280 f080 8080 ]
-
-@cursor [ 
-	80c0 e0f0 f8e0 1000 ]
+	007c 8280 f080 827c 007c 8280 f080 8080

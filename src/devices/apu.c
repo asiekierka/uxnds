@@ -1,3 +1,6 @@
+#include "../uxn.h"
+#include "apu.h"
+
 /*
 Copyright (c) 2021 Devine Lu Linvega
 Copyright (c) 2021 Andrew Alderwick
@@ -9,9 +12,6 @@ copyright notice and this permission notice appear in all copies.
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
-
-#include "../uxn.h"
-#include "apu.h"
 
 #define NOTE_PERIOD 0x10000
 #define ADSR_STEP (SAMPLE_FREQUENCY / 0xf)

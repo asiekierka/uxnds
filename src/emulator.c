@@ -1,6 +1,10 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <time.h>
+#include "uxn.h"
+#include "devices/ppu.h"
+#include "devices/apu.h"
+#include "devices/mpu.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -12,11 +16,6 @@ copyright notice and this permission notice appear in all copies.
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
-
-#include "uxn.h"
-#include "devices/ppu.h"
-#include "devices/apu.h"
-#include "devices/mpu.h"
 
 static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;

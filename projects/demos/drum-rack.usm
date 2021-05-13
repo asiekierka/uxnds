@@ -156,7 +156,7 @@ BRK
 	&loop
 		OVR STH
 		( x ) .mix-view/x1 LDZ2 #0074 ++
-		( y ) .mix-view/y1 LDZ2 PAD-HEIGHT DUPr STHr TOS ** ++ #0002 ++
+		( y ) .mix-view/y1 LDZ2 PAD-HEIGHT STHkr TOS ** ++ #0002 ++
 		( output ) .Audio0/output STHr #10 * + DEI 
 		;draw-monitor JSR2
 		( incr ) SWP #01 + SWP
@@ -246,40 +246,40 @@ BRK
 	( knob ) .Mouse/x DEI2 .mix-view/x1 LDZ2 -- #0010 // TOB
 	( adsr )
 	DUP #00 ! ,&no-a JCN
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEI
+		.Audio0/adsr [ STHkr #10 * + ] DEI
 		#10 .Mouse/state DEI #10 = #e0 * + +
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEO &no-a
+		.Audio0/adsr [ STHkr #10 * + ] DEO &no-a
 	DUP #01 ! ,&no-d JCN
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEI
+		.Audio0/adsr [ STHkr #10 * + ] DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEO &no-d
+		.Audio0/adsr [ STHkr #10 * + ] DEO &no-d
 	DUP #02 ! ,&no-s JCN
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEI
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEI
 		#10 .Mouse/state DEI #10 = #e0 * + +
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEO &no-s
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEO &no-s
 	DUP #03 ! ,&no-r JCN
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEI
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEO &no-r
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEO &no-r
 	( modes )
 	DUP #04 ! ,&no-repeat JCN
-		.modes [ DUPr STHr + ] LDZ 
+		.modes [ STHkr + ] LDZ 
 		#00 =
-		.modes [ DUPr STHr + ] STZ &no-repeat
+		.modes [ STHkr + ] STZ &no-repeat
 	( volume )
 	DUP #05 ! ,&no-left JCN
-		.Audio0/volume [ DUPr STHr #10 * + ] DEI 
+		.Audio0/volume [ STHkr #10 * + ] DEI 
 		#10 .Mouse/state DEI #10 = #e0 * + +
-		.Audio0/volume [ DUPr STHr #10 * + ] DEO &no-left
+		.Audio0/volume [ STHkr #10 * + ] DEO &no-left
 	DUP #06 ! ,&no-right JCN
-		.Audio0/volume [ DUPr STHr #10 * + ] DEI
+		.Audio0/volume [ STHkr #10 * + ] DEI
 		DUP #f0 AND STH #01 .Mouse/state DEI #10 = #0e * + + #0f AND STHr +
-		.Audio0/volume [ DUPr STHr #10 * + ] DEO &no-right
+		.Audio0/volume [ STHkr #10 * + ] DEO &no-right
 	POP
 
 	( release ) #00 .Mouse/state DEO
 
-	DUPr STHr ;draw-mixer JSR2
+	STHkr ;draw-mixer JSR2
 
 	POPr
 
@@ -371,21 +371,21 @@ RTN
 
 	( adsr )
 	DUP2 .mix-view/x1 LDZ2 SWP2
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEI #04 SFT ;draw-knob JSR2
+		.Audio0/adsr [ STHkr #10 * + ] DEI #04 SFT ;draw-knob JSR2
 	DUP2 .mix-view/x1 LDZ2 #0010 ++ SWP2
-		.Audio0/adsr [ DUPr STHr #10 * + ] DEI #0f AND ;draw-knob JSR2
+		.Audio0/adsr [ STHkr #10 * + ] DEI #0f AND ;draw-knob JSR2
 	DUP2 .mix-view/x1 LDZ2 #0020 ++ SWP2
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEI #04 SFT ;draw-knob JSR2
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEI #04 SFT ;draw-knob JSR2
 	DUP2 .mix-view/x1 LDZ2 #0030 ++ SWP2
-		.Audio0/adsr [ DUPr STHr #10 * + ] #01 + DEI #0f AND ;draw-knob JSR2
+		.Audio0/adsr [ STHkr #10 * + ] #01 + DEI #0f AND ;draw-knob JSR2
 	( once/repeat )
 	DUP2 .mix-view/x1 LDZ2 #0040 ++ SWP2
-		.modes [ DUPr STHr + ] LDZ ;draw-switch JSR2
+		.modes [ STHkr + ] LDZ ;draw-switch JSR2
 	( volume )
 	DUP2 .mix-view/x1 LDZ2 #0050 ++ SWP2
-		.Audio0/volume [ DUPr STHr #10 * + ] DEI #04 SFT ;draw-knob JSR2
+		.Audio0/volume [ STHkr #10 * + ] DEI #04 SFT ;draw-knob JSR2
 	DUP2 .mix-view/x1 LDZ2 #0060 ++ SWP2
-		.Audio0/volume [ DUPr STHr #10 * + ] DEI #0f AND ;draw-knob JSR2
+		.Audio0/volume [ STHkr #10 * + ] DEI #0f AND ;draw-knob JSR2
 	POP2
 	POPr
 
@@ -395,7 +395,7 @@ RTN
 	
 	STH STH
 
-	DUPr STHr 
+	STHkr 
 
 	DUP #04 / SWP #04 MOD TOS PAD-WIDTH ** ( center ) .pad-view/x1 LDZ2 ++ 
 	ROT TOS PAD-HEIGHT ** ( center ) .pad-view/y1 LDZ2 ++ 
@@ -409,21 +409,21 @@ RTN
 	( draw name )
 	OVR2 #0002 ++ 
 	OVR2 #0002 ++ 
-	;pad-name DUPr STHr TOS #0005 ** ++ 
+	;pad-name STHkr TOS #0005 ** ++ 
 	#20 OVRr STHr + 
 	;draw-label JSR2
 
 	( draw note )
 	OVR2 #0003 ++ .Screen/x DEO2
 	DUP2 #0014 ++ .Screen/y DEO2
-	( get pitch ) DUPr STHr TOS ;pad-pitch ++ LDA
+	( get pitch ) STHkr TOS ;pad-pitch ++ LDA
 	#0c / TOS #0008 ** ;font-hex ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
 
 	( draw octave )
 	OVR2 #000b ++ .Screen/x DEO2
 	DUP2 #0014 ++ .Screen/y DEO2
-	( get pitch ) DUPr STHr TOS ;pad-pitch ++ LDA
+	( get pitch ) STHkr TOS ;pad-pitch ++ LDA
 	#0c MOD TOS #0008 ** ;font-notes ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
 
@@ -470,9 +470,9 @@ RTN
 
 	#00 #0f
 	&loop
-		OVR #10 SWP - DUPr STHr #0f AND < #01 + .Screen/color DEO
+		OVR #10 SWP - STHkr #0f AND < #01 + .Screen/color DEO
 		.Screen/x DEI2 #0002 ++ .Screen/x DEO2
-		OVR #10 SWP - DUPr STHr #04 SFT < #01 + .Screen/color DEO
+		OVR #10 SWP - STHkr #04 SFT < #01 + .Screen/color DEO
 		.Screen/x DEI2 #0002 -- .Screen/x DEO2
 		.Screen/y DEI2 #0002 ++ .Screen/y DEO2
 		( incr ) SWP #01 + SWP
@@ -491,7 +491,7 @@ RTN
 	DUP2 #0018 ++
 	&loop
 		( move ) OVR2 .Screen/y DEO2
-		( draw ) DUPr STHr .Screen/color DEO
+		( draw ) STHkr .Screen/color DEO
 		( incr ) .Screen/addr DEI2 #0008 ++ .Screen/addr DEO2  
 		( incr ) SWP2 #0008 ++ SWP2
 		LTH2k ,&loop JCN
@@ -534,9 +534,9 @@ RTN
 	( draw ) #21 .Screen/color DEO
 	.Screen/x DEI2 #0004 ++ .Screen/x DEO2
 	.Screen/y DEI2 #0008 ++ .Screen/y DEO2
-	;font-hex #00 DUPr STHr #08 * ++ .Screen/addr DEO2
+	;font-hex #00 STHkr #08 * ++ .Screen/addr DEO2
 	( draw ) #21 .Screen/color DEO
-	.Screen/x DEI2 #0004 -- #00 #00 DUPr STHr ;knob-offsetx ++ LDA ++ .Screen/x DEO2
+	.Screen/x DEI2 #0004 -- #00 #00 STHkr ;knob-offsetx ++ LDA ++ .Screen/x DEO2
 	.Screen/y DEI2 #0010 -- #00 #00 STHr ;knob-offsety ++ LDA ++ .Screen/y DEO2
 	;knob-icns #0020 ++ .Screen/addr DEO2
 	( draw ) #25 .Screen/color DEO
@@ -546,16 +546,16 @@ RTN
 @draw-switch ( x* y* value -- )
 	
 	STH .Screen/y DEO2 .Screen/x DEO2
-	DUPr STHr #20 * #00 SWP ;switch-icns ++
+	STHkr #20 * #00 SWP ;switch-icns ++
 	DUP2 .Screen/addr DEO2
-	( draw ) #21 DUPr STHr + .Screen/color DEO
+	( draw ) #21 STHkr + .Screen/color DEO
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	DUP2 #0008 ++ .Screen/addr DEO2
-	( draw ) #21 DUPr STHr + .Screen/color DEO
+	( draw ) #21 STHkr + .Screen/color DEO
 	.Screen/y DEI2 #0008 ++ .Screen/y DEO2
 	.Screen/x DEI2 #0008 -- .Screen/x DEO2
 	DUP2 #0010 ++ .Screen/addr DEO2
-	( draw ) #21 DUPr STHr + .Screen/color DEO
+	( draw ) #21 STHkr + .Screen/color DEO
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	#0018 ++ .Screen/addr DEO2
 	( draw ) #21 STHr + .Screen/color DEO
@@ -590,7 +590,7 @@ RTN
 	STH2r
 	&loop
 		DUP2 LDA #00 SWP #0030 -- #0008 ** ;font-num-uc ++ .Screen/addr DEO2 
-		( draw ) DUPr STHr .Screen/color DEO
+		( draw ) STHkr .Screen/color DEO
 		( incr ) #0001 ++
 		( incr ) .Screen/x DEI2 #0008 ++ .Screen/x DEO2
 		DUP2 LDA #00 ! ,&loop JCN

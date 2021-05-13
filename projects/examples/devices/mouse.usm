@@ -72,6 +72,7 @@ BRK
 
 @draw-cursor ( -- )
 	
+	;pointer_icn .Screen/addr DEO2
 	( clear last cursor )
 	.pointer/x LDZ2 .Screen/x DEO2
 	.pointer/y LDZ2 .Screen/y DEO2
@@ -82,7 +83,6 @@ BRK
 	.Mouse/y DEI2 .pointer/y STZ2
 
 	( draw new cursor )
-	;pointer_icn .Screen/addr DEO2
 	.pointer/x LDZ2 .Screen/x DEO2
 	.pointer/y LDZ2 .Screen/y DEO2
 	#33 .Mouse/state DEI #00 NEQ #02 MUL SUB .Screen/color DEO

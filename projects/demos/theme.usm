@@ -327,7 +327,7 @@ RTN
 	&loop
 		DUP2 LDA #00 SWP #0008 MUL2 
 		;font ADD2 .Screen/addr DEO2 
-		( draw ) DUPr STHr .Screen/color DEO
+		( draw ) STHkr .Screen/color DEO
 		( incr ) ++
 		( incr ) .Screen/x DEI2 8+ .Screen/x DEO2
 		DUP2 LDA #00 NEQ ,&loop JCN
@@ -339,13 +339,13 @@ RTN
 
 	STH SWP 
 	DUP #04 SFT #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	#0f AND #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	DUP #04 SFT #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
 	.Screen/x DEI2 8+ .Screen/x DEO2
-	( draw ) DUPr STHr .Screen/color DEO
+	( draw ) STHkr .Screen/color DEO
 	#0f AND #00 SWP #0008 MUL2 ;font-hex ADD2 .Screen/addr DEO2
 	.Screen/x DEI2 8+ .Screen/x DEO2
 	( draw ) STHr .Screen/color DEO
@@ -363,13 +363,14 @@ RTN
 @sliderc_icn  [ fcfe ffff ffff fefc ]
 @sliderd_icn  [ 003c 7e7e 7e7e 3c00 ]
 
-@preview_icn  [ 
+@preview_icn 
 	183c 66db db66 3c18 
-	0000 183c 3c18 0000 ]
+	0000 183c 3c18 0000
 @radio_icns
-	[ 3c42 8181 8181 423c ]
-	[ 3c42 99bd bd99 423c ]
-@font-hex [
+	3c42 8181 8181 423c 
+	3c42 99bd bd99 423c 
+
+@font-hex 
 	003c 464a 5262 3c00 0018 0808 0808 1c00
 	003c 4202 3c40 7e00 003c 421c 0242 3c00
 	000c 1424 447e 0400 007e 407c 0242 3c00
@@ -377,9 +378,9 @@ RTN
 	003c 423c 4242 3c00 003c 4242 3e02 3c00
 	003c 4242 7e42 4200 007c 427c 4242 7c00
 	003c 4240 4042 3c00 007c 4242 4242 7c00
-	007e 4078 4040 7e00 007e 4078 4040 4000 ]
+	007e 4078 4040 7e00 007e 4078 4040 4000 
 
-@font ( spectrum-zx font ) [
+@font ( spectrum-zx font ) 
 	0000 0000 0000 0000 0000 2400 7e3c 0000 0000 2400 3c42 0000 0000 6c7c 7c38 1000
 	0010 387c 7c38 1000 0038 387c 6c10 3800 0010 387c 7c10 3800 0000 0018 1800 0000
 	007e 4242 4242 7e00 0000 1824 2418 0000 0018 2442 4224 1800 001e 063a 4a48 3000
@@ -411,4 +412,4 @@ RTN
 	0000 7844 4478 4040 0000 3c44 443c 0406 0000 2c30 2020 2000 0000 3840 3804 7800
 	0010 103c 1010 0c00 0000 4444 4444 3800 0000 4444 2828 1000 0000 4454 5454 2800
 	0000 4428 1028 4400 0000 4444 443c 0438 0000 7c08 1020 7c00 000c 0810 1008 0c00
-	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c ]
+	0008 0808 0808 0800 0030 1008 0810 3000 0000 0032 4c00 0000 3c42 99a1 a199 423c 

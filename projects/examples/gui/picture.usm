@@ -14,9 +14,9 @@
 
 |0000
 
-@color [ &byte $1 ]
+@color    [ &byte $1 ]
 @position [ &x $2 &y $2 ]
-@size [ &width $2 &height $2 ]
+@size     [ &width $2 &height $2 ]
 
 ( program )
 

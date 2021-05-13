@@ -74,7 +74,7 @@ BRK
 		#00 SWP SCALEX .Screen/x DEO2
 		OVR #0f MOD #00 EQU #01 ADD .Screen/color DEO
 		( incr ) SWP #01 ADD SWP
-		DUP2 LTH ,&loop JCN
+		LTHk ,&loop JCN
 	POP2
 
 	;draw-display JSR2
@@ -86,22 +86,22 @@ BRK
 	.Screen/height DEI2 #0002 DIV2 #0048 ADD2 .Screen/y DEO2
 	.Screen/width DEI2 #0002 DIV2
 	DUP2 #0020 SUB2 .Screen/x DEO2
-		;font_hex #00 .DateTime/hour DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/hour DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	DUP2 #0018 SUB2 .Screen/x DEO2
-		;font_hex #00 .DateTime/hour DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/hour DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	DUP2 #0008 SUB2 .Screen/x DEO2
-		;font_hex #00 .DateTime/minute DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/minute DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	DUP2 .Screen/x DEO2
-		;font_hex #00 .DateTime/minute DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/minute DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	DUP2 #0010 ADD2 .Screen/x DEO2
-		;font_hex #00 .DateTime/second DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/second DEI #0a DIV #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	DUP2 #0018 ADD2 .Screen/x DEO2
-		;font_hex #00 .DateTime/second DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
+		;font-hex #00 .DateTime/second DEI #0a MOD #08 MUL ADD2 .Screen/addr DEO2
 		#22 .Screen/color DEO
 	POP2
 
@@ -136,7 +136,6 @@ RTN
 RTN
 
 @table ( 60 positions on a circle in bytes )
-[
 	8000 8d00 9a02 a706 b40b c011 cb18 d520
 	df2a e734 ee40 f44b f958 fd65 ff72 ff80
 	ff8d fd9a f9a7 f4b4 eec0 e7cb dfd5 d5df
@@ -145,10 +144,8 @@ RTN
 	11c0 0bb4 06a7 029a 008d 0080 0072 0265
 	0658 0b4b 113f 1834 202a 2a20 3418 3f11
 	4b0b 5806 6502 7200
-]
 
-@font_hex ( 0-F )
-[
+@font-hex ( 0-F )
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
@@ -157,4 +154,3 @@ RTN
 	007c 8202 7e82 827e 00fc 8282 fc82 82fc
 	007c 8280 8080 827c 00fc 8282 8282 82fc
 	007c 8280 f080 827c 007c 8280 f080 8080
-]

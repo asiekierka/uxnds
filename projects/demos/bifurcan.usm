@@ -53,7 +53,6 @@ BRK
 	.DateTime/second DEI .last LDZ NEQ #01 JCN [ BRK ]
 
 	.DateTime/second DEI .last STZ
-
 	;redraw JSR2
 
 BRK
@@ -107,7 +106,7 @@ RTN
 	&loop
 		( save-x ) OVR #03 MOD TOS #0008 MUL2 .anchor/x LDZ2 ADD2 .Screen/x DEO2
 		( save-y ) OVR #03 DIV TOS #0008 MUL2 .anchor/y LDZ2 ADD2 .Screen/y DEO2
-		( get digit* ) OVR DUPr STHr #02 MUL TOS ;digits ADD2 LDA2 
+		( get digit* ) OVR STHkr #02 MUL TOS ;digits ADD2 LDA2 
 		( get bit ) ROT #0e SWP SUB TOS SFT2 #0001 AND2 
 		( set tile ) #0008 MUL2 ;tiles ADD2 
 		( set style ) .style LDZ #10 MUL TOS ADD2

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "uxn.h"
 
 /*
 Copyright (u) 2021 Devine Lu Linvega
@@ -10,8 +11,6 @@ copyright notice and this permission notice appear in all copies.
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
-
-#include "uxn.h"
 
 #pragma mark - Operations
 

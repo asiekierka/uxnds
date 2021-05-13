@@ -64,7 +64,7 @@ BRK
 
 	( ears )
 	.cat/y LDZ2 .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
+	.cat/x LDZ2 STH2k #0008 SUB2 .Screen/x DEO2
 	;ears .Screen/addr DEO2
 	#41 .Screen/color DEO
 	STH2r .Screen/x DEO2
@@ -79,7 +79,7 @@ RTN
 @draw-eye ( quad* -- )
 	
 	.cat/y LDZ2 #0008 ADD2 .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
+	.cat/x LDZ2 STH2k #0008 SUB2 .Screen/x DEO2
 	DUP2 ;eye ADD2 .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 	STH2r .Screen/x DEO2
@@ -91,7 +91,7 @@ RTN
 @draw-tail ( frame* -- )
 
 	.cat/y LDZ2 #0010 ADD2 .Screen/y DEO2
-	.cat/x LDZ2 DUP2 STH2 #0008 SUB2 .Screen/x DEO2
+	.cat/x LDZ2 STH2k #0008 SUB2 .Screen/x DEO2
 	;body .Screen/addr DEO2
 	( draw ) #41 .Screen/color DEO
 	STH2r .Screen/x DEO2
@@ -138,14 +138,14 @@ RTN
 
 RTN
 
-@cursor [ 
-	80c0 e0f0 f8e0 1000 ]
+@cursor 
+	80c0 e0f0 f8e0 1000 
 
-@ears [
+@ears 
 	081c 3e3e 7f7f ffff 081c 3e3e 7f7f fffc
-	081c 3c3e 7e7e ffff 081c 3c3e 7e7e ff1f ]
+	081c 3c3e 7e7e ffff 081c 3c3e 7e7e ff1f 
 
-@eye [
+@eye 
 	ffff ffff ff7f 3f0f f7ef cfe7 f07c 3f0f
 	ffff ffff fffe fcf0 87c3 c183 071e fcf0
 	ffff ffff ff7f 3f0f f0e1 c1e0 f07c 3f0f
@@ -154,17 +154,16 @@ RTN
 	ffff ffff fffe fcf0 0783 c1c3 871e fcf0
 	ffff ffff ff7f 3f0f f0e0 c1e1 f07c 3f0f
 	ffff ffff fffe fcf0 07f3 f9fb f71e fcf0
-]
 
-@body [
+@body 
 	0707 0707 0302 0200 0107 0707 0300 0000
 	e0f0 f0e0 e080 8000 c0f2 f9f9 fef8 b000
 	e0f0 f0e0 e080 8000 c0f2 f9f9 fef8 b000
 	e0f0 f0e0 e080 8000 c0f2 faf9 fef8 b000
 	e0f0 f0e0 e080 8000 c0f1 faf9 fef8 b000
 	0707 0707 0f08 1000 0307 0707 0f00 0000
-	e0e0 e0e0 e080 8000 f2f9 f9fe b884 8400 ]
+	e0e0 e0e0 e080 8000 f2f9 f9fe b884 8400 
 
-@ground [
+@ground 
 	bf00 5c02 0202 020c ef10 6f90 8080 8074
-	ff00 fe01 0100 0116 fd00 3c40 4040 4028 ]
+	ff00 fe01 0100 0116 fd00 3c40 4040 4028 

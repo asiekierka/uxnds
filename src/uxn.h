@@ -28,8 +28,6 @@ typedef struct {
 	Uint8 dat[65536];
 } Memory;
 
-struct Uxn;
-
 typedef struct Device {
 	struct Uxn *u;
 	Uint8 addr, dat[16], *mem;
@@ -42,10 +40,12 @@ typedef struct Uxn {
 	Device dev[16];
 } Uxn;
 
-int loaduxn(Uxn *c, char *filepath);
-int bootuxn(Uxn *c);
-int evaluxn(Uxn *u, Uint16 vec);
+struct Uxn;
+
 void mempoke16(Uint8 *m, Uint16 a, Uint16 b);
 Uint16 mempeek16(Uint8 *m, Uint16 a);
 
+int loaduxn(Uxn *c, char *filepath);
+int bootuxn(Uxn *c);
+int evaluxn(Uxn *u, Uint16 vec);
 Device *portuxn(Uxn *u, Uint8 id, char *name, void (*talkfn)(Device *, Uint8, Uint8));

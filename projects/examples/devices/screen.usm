@@ -54,20 +54,17 @@ RTN
 	
 	#00 #10
 	&loop
-		OVR #08 MUL #00 SWP ;font_hex ADD2 .Screen/addr DEO2
-
+		OVR #08 MUL #00 SWP ;font-hex ADD2 .Screen/addr DEO2
 		( x-axis ) 
 		OVR #08 MUL #00 SWP 
 		.center/x LDZ2 #0040 SUB2 ADD2 .Screen/x DEO2
 		.center/y LDZ2 #0050 SUB2 .Screen/y DEO2
 		( draw ) #21 .Screen/color DEO
-
 		( y-axis )
 		OVR #08 MUL #00 SWP 
 		.center/y LDZ2 #0040 SUB2 ADD2 .Screen/y DEO2
 		.center/x LDZ2 #0050 SUB2 .Screen/x DEO2
 		( draw ) #21 .Screen/color DEO
-
 		( incr ) SWP #01 ADD SWP
 		LTHk ,&loop JCN
 	POP2
@@ -77,7 +74,6 @@ RTN
 @draw-circle ( -- )
 	
 	;preview_icn .Screen/addr DEO2
-
 	.center/x LDZ2 #0048 ADD2 .Screen/x DEO2
 	.center/y LDZ2 #0030 ADD2 .Screen/y DEO2
 	#21 .Screen/color DEO
@@ -91,10 +87,10 @@ RTN
 
 RTN
 
-@preview_icn  [ 
-	0f38 675f dfbf bfbf 0007 1820 2344 4848 ]
+@preview_icn  [
+	0f38 675f dfbf bfbf 0007 1820 2344 4848 
 
-@font_hex [
+@font-hex 
 	007c 8282 8282 827c 0030 1010 1010 1010
 	007c 8202 7c80 80fe 007c 8202 1c02 827c
 	000c 1424 4484 fe04 00fe 8080 7c02 827c
@@ -102,4 +98,4 @@ RTN
 	007c 8282 7c82 827c 007c 8282 7e02 827c
 	007c 8202 7e82 827e 00fc 8282 fc82 82fc
 	007c 8280 8080 827c 00fc 8282 8282 82fc
-	007c 8280 f080 827c 007c 8280 f080 8080 ]
+	007c 8280 f080 827c 007c 8280 f080 8080 
