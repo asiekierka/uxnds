@@ -28,7 +28,7 @@
 	;srcpath .File/name DEO2
 	MEMORY   .File/load DEO2
 
-	.File/success DEI2 #0000 NEQ2 ;on-success JCN2
+	.File/success DEI2 ORA ;on-success JCN2
 
 	;failedtxt .Console/string DEO2
 

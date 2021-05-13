@@ -151,7 +151,7 @@
 	&h ( number* -- )
 	,scale JSR
 	.neralie/h LDZ2 ;mul2hi JSR2
-	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
+	ORAk #02 JCN POP2 JMP2r
 	DUP2 .neralie/y LDZ2 ADD2 .neralie/y STZ2
 	.neralie/h LDZ2 SWP2 SUB2 .neralie/h STZ2
 	.neralie/x LDZ2 DUP2 .neralie/w LDZ2 ADD2 .neralie/y LDZ2 ,h JMP
@@ -159,7 +159,7 @@
 	&v ( number* -- )
 	,scale JSR
 	.neralie/w LDZ2 ;mul2hi JSR2
-	DUP2 #0000 NEQ2 #02 JCN POP2 JMP2r
+	ORAk #02 JCN POP2 JMP2r
 	DUP2 .neralie/x LDZ2 ADD2 .neralie/x STZ2
 	.neralie/w LDZ2 SWP2 SUB2 .neralie/w STZ2
 	.neralie/y LDZ2 DUP2 .neralie/h LDZ2 ADD2 .neralie/x LDZ2 ,v JMP
