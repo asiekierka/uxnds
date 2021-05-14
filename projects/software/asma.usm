@@ -9,6 +9,15 @@
 	;reset JMP2
 
 %asma-IF-ERROR { ;asma/error LDA2 ORA }
+%asma-LOG { #01 }
+(
+	#00 first pass output
+	#01 second pass output
+	#02 current token
+	#04 label dump at end
+)
+%asma-DEO2 { asma-LOG NEQ JMP DEO2k POP POP2 }
+%asma-DEO { asma-LOG NEQ JMP DEOk POP2 }
 
 @asma-dump-sublabels ( incoming-ptr* -- )
 	LDA2
@@ -19,18 +28,18 @@
 	( left node )
 	DUP2 ,asma-dump-sublabels JSR
 	( here )
-	#09 .Console/char DEO
+	#09 .Console/char #04 asma-DEO
 	DUP2 #0004 ADD2
 	&loop
 	DUP2 #0001 ADD2 SWP2 LDA
 	DUP #00 EQU ,&end JCN
-	.Console/char DEO
+	.Console/char #04 asma-DEO
 	,&loop JMP
 	&end
 	POP
-	#09 .Console/char DEO
-	LDA2 .Console/short DEO2
-	#0a .Console/char DEO
+	#09 .Console/char #04 asma-DEO
+	LDA2 .Console/short #04 asma-DEO2
+	#0a .Console/char #04 asma-DEO
 
 	( right node )
 	#0002 ADD2 ,asma-dump-sublabels JSR
@@ -49,15 +58,15 @@
 	&loop
 	DUP2 #0001 ADD2 SWP2 LDA
 	DUP #00 EQU ,&end JCN
-	.Console/char DEO
+	.Console/char #04 asma-DEO
 	,&loop JMP
 	&end
 	POP
-	#09 .Console/char DEO
-	LDA2k .Console/short DEO2
-	#0a .Console/char DEO
+	#09 .Console/char #04 asma-DEO
+	LDA2k .Console/short #04 asma-DEO2
+	#0a .Console/char #04 asma-DEO
 	( subtree )
-	#0002 ADD2 ,asma-dump-sublabels JSR
+	#0002 ADD2 ;asma-dump-sublabels JSR2
 
 	( right node )
 	#0002 ADD2 ,asma-dump-labels JSR
@@ -70,9 +79,9 @@
 	;asma-init-assembler-pass JSR2
 	;&filename ;asma-assemble-file-pass JSR2
 	asma-IF-ERROR ,asma-print-error JCN
-	;asma-trees/labels ,asma-dump-labels JSR
-	;asma/line LDA2 .Console/short DEO2
-	;&lines .Console/string DEO2
+	;asma-trees/labels ;asma-dump-labels JSR2
+	;asma/line LDA2 .Console/short #04 asma-DEO2
+	;&lines .Console/string #04 asma-DEO2
 	#0000 DIV
 	BRK
 
@@ -165,7 +174,8 @@
 @asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
 
 @asma-assemble-token ( string-ptr* -- )
-	DUP2 .Console/string DEO2 #0a .Console/char DEO
+	DUP2 .Console/string #02 asma-DEO2
+	#0a .Console/char #02 asma-DEO
 	DUP2 ;asma/token STA2
 	DUP2 ;asma/orig-token STA2
 	LDAk ,&not-empty JCN
@@ -313,10 +323,10 @@
 	JMP2r
 
 @asma-write-byte ( byte -- )
-	#3e .Console/char DEO
-	#20 .Console/char DEO
-	.Console/byte DEO ( FIXME actually write! )
-	#0a .Console/char DEO
+	#3e .Console/char ;asma/pass LDA asma-DEO
+	#20 .Console/char ;asma/pass LDA asma-DEO
+	.Console/byte ;asma/pass LDA asma-DEO ( FIXME actually write! )
+	#0a .Console/char ;asma/pass LDA asma-DEO
 	;asma/addr LDA2 #0001 ADD2 ;asma/addr STA2
 	JMP2r
 
@@ -349,14 +359,6 @@
 
 @asma-traverse-tree ( incoming-ptr* -- binary-ptr* 00 if key found
                                     OR node-incoming-ptr* 01 if key not found )
-	( ;&help-str .Console/string DEO2
-	DUP2 .Console/short DEO2
-	#20 .Console/char DEO
-	;asma/token LDA2 .Console/string DEO2
-	#20 .Console/char DEO
-	;asma/orig-token LDA2 .Console/string DEO2
-	#0a .Console/char DEO )
-
 	&loop ( incoming-ptr* )
 	LDA2k ORA ,&valid-node JCN
 	#01 JMP2r
