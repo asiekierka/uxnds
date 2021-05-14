@@ -87,7 +87,7 @@
 
 	&filename
 		( "test.usm 00 )
-		"projects/demos/piano.usm 00
+		"projects/examples/gui/label.usm 00
 
 	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
 
@@ -110,18 +110,22 @@
 	&loop
 	OVR2 .File/name DEO2
 	DUP2 .File/offset DEO2
-	#0100 .File/length DEO2
-	#fe00 DUP2k .File/load DEO2
-	.File/success DEI2 ORAk ,&not-end JCN
-	POP2 POP2
-	&error
-	POP2 POP2 POP2
-	JMP2r
-
-	&not-end
+	#0023 STH2k .File/length DEO2
+	#f000 DUP2k .File/load DEO2
+	.File/success DEI2
+	DUP2 STH2r SUB2 ORA ,&last-one JCN
 	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JCN
 	SUB2 SUB2
 	,&loop JMP
+
+	&last-one
+	ADD2k #00 ROT ROT STA
+	#0001 ADD2
+	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JCN
+	POP2
+	&error
+	POP2 POP2 POP2
+	JMP2r
 
 @asma-init-assembler ( -- )
 	#ff ;asma/pass STA
