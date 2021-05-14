@@ -6,21 +6,81 @@
 ( vectors )
 
 |0100
+	;reset JMP2
 
 %asma-IF-ERROR { ;asma/error LDA2 ORA }
 
+@asma-dump-sublabels ( incoming-ptr* -- )
+	LDA2
+	ORAk ,&valid-incoming-ptr JCN
+	POP2 JMP2r
+
+	&valid-incoming-ptr
+	( left node )
+	DUP2 ,asma-dump-sublabels JSR
+	( here )
+	#09 .Console/char DEO
+	DUP2 #0004 ADD2
+	&loop
+	DUP2 #0001 ADD2 SWP2 LDA
+	DUP #00 EQU ,&end JCN
+	.Console/char DEO
+	,&loop JMP
+	&end
+	POP
+	#09 .Console/char DEO
+	LDA2 .Console/short DEO2
+	#0a .Console/char DEO
+
+	( right node )
+	#0002 ADD2 ,asma-dump-sublabels JSR
+	JMP2r
+
+@asma-dump-labels ( incoming-ptr* -- )
+	LDA2
+	ORAk ,&valid-incoming-ptr JCN
+	POP2 JMP2r
+
+	&valid-incoming-ptr
+	( left node )
+	DUP2 ,asma-dump-labels JSR
+	( here )
+	DUP2 #0004 ADD2
+	&loop
+	DUP2 #0001 ADD2 SWP2 LDA
+	DUP #00 EQU ,&end JCN
+	.Console/char DEO
+	,&loop JMP
+	&end
+	POP
+	#09 .Console/char DEO
+	LDA2k .Console/short DEO2
+	#0a .Console/char DEO
+	( subtree )
+	#0002 ADD2 ,asma-dump-sublabels JSR
+
+	( right node )
+	#0002 ADD2 ,asma-dump-labels JSR
+	JMP2r
+
 @reset
 	;asma-init-assembler JSR2
-	;&filename ,asma-assemble-file-pass JSR
+	;&filename ;asma-assemble-file-pass JSR2
 	asma-IF-ERROR ,asma-print-error JCN
 	;asma-init-assembler-pass JSR2
-	;&filename ,asma-assemble-file-pass JSR
+	;&filename ;asma-assemble-file-pass JSR2
 	asma-IF-ERROR ,asma-print-error JCN
+	;asma-trees/labels ,asma-dump-labels JSR
+	;asma/line LDA2 .Console/short DEO2
+	;&lines .Console/string DEO2
+	#0000 DIV
 	BRK
 
 	&filename
 		( "test.usm 00 )
 		"projects/demos/piano.usm 00
+
+	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
 
 @asma-print-error ( -- )
 	;asma/error LDA2 .Console/string DEO2
@@ -431,7 +491,7 @@
 	;asma-parse-hex-string JSR2
 	,&valid JCN
 
-	;asma-msg-hex ;asma/error STZ2
+	;asma-msg-hex ;asma/error STA2
 	JMP2r
 
 	&valid
