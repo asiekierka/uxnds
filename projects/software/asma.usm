@@ -136,6 +136,7 @@
 	;asma/pass LDA #01 ADD ;asma/pass STA
 	#00 ;asma/state STA
 	#0000 ;asma/addr STA2
+	#0100 ;asma/written-addr STA2
 	#0001 ;asma/line STA2
 	JMP2r
 
@@ -170,7 +171,7 @@
 	POP POP2 POP2
 	JMP2r
 
-@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &scope-addr $2 &error $2 ]
+@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &scope-addr $2 &error $2 ]
 @asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
 
 @asma-assemble-token ( string-ptr* -- )
@@ -323,12 +324,29 @@
 	JMP2r
 
 @asma-write-byte ( byte -- )
+	;asma/addr LDA2 ;asma/written-addr LDA2
+	LTH2k ,&rewound JCN
+	&loop
+	EQU2k ,&ready JCN
+	#00 ,&write JSR
+	#0001 ADD2
+	,&loop JMP
+
+	&ready
+	POP2 #0001 ADD2
+	DUP2 ;asma/addr STA2
+	;asma/written-addr STA2
+
+	&write
 	#3e .Console/char ;asma/pass LDA asma-DEO
 	#20 .Console/char ;asma/pass LDA asma-DEO
 	.Console/byte ;asma/pass LDA asma-DEO ( FIXME actually write! )
 	#0a .Console/char ;asma/pass LDA asma-DEO
-	;asma/addr LDA2 #0001 ADD2 ;asma/addr STA2
 	JMP2r
+
+	&rewound
+	;asma-msg-rewound ;asma/error STA2
+	POP2 POP2 POP JMP2r
 
 @asma-write-short ( short -- )
 	SWP
@@ -497,7 +515,6 @@
 	JMP2r
 
 	&valid
-	( FIXME complain if rewind after writing nonzeroes )
 	ADD2 ;asma/addr STA2
 	JMP2r
 
@@ -659,6 +676,7 @@
 @asma-msg-relative  "Address 20 "outside 20 "range 00
 @asma-msg-label     "Label 20 "not 20 "found 00
 @asma-msg-macro     "Macro 20 "already 20 "exists 00
+@asma-msg-rewound   "Memory 20 "overwrite 00
 
 ( trees )
 
