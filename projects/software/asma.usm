@@ -5,14 +5,15 @@
 
 ( vectors )
 
-|0100
-	;reset JMP2
+|0100 @reset
+	;&source-file ;&dest-file ;asma-assemble-file JSR2
+	BRK
 
-(
-	Asma's public interface.
-	These routines are what are expected to be called from programs that bundle
-	Asma into bigger projects.
-)
+	&source-file
+		"test.usm 00
+		"projects/demos/piano.usm 00
+	&dest-file
+		"bin/asma-boot.rom 00
 
 (
 	Common macros for use later on.
@@ -30,21 +31,66 @@
 %asma-DEO { asma-LOG NEQ JMP DEOk POP2 }
 
 (
+	Asma's public interface.
+	These routines are what are expected to be called from programs that bundle
+	Asma into bigger projects.
+)
+
+@asma-assemble-file ( src-filename* dest-filename* -- )
+	;asma/dest-filename STA2 ;asma/src-filename STA2
+
+	;asma-init-first-pass JSR2
+	;asma/src-filename LDA2 ;asma-assemble-file-pass JSR2
+	asma-IF-ERROR ,&error JCN
+
+	;asma-init-next-pass JSR2
+	;asma/src-filename LDA2 ;asma-assemble-file-pass JSR2
+	asma-IF-ERROR ,&error JCN
+
+	;asma-trees/labels ;asma-print-labels JSR2 ( DEBUG )
+	;asma-print-linecount JSR2 ( DEBUG )
+	JMP2r
+
+	&error
+	;asma-print-error JSR2 ( DEBUG )
+	JMP2r
+
+(
 	Debugging routines. These all output extra information to the Console.
 	These can be stripped out to save space, once the references to them are
-	removed. Look for the word DEBUG later on to find these references: the
-	lines that contain that word can be deleted to strip out the functionality
+	removed. Look for the word DEBUG above to find these references: the lines
+	that contain that word can be deleted to strip out the functionality
 	cleanly.
 )
 
-@asma-dump-sublabels ( incoming-ptr* -- )
+@asma-print-error ( -- )
+	;asma/error LDA2 .Console/string DEO2
+	#3a .Console/char DEO
+	#20 .Console/char DEO
+	;asma/orig-token LDA2 .Console/string DEO2
+	;&line .Console/string DEO2
+	;asma/line LDA2 .Console/short DEO2
+	#2e .Console/char DEO
+	#0a .Console/char DEO
+	BRK
+
+	&line 20 "on 20 "line 20 00
+
+@asma-print-linecount ( -- )
+	;asma/line LDA2 .Console/short #04 asma-DEO2
+	;&lines .Console/string #04 asma-DEO2
+	JMP2r
+
+	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
+
+@asma-print-sublabels ( incoming-ptr* -- )
 	LDA2
 	ORAk ,&valid-incoming-ptr JCN
 	POP2 JMP2r
 
 	&valid-incoming-ptr
 	( left node )
-	DUP2 ,asma-dump-sublabels JSR
+	DUP2 ,asma-print-sublabels JSR
 	( here )
 	#09 .Console/char #04 asma-DEO
 	DUP2 #0004 ADD2
@@ -60,17 +106,17 @@
 	#0a .Console/char #04 asma-DEO
 
 	( right node )
-	#0002 ADD2 ,asma-dump-sublabels JSR
+	#0002 ADD2 ,asma-print-sublabels JSR
 	JMP2r
 
-@asma-dump-labels ( incoming-ptr* -- )
+@asma-print-labels ( incoming-ptr* -- )
 	LDA2
 	ORAk ,&valid-incoming-ptr JCN
 	POP2 JMP2r
 
 	&valid-incoming-ptr
 	( left node )
-	DUP2 ,asma-dump-labels JSR
+	DUP2 ,asma-print-labels JSR
 	( here )
 	DUP2 #0004 ADD2
 	&loop
@@ -84,42 +130,36 @@
 	LDA2k .Console/short #04 asma-DEO2
 	#0a .Console/char #04 asma-DEO
 	( subtree )
-	#0002 ADD2 ;asma-dump-sublabels JSR2
+	#0002 ADD2 ;asma-print-sublabels JSR2
 
 	( right node )
-	#0002 ADD2 ,asma-dump-labels JSR
+	#0002 ADD2 ,asma-print-labels JSR
 	JMP2r
 
-@reset
-	;asma-init-assembler JSR2
-	;&filename ;asma-assemble-file-pass JSR2
-	asma-IF-ERROR ,asma-print-error JCN
-	;asma-init-assembler-pass JSR2
-	;&filename ;asma-assemble-file-pass JSR2
-	asma-IF-ERROR ,asma-print-error JCN
-	;asma-trees/labels ;asma-dump-labels JSR2
-	;asma/line LDA2 .Console/short #04 asma-DEO2
-	;&lines .Console/string #04 asma-DEO2
-	BRK
+(
+	Initialise the assembler state before loading a file or chunk.
+)
 
-	&filename
-		"test.usm 00
-		"projects/examples/gui/label.usm 00
+@asma-init-first-pass ( -- )
+	#ff ;asma/pass STA
+	#0000 ;asma/error STA2
+	;asma-heap ;asma/heap STA2
+	#0000 ;asma-trees/labels STA2
+	;asma-opcodes/_entry ;asma-trees/opcodes STA2
+	#0000 ;asma-trees/macros STA2
+	( fall through )
 
-	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
+@asma-init-next-pass ( -- )
+	;asma/pass LDA #01 ADD ;asma/pass STA
+	#00 ;asma/state STA
+	#0000 ;asma/addr STA2
+	#0100 ;asma/written-addr STA2
+	#0001 ;asma/line STA2
+	JMP2r
 
-@asma-print-error ( -- )
-	;asma/error LDA2 .Console/string DEO2
-	#3a .Console/char DEO
-	#20 .Console/char DEO
-	;asma/orig-token LDA2 .Console/string DEO2
-	;&line .Console/string DEO2
-	;asma/line LDA2 .Console/short DEO2
-	#2e .Console/char DEO
-	#0a .Console/char DEO
-	BRK
-
-	&line 20 "on 20 "line 20 00
+(
+	Divide a file up into chunks, and pass each chunk to asma-assemble-chunk.
+)
 
 @asma-assemble-file-pass ( filename-ptr* -- )
 	#0000
@@ -144,21 +184,14 @@
 	POP2 POP2 POP2
 	JMP2r
 
-@asma-init-assembler ( -- )
-	#ff ;asma/pass STA
-	#0000 ;asma/error STA2
-	;asma-heap ;asma/heap STA2
-	#0000 ;asma-trees/labels STA2
-	;asma-opcodes/_entry ;asma-trees/opcodes STA2
-	#0000 ;asma-trees/macros STA2
-
-@asma-init-assembler-pass ( -- )
-	;asma/pass LDA #01 ADD ;asma/pass STA
-	#00 ;asma/state STA
-	#0000 ;asma/addr STA2
-	#0100 ;asma/written-addr STA2
-	#0001 ;asma/line STA2
-	JMP2r
+(
+	Assemble a chunk of source code, which begins with whitespace or the start
+	of a token and is divided up into tokens separated by whitespace. If the
+	chunk ends with whitespace, assembled-up-to-ptr* will equal ptr* + len* and
+	every token in the chunk will have been assembled. If the chunk ends with a
+	non-whitespace character, assembled-up-to-ptr* will point to the beginning
+	of the last token in the chunk.
+)
 
 @asma-assemble-chunk ( ptr* len* -- assembled-up-to-ptr* )
 	OVR2 ADD2 #0001 SUB2 SWP2 STH2k
@@ -191,7 +224,7 @@
 	POP POP2 POP2
 	JMP2r
 
-@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &flush-fn $2 &error $2 ]
+@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &flush-fn $2 &src-filename $2 &dest-filename $2 &error $2 ]
 @asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
 
 (
