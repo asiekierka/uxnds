@@ -10,7 +10,6 @@
 	BRK
 
 	&source-file
-		"test.usm 00
 		"projects/demos/piano.usm 00
 	&dest-file
 		"bin/asma-boot.rom 00
@@ -40,10 +39,12 @@
 	;asma/dest-filename STA2 ;asma/src-filename STA2
 
 	;asma-init-first-pass JSR2
+	;asma-flush-ignore ;asma/flush-fn STA2
 	;asma/src-filename LDA2 ;asma-assemble-file-pass JSR2
 	asma-IF-ERROR ,&error JCN
 
 	;asma-init-next-pass JSR2
+	;asma-flush-to-file ;asma/flush-fn STA2
 	;asma/src-filename LDA2 ;asma-assemble-file-pass JSR2
 	asma-IF-ERROR ,&error JCN
 
@@ -142,19 +143,24 @@
 
 @asma-init-first-pass ( -- )
 	#ff ;asma/pass STA
-	#0000 ;asma/error STA2
+	#0000 DUP2k
+		;asma/error STA2
+		;asma-trees/labels STA2
+		;asma-trees/macros STA2
 	;asma-heap ;asma/heap STA2
-	#0000 ;asma-trees/labels STA2
 	;asma-opcodes/_entry ;asma-trees/opcodes STA2
-	#0000 ;asma-trees/macros STA2
 	( fall through )
 
 @asma-init-next-pass ( -- )
 	;asma/pass LDA #01 ADD ;asma/pass STA
-	#00 ;asma/state STA
-	#0000 ;asma/addr STA2
-	#0100 ;asma/written-addr STA2
-	#0001 ;asma/line STA2
+	;asma-write-buffer ;asma-output/ptr STA2
+	#0000 DUP2k
+		;asma-output/offset STA2
+		;asma/addr STA2
+		;asma/state STA
+	#01 ( 0001 )
+	SWPk ( 0001 0100 ) ;asma/written-addr STA2
+	;asma/line STA2
 	JMP2r
 
 (
@@ -167,8 +173,8 @@
 	&loop
 	OVR2 .File/name DEO2
 	DUP2 .File/offset DEO2
-	#0023 STH2k .File/length DEO2
-	#f000 DUP2k .File/load DEO2
+	;asma-read-buffer/end ;asma-read-buffer SUB2 STH2k .File/length DEO2
+	;asma-read-buffer DUP2k .File/load DEO2
 	.File/success DEI2
 	DUP2 STH2r SUB2 ORA ,&last-one JCN
 	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JCN
@@ -179,6 +185,10 @@
 	ADD2k #00 ROT ROT STA
 	#0001 ADD2
 	,asma-assemble-chunk JSR asma-IF-ERROR ,&error JCN
+
+	( flush output buffer )
+	;asma-output/ptr LDA2 ;asma-write-buffer SUB2 ;asma/flush-fn LDA2 JSR2
+
 	POP2
 	&error
 	POP2 POP2 POP2
@@ -386,6 +396,11 @@
 	POP2 #01
 	JMP2r
 
+@asma-write-short ( short -- )
+	SWP
+	,asma-write-byte JSR
+	,asma-write-byte JMP ( tail call )
+
 @asma-write-byte ( byte -- )
 	;asma/addr LDA2 ;asma/written-addr LDA2
 	LTH2k ,&rewound JCN
@@ -395,26 +410,46 @@
 	#0001 ADD2
 	,&loop JMP
 
+	&rewound
+	;asma-msg-rewound ;asma/error STA2
+	POP2 POP2 POP JMP2r
+
 	&ready
 	POP2 #0001 ADD2
 	DUP2 ;asma/addr STA2
 	;asma/written-addr STA2
 
 	&write
-	#3e .Console/char ;asma/pass LDA asma-DEO
+	,asma-output/ptr LDR2
+	DUP2 ;asma-write-buffer/end EQU2 ,&flush JCN
+	&after-flush
+	STH2k STA
+	STH2r #0001 ADD2 ,asma-output/ptr STR2
+
+	( #3e .Console/char ;asma/pass LDA asma-DEO
 	#20 .Console/char ;asma/pass LDA asma-DEO
-	.Console/byte ;asma/pass LDA asma-DEO ( FIXME actually write! )
-	#0a .Console/char ;asma/pass LDA asma-DEO
+	#00 .Console/byte ;asma/pass LDA asma-DEO
+	#0a .Console/char ;asma/pass LDA asma-DEO )
 	JMP2r
 
-	&rewound
-	;asma-msg-rewound ;asma/error STA2
-	POP2 POP2 POP JMP2r
+	&flush ( ptr* -- start-of-buffer* )
+	;asma-write-buffer SUB2k ( ptr* start* len* )
+	;asma/flush-fn LDA2 JSR2
+	SWP2 POP2 ( start* )
+	,&after-flush JMP
 
-@asma-write-short ( short -- )
-	SWP
-	,asma-write-byte JSR
-	,asma-write-byte JMP ( tail call )
+@asma-output [ &ptr $2 &offset $2 &filename $2 ]
+
+@asma-flush-ignore ( len* -- )
+	POP2
+	JMP2r
+
+@asma-flush-to-file ( len* -- )
+	DUP2 .File/length DEO2
+	,asma-output/offset LDR2 DUP2 .File/offset DEO2 ADD2 ,asma-output/offset STR2
+	;asma/dest-filename LDA2 .File/name DEO2
+	;asma-write-buffer .File/save DEO2
+	JMP2r
 
 @asma-append-heap-byte ( dummy byte -- dummy )
 	;asma/heap LDA2
