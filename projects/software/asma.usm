@@ -5,9 +5,54 @@
 
 ( vectors )
 
+(
+	Asma - an in-Uxn assembler
+
+	This assembler aims to be binary compatible with the output from
+	src/assembler.c, but unlike that assembler this one can be run inside Uxn
+	itself!
+
+	Asma is designed to be able to be copy-pasted inside another project, so
+	all its routines are prefixed with "asma-" to prevent clashes with labels
+	used in the incorporating project. The reset vector contains a couple of
+	examples of asma's usage and can be discarded.
+)
+
 |0100 @reset
+	(
+		Assemble the source code into an output ROM file.
+
+		If all you want is to use asma.usm to assemble files, insert a BRK
+		after this statement.
+	)
 	;&source-file ;&dest-file ;asma-assemble-file JSR2
-	BRK
+
+	(
+		If an error has occurred, BRK here, otherwise continue. (The error
+		message will already have been printed to the Console in
+		asma-assemble-file.)
+	)
+	;asma/error LDA2 #0000 EQU2 JMP BRK
+
+	(
+		Load the output ROM over the currently running program, almost as if
+		we loaded the ROM with uxnemu directly!
+
+		It's not a totally pristine environment, as File/load doesn't zero out
+		memory beyond the end of the file. So if the assembled program assumes
+		that all memory above it is zero, it may misbehave.
+
+		Asma itself doesn't use the zero page, but this example code writes a
+		DEO2 instruction to 0x00ff. In order to execute File/load and have the
+		CPU continue at memory location 0x0100, we write the final DEO2
+		instruction there and jump there as our final act.
+	)
+	;&dest-file .File/name DEO2
+	#0000 .File/offset DEO2
+	#ff00 .File/length DEO2
+	#0100 .File/load
+	LIT DEO2 #00ff STA
+	#00ff JMP2
 
 	&source-file
 		"projects/demos/piano.usm 00
@@ -21,13 +66,14 @@
 %asma-IF-ERROR { ;asma/error LDA2 ORA }
 %asma-LOG { #01 }
 (
-	#00 first pass output
-	#01 second pass output
-	#02 current token
-	#04 label dump at end
+	asma-LOG is a log-level parameter for helping to debug stuff.
+	It's value is the bitwise OR of all the following output types:
+		#01 prints the number of lines in the source code,
+		#02 prints tokens as they are processed, and
+		#04 dumps all defined labels at end.
 )
-%asma-DEO2 { asma-LOG NEQ JMP DEO2k POP POP2 }
-%asma-DEO { asma-LOG NEQ JMP DEOk POP2 }
+%asma-DEO2 { asma-LOG AND #00 EQU JMP DEO2k POP POP2 }
+%asma-DEO { asma-LOG AND #00 EQU JMP DEOk POP2 }
 
 (
 	Asma's public interface.
@@ -70,6 +116,7 @@
 	#20 .Console/char DEO
 	;asma/orig-token LDA2 .Console/string DEO2
 	;&line .Console/string DEO2
+	( FIXME it would be nicer if line numbers were in decimal )
 	;asma/line LDA2 .Console/short DEO2
 	#2e .Console/char DEO
 	#0a .Console/char DEO
@@ -78,8 +125,9 @@
 	&line 20 "on 20 "line 20 00
 
 @asma-print-linecount ( -- )
-	;asma/line LDA2 .Console/short #04 asma-DEO2
-	;&lines .Console/string #04 asma-DEO2
+	( FIXME it would be nicer if line numbers were in decimal )
+	;asma/line LDA2 .Console/short #01 asma-DEO2
+	;&lines .Console/string #01 asma-DEO2
 	JMP2r
 
 	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
