@@ -160,4 +160,28 @@ RTN
 
 RTN
 
+@line-hor ( x0* x1* y* color -- )
+	
+	STH .Screen/y DEO2
+	&loop
+		( save ) OVR2 .Screen/x DEO2
+		( draw ) STHkr .Screen/color DEO
+		( incr ) SWP2 #0002 ++ SWP2
+		LTH2k ,&loop JCN
+	POP2 POP2 POPr
+
+RTN
+
+@line-ver ( x* y0* y1* color -- )
+	
+	STH ROT2 .Screen/x DEO2
+	&loop
+		( save ) OVR2 .Screen/y DEO2
+		( draw ) STHkr .Screen/color DEO
+		( incr ) SWP2 #0002 ++ SWP2
+		LTH2k ,&loop JCN
+	POP2 POP2 POPr
+
+RTN
+
 @checker_icn [ f0f0 f0f0 0f0f 0f0f ]

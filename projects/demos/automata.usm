@@ -1,0 +1,119 @@
+( Project by Alex Schroeder - https://alexschroeder.ch )
+
+%RTN { JMP2r }
+%INCR { SWP #01 ADD SWP }
+%CELL { #1000 }
+%NEXT { #2000 }
+
+( devices )
+
+|00 @System     [ &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
+|20 @Screen     [ &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr $2 &color $1 ]
+|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
+
+|0000
+
+( program )
+
+@seed [ &x $1 &w $2 &s $2 ]
+
+|0100 ( -> )
+
+	( theme ) 
+	#2aac .System/r DEO2 
+	#269b .System/g DEO2 
+	#378d .System/b DEO2
+
+	;seed-line JSR2
+
+	( run for a few generations ) 
+	#00 #ff
+	&loop
+		OVR #00 SWP ;print-line JSR2
+		;compute-next JSR2
+		;copy-next JSR2
+		( incr ) INCR
+		( loop ) LTHk ,&loop JCN
+	POP2
+
+BRK
+
+@print-line ( y -- )
+
+	( set ) .Screen/y DEO2
+	( loop through cells ) 
+	#00 #ff
+	&loop
+		( copy ) OVR #00 SWP DUP2
+		( pos  ) .Screen/x DEO2
+		( addr ) CELL ADD2
+		( draw ) LDA .Screen/color DEO
+		( incr ) INCR
+		( loop ) LTHk ,&loop JCN
+	POP2
+
+RTN
+
+@compute-next ( -- )
+
+	( loop through 62 cells ) 
+	#01 #fe
+	&loop
+		OVR DUP DUP ( three copies of the counter )
+		#01 SUB #00 SWP CELL ADD2 LDA
+		SWP
+		#01 ADD #00 SWP CELL ADD2 LDA
+		( the cell dies if the neighbors are either both dead or both alive, i.e. Rule 90 )
+		NEQ
+		( one copy of the counter and the life value )
+		SWP #00 SWP NEXT ADD2 STA
+		( incr ) INCR
+		( loop ) LTHk ,&loop JCN
+	POP2
+
+RTN
+
+@copy-next ( -- )
+
+	( loop through cells ) 
+	#00 #ff
+	&loop
+		OVR DUP ( two copies of the counter )
+		#00 SWP NEXT ADD2 LDA ( one copy of the counter and the value )
+		SWP #00 SWP CELL ADD2 STA
+		( incr ) INCR
+		( loop ) LTHk ,&loop JCN
+	POP2
+
+RTN
+
+@seed-line ( -- )
+
+	.DateTime/second DEI .seed/x STZ 
+	#0000 .seed/w STZ2 
+	#e2a9 .seed/s STZ2
+	( loop through cells ) 
+	#01 #fe
+	&loop
+		OVR ( one copy of the counter )
+		;rand JSR2
+		#10 AND ( pick a bit )
+		SWP #00 SWP CELL ADD2 STA
+		( incr ) INCR
+		( loop ) LTHk ,&loop JCN
+	POP2
+
+RTN
+
+( https://en.wikipedia.org/wiki/Middle-square_method )
+
+@rand ( -- 1 )
+
+	.seed/x LDZ #00 SWP DUP2 MUL2
+	.seed/w LDZ2 .seed/s LDZ2 ADD2
+	DUP2 .seed/w STZ2
+	ADD2
+	#04 SFT SWP #40 SFT ADD
+	DUP .seed/x STZ
+
+RTN
