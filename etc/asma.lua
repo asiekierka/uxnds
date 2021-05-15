@@ -200,7 +200,8 @@ do
   _with_0:write('(          automatically generated code below          )\n')
   _with_0:write('(          see etc/asma.moon for instructions          )\n')
   _with_0:write('\n(')
-  _with_0:write(fmt('label', 'less than', 'greater than', 'key', 'data )'))
+  _with_0:write(fmt('label', 'less', 'greater', 'key', 'binary'))
+  _with_0:write(fmt('', 'than', 'than', 'string', 'data )'))
   _with_0:write('\n')
   for name, tree in spairs(trees) do
     _with_0:write(('@%s\n'):format(name))
@@ -229,7 +230,43 @@ do
     end
     _with_0:write('\n')
   end
-  _with_0:write('@asma-heap\n\n')
+  _with_0:write([[(
+	Heap, a large temporary area for keeping track of labels. More complex
+	programs need more of this space. If there's insufficient space then the
+	assembly process will fail, but having extra space above what the most
+	complex program needs provides no benefit.
+
+	This heap, and the buffers below, are free to be used to hold temporary
+	data between assembly runs, and do not need to be initialized with any
+	particular contents to use the assembler.
+)
+
+@asma-heap
+
+|ff00 &end
+
+(
+	Buffer for use with loading source code.
+	The minimum size is the length of the longest token plus one, which is
+	0x21 to keep the same capability of the C assembler.
+	Larger sizes are more efficient, provided there is enough
+	heap space to keep track of all the labels.
+)
+
+@asma-read-buffer
+
+|ff80 &end
+
+(
+	Buffer for use with writing output.
+	The minimum size is 1, and larger sizes are more efficient.
+)
+
+@asma-write-buffer
+
+|ffff &end
+
+]])
   _with_0:close()
 end
 return os.execute('mv projects/software/asma.usm.tmp projects/software/asma.usm')

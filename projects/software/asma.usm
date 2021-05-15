@@ -8,6 +8,16 @@
 |0100
 	;reset JMP2
 
+(
+	Asma's public interface.
+	These routines are what are expected to be called from programs that bundle
+	Asma into bigger projects.
+)
+
+(
+	Common macros for use later on.
+)
+
 %asma-IF-ERROR { ;asma/error LDA2 ORA }
 %asma-LOG { #01 }
 (
@@ -18,6 +28,14 @@
 )
 %asma-DEO2 { asma-LOG NEQ JMP DEO2k POP POP2 }
 %asma-DEO { asma-LOG NEQ JMP DEOk POP2 }
+
+(
+	Debugging routines. These all output extra information to the Console.
+	These can be stripped out to save space, once the references to them are
+	removed. Look for the word DEBUG later on to find these references: the
+	lines that contain that word can be deleted to strip out the functionality
+	cleanly.
+)
 
 @asma-dump-sublabels ( incoming-ptr* -- )
 	LDA2
@@ -82,11 +100,10 @@
 	;asma-trees/labels ;asma-dump-labels JSR2
 	;asma/line LDA2 .Console/short #04 asma-DEO2
 	;&lines .Console/string #04 asma-DEO2
-	#0000 DIV
 	BRK
 
 	&filename
-		( "test.usm 00 )
+		"test.usm 00
 		"projects/examples/gui/label.usm 00
 
 	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
@@ -175,8 +192,20 @@
 	POP POP2 POP2
 	JMP2r
 
-@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &scope-addr $2 &error $2 ]
+@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &flush-fn $2 &scope-addr $2 &error $2 ]
 @asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
+
+(
+	The main routine to assemble a single token.
+	asma/state contains several meaningful bits:
+	0x02 we are in a comment,
+	0x04 we are in a macro body, and
+	0x08 we are in a macro body that we are ignoring
+	   (because the macro was already defined in a previous pass).
+	Since 0x08 never appears without 0x04, the lowest bit set in asma/state is
+	always 0x00, 0x02, or 0x04, which is very handy for use with jump tables.
+	The lowest bit set can be found easily by #00 (n) SUBk AND.
+)
 
 @asma-assemble-token ( string-ptr* -- )
 	DUP2 .Console/string #02 asma-DEO2
@@ -195,8 +224,6 @@
 	LITr 00 STH2 ( / end* char end* 00 end* )
 	STAr ( / end* char end* )
 
-	( find lowest set bit of assembler/state
-	  in C, this would be i & -i )
 	#00 ;asma/state LDA SUBk AND ( tree-offset* / end* )
 	DUP2 ;&first-char-trees ADD2 ( tree-offset* incoming-ptr* / end* )
 	;asma-traverse-tree JSR2
@@ -213,7 +240,7 @@
 
 	&not-found ( tree-offset* dummy* / end* )
 	POP2 POP2r
-	;&first-char-dispatch ADD2 LDA2
+	;&body-routines ADD2 LDA2
 	JMP2 ( tail call )
 
 	&first-char-trees
@@ -221,7 +248,7 @@
 		:asma-first-char-comment/_entry
 		:asma-first-char-macro/_entry
 
-	&first-char-dispatch
+	&body-routines
 		:asma-normal-body
 		:asma-ignore
 		:asma-macro-body
@@ -421,7 +448,12 @@
 	POP2r ROT ROT POP2
 	JMP2r
 
-( actions based on first character )
+(
+	First character routines.
+	The following routines (that don't have a FORTH-like signature) are called
+	to deal with tokens that begin with particular first letters, or (for
+	-body routines) tokens that fail to match any first letter in their tree.
+)
 
 %asma-STATE-SET { ;asma/state LDA ORA ;asma/state STA }
 %asma-STATE-CLEAR { #ff EOR ;asma/state LDA AND ;asma/state STA }
@@ -457,7 +489,9 @@
 	JMP2r
 
 @asma-macro-body
+	;asma/state LDA #08 AND ,&skip JCN
 	;asma/token LDA2 ;asma-append-heap-string JSR2
+	&skip
 	JMP2r
 
 @asma-macro-end
@@ -673,7 +707,7 @@
 	;asma-msg-label ;asma/error STA2
 	JMP2r
 
-( messages )
+( Error messages )
 
 @asma-msg-hex       "Invalid 20 "hexadecimal 00
 @asma-msg-zero-page "Address 20 "not 20 "in 20 "zero 20 "page 00
@@ -688,7 +722,8 @@
 (          automatically generated code below          )
 (          see etc/asma.moon for instructions          )
 
-(	label       less than  greater than key            data )
+(	label       less       greater      key            binary
+	            than       than         string         data )
 
 @asma-first-char-comment
 	&_entry      $2         $2          ') 00          :asma-comment-end
@@ -838,5 +873,39 @@
 	&EOR         $2         $2          "EOR 00
 	&SFT         $2         $2          "SFT 00
 
+(
+	Heap, a large temporary area for keeping track of labels. More complex
+	programs need more of this space. If there's insufficient space then the
+	assembly process will fail, but having extra space above what the most
+	complex program needs provides no benefit.
+
+	This heap, and the buffers below, are free to be used to hold temporary
+	data between assembly runs, and do not need to be initialized with any
+	particular contents to use the assembler.
+)
+
 @asma-heap
+
+|ff00 &end
+
+(
+	Buffer for use with loading source code.
+	The minimum size is the length of the longest token plus one, which is
+	0x21 to keep the same capability of the C assembler.
+	Larger sizes are more efficient, provided there is enough
+	heap space to keep track of all the labels.
+)
+
+@asma-read-buffer
+
+|ff80 &end
+
+(
+	Buffer for use with writing output.
+	The minimum size is 1, and larger sizes are more efficient.
+)
+
+@asma-write-buffer
+
+|ffff &end
 
