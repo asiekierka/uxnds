@@ -148,7 +148,7 @@
 	#ff ;asma/pass STA
 	#0000 ;asma/error STA2
 	;asma-heap ;asma/heap STA2
-	;asma-labels/_entry ;asma-trees/labels STA2
+	#0000 ;asma-trees/labels STA2
 	( FIXME should walk the label tree and remove any in the heap )
 	;asma-opcodes/_entry ;asma-trees/opcodes STA2
 	#0000 ;asma-trees/macros STA2
@@ -753,91 +753,6 @@
 	&7b          $2         $2          '{ 00          :asma-ignore
 	&7c         :&7b       :&7d         '| 00          :asma-pad-absolute
 	&7d          $2         $2          '} 00          :asma-ignore
-
-@asma-labels
-	&Audio0      $2         $2          "Audio0 00     0030 :asma-ldev-Audio/_entry
-	&Audio1     :&Audio0   :&Audio2     "Audio1 00     0040 :asma-ldev-Audio/_entry
-	&Audio2      $2         $2          "Audio2 00     0050 :asma-ldev-Audio/_entry
-	&Audio3     :&Audio1   :&Controller "Audio3 00     0060 :asma-ldev-Audio/_entry
-	&Console     $2         $2          "Console 00    0010 :asma-ldev-Console/_entry
-	&Controller :&Console   $2          "Controller 00 0080 :asma-ldev-Controller/_entry
-	&_entry     :&Audio3   :&Mouse      "DateTime 00   00b0 :asma-ldev-DateTime/_entry
-	&File        $2         $2          "File 00       00a0 :asma-ldev-File/_entry
-	&Midi       :&File      $2          "Midi 00       0070 :asma-ldev-Midi/_entry
-	&Mouse      :&Midi     :&System     "Mouse 00      0090 :asma-ldev-Mouse/_entry
-	&Screen      $2         $2          "Screen 00     0020 :asma-ldev-Screen/_entry
-	&System     :&Screen    $2          "System 00     0000 :asma-ldev-System/_entry
-
-@asma-ldev-Audio
-	&addr        $2         $2          "addr 00       000c
-	&adsr       :&addr      $2          "adsr 00       0008
-	&length     :&adsr     :&output     "length 00     000a
-	&output      $2         $2          "output 00     0004
-	&_entry     :&length   :&vector     "pitch 00      000f
-	&position    $2         $2          "position 00   0002
-	&vector     :&position :&volume     "vector 00     0000
-	&volume      $2         $2          "volume 00     000e
-
-@asma-ldev-Console
-	&byte        $2         $2          "byte 00       0009
-	&char       :&byte      $2          "char 00       0008
-	&_entry     :&char     :&string     "short 00      000a
-	&string      $2         $2          "string 00     000c
-
-@asma-ldev-Controller
-	&button      $2         $2          "button 00     0002
-	&_entry     :&button   :&vector     "key 00        0003
-	&vector      $2         $2          "vector 00     0000
-
-@asma-ldev-DateTime
-	&day         $2         $2          "day 00        0003
-	&dotw       :&day       $2          "dotw 00       0007
-	&doty       :&dotw     :&hour       "doty 00       0008
-	&hour        $2         $2          "hour 00       0004
-	&_entry     :&doty     :&second     "isdst 00      000a
-	&minute      $2         $2          "minute 00     0005
-	&month      :&minute    $2          "month 00      0002
-	&second     :&month    :&year       "second 00     0006
-	&year        $2         $2          "year 00       0000
-
-@asma-ldev-File
-	&length      $2         $2          "length 00     000a
-	&load       :&length   :&name       "load 00       000c
-	&name        $2         $2          "name 00       0008
-	&_entry     :&load     :&success    "offset 00     0004
-	&save        $2         $2          "save 00       000e
-	&success    :&save     :&vector     "success 00    0002
-	&vector      $2         $2          "vector 00     0000
-
-@asma-ldev-Midi
-	&channel     $2         $2          "channel 00    0002
-	&note       :&channel   $2          "note 00       0003
-	&_entry     :&note     :&velocity   "vector 00     0000
-	&velocity    $2         $2          "velocity 00   0004
-
-@asma-ldev-Mouse
-	&chord       $2         $2          "chord 00      0007
-	&state      :&chord     $2          "state 00      0006
-	&_entry     :&state    :&y          "vector 00     0000
-	&x           $2         $2          "x 00          0002
-	&y          :&x         $2          "y 00          0004
-
-@asma-ldev-Screen
-	&addr        $2         $2          "addr 00       000c
-	&color      :&addr     :&height     "color 00      000e
-	&height      $2         $2          "height 00     0004
-	&_entry     :&color    :&x          "vector 00     0000
-	&width       $2         $2          "width 00      0002
-	&x          :&width    :&y          "x 00          0008
-	&y           $2         $2          "y 00          000a
-
-@asma-ldev-System
-	&b           $2         $2          "b 00          000c
-	&g          :&b        :&r          "g 00          000a
-	&r           $2         $2          "r 00          0008
-	&_entry     :&g        :&wst        "rst 00        0003
-	&vector      $2         $2          "vector 00     0000
-	&wst        :&vector    $2          "wst 00        0002
 
 @asma-opcodes
 	&BRK        :&AND      :&DEI &_disasm "BRK 00

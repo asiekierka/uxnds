@@ -9,7 +9,6 @@ spairs = (t) ->
 		keys[i], t[keys[i]]
 
 trees = {
-	['asma-labels']: {}
 	['asma-opcodes']: {}
 }
 
@@ -31,32 +30,6 @@ do -- opcodes
 					}
 				table.insert opcodes_in_order, w
 	assert #opcodes_in_order == 32, 'didn\'t find 32 opcodes in assembler code!'
-
-do -- devices -> labels
-	add_device = (addr, name, fields) ->
-		addr = tonumber addr, 16
-		k = if name\match '^Audio%x+$'
-			'asma-ldev-Audio'
-		else
-			'asma-ldev-%s'\format name
-		trees['asma-labels'][name] = {
-			'"%s 00'\format name
-			'00%02x :%s/_entry'\format addr, k
-		}
-		trees[k] = {}
-		addr = 0
-		for fname, flen in fields\gmatch '%&(%S+) +%$(%x+)'
-			if fname != 'pad'
-				trees[k][fname] = {
-					'"%s 00'\format fname,
-					'00%02x'\format addr
-				}
-			addr += tonumber flen, 16
-	for l in assert io.lines 'projects/examples/blank.usm'
-		f = { l\match '^%|(%x%x) +%@(%S+) +%[ (.*) %]' }
-		if f[1]
-			add_device unpack f
-
 
 do -- first characters
 	representation = setmetatable {

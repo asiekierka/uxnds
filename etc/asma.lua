@@ -23,7 +23,6 @@ spairs = function(t)
   end
 end
 local trees = {
-  ['asma-labels'] = { },
   ['asma-opcodes'] = { }
 }
 local opcodes_in_order = { }
@@ -48,41 +47,6 @@ do
     end
   end
   assert(#opcodes_in_order == 32, 'didn\'t find 32 opcodes in assembler code!')
-end
-do
-  local add_device
-  add_device = function(addr, name, fields)
-    addr = tonumber(addr, 16)
-    local k
-    if name:match('^Audio%x+$') then
-      k = 'asma-ldev-Audio'
-    else
-      k = ('asma-ldev-%s'):format(name)
-    end
-    trees['asma-labels'][name] = {
-      ('"%s 00'):format(name),
-      ('00%02x :%s/_entry'):format(addr, k)
-    }
-    trees[k] = { }
-    addr = 0
-    for fname, flen in fields:gmatch('%&(%S+) +%$(%x+)') do
-      if fname ~= 'pad' then
-        trees[k][fname] = {
-          ('"%s 00'):format(fname),
-          ('00%02x'):format(addr)
-        }
-      end
-      addr = addr + tonumber(flen, 16)
-    end
-  end
-  for l in assert(io.lines('projects/examples/blank.usm')) do
-    local f = {
-      l:match('^%|(%x%x) +%@(%S+) +%[ (.*) %]')
-    }
-    if f[1] then
-      add_device(unpack(f))
-    end
-  end
 end
 do
   local representation = setmetatable({
