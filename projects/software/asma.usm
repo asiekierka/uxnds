@@ -149,7 +149,6 @@
 	#0000 ;asma/error STA2
 	;asma-heap ;asma/heap STA2
 	#0000 ;asma-trees/labels STA2
-	( FIXME should walk the label tree and remove any in the heap )
 	;asma-opcodes/_entry ;asma-trees/opcodes STA2
 	#0000 ;asma-trees/macros STA2
 
@@ -192,7 +191,7 @@
 	POP POP2 POP2
 	JMP2r
 
-@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &flush-fn $2 &scope-addr $2 &error $2 ]
+@asma [ &pass $1 &state $1 &line $2 &token $2 &orig-token $2 &heap $2 &addr $2 &written-addr $2 &flush-fn $2 &error $2 ]
 @asma-trees [ &labels $2 &macros $2 &opcodes $2 &scope $2 ]
 
 (
@@ -500,14 +499,12 @@
 	JMP2r
 
 @asma-label-define
-	#0000 ;asma/scope-addr STA2
 	;asma-trees/labels ,asma-label-helper JSR
 	,&already-existed JCN
 
 	#0000 ;asma-append-heap-short JSR2 ( data2: subtree incoming ptr )
 
 	&already-existed
-	;asma/addr LDA2 ;asma/scope-addr STA2
 	#0002 ADD2 ;asma-trees/scope STA2
 	JMP2r
 
@@ -534,8 +531,7 @@
 
 	;asma/heap LDA2
 
-	;asma/addr LDA2 ;asma/scope-addr LDA2 SUB2
-	;asma-append-heap-short JSR2 ( data1: address )
+	;asma/addr LDA2 ;asma-append-heap-short JSR2 ( data1: address )
 	#00 JMP2r
 
 @asma-pad-absolute
@@ -614,14 +610,14 @@
 @asma-addr-helper ( -- addr* )
 	;asma/token LDA2 LDAk #26 NEQ ,&not-local JCN
 	#0001 ADD2 ;asma/token STA2
-	;asma/scope-addr LDA2 ;asma-trees/scope LDA2
+	;asma-trees/scope LDA2
 	,&final-lookup JMP
 
 	&not-local ( token* )
 	LDAk
 	DUP ,&not-end JCN
 	POP POP2
-	#0000 ;asma-trees/labels
+	;asma-trees/labels
 	,&final-lookup JMP
 
 	&not-end ( token* char )
@@ -633,23 +629,26 @@
 	DUP2 #00 ROT ROT STA
 	;asma-trees/labels ;asma-traverse-tree JSR2 STH
 	SWP2 DUP2 #2f ROT ROT STA
-	STHr ,&not-found JCN
+	STHr ,&not-found2 JCN
 	( token* binary-ptr* )
 	#0001 ADD2 ;asma/token STA2
-	LDA2k SWP2 #0002 ADD2
+	#0002 ADD2
 
 	&final-lookup ( addr-offset* incoming-ptr* )
-	;asma-traverse-tree JSR2 ,&not-found JCN
-	LDA2 ADD2
+	;asma-traverse-tree JSR2
+	,&not-found JCN
+	LDA2
 	JMP2r
 
-	&not-found ( dummy* dummy* )
+	&not-found2 ( dummy* dummy* )
+	POP2
+	&not-found ( dummy* )
+	POP2
 
 	;asma/pass LDA #00 EQU ,&ignore-error JCN
 	;asma-msg-label ;asma/error STA2
 	&ignore-error
 
-	POP2 POP2
 	;asma/addr LDA2
 	JMP2r
 
