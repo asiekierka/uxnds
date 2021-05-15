@@ -4,7 +4,7 @@
 %8+ { #0008 ADD2 } %8- { #0008 SUB2 }
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %++ { #0001 ADD2 }
-%MOD { DUP2 DIV MUL SUB }
+%MOD8 { #07 AND }
 %TRACK { ;track/ch1 #00 .track/active LDZ #0020 MUL2 ADD2 }
 
 ( variables )
@@ -79,7 +79,7 @@ BRK
 	
 	;move-head JSR2
 	;draw-vu JSR2
-	.head/pos LDZ #08 MOD ,&skip JCN
+	.head/pos LDZ MOD8 ,&skip JCN
 		;bang JSR2
 	&skip
 

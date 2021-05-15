@@ -16,6 +16,8 @@
 %8+ { #0008 ADD2 }
 %8* { #0008 MUL2 } %8/ { #0008 DIV2 }
 %MOD { DUP2 DIV MUL SUB }
+%MOD8 { #07 AND }
+%MOD2 { #01 AND }
 
 %DATA-CELLS { #2000 }
 %DATA-LOCKS { #3000 }
@@ -195,8 +197,8 @@ RTN
 	DUP #2e NEQ ,&no-bar JCN
 		( check if x,y is grid )
 		POP
-		DUP2 #08 MOD #00 EQU SWP #08 MOD #00 EQU #0101 NEQ2 ,&no-marker8 JCN POP2 ;marker8_icn RTN &no-marker8
-		DUP2 #02 MOD #00 EQU SWP #02 MOD #00 EQU #0101 NEQ2 ,&no-marker4 JCN POP2 ;marker4_icn RTN &no-marker4
+		DUP2 MOD8 #00 EQU SWP MOD8 #00 EQU #0101 NEQ2 ,&no-marker8 JCN POP2 ;marker8_icn RTN &no-marker8
+		DUP2 MOD2 #00 EQU SWP MOD2 #00 EQU #0101 NEQ2 ,&no-marker4 JCN POP2 ;marker4_icn RTN &no-marker4
 		POP2 ;font RTN
 	&no-bar
 	STH POP2 STHr
@@ -236,7 +238,7 @@ RTN
 	
 	POP
 	++
-	#30 .timer/frame LDZ #08 MOD ADD SET-CELL
+	#30 .timer/frame LDZ MOD8 ADD SET-CELL
 
 RTN
 
@@ -517,7 +519,7 @@ RTN
 
 	#0040 .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
-	#21 .timer/frame LDZ #08 MOD #00 EQU #02 MUL ADD .Screen/color DEO
+	#21 .timer/frame LDZ MOD8 #00 EQU #02 MUL ADD .Screen/color DEO
 
 	( Speed )
 	#0050 .Screen/x DEO2

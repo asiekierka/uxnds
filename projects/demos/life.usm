@@ -13,6 +13,7 @@
 %DECR { SWP #01 - SWP }
 %TOS  { #00 SWP } %TOB  { SWP POP }
 %RTN  { JMP2r }   %MOD  { DUP2 / * - }
+%MOD8 { #07 AND } %MOD2 { #01 AND }
 %SFL  { #40 SFT SFT }
 
 %WIDTH { #40 }   %HEIGHT { #40 }
@@ -72,7 +73,7 @@ BRK
 	( incr frame ) .world/frame LDZ #01 + [ DUP ] .world/frame STZ
 	( reset count ) #0000 .world/count STZ2
 
-	#02 MOD #00 = #01 JCN [ BRK ] 
+	MOD2 #00 = #01 JCN [ BRK ] 
 
 	( clear buffer )
 	BANK2 DUP2 GET-SIZE ++
@@ -173,7 +174,7 @@ RTN
 @set-cell ( x y -- )
 	
 	DUP2 ,get-index JSR STH2
-	POP #08 MOD #01 SWP SFL 
+	POP MOD8 #01 SWP SFL 
 	LDAkr STHr SWP ORA
 	STH2r STA
 
@@ -183,7 +184,7 @@ RTN
 	
 	DUP2 ,get-index JSR LDA 
 	SWP POP SWP
-	#08 MOD
+	MOD8
 	SFT #01 AND
 
 RTN 
@@ -245,7 +246,7 @@ RTN
 	.world/count LDZ2 #0001 ADD2 .world/count STZ2
 	( save in buffer )
 	STH2
-	DUP2 POP #08 MOD #01 SWP SFL 
+	DUP2 POP MOD8 #01 SWP SFL 
 	LDAkr STHr SWP ORA
 	STH2r STA
 

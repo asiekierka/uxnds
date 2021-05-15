@@ -1,7 +1,5 @@
 ( dev/audio )
 
-%MOD { DUP2 DIV MUL SUB }
-
 @timer    $1
 @progress $1
 
@@ -49,7 +47,7 @@ BRK
 	;dot .Screen/addr DEO2
 	#21 .Screen/color DEO
 
-	( incr ) .progress LDZ #01 ADD #20 MOD .progress STZ
+	( incr ) .progress LDZ #01 ADD #1f AND .progress STZ
 
 	#00 .timer STZ
 
