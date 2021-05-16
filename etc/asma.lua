@@ -1,8 +1,3 @@
-local band, bor, lshift, rshift
-do
-  local _obj_0 = require('bit')
-  band, bor, lshift, rshift = _obj_0.band, _obj_0.bor, _obj_0.lshift, _obj_0.rshift
-end
 local spairs
 spairs = function(t)
   local keys

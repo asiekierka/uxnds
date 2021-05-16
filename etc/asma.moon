@@ -1,4 +1,22 @@
-import band, bor, lshift, rshift from require 'bit'
+--
+-- Asma tree helper script
+--
+-- This script updates the trees at the end of projects/software/asma.usm when
+-- Uxn's opcode set changes or new runes (first character of tokens) are
+-- created, so that new changes in the C assembler can be incorporated rapidly
+-- into asma.
+--
+-- To run, you need Lua or LuaJIT, and just run etc/asma.lua from the top
+-- directory of Uxn's git repository:
+--
+--     lua etc/asma.lua
+--
+-- This file is written in MoonScript, which is a language that compiles to
+-- Lua, the same way as e.g. CoffeeScript compiles to JavaScript. Since
+-- installing MoonScript has more dependencies than Lua, the compiled
+-- etc/asma.lua is kept in Uxn's repository and will be kept updated as this
+-- file changes.
+--
 
 spairs = (t) ->
 	keys = [ k for k in pairs t ]
