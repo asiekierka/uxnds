@@ -46,12 +46,17 @@
 		DEO2 instruction to 0x00ff. In order to execute File/load and have the
 		CPU continue at memory location 0x0100, we write the final DEO2
 		instruction there and jump there as our final act.
+
+		Just in case the assembled code is zero-length (which can occur when
+		assembling an empty source file), we write a BRK to the reset vector so
+		that will prevent an infinite loop.
 	)
 	;&dest-file .File/name DEO2
 	#0000 .File/offset DEO2
 	#ff00 .File/length DEO2
 	#0100 .File/load
 	LIT DEO2 #00ff STA
+	LIT BRK #0100 STA
 	#00ff JMP2
 
 	&source-file
