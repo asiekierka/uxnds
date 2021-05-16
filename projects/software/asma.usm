@@ -126,7 +126,7 @@
 	;asma/line LDA2 .Console/short DEO2
 	#2e .Console/char DEO
 	#0a .Console/char DEO
-	BRK
+	JMP2r
 
 	&line 20 "on 20 "line 20 00
 
