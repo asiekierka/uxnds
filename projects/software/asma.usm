@@ -69,13 +69,14 @@
 )
 
 %asma-IF-ERROR { ;asma/error LDA2 ORA }
-%asma-LOG { #01 }
+%asma-LOG { #09 }
 (
 	asma-LOG is a log-level parameter for helping to debug stuff.
-	It's value is the bitwise OR of all the following output types:
+	Its value is the bitwise OR of all the following output types:
 		#01 prints the number of lines in the source code,
-		#02 prints tokens as they are processed, and
-		#04 dumps all defined labels at end.
+		#02 prints tokens as they are processed,
+		#04 dumps all defined labels at end, and
+		#08 prints the heap usage.
 )
 %asma-DEO2 { asma-LOG AND #00 EQU JMP DEO2k POP POP2 }
 %asma-DEO { asma-LOG AND #00 EQU JMP DEOk POP2 }
@@ -100,7 +101,8 @@
 	asma-IF-ERROR ,&error JCN
 
 	;asma-trees/labels ;asma-print-labels JSR2 ( DEBUG )
-	;asma-print-linecount JSR2 ( DEBUG )
+	;asma-print-line-count JSR2 ( DEBUG )
+	;asma-print-heap-usage JSR2 ( DEBUG )
 	JMP2r
 
 	&error
@@ -121,7 +123,6 @@
 	#20 .Console/char DEO
 	;asma/orig-token LDA2 .Console/string DEO2
 	;&line .Console/string DEO2
-	( FIXME it would be nicer if line numbers were in decimal )
 	;asma/line LDA2 .Console/short DEO2
 	#2e .Console/char DEO
 	#0a .Console/char DEO
@@ -129,13 +130,22 @@
 
 	&line 20 "on 20 "line 20 00
 
-@asma-print-linecount ( -- )
-	( FIXME it would be nicer if line numbers were in decimal )
+@asma-print-line-count ( -- )
 	;asma/line LDA2 .Console/short #01 asma-DEO2
 	;&lines .Console/string #01 asma-DEO2
 	JMP2r
 
-	&lines [ 20 "lines 20 "in 20 "total. 0a 00 ]
+	&lines [ 20 "lines 20 "of 20 "source 20 "code. 0a 00 ]
+
+@asma-print-heap-usage ( -- )
+	;asma/heap LDA2 ;asma-heap SUB2 .Console/short #08 asma-DEO2
+	;&str1 .Console/string #08 asma-DEO2
+	;asma-heap/end ;asma/heap LDA2 SUB2 .Console/short #08 asma-DEO2
+	;&str2 .Console/string #08 asma-DEO2
+	JMP2r
+
+	&str1 [ 20 "bytes 20 "of 20 "heap 20 "used, 20 00 ]
+	&str2 [ 20 "bytes 20 "free. 0a 00 ]
 
 @asma-print-sublabels ( incoming-ptr* -- )
 	LDA2
@@ -640,7 +650,7 @@
 	,&new-label JCN
 
 	( label already exists )
-	( FIXME check label address )
+	( FIXME check label address hasn't changed (label defined twice) )
 	#01 JMP2r
 
 	&new-label ( incoming-ptr* )
