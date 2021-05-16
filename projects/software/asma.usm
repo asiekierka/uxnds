@@ -790,8 +790,6 @@
 	( hex short   ) ,asma-short-helper JMP
 
 	&invalid
-	POP2
-
 	;asma-msg-hex ;asma/error STA2
 	JMP2r
 
