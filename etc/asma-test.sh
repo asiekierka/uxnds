@@ -20,6 +20,15 @@ EOD
 	sed -ne '/%asma-IF-ERROR/,$p' ../projects/software/asma.usm
 }
 
+expect_failure() {
+    cat > 'in.usm'
+    if ../bin/debugger asma.rom > asma.log 2>/dev/null || ! grep -qF "${1}" asma.log; then
+        echo "error: asma didn't report error ${1} in faulty code"
+		tail asma.log
+        exit 1
+    fi
+}
+
 echo 'Assembling asma with uxnasm'
 build_asma > asma.usm
 ../bin/uxnasm asma.usm asma.rom > uxnasm.log
@@ -44,5 +53,31 @@ find ../projects -type f -name '*.usm' -not -name 'blank.usm' | sort | while rea
 
 	diff -u "uxnasm-${BN}.hex" "asma-${BN}.hex"
 done
+expect_failure 'Invalid hexadecimal: $defg' <<'EOD'
+|1000 $defg
+EOD
+expect_failure 'Invalid hexadecimal: #defg' <<'EOD'
+|1000 #defg
+EOD
+expect_failure 'Address not in zero page: .hello' <<'EOD'
+|1000 @hello
+	.hello
+EOD
+expect_failure 'Address outside range: ,hello' <<'EOD'
+|1000 @hello
+|2000 ,hello
+EOD
+expect_failure 'Label not found: hello' <<'EOD'
+hello
+EOD
+expect_failure 'Macro already exists: %abc' <<'EOD'
+%abc { def }
+%abc { ghi }
+EOD
+expect_failure 'Memory overwrite: SUB' <<'EOD'
+|2000 ADD
+|1000 SUB
+EOD
+
 echo 'All OK'
 
