@@ -42,7 +42,7 @@ then
 fi
 
 echo "Assembling.."
-./bin/uxnasm projects/demos/life.usm bin/boot.rom
+./bin/uxnasm projects/demos/piano.usm bin/boot.rom
 
 echo "Running.."
 if [ "${2}" = '--cli' ]; 

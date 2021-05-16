@@ -169,19 +169,15 @@ BRK
 @on-mouse ( -> )
 
 	;draw-cursor JSR2 
+	
 	.Mouse/state DEI #00 ! #01 JCN [ BRK ]
-	( wave-view )
-	.Mouse/x DEI2 DUP2 .wave-view/x1 LDZ2 >> ROT ROT .wave-view/x2 LDZ2 #0001 ++ << #0101 ==
-	.Mouse/y DEI2 DUP2 .wave-view/y1 LDZ2 >> ROT ROT .wave-view/y2 LDZ2 << #0101 ==
-	#0101 == ;on-touch-wave-view JCN2
-	( adsr-view )
-	.Mouse/x DEI2 DUP2 .adsr-view/x1 LDZ2 >> ROT ROT .adsr-view/x2 LDZ2 << #0101 ==
-	.Mouse/y DEI2 DUP2 .adsr-view/y1 LDZ2 >> ROT ROT .adsr-view/y2 LDZ2 << #0101 ==
-	#0101 == ;on-touch-adsr-view JCN2
-	( octave-view )
-	.Mouse/x DEI2 DUP2 .octave-view/x1 LDZ2 >> ROT ROT .octave-view/x2 LDZ2 << #0101 ==
-	.Mouse/y DEI2 DUP2 .octave-view/y1 LDZ2 >> ROT ROT .octave-view/y2 LDZ2 << #0101 ==
-	#0101 == ;on-touch-octave-view JCN2
+
+	.Mouse/x DEI2 .Mouse/y DEI2 .wave-view ;within-rect JSR2 
+		;on-touch-wave-view JCN2
+	.Mouse/x DEI2 .Mouse/y DEI2 .adsr-view ;within-rect JSR2 
+		;on-touch-adsr-view JCN2
+	.Mouse/x DEI2 .Mouse/y DEI2 .octave-view ;within-rect JSR2 
+		;on-touch-octave-view JCN2
 
 BRK
 
@@ -456,6 +452,23 @@ RTN
 		( incr ) SWP2 #0001 ++ SWP2
 		OVR2 OVR2 LTS2 ,&ver JCN
 	POP2 POP2 POP2 POP2
+
+RTN
+
+@within-rect ( x* y* rect -- flag )
+	
+	STH
+	( y < rect.y1 ) DUP2 STHkr #02 ADD LDZ2 LTH2 ,&skip JCN
+	( y > rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
+	SWP2
+	( x < rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
+	( x > rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ,&skip JCN
+	POP2 POP2 POPr
+	#01 
+RTN
+	&skip
+	POP2 POP2 POPr
+	#00
 
 RTN
 
