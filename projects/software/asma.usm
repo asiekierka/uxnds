@@ -931,7 +931,7 @@
 
 @asma-heap
 
-|ff00 &end
+|e000 &end
 
 (
 	Buffer for use with loading source code.
@@ -943,7 +943,7 @@
 
 @asma-read-buffer
 
-|ff80 &end
+|f800 &end
 
 (
 	Buffer for use with writing output.
