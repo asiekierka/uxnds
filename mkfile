@@ -7,9 +7,9 @@ CFLAGS=$CFLAGS -I/sys/include/npe
 BIN=/$objtype/bin/uxn
 HFILES=\
 	/sys/include/npe/stdio.h\
-	src/apu.h\
-	src/mpu.h\
-	src/ppu.h\
+	src/devices/apu.h\
+	src/devices/mpu.h\
+	src/devices/ppu.h\
 	src/uxn.h\
 
 CLEANFILES=${TARG:%=bin/%} `{echo $ROM | sed 's,([^ /]+/)+,bin/,g'}
@@ -44,5 +44,8 @@ $O.debugger: debugger.$O uxn.$O
 
 $O.emulator: emulator.$O apu.$O mpu.$O ppu.$O uxn.$O
 
-%.$O: src/%.c
-	$CC $CFLAGS -Isrc -o $target src/$stem.c
+(assembler|debugger|emulator|uxn)\.$O:R: src/\1.c
+	$CC $CFLAGS -Isrc -o $target src/$stem1.c
+
+(apu|mpu|ppu)\.$O:R: src/devices/\1.c
+	$CC $CFLAGS -Isrc -o $target src/devices/$stem1.c
