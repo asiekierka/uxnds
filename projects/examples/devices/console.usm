@@ -1,23 +1,19 @@
 ( dev/console )
 
-%RTN { JMP2r }
-
-( devices )
-
-|10 @Console    [ &pad $8 &char $1 ]
+|10 @Console [ &pad $8 &char ]
 
 ( init )
 
 |0100 ( -> )
 	
-	,hello-word 
+	;hello-word 
 
 	&loop
-		( send ) LDRk .Console/char DEO
-		( incr ) #01 ADD
-		( loop ) DUP ,&loop JCN
-	POP
+		( send ) LDAk .Console/char DEO
+		( incr ) #0001 ADD2
+		( loop ) LDAk ,&loop JCN
+	POP2
 	
 BRK
 
-@hello-word "hello 20 "World!
+@hello-word "Hello 20 "World!

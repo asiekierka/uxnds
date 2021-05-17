@@ -4,7 +4,7 @@ An [8-bit stack-based computer](https://wiki.xxiivv.com/site/uxn.html), written 
 
 ## Build
 
-To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/) and [Portmidi](http://portmedia.sourceforge.net/portmidi/).
+To build the Uxn emulator on Linux, you must have [SDL2](https://wiki.libsdl.org/) and [Portmidi](http://portmedia.sourceforge.net/portmidi/).
 
 ```sh
 ./build.sh 
@@ -12,7 +12,7 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/) and [P
 	--cli # Run rom without graphics
 ```
 
-On 9front:
+To build the Uxn emulator on the [9front](http://9front.org/) fork of Plan 9:
 
 ```rc
 mk
