@@ -1,0 +1,121 @@
+( GUI Proportional font )
+
+( devices )
+
+|00 @System [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|20 @Screen [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
+
+( variables )
+
+|0000
+
+( program )
+
+|0100
+	
+	( theme ) #0f9f .System/r DEO2 #0f3f .System/g DEO2 #0f30 .System/b DEO2
+	
+	#0000 ;draw JSR2
+	#0001 ;draw JSR2
+	#0002 ;draw JSR2
+	
+BRK
+
+@draw ( extra-spacing* -- )
+	STH2
+	;text
+	&loop
+	LDAk
+	DUP #00 EQU ,&end JCN
+	DUP #0a EQU ,&linefeed JCN
+	#00 #0005 SFT2 ;font ADD2
+	DUP2 .Screen/addr DEO2
+	#29 .Screen/color DEO
+	,get-x-advance JSR .Screen/x DEI2 ADD2 STH2kr ADD2 .Screen/x DEO2
+	&next
+	#0001 ADD2
+	,&loop JMP
+
+	&linefeed
+	POP
+	#0000 .Screen/x DEO2
+	#0008 .Screen/y DEI2 ADD2 STH2kr ADD2 .Screen/y DEO2
+	,&next JMP
+
+	&end
+	POP POP2 POP2r
+	JMP2r
+
+@get-x-advance ( font-char-addr* -- advance* )
+	( Save two 00 bytes for later use )
+	#0000 SWP2
+	( First, load the eight bytes that make up the character )
+	LDA2k SWP2 #0002 ADD2
+	LDA2k SWP2 #0002 ADD2
+	LDA2k SWP2 #0002 ADD2
+	LDA2
+	( OR all the bytes together, so we know which columns contain filled pixels )
+	ORA2 ORA2 ORA2 ORA
+	( Find the lowest set bit (using one of the 00 bytes at the top, but not consuming it) )
+	SUBk AND
+	( Convert the nine possible values (00-80) into an offset into the magic table (00-08). )
+	( They get jumbled up with these two operations, but each possible value remains unique )
+	#a3 MUL #16 DIV
+	( Load the byte from the magic table, return a short (consuming/returning the 00 bytes at the top) )
+	;&magic ADD2 LDA
+	JMP2r
+	( The magic table performs the last bit of arithmetic we want:
+	  * the advance in x should be one more than the number of columns with filled pixels,
+	  * with a maximum of 8, and
+	  * a minimum of 3. )
+	&magic
+		03 ( lowest set bit is 00, 0 columns wide )
+		06 ( lowest set bit is 08, 5 columns wide )
+		05 ( lowest set bit is 10, 4 columns wide )
+		08 ( lowest set bit is 02, 7 columns wide )
+		04 ( lowest set bit is 20, 3 columns wide )
+		03 ( lowest set bit is 80, 1 column wide )
+		07 ( lowest set bit is 04, 6 columns wide )
+		08 ( lowest set bit is 01, 8 columns wide )
+		03 ( lowest set bit is 40, 2 columns wide )
+
+@font ( spectrum-zx font, with each character moved to be flush left in its cell )
+[
+	0000 0000 0000 0000 0000 4800 fc78 0000 0000 4800 7884 0000 0000 d8f8 f870 2000
+	0020 70f8 f870 2000 0070 70f8 d820 7000 0020 70f8 f820 7000 0000 00c0 c000 0000
+	00fc 8484 8484 fc00 0000 6090 9060 0000 0030 4884 8448 3000 003c 0c74 9490 6000
+	0070 88d8 20f8 2000 0030 2020 20e0 e000 007c 4444 44cc cc00 0000 2088 0088 2000
+	0000 80c0 e0c0 8000 0000 2060 e060 2000 0040 e000 00e0 4000 00a0 a0a0 a000 a000
+	007c 9494 7414 1400 0018 608c c418 6000 0000 0000 0000 ffff 0040 e000 e040 00e0
+	0020 70a8 2020 2000 0020 2020 a870 2000 0000 1008 fc08 1000 0000 2040 fc40 2000
+	0000 8080 fc00 0000 0000 0048 cc48 0000 0000 2070 f800 0000 0000 00f8 7020 0000
+	0000 0000 0000 0000 0080 8080 8000 8000 00a0 a000 0000 0000 0048 fc48 48fc 4800
+	0020 78a0 7028 f020 0084 0810 2040 8400 0060 9064 9888 7400 0040 8000 0000 0000
+	0040 8080 8080 4000 0080 4040 4040 8000 0000 5020 f820 5000 0000 2020 f820 2000
+	0000 0000 0040 4080 0000 0000 f000 0000 0000 0000 0000 8000 0000 0810 2040 8000
+	0078 8c94 a4c4 7800 0060 a020 2020 f800 0078 8404 7880 fc00 0078 8438 0484 7800
+	0010 3050 90fc 1000 00fc 80f8 0484 7800 0078 80f8 8484 7800 00fc 0408 1020 2000
+	0078 8478 8484 7800 0078 8484 7c04 7800 0000 0080 0000 8000 0000 4000 0040 4080
+	0000 2040 8040 2000 0000 00f8 00f8 0000 0000 8040 2040 8000 0078 8404 1800 1000
+	0078 84b4 a884 7800 0030 4884 fc84 8400 00f8 84f8 8484 f800 0078 8480 8084 7800
+	00f0 8884 8488 f000 00fc 80f8 8080 fc00 007c 8080 f880 8000 0078 8480 9c84 7800
+	0084 84fc 8484 8400 00f8 2020 2020 f800 0004 0404 8484 7800 0088 90e0 9088 8400
+	0080 8080 8080 fc00 0084 ccb4 8484 8400 0084 c4a4 948c 8400 0078 8484 8484 7800
+	00f8 8484 f880 8000 0078 8484 a494 7800 00f8 8484 f888 8400 0078 8078 0484 7800
+	00fe 1010 1010 1000 0084 8484 8484 7800 0084 8484 8448 3000 0084 8484 b4cc 8400
+	0084 4830 3048 8400 0082 4428 1010 1000 00fc 0810 2040 fc00 00c0 8080 8080 c000
+	0080 4020 1008 0400 00c0 4040 4040 c000 0020 5088 0000 0000 0000 0000 0000 fc00
+	0080 4000 0000 0000 0000 7008 7888 7800 0080 80f0 8888 f000 0000 7880 8080 7800
+	0008 0878 8888 7800 0000 7088 f080 7800 0060 80e0 8080 8000 0000 7088 8878 0870
+	0080 80b0 c888 8800 0040 00c0 4040 2000 0010 0010 1010 9060 0080 90a0 c0a0 9000
+	0080 8080 8080 6000 0000 d0a8 a8a8 a800 0000 b0c8 8888 8800 0000 7088 8888 7000
+	0000 f088 88f0 8080 0000 7888 8878 080c 0000 b0c0 8080 8000 0000 7080 7008 f000
+	0040 40f0 4040 3000 0000 8888 8888 7000 0000 8888 5050 2000 0000 88a8 a8a8 5000
+	0000 8850 2050 8800 0000 8888 8878 0870 0000 f810 2040 f800 0060 4080 8040 6000
+	0080 8080 8080 8000 00c0 4020 2040 c000 0000 0064 9800 0000 3c42 99a1 a199 423c
+]
+
+@text "Are 20 "proportional 20 "fonts 20 "a 20 "good 20 "idea? 0a 0a
+	"The 20 "jury 20 "is 20 "still 20 "out, 20 "but 20 "one 20 "thing 20 "is 20 "certain: 0a
+	"it 20 "is 20 "possible 20 "to 20 "print 20 "with 20 "these 20 "fonts 20 "in 20 "Uxn. 0a 0a 0a 00
+
