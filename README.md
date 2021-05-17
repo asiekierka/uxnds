@@ -12,7 +12,7 @@ To build the Uxn emulator on Linux, you must have [SDL2](https://wiki.libsdl.org
 	--cli # Run rom without graphics
 ```
 
-To build the Uxn emulator on the [9front](http://9front.org/) fork of Plan 9:
+To build the Uxn emulator on [9front](http://9front.org/), via [npe](https://git.sr.ht/~ft/npe):
 
 ```rc
 mk
