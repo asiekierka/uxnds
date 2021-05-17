@@ -12,6 +12,15 @@ To build the Uxn emulator, you must have [SDL2](https://wiki.libsdl.org/) and [P
 	--cli # Run rom without graphics
 ```
 
+On 9front:
+
+```rc
+mk
+```
+
+If the build fails on 9front because of missing headers or functions,
+try again after `rm -r /sys/include/npe`.
+
 ## Emulator Controls
 
 - `ctrl+h` toggle debugger
