@@ -246,8 +246,10 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			if(fseek(f, offset, SEEK_SET) != -1 && (result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f)))
-				printf("%s %d bytes, at %04x from %s\n", read ? "Loaded" : "Saved", result, addr, name);
+			printf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
+			if(fseek(f, offset, SEEK_SET) != -1)
+				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
+			printf("%04x bytes\n", result);
 			fclose(f);
 		}
 		mempoke16(d->dat, 0x2, result);
