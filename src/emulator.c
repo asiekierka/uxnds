@@ -113,6 +113,7 @@ init(void)
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
 	if(gRenderer == NULL)
 		return error("Renderer", SDL_GetError());
+	SDL_RenderSetLogicalSize(gRenderer, ppu.width, ppu.height);
 	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width, ppu.height);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
