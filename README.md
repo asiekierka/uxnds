@@ -9,4 +9,8 @@ On start, a keyboard is presented on the bottom screen, and the uxn display - on
 Use the L or R buttons to swap them - in this configuration, mouse input is approximated via 
 touchscreen.
 
+When using a real DS, DSi or 3DS console, it is recommended to launch this program via
+[nds-hb-menu](https://github.com/devkitPro/nds-hb-menu) - though, as it currently doesn't use argc/argv,
+it doesn't really change much.
+
 Use the latest devkitARM toolchain from the devkitPro organization to compile.
