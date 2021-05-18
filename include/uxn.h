@@ -1,6 +1,12 @@
 #include <nds.h>
 #include <stdio.h>
 
+#ifdef DEBUG
+#define dprintf iprintf
+#else
+#define dprintf(...)
+#endif
+
 /*
 Copyright (c) 2021 Devine Lu Linvega
 Copyright (c) 2021 Adrian "asie" Siekierka

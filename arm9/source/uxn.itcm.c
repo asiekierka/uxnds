@@ -124,12 +124,12 @@ void (*ops[])(Uxn *u) = {
 int
 haltuxn(Uxn *u, char *name, int id)
 {
-	iprintf("Halted: %s#%04x, at 0x%04x\n", name, id, u->ram.ptr);
+	dprintf("Halted: %s#%04x, at 0x%04x\n", name, id, u->ram.ptr);
 	u->ram.ptr = 0;
 	return 0;
 }
 
-void
+inline void
 opcuxn(Uxn *u, Uint8 instr)
 {
 	Uint8 op = instr & 0x3f, freturn = instr & 0x40, fkeep = instr & 0x80;
@@ -144,7 +144,7 @@ opcuxn(Uxn *u, Uint8 instr)
 	(*ops[op])(u);
 }
 
-int
+inline int
 stepuxn(Uxn *u, Uint8 instr)
 {
 	opcuxn(u, instr);
@@ -183,7 +183,7 @@ loaduxn(Uxn *u, char *filepath)
 	if(!(f = fopen(filepath, "rb")))
 		return haltuxn(u, "Missing input rom.", 0);
 	fread(u->ram.dat + PAGE_PROGRAM, sizeof(u->ram.dat) - PAGE_PROGRAM, 1, f);
-	iprintf("Uxn loaded[%s].\n", filepath);
+	dprintf("Uxn loaded[%s].\n", filepath);
 	return 1;
 }
 
@@ -195,6 +195,6 @@ portuxn(Uxn *u, Uint8 id, char *name, void (*talkfn)(Device *d, Uint8 b0, Uint8 
 	d->u = u;
 	d->mem = u->ram.dat;
 	d->talk = talkfn;
-	iprintf("Device added #%02x: %s, at 0x%04x \n", id, name, d->addr);
+	dprintf("Device added #%02x: %s, at 0x%04x \n", id, name, d->addr);
 	return d;
 }

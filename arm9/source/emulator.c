@@ -19,7 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-DTCM_DATA
+DTCM_BSS
 static Ppu ppu;
 static Apu apu[POLYPHONY];
 static u32 apu_samples[(512 * 4) >> 1];
@@ -36,7 +36,7 @@ clamp(int val, int min, int max)
 int
 error(char *msg, const char *err)
 {
-	iprintf("Error %s: %s\n", msg, err);
+	dprintf("Error %s: %s\n", msg, err);
 	while(1) {}
 }
 
@@ -70,6 +70,7 @@ system_talk(Device *d, Uint8 b0, Uint8 w)
 	(void)b0;
 }
 
+#ifdef DEBUG
 void
 console_talk(Device *d, Uint8 b0, Uint8 w)
 {
@@ -82,6 +83,7 @@ console_talk(Device *d, Uint8 b0, Uint8 w)
 	}
 	fflush(stdout);
 }
+#endif
 
 void
 screen_talk(Device *d, Uint8 b0, Uint8 w)
@@ -112,10 +114,10 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			iprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
+			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
 			if(fseek(f, offset, SEEK_SET) != -1)
 				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
-			iprintf("%04x bytes\n", result);
+			dprintf("%04x bytes\n", result);
 			fclose(f);
 		}
 		mempoke16(d->dat, 0x2, result);
@@ -186,13 +188,16 @@ doctrl(Uxn *u)
 	}
 }
 
+static touchPosition tpos;
+
 void
 domouse(Uxn *u)
 {
-	touchPosition tpos;
 	bool firstTouch;
 
 	if (keysUp() & KEY_TOUCH) {
+		mempoke16(devmouse->dat, 0x2, tpos.px);
+		mempoke16(devmouse->dat, 0x4, tpos.py);
 		devmouse->dat[6] = 0x00;
 		devmouse->dat[7] = 0x00;
 		evaluxn(u, mempeek16(devmouse->dat, 0));
@@ -210,6 +215,25 @@ domouse(Uxn *u)
 			evaluxn(u, mempeek16(devmouse->dat, 0));
 		}
 	}
+}
+
+void
+datetime_talk(Device *d, Uint8 b0, Uint8 w)
+{
+	time_t seconds = time(NULL);
+	struct tm *t = localtime(&seconds);
+	t->tm_year += 1900;
+	mempoke16(d->dat, 0x0, t->tm_year);
+	d->dat[0x2] = t->tm_mon;
+	d->dat[0x3] = t->tm_mday;
+	d->dat[0x4] = t->tm_hour;
+	d->dat[0x5] = t->tm_min;
+	d->dat[0x6] = t->tm_sec;
+	d->dat[0x7] = t->tm_wday;
+	mempoke16(d->dat, 0x08, t->tm_yday);
+	d->dat[0xa] = t->tm_isdst;
+	(void)b0;
+	(void)w;
 }
 
 int
@@ -235,23 +259,24 @@ main(int argc, char **argv)
 	Keyboard *keyboard;
 
 	powerOn(POWER_ALL_2D);
-	fatInitDefault();
-
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
 
-	/* if(argc < 2)
-		return error("Input", "Missing"); */
+#ifdef DEBUG
+	consoleDemoInit();
+#endif
+
+	keyboardDemoInit();
+
 	if(!bootuxn(&u))
 		return error("Boot", "Failed");
-	// if(!loaduxn(&u, argv[1]))
+	if (!fatInitDefault())
+		return error("FAT init", "Failed");
 	chdir("/uxn");
 	if(!loaduxn(&u, "boot.rom"))
 		return error("Load", "Failed");
 	if(!init())
 		return error("Init", "Failed");
-
-	keyboardDemoInit();
 
 	keyboard = keyboardGetDefault();
 	keyboard->scrollSpeed = 0;
@@ -259,18 +284,21 @@ main(int argc, char **argv)
 	keyboardShow();
 
 	portuxn(&u, 0x0, "system", system_talk);
+#ifdef DEBUG
 	portuxn(&u, 0x1, "console", console_talk);
-	// portuxn(&u, 0x1, "---", nil_talk);
+#else
+	portuxn(&u, 0x1, "---", nil_talk);
+#endif
 	devscreen = portuxn(&u, 0x2, "screen", screen_talk);
 	devaudio0 = portuxn(&u, 0x3, "audio0", audio_talk);
 	portuxn(&u, 0x4, "audio1", audio_talk);
 	portuxn(&u, 0x5, "audio2", audio_talk);
 	portuxn(&u, 0x6, "audio3", audio_talk);
+	portuxn(&u, 0x7, "---", nil_talk);
 	devctrl = portuxn(&u, 0x8, "controller", nil_talk);
 	devmouse = portuxn(&u, 0x9, "mouse", nil_talk);
 	portuxn(&u, 0xa, "file", file_talk);
-	/* portuxn(&u, 0xb, "datetime", datetime_talk); */
-	portuxn(&u, 0xb, "---", nil_talk);
+	portuxn(&u, 0xb, "datetime", datetime_talk);
 	portuxn(&u, 0xc, "---", nil_talk);
 	portuxn(&u, 0xd, "---", nil_talk);
 	portuxn(&u, 0xe, "---", nil_talk);

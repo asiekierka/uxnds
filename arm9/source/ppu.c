@@ -46,6 +46,7 @@ putcolors(Ppu *p, Uint8 *addr)
 	}
 }
 
+ITCM_CODE
 void
 putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
@@ -56,6 +57,7 @@ putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 	layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
 }
 
+ITCM_CODE
 void
 puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
@@ -72,6 +74,7 @@ puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 		}
 }
 
+ITCM_CODE
 void
 putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
