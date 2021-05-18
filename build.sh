@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "Formatting.."
 clang-format -i src/uxn.h
