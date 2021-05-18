@@ -113,6 +113,7 @@ init(void)
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
 	if(gRenderer == NULL)
 		return error("Renderer", SDL_GetError());
+	SDL_RenderSetLogicalSize(gRenderer, ppu.width, ppu.height);
 	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width, ppu.height);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
@@ -136,8 +137,8 @@ void
 domouse(SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	Uint16 x = clamp(event->motion.x / zoom - ppu.pad, 0, ppu.hor * 8 - 1);
-	Uint16 y = clamp(event->motion.y / zoom - ppu.pad, 0, ppu.ver * 8 - 1);
+	Uint16 x = clamp(event->motion.x - ppu.pad, 0, ppu.hor * 8 - 1);
+	Uint16 y = clamp(event->motion.y - ppu.pad, 0, ppu.ver * 8 - 1);
 	mempoke16(devmouse->dat, 0x2, x);
 	mempoke16(devmouse->dat, 0x4, y);
 	devmouse->dat[7] = 0x00;
