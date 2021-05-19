@@ -26,7 +26,7 @@ static Apu apu[POLYPHONY];
 static Mpu mpu;
 static Device *devscreen, *devmouse, *devctrl, *devmidi, *devaudio0;
 
-Uint8 zoom = 0, debug = 0, reqdraw = 0;
+Uint8 zoom = 0, debug = 0, reqdraw = 0, bench = 0;
 
 int
 clamp(int val, int min, int max)
@@ -323,7 +323,9 @@ start(Uxn *u)
 	while(1) {
 		int i;
 		SDL_Event event;
-		double elapsed, start = SDL_GetPerformanceCounter();
+		double elapsed, start;
+		if(!bench)
+			start = SDL_GetPerformanceCounter();
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT:
@@ -360,8 +362,10 @@ start(Uxn *u)
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 		if(reqdraw)
 			redraw(ppu.output, u);
-		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
-		SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
+		if(!bench){
+			elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
+			SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
+		}
 	}
 	return 1;
 }
