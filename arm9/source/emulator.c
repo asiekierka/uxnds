@@ -246,6 +246,7 @@ start(Uxn *u)
 		domouse(u);
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 		swiWaitForVBlank();
+		copyppu(&ppu);
 	}
 	return 1;
 }
