@@ -86,7 +86,6 @@ quit(void)
 	free(ppu.output);
 	free(ppu.fg);
 	free(ppu.bg);
-	free(ppu.up);
 	SDL_UnlockAudioDevice(audio_id);
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;

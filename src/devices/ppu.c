@@ -41,11 +41,13 @@ readpixel(Uint8 *sprite, Uint8 h, Uint8 v)
 void
 clear(Ppu *p)
 {
-	int sz = p->height * p->width, rows = sz / 4;
-	memset(p->output, p->colors[0], sz);
-	memset(p->fg, 0, rows);
-	memset(p->bg, 0, rows);
-	memset(p->up, 0xff, p->ver);
+	int i, sz = p->height * p->width, rows = sz / 4;
+	for(i = 0; i < sz; ++i)
+		p->output[i] = p->colors[0];
+	for(i = 0; i < rows; i++) {
+		p->fg[i] = 0;
+		p->bg[i] = 0;
+	}
 }
 
 void
@@ -64,12 +66,9 @@ putcolors(Ppu *p, Uint8 *addr)
 void
 putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
-	if(x >= p->hor * 8 || y >= p->ver * 8)
+	Uint16 row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16), col = 7 - (x % 8);
+	if(x >= p->hor * 8 || y >= p->ver * 8 || row > (p->hor * p->ver * 16) - 8)
 		return;
-	int row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16);
-	if(row > (p->hor * p->ver * 16) - 8)
-		return;
-	int col = 7 - (x % 8);
 	if(color == 0 || color == 2)
 		layer[row] &= ~(1UL << col);
 	else
@@ -78,8 +77,6 @@ putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
 		layer[row + 8] &= ~(1UL << col);
 	else
 		layer[row + 8] |= 1UL << col;
-
-	p->up[y / 8] |= 1<<(y % 8);
 }
 
 void
@@ -146,25 +143,18 @@ void
 drawppu(Ppu *p)
 {
 	Uint16 x, y;
-	for(y = 0; y < p->ver; ++y) {
-		if(p->up[y] == 0)
-			continue;
+	for(y = 0; y < p->ver; ++y)
 		for(x = 0; x < p->hor; ++x) {
 			Uint8 v, h;
 			Uint16 key = (y * p->hor + x) * 16;
-			for(v = 0; v < 8; v++) {
-				if((p->up[y] & (1<<v)) == 0)
-					continue;
+			for(v = 0; v < 8; v++)
 				for(h = 0; h < 8; h++) {
 					Uint8 color = readpixel(&p->fg[key], h, v);
 					if(color == 0)
 						color = readpixel(&p->bg[key], h, v);
 					drawpixel(p, x * 8 + p->pad + 7 - h, y * 8 + p->pad + v, color);
 				}
-			}
 		}
-		p->up[y] = 0;
-	}
 }
 
 int
@@ -180,8 +170,6 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
 		return 0;
 	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
-		return 0;
-	if(!(p->up = malloc(p->ver)))
 		return 0;
 	clear(p);
 	return 1;
