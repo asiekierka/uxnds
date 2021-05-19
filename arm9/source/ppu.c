@@ -39,10 +39,14 @@ putcolors(Ppu *p, Uint8 *addr)
 	int i;
 	for(i = 0; i < 4; ++i) {
 		Uint8
-			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
-			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		BG_PALETTE[i] = RGB15(r * 31 / 15, g * 31 / 15, b * 31 / 15);
+			r = (*(addr + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f,
+			g = (*(addr + 2 + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f,
+			b = (*(addr + 4 + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f;
+		BG_PALETTE[i] = RGB15(
+			(r << 1) | (r >> 3),
+			(g << 1) | (g >> 3),
+			(b << 1) | (b >> 3)
+		);
 	}
 }
 
@@ -70,7 +74,7 @@ puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 					layer,
 					x + (flipx ? 7 - h : h),
 					y + (flipy ? 7 - v : v),
-					ch1 ? color % 4 : color / 4);
+					ch1 ? (color & 3) : (color >> 2));
 		}
 }
 
@@ -87,7 +91,7 @@ putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 				layer,
 				x + (flipx ? 7 - h : h),
 				y + (flipy ? 7 - v : v),
-				(((ch1 + ch2 * 2) + color / 4) & 0x3));
+				((((ch1 + ch2) << 1) + (color >> 2)) & 0x3));
 		}
 }
 
@@ -116,6 +120,7 @@ int
 initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 {
 	int i;
+	u16 *map_ptr;
 
 	p->hor = hor;
 	p->ver = ver;
@@ -133,13 +138,13 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	dmaFillWords(0, p->fg, 768 * 32);
 
 	// init bg data
+	map_ptr = BG_GFX + (24576 >> 1);
 	for (i = 0; i < 768; i++) {
-		BG_GFX[12288 + i] = i;
-		BG_GFX[12288 + 1024 + i] = i;
+		*(map_ptr++) = i;
 	}
 
 	REG_BG0CNT = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_3 | BG_TILE_BASE(0) | BG_MAP_BASE(12);
-	REG_BG1CNT = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_2 | BG_TILE_BASE(2) | BG_MAP_BASE(13);
+	REG_BG1CNT = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_2 | BG_TILE_BASE(2) | BG_MAP_BASE(12);
 
 	return 1;
 }
