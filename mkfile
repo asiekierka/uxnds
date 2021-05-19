@@ -30,13 +30,13 @@ bin:
 	bin/uxnasm $stem.usm $target >/dev/null
 
 bin/debugger: debugger.$O uxn.$O
-	$LD -o $target $prereq
+	$LD $LDFLAGS -o $target $prereq
 
 bin/uxnasm: assembler.$O
-	$LD -o $target $prereq
+	$LD $LDFLAGS -o $target $prereq
 
 bin/uxnemu: emulator.$O apu.$O mpu.$O ppu.$O uxn.$O
-	$LD -o $target $prereq
+	$LD $LDFLAGS -o $target $prereq
 
 (assembler|debugger|emulator|uxn)\.$O:R: src/\1.c
 	$CC $CFLAGS -Isrc -o $target src/$stem1.c
@@ -54,3 +54,5 @@ clean:V:
 
 install:QV: all
 	exit 'Sorry, there is no install rule yet'
+
+#LDFLAGS=-p
