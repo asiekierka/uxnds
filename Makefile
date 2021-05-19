@@ -24,7 +24,7 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all: checkarm7 checkarm9 $(TARGET).nds
+all: checkarm7 checkarm9 $(TARGET).nds $(TARGET)_debug.nds
 
 #---------------------------------------------------------------------------------
 checkarm7:
@@ -40,13 +40,21 @@ $(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
 	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
+$(TARGET)_debug.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_debug.elf
+	ndstool	-c $(TARGET)_debug.nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET)_debug.elf \
+	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	$(_ADDFILES)
+
 #---------------------------------------------------------------------------------
 arm7/$(TARGET).elf:
 	$(MAKE) -C arm7
 	
 #---------------------------------------------------------------------------------
 arm9/$(TARGET).elf:
-	$(MAKE) -C arm9
+	$(MAKE) -C arm9 DEBUG=false
+
+arm9/$(TARGET)_debug.elf:
+	$(MAKE) -C arm9 DEBUG=true
 
 #---------------------------------------------------------------------------------
 clean:

@@ -14,7 +14,11 @@ include $(DEVKITARM)/ds_rules
 # DATA is a list of directories containing binary files
 # all directories are relative to this makefile
 #---------------------------------------------------------------------------------
+ifeq ($(DEBUG),true)
+BUILD		:=	build_debug
+else
 BUILD		:=	build
+endif
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=
@@ -30,8 +34,13 @@ CFLAGS	:=	-g -Wall -O3 \
 			-ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM9 -DDEBUG
+CFLAGS		+=	$(INCLUDE) -DARM9
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
+
+ifeq ($(DEBUG),true)
+CFLAGS		+=	-DDEBUG -DCPU_ERROR_CHECKING -DDEBUG_PROFILE
+CXXFLAGS	+=	-DDEBUG -DCPU_ERROR_CHECKING -DDEBUG_PROFILE
+endif
 
 ASFLAGS	:=	-g $(ARCH) -march=armv5te -mtune=arm946e-s
 
@@ -55,7 +64,11 @@ LIBDIRS	:=	$(LIBNDS)
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
  
+ifeq ($(DEBUG),true)
+export ARM9ELF	:=	$(CURDIR)/$(TARGET)_debug.elf
+else
 export ARM9ELF	:=	$(CURDIR)/$(TARGET).elf
+endif
 export DEPSDIR := $(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -99,7 +112,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) *.elf *.nds* *.bin 
+	@rm -fr build build_debug *.elf *.nds* *.bin 
  
  
 #---------------------------------------------------------------------------------
