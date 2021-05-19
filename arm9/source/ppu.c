@@ -61,7 +61,7 @@ putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 	Uint32 pos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
 	Uint32 shift = (x & 7) << 2;
 	layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
-	tile_dirty[y >> 3] |= (x >> 3);
+	tile_dirty[y >> 3] |= 1 << (x >> 3);
 }
 
 ITCM_CODE
@@ -152,13 +152,14 @@ ITCM_CODE
 void
 copyppu(Ppu *p)
 {
-	int i, j, ofs;
+	int i, j, k, ofs;
 
 	for (i = 0; i < 24; i++) {
 		if (tile_dirty[i] != 0) {
 			ofs = i << 8;
-			for (j = 0; j < 32; j++, ofs += 8) {
-				if (tile_dirty[i] & j) {
+			k = 1;
+			for (j = 0; j < 32; j++, ofs += 8, k <<= 1) {
+				if (tile_dirty[i] & k) {
 					copytile(p->bg + ofs);
 					copytile(p->fg + ofs);
 				}
@@ -199,6 +200,11 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 
 	REG_BG0CNT = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_3 | BG_TILE_BASE(0) | BG_MAP_BASE(12);
 	REG_BG1CNT = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_2 | BG_TILE_BASE(2) | BG_MAP_BASE(12);
+
+	REG_BG0HOFS = 0;
+	REG_BG0VOFS = 0;
+	REG_BG1HOFS = 0;
+	REG_BG1VOFS = 0;
 
 	return 1;
 }

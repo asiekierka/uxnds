@@ -13,9 +13,9 @@ export TOPDIR	:=	$(CURDIR)
 NITRO_FILES	:=
 
 # These set the information text in the nds file
-GAME_TITLE     := uxnds v0.1.1
+GAME_TITLE     := uxnds v0.2.0
 GAME_SUBTITLE1 := tiny virtual machine
-GAME_SUBTITLE2 := 18/05/2021
+GAME_SUBTITLE2 := 19/05/2021
 
 include $(DEVKITARM)/ds_rules
 
@@ -24,7 +24,7 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all: checkarm7 checkarm9 $(TARGET).nds $(TARGET)_debug.nds
+all: checkarm7 checkarm9 checkarm9debug $(TARGET).nds $(TARGET)_debug.nds
 
 #---------------------------------------------------------------------------------
 checkarm7:
@@ -32,7 +32,10 @@ checkarm7:
 	
 #---------------------------------------------------------------------------------
 checkarm9:
-	$(MAKE) -C arm9
+	$(MAKE) -C arm9 DEBUG=false
+
+checkarm9debug:
+	$(MAKE) -C arm9 DEBUG=true
 
 #---------------------------------------------------------------------------------
 $(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf assets/uxn32.bmp

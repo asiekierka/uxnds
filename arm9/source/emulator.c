@@ -27,6 +27,13 @@ static Device *devscreen, *devctrl, *devmouse, *devaudio0;
 
 Uint8 dispswap = 0, debug = 0;
 
+#ifdef DEBUG
+static PrintConsole *mainConsole;
+#ifdef DEBUG_PROFILE
+static PrintConsole profileConsole;
+#endif
+#endif
+
 int
 clamp(int val, int min, int max)
 {
@@ -189,19 +196,21 @@ doctrl(Uxn *u)
 }
 
 static touchPosition tpos;
+static Uint8 last_dispswap = 0;
 
 void
 domouse(Uxn *u)
 {
 	bool firstTouch;
 
-	if (keysUp() & KEY_TOUCH) {
+	if (last_dispswap || (keysUp() & KEY_TOUCH)) {
 		mempoke16(devmouse->dat, 0x2, tpos.px);
 		mempoke16(devmouse->dat, 0x4, tpos.py);
 		devmouse->dat[6] = 0x00;
 		devmouse->dat[7] = 0x00;
 		evaluxn(u, mempeek16(devmouse->dat, 0));
-	} else if ((keysDown() | keysHeld()) & KEY_TOUCH) {
+		last_dispswap = 0;
+	} else if (dispswap && ((keysDown() | keysHeld()) & KEY_TOUCH)) {
 		firstTouch = (keysDown() & KEY_TOUCH);
 		touchRead(&tpos);
 		if (firstTouch
@@ -213,6 +222,7 @@ domouse(Uxn *u)
 			devmouse->dat[6] = 0x01;
 			devmouse->dat[7] = 0x00;
 			evaluxn(u, mempeek16(devmouse->dat, 0));
+			last_dispswap = 1;
 		}
 	}
 }
@@ -238,26 +248,54 @@ datetime_talk(Device *d, Uint8 b0, Uint8 w)
 
 #define timer_ticks(tid) (TIMER_DATA((tid)) | (TIMER_DATA((tid)+1) << 16))
 
+#ifdef DEBUG_PROFILE
+static Uint32 tticks_peak[3];
+
+void
+profiler_ticks(Uint32 tticks, int pos, const char *name)
+{
+	if (tticks_peak[pos] < tticks)
+		tticks_peak[pos] = tticks;
+	consoleSelect(&profileConsole);
+	iprintf("\x1b[%d;0H\x1b[0K%s: %d, peak %d\n", pos, name, tticks, tticks_peak[pos]);
+	consoleSelect(mainConsole);
+}
+#endif
+
 int
 start(Uxn *u)
 {
+#ifdef DEBUG_PROFILE
 	u32 tticks;
+#endif
 
 	evaluxn(u, 0x0100);
 	while(1) {
 		scanKeys();
+#ifdef DEBUG_PROFILE
+		// X+Y in debugger mode resets tticks_peak
+		if ((keysHeld() & (KEY_X | KEY_Y)) == (KEY_X | KEY_Y))
+			memset(tticks_peak, 0, sizeof(tticks_peak));
+		tticks = timer_ticks(0);
+#endif
 		doctrl(u);
 		domouse(u);
 #ifdef DEBUG_PROFILE
+		profiler_ticks(timer_ticks(0) - tticks, 1, "ctrl");
 		tticks = timer_ticks(0);
 #endif
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 #ifdef DEBUG_PROFILE
-		tticks = timer_ticks(0) - tticks;
-		iprintf("%d ticks\n", tticks);
+		profiler_ticks(timer_ticks(0) - tticks, 0, "main");
 #endif
 		swiWaitForVBlank();
+#ifdef DEBUG_PROFILE
+		tticks = timer_ticks(0);
+#endif
 		copyppu(&ppu);
+#ifdef DEBUG_PROFILE
+		profiler_ticks(timer_ticks(0) - tticks, 2, "flip");
+#endif
 	}
 	return 1;
 }
@@ -275,7 +313,7 @@ main(int argc, char **argv)
 	vramSetBankC(VRAM_C_SUB_BG);
 
 #ifdef DEBUG
-	consoleDemoInit();
+	mainConsole = consoleDemoInit();
 
 #ifdef DEBUG_PROFILE
 	// Timers 0-1 - profiling timers
@@ -283,7 +321,15 @@ main(int argc, char **argv)
 	TIMER1_DATA = 0;
 	TIMER0_CR = TIMER_ENABLE | TIMER_DIV_1;
 	TIMER1_CR = TIMER_ENABLE | TIMER_CASCADE;
+
+	consoleSetWindow(mainConsole, 0, 0, 32, 11);
+
+	profileConsole = *mainConsole;
+	consoleSetWindow(&profileConsole, 0, 11, 32, 4);
+#else
+	consoleSetWindow(mainConsole, 0, 0, 32, 14);
 #endif
+	consoleSelect(mainConsole);
 #endif
 
 	keyboardDemoInit();
