@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "../../include/uxn.h"
 
-// #define CPU_ERROR_CHECKING
-
 /*
 Copyright (u) 2021 Devine Lu Linvega
 Copyright (c) 2021 Adrian "asie" Siekierka
@@ -19,6 +17,7 @@ WITH REGARD TO THIS SOFTWARE.
 #pragma mark - Operations
 
 /* clang-format off */
+
 static inline void   push8(Stack *s, Uint8 a) {
 #ifdef CPU_ERROR_CHECKING
 	if (s->ptr == 0xff) { s->error = 2; return; }
@@ -64,6 +63,49 @@ haltuxn(Uxn *u, char *name, int id)
 static inline void
 opcuxn(Uxn *u, Uint8 instr)
 {
+#ifdef CPU_ERROR_CHECKING
+	// With CPU error checking enabled, the codebase becomes too large to fit in ITCM.
+	// Therefore, we take some concessions.
+	if (instr & 0x40) {
+		u->src = &u->rst;
+		u->dst = &u->wst;
+	} else {
+		u->src = &u->wst;
+		u->dst = &u->rst;
+	}
+
+	switch (instr & 0xBF) {
+#define UXN_SRC (u->src)
+#define UXN_DST (u->dst)
+
+#define UXN_KEEP_SYNC {}
+#define pop8 pop8_nokeep
+#define pop16(s) (pop8((s)) + (pop8((s)) << 8))
+
+#define UXN_OPC(a) (a)
+#include "uxn/opcodes.c"
+#undef UXN_OPC
+
+#undef pop16
+#undef pop8
+#undef UXN_KEEP_SYNC
+
+#define UXN_KEEP_SYNC {(*(UXN_SRC)).kptr = (*(UXN_SRC)).ptr;}
+#define pop8 pop8_keep
+#define pop16(s) (pop8((s)) + (pop8((s)) << 8))
+
+#define UXN_OPC(a) (a | 0x80)
+#include "uxn/opcodes.c"
+#undef UXN_OPC
+
+#undef pop16
+#undef pop8
+#undef UXN_KEEP_SYNC
+
+#undef UXN_DST
+#undef UXN_SRC
+	}
+#else
 	switch (instr) {
 #define UXN_KEEP_SYNC {}
 #define pop8 pop8_nokeep
@@ -113,6 +155,7 @@ opcuxn(Uxn *u, Uint8 instr)
 #undef pop8
 #undef UXN_KEEP_SYNC
 	}
+#endif
 }
 
 static inline int
