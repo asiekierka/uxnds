@@ -35,14 +35,14 @@ checkarm9:
 	$(MAKE) -C arm9
 
 #---------------------------------------------------------------------------------
-$(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
+$(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf assets/uxn32.bmp
 	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
-	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	-b assets/uxn32.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
-$(TARGET)_debug.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_debug.elf
+$(TARGET)_debug.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_debug.elf assets/uxn32.bmp
 	ndstool	-c $(TARGET)_debug.nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET)_debug.elf \
-	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	-b assets/uxn32.bmp "$(GAME_TITLE) (debug);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
 #---------------------------------------------------------------------------------
