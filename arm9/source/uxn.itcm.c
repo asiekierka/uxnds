@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "../../include/uxn.h"
 
-#define CPU_ERROR_CHECKING
+// #define CPU_ERROR_CHECKING
 
 /*
 Copyright (u) 2021 Devine Lu Linvega
@@ -64,26 +64,53 @@ haltuxn(Uxn *u, char *name, int id)
 static inline void
 opcuxn(Uxn *u, Uint8 instr)
 {
-	Uint8 op = instr & 0xbf, freturn = instr & 0x40, fkeep = instr & 0x80;
-	u->src = freturn ? &u->rst : &u->wst;
-	u->dst = freturn ? &u->wst : &u->rst;
-	u->src->kptr = u->src->ptr; // fkeep
-	switch (op) {
-#define UXN_OPC(a) (a)
+	u->wst.kptr = u->wst.ptr; // fkeep
+	u->rst.kptr = u->rst.ptr; // fkeep
+
+	switch (instr) {
 #define pop8 pop8_nokeep
 #define pop16(s) (pop8((s)) + (pop8((s)) << 8))
+
+#define UXN_OPC(a) (a)
+#define UXN_SRC (&u->wst)
+#define UXN_DST (&u->rst)
 #include "uxn/opcodes.c"
-#undef pop16
-#undef pop8
+#undef UXN_DST
+#undef UXN_SRC
 #undef UXN_OPC
 
-#define UXN_OPC(a) (a | 0x80)
-#define pop8 pop8_keep
-#define pop16(s) (pop8((s)) + (pop8((s)) << 8))
+#define UXN_OPC(a) (a | 0x40)
+#define UXN_SRC (&u->rst)
+#define UXN_DST (&u->wst)
 #include "uxn/opcodes.c"
+#undef UXN_DST
+#undef UXN_SRC
+#undef UXN_OPC
+
 #undef pop16
 #undef pop8
+
+#define pop8 pop8_keep
+#define pop16(s) (pop8((s)) + (pop8((s)) << 8))
+
+#define UXN_OPC(a) (a | 0x80)
+#define UXN_SRC (&u->wst)
+#define UXN_DST (&u->rst)
+#include "uxn/opcodes.c"
+#undef UXN_DST
+#undef UXN_SRC
 #undef UXN_OPC
+
+#define UXN_OPC(a) (a | 0xC0)
+#define UXN_SRC (&u->rst)
+#define UXN_DST (&u->wst)
+#include "uxn/opcodes.c"
+#undef UXN_DST
+#undef UXN_SRC
+#undef UXN_OPC
+
+#undef pop16
+#undef pop8
 	}
 }
 
