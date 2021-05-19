@@ -236,15 +236,26 @@ datetime_talk(Device *d, Uint8 b0, Uint8 w)
 	(void)w;
 }
 
+#define timer_ticks(tid) (TIMER_DATA((tid)) | (TIMER_DATA((tid)+1) << 16))
+
 int
 start(Uxn *u)
 {
+	u32 tticks;
+
 	evaluxn(u, 0x0100);
 	while(1) {
 		scanKeys();
 		doctrl(u);
 		domouse(u);
+#ifdef DEBUG_PROFILE
+		tticks = timer_ticks(0);
+#endif
 		evaluxn(u, mempeek16(devscreen->dat, 0));
+#ifdef DEBUG_PROFILE
+		tticks = timer_ticks(0) - tticks;
+		iprintf("%d ticks\n", tticks);
+#endif
 		swiWaitForVBlank();
 		copyppu(&ppu);
 	}
@@ -265,6 +276,14 @@ main(int argc, char **argv)
 
 #ifdef DEBUG
 	consoleDemoInit();
+
+#ifdef DEBUG_PROFILE
+	// Timers 0-1 - profiling timers
+	TIMER0_DATA = 0;
+	TIMER1_DATA = 0;
+	TIMER0_CR = TIMER_ENABLE | TIMER_DIV_1;
+	TIMER1_CR = TIMER_ENABLE | TIMER_CASCADE;
+#endif
 #endif
 
 	keyboardDemoInit();
