@@ -32,6 +32,8 @@ static Uint8 font[][8] = {
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x82, 0x7c},
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x80, 0x80}};
 
+DTCM_BSS
+static Uint32 tile_dirty[24];
 
 void
 putcolors(Ppu *p, Uint8 *addr)
@@ -59,6 +61,7 @@ putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 	Uint32 pos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
 	Uint32 shift = (x & 7) << 2;
 	layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
+	tile_dirty[y >> 3] |= (x >> 3);
 }
 
 ITCM_CODE
@@ -116,6 +119,55 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 	}
 } */
 
+DTCM_BSS
+static Uint32 tile_backup[8];
+
+static inline void
+copytile(Uint32 *tptr)
+{
+	// TODO: use ldmia/stmia for faster performance
+
+	tile_backup[0] = tptr[0];
+	tile_backup[1] = tptr[1];
+	tile_backup[2] = tptr[2];
+	tile_backup[3] = tptr[3];
+	tile_backup[4] = tptr[4];
+	tile_backup[5] = tptr[5];
+	tile_backup[6] = tptr[6];
+	tile_backup[7] = tptr[7];
+
+	tptr = (Uint32*) (((u32) tptr) & 0xFFFEFFFF);
+
+	tptr[0] = tile_backup[0];
+	tptr[1] = tile_backup[1];
+	tptr[2] = tile_backup[2];
+	tptr[3] = tile_backup[3];
+	tptr[4] = tile_backup[4];
+	tptr[5] = tile_backup[5];
+	tptr[6] = tile_backup[6];
+	tptr[7] = tile_backup[7];
+}
+
+ITCM_CODE
+void
+copyppu(Ppu *p)
+{
+	int i, j, ofs;
+
+	for (i = 0; i < 24; i++) {
+		if (tile_dirty[i] != 0) {
+			ofs = i << 8;
+			for (j = 0; j < 32; j++, ofs += 8) {
+				if (tile_dirty[i] & j) {
+					copytile(p->bg + ofs);
+					copytile(p->fg + ofs);
+				}
+			}
+			tile_dirty[i] = 0;
+		}
+	}
+}
+
 int
 initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 {
@@ -132,10 +184,12 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
 	vramSetBankA(VRAM_A_MAIN_BG);
 
 	// clear tile data
-	p->bg = (Uint32*) BG_TILE_RAM(0);
-	p->fg = (Uint32*) BG_TILE_RAM(2);
-	dmaFillWords(0, p->bg, 768 * 32);
-	dmaFillWords(0, p->fg, 768 * 32);
+	p->bg = (Uint32*) BG_TILE_RAM(4);
+	p->fg = (Uint32*) BG_TILE_RAM(6);
+	for (i = 0; i < 8; i += 2) {
+		dmaFillWords(0, BG_TILE_RAM(i), 768 * 32);
+	}
+	memset(tile_dirty, 0, sizeof(tile_dirty));
 
 	// init bg data
 	map_ptr = BG_GFX + (24576 >> 1);

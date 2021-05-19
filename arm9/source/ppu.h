@@ -28,3 +28,4 @@ void putcolors(Ppu *p, Uint8 *addr);
 void putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color);
 void puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
 void putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void copyppu(Ppu *p);
