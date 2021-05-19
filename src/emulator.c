@@ -334,7 +334,7 @@ start(Uxn *u)
 			case SDL_TEXTINPUT:
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
-				if(event.text.text[0] >= ' ' || event.text.text[0] <= '~')
+				if(event.text.text[0] >= ' ' && event.text.text[0] <= '~')
 					devctrl->dat[3] = event.text.text[0];
 				doctrl(u, &event, event.type == SDL_KEYDOWN);
 				evaluxn(u, mempeek16(devctrl->dat, 0));
@@ -362,7 +362,7 @@ start(Uxn *u)
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 		if(reqdraw)
 			redraw(ppu.output, u);
-		if(!bench){
+		if(!bench) {
 			elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 			SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
 		}
