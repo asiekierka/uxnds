@@ -64,10 +64,8 @@ haltuxn(Uxn *u, char *name, int id)
 static inline void
 opcuxn(Uxn *u, Uint8 instr)
 {
-	u->wst.kptr = u->wst.ptr; // fkeep
-	u->rst.kptr = u->rst.ptr; // fkeep
-
 	switch (instr) {
+#define UXN_KEEP_SYNC {}
 #define pop8 pop8_nokeep
 #define pop16(s) (pop8((s)) + (pop8((s)) << 8))
 
@@ -89,7 +87,9 @@ opcuxn(Uxn *u, Uint8 instr)
 
 #undef pop16
 #undef pop8
+#undef UXN_KEEP_SYNC
 
+#define UXN_KEEP_SYNC {(*(UXN_SRC)).kptr = (*(UXN_SRC)).ptr;}
 #define pop8 pop8_keep
 #define pop16(s) (pop8((s)) + (pop8((s)) << 8))
 
@@ -111,6 +111,7 @@ opcuxn(Uxn *u, Uint8 instr)
 
 #undef pop16
 #undef pop8
+#undef UXN_KEEP_SYNC
 	}
 }
 
@@ -118,10 +119,12 @@ static inline int
 stepuxn(Uxn *u, Uint8 instr)
 {
 	opcuxn(u, instr);
+#ifdef CPU_ERROR_CHECKING
 	if(u->wst.error)
 		return haltuxn(u, u->wst.error == 1 ? "Working-stack underflow" : "Working-stack overflow", instr);
 	if(u->rst.error)
 		return haltuxn(u, u->rst.error == 1 ? "Return-stack underflow" : "Return-stack overflow", instr);
+#endif
 	return 1;
 }
 
@@ -129,8 +132,10 @@ int
 evaluxn(Uxn *u, Uint16 vec)
 {
 	u->ram.ptr = vec;
+#ifdef CPU_ERROR_CHECKING
 	u->wst.error = 0;
 	u->rst.error = 0;
+#endif
 	while(u->ram.ptr)
 		if(!stepuxn(u, u->ram.dat[u->ram.ptr++]))
 			return 0;
