@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "../../include/uxn.h"
 
+#define CPU_ERROR_CHECKING
+
 /*
 Copyright (u) 2021 Devine Lu Linvega
 Copyright (c) 2021 Adrian "asie" Siekierka
@@ -17,9 +19,24 @@ WITH REGARD TO THIS SOFTWARE.
 #pragma mark - Operations
 
 /* clang-format off */
-static inline void   push8(Stack *s, Uint8 a) { if (s->ptr == 0xff) { s->error = 2; return; } s->dat[s->ptr++] = a; }
-static inline Uint8  pop8_keep(Stack *s) { if (s->kptr == 0) { s->error = 1; return 0; } return s->dat[--s->kptr]; }
-static inline Uint8  pop8_nokeep(Stack *s) { if (s->ptr == 0) { s->error = 1; return 0; } return s->dat[--s->ptr]; }
+static inline void   push8(Stack *s, Uint8 a) {
+#ifdef CPU_ERROR_CHECKING
+	if (s->ptr == 0xff) { s->error = 2; return; }
+#endif
+	s->dat[s->ptr++] = a;
+}
+static inline Uint8  pop8_keep(Stack *s) {
+#ifdef CPU_ERROR_CHECKING
+	if (s->kptr == 0) { s->error = 1; return 0; }
+#endif
+	return s->dat[--s->kptr];
+}
+static inline Uint8  pop8_nokeep(Stack *s) {
+#ifdef CPU_ERROR_CHECKING
+	if (s->ptr == 0) { s->error = 1; return 0; }
+#endif
+	return s->dat[--s->ptr];
+}
 static inline void   mempoke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
 static inline Uint8  mempeek8(Uint8 *m, Uint16 a) { return m[a]; }
 static inline void   devpoke8(Device *d, Uint8 a, Uint8 b) { d->dat[a & 0xf] = b; d->talk(d, a & 0x0f, 1); }
