@@ -17,16 +17,18 @@ typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;
 
+typedef struct Layer {
+	Uint32 *pixels, colors[4];
+} Layer;
+
 typedef struct Ppu {
-	Uint8 *bg, *fg;
-	Uint16 hor, ver, pad, width, height;
-	Uint32 *output, colors[4];
+	Uint16 hor, ver, width, height;
+	Layer fg, bg;
 } Ppu;
 
-int initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad);
+int initppu(Ppu *p, Uint8 hor, Uint8 ver);
 void putcolors(Ppu *p, Uint8 *addr);
-void putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color);
-void puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
-void putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
-void drawppu(Ppu *p);
+void putpixel(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 color);
+void puticn(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void putchr(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
 void drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr);

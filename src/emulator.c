@@ -20,11 +20,14 @@ WITH REGARD TO THIS SOFTWARE.
 static SDL_AudioDeviceID audio_id;
 static SDL_Window *gWindow;
 static SDL_Renderer *gRenderer;
-static SDL_Texture *gTexture;
+static SDL_Texture *fgTexture, *bgTexture;
+static SDL_Rect gRect;
 static Ppu ppu;
 static Apu apu[POLYPHONY];
 static Mpu mpu;
 static Device *devscreen, *devmouse, *devctrl, *devmidi, *devaudio0;
+
+#define PAD 16
 
 Uint8 zoom = 0, debug = 0, reqdraw = 0, bench = 0;
 
@@ -53,14 +56,15 @@ audio_callback(void *u, Uint8 *stream, int len)
 }
 
 void
-redraw(Uint32 *dst, Uxn *u)
+redraw(Uxn *u)
 {
-	drawppu(&ppu);
 	if(debug)
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
-	SDL_UpdateTexture(gTexture, NULL, dst, ppu.width * sizeof(Uint32));
+	SDL_UpdateTexture(bgTexture, &gRect, ppu.bg.pixels, ppu.width * sizeof(Uint32));
+	SDL_UpdateTexture(fgTexture, &gRect, ppu.fg.pixels, ppu.width * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
-	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+	SDL_RenderCopy(gRenderer, bgTexture, NULL, NULL);
+	SDL_RenderCopy(gRenderer, fgTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
 	reqdraw = 0;
 }
@@ -69,26 +73,27 @@ void
 toggledebug(Uxn *u)
 {
 	debug = !debug;
-	redraw(ppu.output, u);
+	redraw(u);
 }
 
 void
 togglezoom(Uxn *u)
 {
 	zoom = zoom == 3 ? 1 : zoom + 1;
-	SDL_SetWindowSize(gWindow, ppu.width * zoom, ppu.height * zoom);
-	redraw(ppu.output, u);
+	SDL_SetWindowSize(gWindow, (ppu.width + PAD * 2) * zoom, (ppu.height + PAD * 2) * zoom);
+	redraw(u);
 }
 
 void
 quit(void)
 {
-	free(ppu.output);
-	free(ppu.fg);
-	free(ppu.bg);
+	free(ppu.fg.pixels);
+	free(ppu.bg.pixels);
 	SDL_UnlockAudioDevice(audio_id);
-	SDL_DestroyTexture(gTexture);
-	gTexture = NULL;
+	SDL_DestroyTexture(bgTexture);
+	bgTexture = NULL;
+	SDL_DestroyTexture(fgTexture);
+	fgTexture = NULL;
 	SDL_DestroyRenderer(gRenderer);
 	gRenderer = NULL;
 	SDL_DestroyWindow(gWindow);
@@ -101,22 +106,31 @@ int
 init(void)
 {
 	SDL_AudioSpec as;
-	if(!initppu(&ppu, 48, 32, 16))
+	if(!initppu(&ppu, 48, 32))
 		return error("PPU", "Init failure");
+	gRect.x = PAD;
+	gRect.y = PAD;
+	gRect.w = ppu.width;
+	gRect.h = ppu.height;
 	if(!initmpu(&mpu, 1))
 		return error("MPU", "Init failure");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppu.width * zoom, ppu.height * zoom, SDL_WINDOW_SHOWN);
+	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, (ppu.width + PAD * 2) * zoom, (ppu.height + PAD * 2) * zoom, SDL_WINDOW_SHOWN);
 	if(gWindow == NULL)
 		return error("Window", SDL_GetError());
 	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
 	if(gRenderer == NULL)
 		return error("Renderer", SDL_GetError());
-	SDL_RenderSetLogicalSize(gRenderer, ppu.width, ppu.height);
-	gTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width, ppu.height);
-	if(gTexture == NULL)
+	SDL_RenderSetLogicalSize(gRenderer, ppu.width + PAD * 2, ppu.height + PAD * 2);
+	bgTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width + PAD * 2, ppu.height + PAD * 2);
+	if(bgTexture == NULL || SDL_SetTextureBlendMode(bgTexture, SDL_BLENDMODE_NONE))
 		return error("Texture", SDL_GetError());
+	fgTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width + PAD * 2, ppu.height + PAD * 2);
+	if(fgTexture == NULL || SDL_SetTextureBlendMode(fgTexture, SDL_BLENDMODE_BLEND))
+		return error("Texture", SDL_GetError());
+	SDL_UpdateTexture(bgTexture, NULL, ppu.bg.pixels, 4);
+	SDL_UpdateTexture(fgTexture, NULL, ppu.fg.pixels, 4);
 	SDL_StartTextInput();
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_zero(as);
@@ -137,8 +151,8 @@ void
 domouse(SDL_Event *event)
 {
 	Uint8 flag = 0x00;
-	Uint16 x = clamp(event->motion.x - ppu.pad, 0, ppu.hor * 8 - 1);
-	Uint16 y = clamp(event->motion.y - ppu.pad, 0, ppu.ver * 8 - 1);
+	Uint16 x = clamp(event->motion.x - PAD, 0, ppu.hor * 8 - 1);
+	Uint16 y = clamp(event->motion.y - PAD, 0, ppu.ver * 8 - 1);
 	mempoke16(devmouse->dat, 0x2, x);
 	mempoke16(devmouse->dat, 0x4, y);
 	devmouse->dat[7] = 0x00;
@@ -223,7 +237,7 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 x = mempeek16(d->dat, 0x8);
 		Uint16 y = mempeek16(d->dat, 0xa);
 		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-		Uint8 *layer = d->dat[0xe] >> 4 & 0x1 ? ppu.fg : ppu.bg;
+		Layer *layer = d->dat[0xe] >> 4 & 0x1 ? &ppu.fg : &ppu.bg;
 		Uint8 mode = d->dat[0xe] >> 5;
 		if(!mode)
 			putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
@@ -319,11 +333,11 @@ int
 start(Uxn *u)
 {
 	evaluxn(u, 0x0100);
-	redraw(ppu.output, u);
+	redraw(u);
 	while(1) {
 		int i;
 		SDL_Event event;
-		double elapsed, start;
+		double elapsed, start = 0;
 		if(!bench)
 			start = SDL_GetPerformanceCounter();
 		while(SDL_PollEvent(&event) != 0) {
@@ -348,7 +362,7 @@ start(Uxn *u)
 				break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(ppu.output, u);
+					redraw(u);
 				break;
 			}
 		}
@@ -361,7 +375,7 @@ start(Uxn *u)
 		}
 		evaluxn(u, mempeek16(devscreen->dat, 0));
 		if(reqdraw)
-			redraw(ppu.output, u);
+			redraw(u);
 		if(!bench) {
 			elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
 			SDL_Delay(clamp(16.666f - elapsed, 0, 1000));

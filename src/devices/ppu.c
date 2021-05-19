@@ -41,12 +41,10 @@ readpixel(Uint8 *sprite, Uint8 h, Uint8 v)
 void
 clear(Ppu *p)
 {
-	int i, sz = p->height * p->width, rows = sz / 4;
-	for(i = 0; i < sz; ++i)
-		p->output[i] = p->colors[0];
-	for(i = 0; i < rows; i++) {
-		p->fg[i] = 0;
-		p->bg[i] = 0;
+	int i, sz = p->height * p->width;
+	for(i = 0; i < sz; ++i) {
+		p->fg.pixels[i] = p->fg.colors[0];
+		p->bg.pixels[i] = p->bg.colors[0];
 	}
 }
 
@@ -59,28 +57,23 @@ putcolors(Ppu *p, Uint8 *addr)
 			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		p->colors[i] = (r << 20) + (r << 16) + (g << 12) + (g << 8) + (b << 4) + b;
+		p->bg.colors[i] = 0xff000000 | (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
+		p->fg.colors[i] = 0xff000000 | (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
 	}
+	p->fg.colors[0] = 0;
+	clear(p);
 }
 
 void
-putpixel(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 color)
+putpixel(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 color)
 {
-	Uint16 row = (y % 8) + ((x / 8 + y / 8 * p->hor) * 16), col = 7 - (x % 8);
-	if(x >= p->hor * 8 || y >= p->ver * 8 || row > (p->hor * p->ver * 16) - 8)
+	if(x >= p->width || y >= p->height)
 		return;
-	if(color == 0 || color == 2)
-		layer[row] &= ~(1UL << col);
-	else
-		layer[row] |= 1UL << col;
-	if(color == 0 || color == 1)
-		layer[row + 8] &= ~(1UL << col);
-	else
-		layer[row + 8] |= 1UL << col;
+	layer->pixels[y * p->width + x] = layer->colors[color];
 }
 
 void
-puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+puticn(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
@@ -96,7 +89,7 @@ puticn(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uin
 }
 
 void
-putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+putchr(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint16 v, h;
 	for(v = 0; v < 8; v++)
@@ -114,62 +107,34 @@ putchr(Ppu *p, Uint8 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uin
 /* output */
 
 void
-drawpixel(Ppu *p, Uint16 x, Uint16 y, Uint8 color)
-{
-	if(x >= p->pad && x <= p->width - p->pad - 1 && y >= p->pad && y <= p->height - p->pad - 1)
-		p->output[y * p->width + x] = p->colors[color];
-}
-
-void
 drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 {
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x20; ++i) { /* memory */
 		x = ((i % 8) * 3 + 1) * 8, y = (i / 8 + 1) * 8, b = stack[i];
-		puticn(p, p->bg, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
-		puticn(p, p->bg, x + 8, y, font[b & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
+		puticn(p, &p->bg, x, y, font[(b >> 4) & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
+		puticn(p, &p->bg, x + 8, y, font[b & 0xf], 1 + (ptr == i) * 0x7, 0, 0);
 	}
 	for(x = 0; x < 0x20; ++x) {
-		drawpixel(p, x, p->height / 2, 2);
-		drawpixel(p, p->width - x, p->height / 2, 2);
-		drawpixel(p, p->width / 2, p->height - x, 2);
-		drawpixel(p, p->width / 2, x, 2);
-		drawpixel(p, p->width / 2 - 16 + x, p->height / 2, 2);
-		drawpixel(p, p->width / 2, p->height / 2 - 16 + x, 2);
+		putpixel(p, &p->bg, x, p->height / 2, 2);
+		putpixel(p, &p->bg, p->width - x, p->height / 2, 2);
+		putpixel(p, &p->bg, p->width / 2, p->height - x, 2);
+		putpixel(p, &p->bg, p->width / 2, x, 2);
+		putpixel(p, &p->bg, p->width / 2 - 16 + x, p->height / 2, 2);
+		putpixel(p, &p->bg, p->width / 2, p->height / 2 - 16 + x, 2);
 	}
-}
-
-void
-drawppu(Ppu *p)
-{
-	Uint16 x, y;
-	for(y = 0; y < p->ver; ++y)
-		for(x = 0; x < p->hor; ++x) {
-			Uint8 v, h;
-			Uint16 key = (y * p->hor + x) * 16;
-			for(v = 0; v < 8; v++)
-				for(h = 0; h < 8; h++) {
-					Uint8 color = readpixel(&p->fg[key], h, v);
-					if(color == 0)
-						color = readpixel(&p->bg[key], h, v);
-					drawpixel(p, x * 8 + p->pad + 7 - h, y * 8 + p->pad + v, color);
-				}
-		}
 }
 
 int
-initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
+initppu(Ppu *p, Uint8 hor, Uint8 ver)
 {
 	p->hor = hor;
 	p->ver = ver;
-	p->pad = pad;
-	p->width = (8 * p->hor + p->pad * 2);
-	p->height = (8 * p->ver + p->pad * 2);
-	if(!(p->output = malloc(p->width * p->height * sizeof(Uint32))))
+	p->width = 8 * p->hor;
+	p->height = 8 * p->ver;
+	if(!(p->bg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
 		return 0;
-	if(!(p->bg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
-		return 0;
-	if(!(p->fg = malloc(p->width * p->height * sizeof(Uint8) / 4)))
+	if(!(p->fg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
 		return 0;
 	clear(p);
 	return 1;
