@@ -165,9 +165,9 @@ nil_talk(Device *d, Uint8 b0, Uint8 w)
 void
 doctrl(Uxn *u)
 {
-	bool changed;
+	bool changed = false;
 	u8 old_flags = devctrl->dat[2];
-	int key = keyboardUpdate();
+	int key = dispswap ? -1 : keyboardUpdate();
 
 	int pressed = keysDown();
 	int held = pressed | keysHeld();
@@ -182,13 +182,30 @@ doctrl(Uxn *u)
 		| ((held & 0xC0) >> 2)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
 		| ((held & KEY_LEFT) ? 0x40 : 0);
-	changed = old_flags != devctrl->dat[2];
 
 	if (key > 0) {
 		devctrl->dat[3] = key;
 		changed = true;
+	} else switch (key) {
+		case DVK_FOLD:
+			devctrl->dat[3] = 27;
+			changed = true;
+			break;
+		case DVK_UP:
+			devctrl->dat[2] |= (1 << 4);
+			break;
+		case DVK_DOWN:
+			devctrl->dat[2] |= (1 << 5);
+			break;
+		case DVK_LEFT:
+			devctrl->dat[2] |= (1 << 6);
+			break;
+		case DVK_RIGHT:
+			devctrl->dat[2] |= (1 << 7);
+			break;
 	}
 
+	changed |= old_flags != devctrl->dat[2];
 	if (changed) {
 		evaluxn(u, mempeek16(devctrl->dat, 0));
 		devctrl->dat[3] = 0;
