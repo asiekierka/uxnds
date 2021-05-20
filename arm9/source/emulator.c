@@ -44,7 +44,9 @@ int
 error(char *msg, const char *err)
 {
 	dprintf("Error %s: %s\n", msg, err);
-	while(1) {}
+	while(1) {
+		swiWaitForVBlank();
+	}
 }
 
 void
@@ -92,6 +94,7 @@ console_talk(Device *d, Uint8 b0, Uint8 w)
 }
 #endif
 
+ITCM_ARM_CODE
 void
 screen_talk(Device *d, Uint8 b0, Uint8 w)
 {
