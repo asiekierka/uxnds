@@ -33,8 +33,11 @@ static Uint8 font[][8] = {
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x82, 0x7c},
 	{0x00, 0x7c, 0x82, 0x80, 0xf0, 0x80, 0x80, 0x80}};
 
+#define PPU_TILES_WIDTH 32
+#define PPU_TILES_HEIGHT 24
+
 DTCM_BSS
-static Uint32 tile_dirty[24];
+static Uint32 tile_dirty[PPU_TILES_HEIGHT];
 
 DTCM_DATA
 static Uint32 lut_expand_8_32[256] = {
@@ -67,9 +70,9 @@ ITCM_ARM_CODE
 void
 putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
-	if(x >= 32 * 8 || y >= 24 * 8)
+	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
-	Uint32 pos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
+	Uint32 pos = ((y & 7) + (((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8));
 	Uint32 shift = (x & 7) << 2;
 	layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
 	tile_dirty[y >> 3] |= 1 << (x >> 3);
@@ -80,25 +83,25 @@ void
 puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline;
-	Uint8 xrightedge = x < (31 * 8);
+	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
 	Uint16 v;
 	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
 
-	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
+	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8));
 	Uint32 *layerptr = &layer[layerpos];
 	Uint32 shift = (x & 7) << 2;
 	Uint32 *lut_expand = flipx ? lut_expand_8_32 : lut_expand_8_32_flipx;
 
 	if (flipy) flipy = 7;
 
-	if(x >= 32 * 8 || y >= 24 * 8)
+	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
 
 	if (color != 0x05 && color != 0x0a && color != 0x0f) {
 		u64 mask = ~((u64)0xFFFFFFFF << shift);
 
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (24 * 8)) break;
+			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
 
 			sprline = sprite[v ^ flipy];
 			u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
@@ -107,11 +110,11 @@ puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 			layerptr[0] = (layerptr[0] & mask) | data;
 			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 
-			if (((y + v) & 7) == 7) layerptr += 248;
+			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
 	} else {
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (24 * 8)) break;
+			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
 
 			sprline = sprite[v ^ flipy];
 			u64 mask = ~((u64)(lut_expand[sprline] * 0xF) << shift);
@@ -120,7 +123,7 @@ puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 			layerptr[0] = (layerptr[0] & mask) | data;
 			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 
-			if (((y + v) & 7) == 7) layerptr += 248;
+			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
 	}
 
@@ -133,25 +136,25 @@ void
 putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline1, sprline2;
-	Uint8 xrightedge = x < (31 * 8);
+	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
 	Uint16 v;
 	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
 
-	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
+	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8));
 	Uint32 *layerptr = &layer[layerpos];
 	Uint32 shift = (x & 7) << 2;
 	Uint32 *lut_expand = flipx ? lut_expand_8_32 : lut_expand_8_32_flipx;
 
 	if (flipy) flipy = 7;
 
-	if(x >= 32 * 8 || y >= 24 * 8)
+	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
 
 	u64 mask = ~((u64)0xFFFFFFFF << shift);
 	u32 colconst = (color >> 2) * 0x11111111;
 
 	for (v = 0; v < 8; v++, layerptr++) {
-		if ((y + v) >= (24 * 8)) break;
+		if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
 
 		sprline1 = sprite[v ^ flipy];
 		sprline2 = sprite[(v ^ flipy) | 8];
@@ -165,7 +168,7 @@ putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 		layerptr[0] = (layerptr[0] & mask) | data;
 		if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 
-		if (((y + v) & 7) == 7) layerptr += 248;
+		if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 	}
 
 	tile_dirty[y >> 3] |= dirtyflag;
@@ -244,15 +247,10 @@ copyppu(Ppu *p)
 }
 
 int
-initppu(Ppu *p, Uint8 hor, Uint8 ver)
+initppu(Ppu *p)
 {
 	int i;
 	u16 *map_ptr;
-
-	p->hor = hor;
-	p->ver = ver;
-	p->width = (8 * p->hor);
-	p->height = (8 * p->ver);
 
 	videoSetMode(DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);
@@ -261,13 +259,13 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver)
 	p->bg = (Uint32*) BG_TILE_RAM(4);
 	p->fg = (Uint32*) BG_TILE_RAM(6);
 	for (i = 0; i < 8; i += 2) {
-		dmaFillWords(0, BG_TILE_RAM(i), 768 * 32);
+		dmaFillWords(0, BG_TILE_RAM(i), (PPU_TILES_WIDTH * PPU_TILES_HEIGHT) * 32);
 	}
 	memset(tile_dirty, 0, sizeof(tile_dirty));
 
 	// init bg data
 	map_ptr = BG_GFX + (24576 >> 1);
-	for (i = 0; i < 768; i++) {
+	for (i = 0; i < (PPU_TILES_WIDTH * PPU_TILES_HEIGHT); i++) {
 		*(map_ptr++) = i;
 	}
 

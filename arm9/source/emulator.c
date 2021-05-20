@@ -58,7 +58,7 @@ quit(void)
 int
 init(void)
 {
-	if(!initppu(&ppu, 32, 24))
+	if(!initppu(&ppu))
 		return error("PPU", "Init failure");
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_RATE | SAMPLE_FREQUENCY);
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_ADDR | ((u32) (&apu_samples)));
@@ -393,8 +393,8 @@ main(int argc, char **argv)
 	portuxn(&u, 0xf, "---", nil_talk);
 
 	/* Write screen size to dev/screen */
-	mempoke16(devscreen->dat, 2, ppu.hor * 8);
-	mempoke16(devscreen->dat, 4, ppu.ver * 8);
+	mempoke16(devscreen->dat, 2, PPU_PIXELS_WIDTH);
+	mempoke16(devscreen->dat, 4, PPU_PIXELS_HEIGHT);
 
 	start(&u);
 	quit();
