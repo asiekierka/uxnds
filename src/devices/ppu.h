@@ -13,6 +13,9 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
+#define PPU_TEX_WIDTH 512
+#define PPU_TEX_HEIGHT 256
+
 typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;

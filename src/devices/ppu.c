@@ -1,3 +1,4 @@
+#include <3ds.h>
 #include "ppu.h"
 
 /*
@@ -41,7 +42,7 @@ readpixel(Uint8 *sprite, Uint8 h, Uint8 v)
 void
 clear(Ppu *p)
 {
-	int i, sz = p->height * p->width;
+	int i, sz = PPU_TEX_WIDTH * p->height;
 	for(i = 0; i < sz; ++i) {
 		p->fg.pixels[i] = p->fg.colors[0];
 		p->bg.pixels[i] = p->bg.colors[0];
@@ -57,8 +58,8 @@ putcolors(Ppu *p, Uint8 *addr)
 			r = (*(addr + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			g = (*(addr + 2 + i / 2) >> (!(i % 2) << 2)) & 0x0f,
 			b = (*(addr + 4 + i / 2) >> (!(i % 2) << 2)) & 0x0f;
-		p->bg.colors[i] = 0xff000000 | (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
-		p->fg.colors[i] = 0xff000000 | (r << 20) | (r << 16) | (g << 12) | (g << 8) | (b << 4) | b;
+		p->bg.colors[i] = 0xff | (r << 28) | (r << 24) | (g << 20) | (g << 16) | (b << 12) | (b << 8);
+		p->fg.colors[i] = 0xff | (r << 28) | (r << 24) | (g << 20) | (g << 16) | (b << 12) | (b << 8);
 	}
 	p->fg.colors[0] = 0;
 	clear(p);
@@ -69,7 +70,7 @@ putpixel(Ppu *p, Layer *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	if(x >= p->width || y >= p->height)
 		return;
-	layer->pixels[y * p->width + x] = layer->colors[color];
+	layer->pixels[y * PPU_TEX_WIDTH + x] = layer->colors[color];
 }
 
 void
@@ -132,9 +133,9 @@ initppu(Ppu *p, Uint8 hor, Uint8 ver)
 	p->ver = ver;
 	p->width = 8 * p->hor;
 	p->height = 8 * p->ver;
-	if(!(p->bg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
+	if(!(p->bg.pixels = linearAlloc(PPU_TEX_WIDTH * PPU_TEX_HEIGHT * sizeof(Uint32))))
 		return 0;
-	if(!(p->fg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
+	if(!(p->fg.pixels = linearAlloc(PPU_TEX_WIDTH * PPU_TEX_HEIGHT * sizeof(Uint32))))
 		return 0;
 	clear(p);
 	return 1;

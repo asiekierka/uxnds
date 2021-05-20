@@ -1,10 +1,11 @@
-#include <SDL2/SDL.h>
+#include <3ds.h>
+#include <citro2d.h>
+#include <citro3d.h>
 #include <stdio.h>
 #include <time.h>
 #include "uxn.h"
 #include "devices/ppu.h"
 #include "devices/apu.h"
-#include "devices/mpu.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -17,19 +18,32 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-static SDL_AudioDeviceID audio_id;
-static SDL_Window *gWindow;
-static SDL_Renderer *gRenderer;
-static SDL_Texture *fgTexture, *bgTexture;
-static SDL_Rect gRect;
+#define AUDIO_BUFFER_SIZE 2048
+
+static C3D_RenderTarget *topLeft, *topRight, *bottom;
+static C2D_Image gpuBg, gpuFg;
+static C3D_Tex texBg, texFg;
+static const Tex3DS_SubTexture gpuFbSub = {
+	320, 240, 0.0f, 1.0f, (320.0f/512.0f), (16/256.0f)
+};
+
+static bool soundFillBlock;
+static ndspWaveBuf soundBuffer[2];
+static u8 *soundData;
+static LightLock soundLock;
+
 static Ppu ppu;
 static Apu apu[POLYPHONY];
-static Mpu mpu;
-static Device *devscreen, *devmouse, *devctrl, *devmidi, *devaudio0;
+static Device *devscreen, *devmouse, *devctrl, *devaudio0;
 
-#define PAD 16
+#define PAD 0
 
-Uint8 zoom = 0, debug = 0, reqdraw = 0, bench = 0;
+#define REQDRAW_BG 1
+#define REQDRAW_FG 2
+#define REQDRAW_DISPLAY 4
+#define REQDRAW_ALL 7
+
+Uint8 dispswap = 0, debug = 0, reqdraw = 0;
 
 int
 clamp(int val, int min, int max)
@@ -40,32 +54,109 @@ clamp(int val, int min, int max)
 int
 error(char *msg, const char *err)
 {
-	printf("Error %s: %s\n", msg, err);
+	consoleInit(GFX_BOTTOM, NULL);
+	iprintf("Error %s: %s\n", msg, err);
+	gfxSwapBuffers();
+	while (aptMainLoop()) {
+		gspWaitForVBlank();
+	}
+	exit(0);
 	return 0;
 }
 
 static void
-audio_callback(void *u, Uint8 *stream, int len)
+audio_callback(void *u)
 {
-	int i;
-	Sint16 *samples = (Sint16 *)stream;
-	SDL_memset(stream, 0, len);
-	for(i = 0; i < POLYPHONY; ++i)
-		apu_render(&apu[i], samples, samples + len / 2);
-	(void)u;
+	if (soundBuffer[soundFillBlock].status == NDSP_WBUF_DONE) {
+		int i;
+		Sint16 *samples = (Sint16 *) soundBuffer[soundFillBlock].data_vaddr;
+		memset(samples, 0, AUDIO_BUFFER_SIZE * 4);
+		LightLock_Lock(&soundLock);
+		for(i = 0; i < POLYPHONY; ++i)
+			apu_render(&apu[i], samples, samples + (AUDIO_BUFFER_SIZE * 2));
+		LightLock_Unlock(&soundLock);
+		DSP_FlushDataCache(samples, AUDIO_BUFFER_SIZE * 4);
+		ndspChnWaveBufAdd(0, &soundBuffer[soundFillBlock]);
+		soundFillBlock = !soundFillBlock;
+	}
 }
 
 void
 redraw(Uxn *u)
 {
-	if(debug)
+	C2D_DrawParams drawParams;
+	float slider = osGet3DSliderState();
+	int x_offset = (int) (slider * 10.0f);
+
+	if(debug) {
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
-	SDL_UpdateTexture(bgTexture, &gRect, ppu.bg.pixels, ppu.width * sizeof(Uint32));
-	SDL_UpdateTexture(fgTexture, &gRect, ppu.fg.pixels, ppu.width * sizeof(Uint32));
-	SDL_RenderClear(gRenderer);
-	SDL_RenderCopy(gRenderer, bgTexture, NULL, NULL);
-	SDL_RenderCopy(gRenderer, fgTexture, NULL, NULL);
-	SDL_RenderPresent(gRenderer);
+		reqdraw |= REQDRAW_BG;
+	}
+	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+	if (reqdraw & REQDRAW_BG) {
+		C3D_SyncDisplayTransfer(
+			ppu.bg.pixels, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
+			texBg.data, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
+			(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(1) |
+			GX_TRANSFER_RAW_COPY(0) | GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO) |
+			GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) |
+			GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGBA8))
+		);
+	}
+	if (reqdraw & REQDRAW_FG) {
+		C3D_SyncDisplayTransfer(
+			ppu.fg.pixels, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
+			texFg.data, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
+			(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(1) |
+			GX_TRANSFER_RAW_COPY(0) | GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO) |
+			GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) |
+			GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGBA8))
+		);
+	}
+
+	memset(&drawParams, 0, sizeof(drawParams));
+	drawParams.pos.y = 0.0f;
+	drawParams.pos.w = 320.0f;
+	drawParams.pos.h = 240.0f;
+
+	if (!dispswap) {
+		C2D_TargetClear(topLeft, C2D_Color32(0, 0, 0, 0));
+		C2D_SceneBegin(topLeft);
+		drawParams.pos.x = 40.0f - x_offset;
+		drawParams.depth = 0.0f;
+		C2D_DrawImage(gpuBg, &drawParams, NULL);
+		drawParams.pos.x = 40.0f;
+		drawParams.depth = -1.0f;
+		C2D_DrawImage(gpuFg, &drawParams, NULL);
+
+		if (slider > 0.0f) {
+			C2D_TargetClear(topRight, C2D_Color32(0, 0, 0, 0));
+			C2D_SceneBegin(topRight);
+			drawParams.pos.x = 40.0f + x_offset;
+			drawParams.depth = 0.0f;
+			C2D_DrawImage(gpuBg, &drawParams, NULL);
+			drawParams.pos.x = 40.0f;
+			drawParams.depth = -1.0f;
+			C2D_DrawImage(gpuFg, &drawParams, NULL);
+		}
+
+		C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 0));
+		C2D_SceneBegin(bottom);
+	} else {
+		C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 0));
+		C2D_SceneBegin(bottom);
+		drawParams.pos.x = 0.0f;
+		drawParams.depth = 0.0f;
+		C2D_DrawImage(gpuBg, &drawParams, NULL);
+		drawParams.depth = -1.0f;
+		C2D_DrawImage(gpuFg, &drawParams, NULL);
+
+		// TODO: keyboard
+		C2D_TargetClear(topLeft, C2D_Color32(0, 0, 0, 0));
+		C2D_SceneBegin(topLeft);
+	}
+
+	C3D_FrameEnd(0);
 	reqdraw = 0;
 }
 
@@ -77,129 +168,136 @@ toggledebug(Uxn *u)
 }
 
 void
-togglezoom(Uxn *u)
-{
-	zoom = zoom == 3 ? 1 : zoom + 1;
-	SDL_SetWindowSize(gWindow, (ppu.width + PAD * 2) * zoom, (ppu.height + PAD * 2) * zoom);
-	redraw(u);
-}
-
-void
 quit(void)
 {
 	free(ppu.fg.pixels);
 	free(ppu.bg.pixels);
-	SDL_UnlockAudioDevice(audio_id);
-	SDL_DestroyTexture(bgTexture);
-	bgTexture = NULL;
-	SDL_DestroyTexture(fgTexture);
-	fgTexture = NULL;
-	SDL_DestroyRenderer(gRenderer);
-	gRenderer = NULL;
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	SDL_Quit();
+	C3D_TexDelete(&texFg);
+	C3D_TexDelete(&texBg);
+	C2D_Fini();
+	C3D_Fini();
+	gfxExit();
 	exit(0);
 }
 
 int
 init(void)
 {
-	SDL_AudioSpec as;
-	if(!initppu(&ppu, 48, 32))
+	osSetSpeedupEnable(1);
+	// PPU
+	if(!initppu(&ppu, 40, 30))
 		return error("PPU", "Init failure");
-	gRect.x = PAD;
-	gRect.y = PAD;
-	gRect.w = ppu.width;
-	gRect.h = ppu.height;
-	if(!initmpu(&mpu, 1))
-		return error("MPU", "Init failure");
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
-		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Uxn", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, (ppu.width + PAD * 2) * zoom, (ppu.height + PAD * 2) * zoom, SDL_WINDOW_SHOWN);
-	if(gWindow == NULL)
-		return error("Window", SDL_GetError());
-	gRenderer = SDL_CreateRenderer(gWindow, -1, 0);
-	if(gRenderer == NULL)
-		return error("Renderer", SDL_GetError());
-	SDL_RenderSetLogicalSize(gRenderer, ppu.width + PAD * 2, ppu.height + PAD * 2);
-	bgTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width + PAD * 2, ppu.height + PAD * 2);
-	if(bgTexture == NULL || SDL_SetTextureBlendMode(bgTexture, SDL_BLENDMODE_NONE))
-		return error("Texture", SDL_GetError());
-	fgTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, ppu.width + PAD * 2, ppu.height + PAD * 2);
-	if(fgTexture == NULL || SDL_SetTextureBlendMode(fgTexture, SDL_BLENDMODE_BLEND))
-		return error("Texture", SDL_GetError());
-	SDL_UpdateTexture(bgTexture, NULL, ppu.bg.pixels, 4);
-	SDL_UpdateTexture(fgTexture, NULL, ppu.fg.pixels, 4);
-	SDL_StartTextInput();
-	SDL_ShowCursor(SDL_DISABLE);
-	SDL_zero(as);
-	as.freq = SAMPLE_FREQUENCY;
-	as.format = AUDIO_S16;
-	as.channels = 2;
-	as.callback = audio_callback;
-	as.samples = 512;
-	as.userdata = NULL;
-	audio_id = SDL_OpenAudioDevice(NULL, 0, &as, NULL, 0);
-	if(!audio_id)
-		return error("Audio", SDL_GetError());
-	SDL_PauseAudioDevice(audio_id, 0);
+	gfxInitDefault();
+	gfxSet3D(true);
+	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
+	C2D_Init(4096);
+	C2D_Prepare();
+	topLeft = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
+	topRight = C2D_CreateScreenTarget(GFX_TOP, GFX_RIGHT);
+	bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+	gpuBg.tex = &texBg;
+	gpuBg.subtex = &gpuFbSub;
+	if (!C3D_TexInitVRAM(&texBg, PPU_TEX_WIDTH, PPU_TEX_HEIGHT, GPU_RGBA8))
+		return error("PPU", "Could not allocate BG texture");
+	gpuFg.tex = &texFg;
+	gpuFg.subtex = &gpuFbSub;
+	if (!C3D_TexInitVRAM(&texFg, PPU_TEX_WIDTH, PPU_TEX_HEIGHT, GPU_RGBA8))
+		return error("PPU", "Could not allocate FG texture");
+	// APU
+	float soundMix[12];
+	memset(soundMix, 0, sizeof(soundMix));
+	soundMix[0] = soundMix[1] = 1.0f;
+	soundData = (u8*) linearAlloc(AUDIO_BUFFER_SIZE * 8);
+	memset(soundData, 0, AUDIO_BUFFER_SIZE * 8);
+	LightLock_Init(&soundLock);
+	ndspInit();
+	ndspSetOutputMode(NDSP_OUTPUT_STEREO);
+	ndspChnReset(0);
+	ndspChnSetInterp(0, NDSP_INTERP_LINEAR);
+	ndspChnSetRate(0, SAMPLE_FREQUENCY);
+	ndspChnSetFormat(0, NDSP_CHANNELS(2) | NDSP_ENCODING(NDSP_ENCODING_PCM16));
+	ndspChnSetMix(0, soundMix);
+	ndspSetOutputCount(1);
+	ndspSetMasterVol(1.0f);
+	ndspSetCallback(audio_callback, soundBuffer);
+
+	memset(soundBuffer, 0, sizeof(soundBuffer));
+	soundBuffer[0].data_vaddr = &soundData[0];
+	soundBuffer[0].nsamples = AUDIO_BUFFER_SIZE;
+	soundBuffer[1].data_vaddr = &soundData[AUDIO_BUFFER_SIZE * 4];
+	soundBuffer[1].nsamples = AUDIO_BUFFER_SIZE;
+
+	DSP_FlushDataCache(soundData, AUDIO_BUFFER_SIZE * 8);
+
+	ndspChnWaveBufAdd(0, &soundBuffer[0]);
+	ndspChnWaveBufAdd(0, &soundBuffer[1]);
 	return 1;
 }
 
 void
-domouse(SDL_Event *event)
+doctrl(Uxn *u)
 {
-	Uint8 flag = 0x00;
-	Uint16 x = clamp(event->motion.x - PAD, 0, ppu.hor * 8 - 1);
-	Uint16 y = clamp(event->motion.y - PAD, 0, ppu.ver * 8 - 1);
-	mempoke16(devmouse->dat, 0x2, x);
-	mempoke16(devmouse->dat, 0x4, y);
-	devmouse->dat[7] = 0x00;
-	switch(event->button.button) {
-	case SDL_BUTTON_LEFT: flag = 0x01; break;
-	case SDL_BUTTON_RIGHT: flag = 0x10; break;
+	// TODO: keyboard
+	bool changed = false;
+	u8 old_flags = devctrl->dat[2];
+	// int key = dispswap ? -1 : keyboardUpdate();
+	int key = -1;
+
+	int held = hidKeysDown() | hidKeysHeld();
+	devctrl->dat[2] = (held & 0x0F)
+		| ((held & KEY_UP) ? 0x10 : 0)
+		| ((held & KEY_DOWN) ? 0x20 : 0)
+		| ((held & KEY_RIGHT) ? 0x80 : 0)
+		| ((held & KEY_LEFT) ? 0x40 : 0);
+
+	if (key > 0) {
+		devctrl->dat[3] = key;
+		changed = true;
 	}
-	switch(event->type) {
-	case SDL_MOUSEBUTTONDOWN:
-		devmouse->dat[6] |= flag;
-		if(flag == 0x10 && (devmouse->dat[6] & 0x01))
-			devmouse->dat[7] = 0x01;
-		if(flag == 0x01 && (devmouse->dat[6] & 0x10))
-			devmouse->dat[7] = 0x10;
-		break;
-	case SDL_MOUSEBUTTONUP:
-		devmouse->dat[6] &= (~flag);
-		break;
+
+	changed |= old_flags != devctrl->dat[2];
+	if (changed) {
+		evaluxn(u, mempeek16(devctrl->dat, 0));
+		devctrl->dat[3] = 0;
 	}
 }
 
+static Uint8 last_dispswap = 0;
+static touchPosition tpos;
+
 void
-doctrl(Uxn *u, SDL_Event *event, int z)
+domouse(Uxn *u)
 {
-	Uint8 flag = 0x00;
-	if(z && event->key.keysym.sym == SDLK_h) {
-		if(SDL_GetModState() & KMOD_LCTRL)
-			toggledebug(u);
-		if(SDL_GetModState() & KMOD_LALT)
-			togglezoom(u);
+	bool firstTouch;
+
+	if (hidKeysDown() & (KEY_L | KEY_R)) {
+		dispswap ^= 1;
+		gfxSet3D(!dispswap);
+		reqdraw |= REQDRAW_DISPLAY;
 	}
-	switch(event->key.keysym.sym) {
-	case SDLK_LCTRL: flag = 0x01; break;
-	case SDLK_LALT: flag = 0x02; break;
-	case SDLK_LSHIFT: flag = 0x04; break;
-	case SDLK_ESCAPE: flag = 0x08; break;
-	case SDLK_UP: flag = 0x10; break;
-	case SDLK_DOWN: flag = 0x20; break;
-	case SDLK_LEFT: flag = 0x40; break;
-	case SDLK_RIGHT: flag = 0x80; break;
+
+	if (last_dispswap || (hidKeysUp() & KEY_TOUCH)) {
+		mempoke16(devmouse->dat, 0x2, tpos.px);
+		mempoke16(devmouse->dat, 0x4, tpos.py);
+		devmouse->dat[6] = 0x00;
+		devmouse->dat[7] = 0x00;
+		evaluxn(u, mempeek16(devmouse->dat, 0));
+		last_dispswap = 0;
+	} else if (dispswap && ((hidKeysDown() | hidKeysHeld()) & KEY_TOUCH)) {
+		firstTouch = (hidKeysDown() & KEY_TOUCH);
+		hidTouchRead(&tpos);
+		if (firstTouch
+			|| mempeek16(devmouse->dat, 0x2) != tpos.px
+			|| mempeek16(devmouse->dat, 0x4) != tpos.py)
+		{
+			mempoke16(devmouse->dat, 0x2, tpos.px);
+			mempoke16(devmouse->dat, 0x4, tpos.py);
+			devmouse->dat[6] = 0x01;
+			devmouse->dat[7] = 0x00;
+			evaluxn(u, mempeek16(devmouse->dat, 0));
+			last_dispswap = 1;
+		}
 	}
-	if(flag && z)
-		devctrl->dat[2] |= flag;
-	else if(flag)
-		devctrl->dat[2] &= (~flag);
-	if(z && event->key.keysym.sym < 20)
-		devctrl->dat[3] = event->key.keysym.sym;
 }
 
 #pragma mark - Devices
@@ -212,7 +310,7 @@ system_talk(Device *d, Uint8 b0, Uint8 w)
 		d->dat[0x3] = d->u->rst.ptr;
 	} else {
 		putcolors(&ppu, &d->dat[0x8]);
-		reqdraw = 1;
+		reqdraw = REQDRAW_ALL;
 	}
 	(void)b0;
 }
@@ -222,10 +320,10 @@ console_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	if(!w) return;
 	switch(b0) {
-	case 0x8: printf("%c", d->dat[0x8]); break;
-	case 0x9: printf("0x%02x", d->dat[0x9]); break;
-	case 0xb: printf("0x%04x", mempeek16(d->dat, 0xa)); break;
-	case 0xd: printf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
+	case 0x8: iprintf("%c", d->dat[0x8]); break;
+	case 0x9: iprintf("0x%02x", d->dat[0x9]); break;
+	case 0xb: iprintf("0x%04x", mempeek16(d->dat, 0xa)); break;
+	case 0xd: iprintf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
 	}
 	fflush(stdout);
 }
@@ -234,10 +332,11 @@ void
 screen_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	if(w && b0 == 0xe) {
+		bool layer_fg = (d->dat[0xe] >> 4) & 0x1;
 		Uint16 x = mempeek16(d->dat, 0x8);
 		Uint16 y = mempeek16(d->dat, 0xa);
 		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-		Layer *layer = d->dat[0xe] >> 4 & 0x1 ? &ppu.fg : &ppu.bg;
+		Layer *layer = layer_fg ? &ppu.fg : &ppu.bg;
 		Uint8 mode = d->dat[0xe] >> 5;
 		if(!mode)
 			putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
@@ -246,7 +345,7 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 		else
 			putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
 
-		reqdraw = 1;
+		reqdraw |= 1 + layer_fg;
 	}
 }
 
@@ -261,10 +360,10 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			printf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
+			iprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
 			if(fseek(f, offset, SEEK_SET) != -1)
 				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
-			printf("%04x bytes\n", result);
+			iprintf("%04x bytes\n", result);
 			fclose(f);
 		}
 		mempoke16(d->dat, 0x2, result);
@@ -281,14 +380,14 @@ audio_talk(Device *d, Uint8 b0, Uint8 w)
 		else if(b0 == 0x4)
 			d->dat[0x4] = apu_get_vu(c);
 	} else if(b0 == 0xf) {
-		SDL_LockAudioDevice(audio_id);
+		LightLock_Lock(&soundLock);
 		c->len = mempeek16(d->dat, 0xa);
 		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
 		c->volume[0] = d->dat[0xe] >> 4;
 		c->volume[1] = d->dat[0xe] & 0xf;
 		c->repeat = !(d->dat[0xf] & 0x80);
 		apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
-		SDL_UnlockAudioDevice(audio_id);
+		LightLock_Unlock(&soundLock);
 	}
 }
 
@@ -334,70 +433,33 @@ start(Uxn *u)
 {
 	evaluxn(u, 0x0100);
 	redraw(u);
-	while(1) {
-		int i;
-		SDL_Event event;
-		double elapsed, start = 0;
-		if(!bench)
-			start = SDL_GetPerformanceCounter();
-		while(SDL_PollEvent(&event) != 0) {
-			switch(event.type) {
-			case SDL_QUIT:
-				quit();
-				break;
-			case SDL_TEXTINPUT:
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				if(event.text.text[0] >= ' ' && event.text.text[0] <= '~')
-					devctrl->dat[3] = event.text.text[0];
-				doctrl(u, &event, event.type == SDL_KEYDOWN);
-				evaluxn(u, mempeek16(devctrl->dat, 0));
-				devctrl->dat[3] = 0;
-				break;
-			case SDL_MOUSEBUTTONUP:
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEMOTION:
-				domouse(&event);
-				evaluxn(u, mempeek16(devmouse->dat, 0));
-				break;
-			case SDL_WINDOWEVENT:
-				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					redraw(u);
-				break;
-			}
-		}
-		listenmpu(&mpu);
-		for(i = 0; i < mpu.queue; ++i) {
-			devmidi->dat[2] = mpu.events[i].message;
-			devmidi->dat[3] = mpu.events[i].message >> 8;
-			devmidi->dat[4] = mpu.events[i].message >> 16;
-			evaluxn(u, mempeek16(devmidi->dat, 0));
-		}
+	while(aptMainLoop()) {
+		hidScanInput();
+		doctrl(u);
+		domouse(u);
 		evaluxn(u, mempeek16(devscreen->dat, 0));
-		if(reqdraw)
-			redraw(u);
-		if(!bench) {
-			elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
-			SDL_Delay(clamp(16.666f - elapsed, 0, 1000));
-		}
+		redraw(u);
 	}
 	return 1;
 }
 
+static Uxn u;
+
 int
 main(int argc, char **argv)
 {
-	Uxn u;
-	zoom = 2;
+	const char *bootpath = "boot.rom";
 
-	if(argc < 2)
-		return error("Input", "Missing");
-	if(!bootuxn(&u))
-		return error("Boot", "Failed");
-	if(!loaduxn(&u, argv[1]))
-		return error("Load", "Failed");
 	if(!init())
 		return error("Init", "Failed");
+	if(argc >= 2 && argv != NULL && argv[1] != NULL)
+		bootpath = argv[1];
+	else
+		chdir("/uxn");
+	if(!bootuxn(&u))
+		return error("Boot", "Failed");
+	if(!loaduxn(&u, bootpath))
+		return error("Load", "Failed");
 
 	portuxn(&u, 0x0, "system", system_talk);
 	portuxn(&u, 0x1, "console", console_talk);
@@ -406,7 +468,7 @@ main(int argc, char **argv)
 	portuxn(&u, 0x4, "audio1", audio_talk);
 	portuxn(&u, 0x5, "audio2", audio_talk);
 	portuxn(&u, 0x6, "audio3", audio_talk);
-	devmidi = portuxn(&u, 0x7, "midi", midi_talk);
+	portuxn(&u, 0x7, "---", nil_talk);
 	devctrl = portuxn(&u, 0x8, "controller", nil_talk);
 	devmouse = portuxn(&u, 0x9, "mouse", nil_talk);
 	portuxn(&u, 0xa, "file", file_talk);
