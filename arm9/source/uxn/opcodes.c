@@ -198,7 +198,7 @@ case UXN_OPC(0x1F): { // sft
 /* 16-BIT OPCODES */
 
 case UXN_OPC(0x21): { // lit
-	push16(UXN_SRC, mempeek16_i(u->ram.dat, u->ram.ptr));
+	push16(UXN_SRC, mempeek16(u->ram.dat, u->ram.ptr));
 	u->ram.ptr += 2;
 } break;
 case UXN_OPC(0x23): { // pop
@@ -282,35 +282,35 @@ case UXN_OPC(0x2F): { // sth
 case UXN_OPC(0x30): { // pek
 	UXN_KEEP_SYNC;
 	Uint8 a = pop8(UXN_SRC);
-	push16(UXN_SRC, mempeek16_i(u->ram.dat, a));
+	push16(UXN_SRC, mempeek16(u->ram.dat, a));
 } break;
 case UXN_OPC(0x31): { // pok
 	UXN_KEEP_SYNC;
 	Uint8 a = pop8(UXN_SRC);
 	Uint16 b = pop16(UXN_SRC);
-	mempoke16_i(u->ram.dat, a, b);
+	mempoke16(u->ram.dat, a, b);
 } break;
 case UXN_OPC(0x32): { // ldr
 	UXN_KEEP_SYNC;
 	Uint8 a = pop8(UXN_SRC);
-	push16(UXN_SRC, mempeek16_i(u->ram.dat, u->ram.ptr + (Sint8)a));
+	push16(UXN_SRC, mempeek16(u->ram.dat, u->ram.ptr + (Sint8)a));
 } break;
 case UXN_OPC(0x33): { // str
 	UXN_KEEP_SYNC;
 	Uint8 a = pop8(UXN_SRC);
 	Uint16 b = pop16(UXN_SRC);
-	mempoke16_i(u->ram.dat, u->ram.ptr + (Sint8)a, b);
+	mempoke16(u->ram.dat, u->ram.ptr + (Sint8)a, b);
 } break;
 case UXN_OPC(0x34): { // lda
 	UXN_KEEP_SYNC;
 	Uint16 a = pop16(UXN_SRC);
-	push16(UXN_SRC, mempeek16_i(u->ram.dat, a));
+	push16(UXN_SRC, mempeek16(u->ram.dat, a));
 } break;
 case UXN_OPC(0x35): { // sta
 	UXN_KEEP_SYNC;
 	Uint16 a = pop16(UXN_SRC);
 	Uint16 b = pop16(UXN_SRC);
-	mempoke16_i(u->ram.dat, a, b);
+	mempoke16(u->ram.dat, a, b);
 } break;
 case UXN_OPC(0x36): { // dei
 	UXN_KEEP_SYNC;

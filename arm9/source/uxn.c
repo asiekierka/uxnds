@@ -36,17 +36,11 @@ static inline Uint8  pop8_nokeep(Stack *s) {
 #endif
 	return s->dat[--s->ptr];
 }
-static inline void   mempoke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
-static inline Uint8  mempeek8(Uint8 *m, Uint16 a) { return m[a]; }
 static inline void   devpoke8(Device *d, Uint8 a, Uint8 b) { d->dat[a & 0xf] = b; d->talk(d, a & 0x0f, 1); }
 static inline Uint8  devpeek8(Device *d, Uint8 a) { d->talk(d, a & 0x0f, 0); return d->dat[a & 0xf];  }
 static inline void   push16(Stack *s, Uint16 a) { push8(s, a >> 8); push8(s, a); }
-static inline void   mempoke16_i(Uint8 *m, Uint16 a, Uint16 b) { mempoke8(m, a, b >> 8); mempoke8(m, a + 1, b); }
-static inline Uint16 mempeek16_i(Uint8 *m, Uint16 a) { return (mempeek8(m, a) << 8) + mempeek8(m, a + 1); }
 static inline void   devpoke16(Device *d, Uint8 a, Uint16 b) { devpoke8(d, a, b >> 8); devpoke8(d, a + 1, b); }
 static inline Uint16 devpeek16(Device *d, Uint16 a) { return (devpeek8(d, a) << 8) + devpeek8(d, a + 1); }
-void   mempoke16(Uint8 *m, Uint16 a, Uint16 b) { mempoke8(m, a, b >> 8); mempoke8(m, a + 1, b); }
-Uint16 mempeek16(Uint8 *m, Uint16 a) { return (mempeek8(m, a) << 8) + mempeek8(m, a + 1); }
 
 /* clang-format on */
 
@@ -60,6 +54,7 @@ haltuxn(Uxn *u, char *name, int id)
 	return 0;
 }
 
+ITCM_ARM_CODE
 static inline void
 opcuxn(Uxn *u, Uint8 instr)
 {
@@ -158,6 +153,7 @@ opcuxn(Uxn *u, Uint8 instr)
 #endif
 }
 
+ITCM_ARM_CODE
 static inline int
 stepuxn(Uxn *u, Uint8 instr)
 {
@@ -171,6 +167,7 @@ stepuxn(Uxn *u, Uint8 instr)
 	return 1;
 }
 
+ITCM_ARM_CODE
 int
 evaluxn(Uxn *u, Uint16 vec)
 {

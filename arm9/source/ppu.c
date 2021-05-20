@@ -1,4 +1,5 @@
 #include <nds.h>
+#include "../../include/uxn.h"
 #include "ppu.h"
 
 /*
@@ -52,7 +53,7 @@ putcolors(Ppu *p, Uint8 *addr)
 	}
 }
 
-ITCM_CODE
+ITCM_ARM_CODE
 void
 putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
@@ -64,7 +65,7 @@ putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 	tile_dirty[y >> 3] |= 1 << (x >> 3);
 }
 
-ITCM_CODE
+ITCM_ARM_CODE
 void
 puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
@@ -81,7 +82,7 @@ puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Ui
 		}
 }
 
-ITCM_CODE
+ITCM_ARM_CODE
 void
 putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
@@ -148,7 +149,7 @@ copytile(Uint32 *tptr)
 	tptr[7] = tile_backup[7];
 }
 
-ITCM_CODE
+ITCM_ARM_CODE
 void
 copyppu(Ppu *p)
 {
