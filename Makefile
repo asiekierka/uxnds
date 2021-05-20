@@ -31,8 +31,16 @@ include $(DEVKITARM)/3ds_rules
 #     - icon.png
 #     - <libctru folder>/default_icon.png
 #---------------------------------------------------------------------------------
+ifeq ($(DEBUG),true)
+TARGET		:=	$(notdir $(CURDIR))_debug
+else
 TARGET		:=	$(notdir $(CURDIR))
+endif
+ifeq ($(DEBUG),true)
+BUILD		:=	build_debug
+else
 BUILD		:=	build
+endif
 SOURCES		:=	src src/devices
 DATA		:=
 INCLUDES	:=	src src/devices
@@ -41,7 +49,11 @@ GFXBUILD	:=	$(BUILD)
 #ROMFS		:=	romfs
 #GFXBUILD	:=	$(ROMFS)/gfx
 APP_TITLE := uxn3ds (v0.1.0)
+ifeq ($(DEBUG),true)
+APP_DESCRIPTION := tiny virtual machine (debug)
+else
 APP_DESCRIPTION := tiny virtual machine
+endif
 ICON := assets/uxn48.png
 
 #---------------------------------------------------------------------------------
@@ -49,13 +61,18 @@ ICON := assets/uxn48.png
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -O2 -mword-relocations \
+CFLAGS	:=	-g -Wall -O3 -mword-relocations \
 			-ffunction-sections \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+
+ifeq ($(DEBUG),true)
+CFLAGS += -DDEBUG -DDEBUG_PROFILE -DCPU_ERROR_CHECKING
+CXXFLAGS += -DDEBUG -DDEBUG_PROFILE -DCPU_ERROR_CHECKING
+endif
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
@@ -183,7 +200,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
+	@rm -fr build build_debug $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s
