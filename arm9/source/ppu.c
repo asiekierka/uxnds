@@ -36,6 +36,16 @@ static Uint8 font[][8] = {
 DTCM_BSS
 static Uint32 tile_dirty[24];
 
+DTCM_DATA
+static Uint32 lut_expand_8_32[256] = {
+#include "lut_expand_8_32.inc"
+};
+
+DTCM_DATA
+static Uint32 lut_expand_8_32_flipx[256] = {
+#include "lut_expand_8_32_flipx.inc"
+};
+
 void
 putcolors(Ppu *p, Uint8 *addr)
 {
@@ -69,34 +79,97 @@ ITCM_ARM_CODE
 void
 puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
-	Uint16 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1);
-			if(ch1 == 1 || (color != 0x05 && color != 0x0a && color != 0x0f))
-				putpixel(p,
-					layer,
-					x + (flipx ? 7 - h : h),
-					y + (flipy ? 7 - v : v),
-					ch1 ? (color & 3) : (color >> 2));
+	Uint8 sprline;
+	Uint8 xrightedge = x < (31 * 8);
+	Uint16 v;
+	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
+
+	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
+	Uint32 *layerptr = &layer[layerpos];
+	Uint32 shift = (x & 7) << 2;
+	Uint32 *lut_expand = flipx ? lut_expand_8_32 : lut_expand_8_32_flipx;
+
+	if (flipy) flipy = 7;
+
+	if(x >= 32 * 8 || y >= 24 * 8)
+		return;
+
+	if (color != 0x05 && color != 0x0a && color != 0x0f) {
+		u64 mask = ~((u64)0xFFFFFFFF << shift);
+
+		for (v = 0; v < 8; v++, layerptr++) {
+			if ((y + v) >= (24 * 8)) break;
+
+			sprline = sprite[v ^ flipy];
+			u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
+			data |= (u64)(lut_expand[sprline ^ 0xFF] * (color >> 2)) << shift;
+
+			layerptr[0] = (layerptr[0] & mask) | data;
+			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+
+			if (((y + v) & 7) == 7) layerptr += 248;
 		}
+	} else {
+		for (v = 0; v < 8; v++, layerptr++) {
+			if ((y + v) >= (24 * 8)) break;
+
+			sprline = sprite[v ^ flipy];
+			u64 mask = ~((u64)(lut_expand[sprline] * 0xF) << shift);
+			u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
+
+			layerptr[0] = (layerptr[0] & mask) | data;
+			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+
+			if (((y + v) & 7) == 7) layerptr += 248;
+		}
+	}
+
+	tile_dirty[y >> 3] |= dirtyflag;
+	tile_dirty[(y + 7) >> 3] |= dirtyflag;
 }
 
 ITCM_ARM_CODE
 void
 putchr(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
-	Uint16 v, h;
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			Uint8 ch1 = ((sprite[v] >> (7 - h)) & 0x1) * color;
-			Uint8 ch2 = ((sprite[v + 8] >> (7 - h)) & 0x1) * color;
-			putpixel(p,
-				layer,
-				x + (flipx ? 7 - h : h),
-				y + (flipy ? 7 - v : v),
-				((((ch1 + ch2) << 1) + (color >> 2)) & 0x3));
-		}
+	Uint8 sprline1, sprline2;
+	Uint8 xrightedge = x < (31 * 8);
+	Uint16 v;
+	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
+
+	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * 32) * 8));
+	Uint32 *layerptr = &layer[layerpos];
+	Uint32 shift = (x & 7) << 2;
+	Uint32 *lut_expand = flipx ? lut_expand_8_32 : lut_expand_8_32_flipx;
+
+	if (flipy) flipy = 7;
+
+	if(x >= 32 * 8 || y >= 24 * 8)
+		return;
+
+	u64 mask = ~((u64)0xFFFFFFFF << shift);
+	u32 colconst = (color >> 2) * 0x11111111;
+
+	for (v = 0; v < 8; v++, layerptr++) {
+		if ((y + v) >= (24 * 8)) break;
+
+		sprline1 = sprite[v ^ flipy];
+		sprline2 = sprite[(v ^ flipy) | 8];
+
+		u32 data32 =
+			(lut_expand[sprline1] * (color & 3))
+			+ (lut_expand[sprline2] * ((color & 1) << 1))
+			+ colconst;
+		u64 data = ((u64) (data32 & 0x33333333)) << shift;
+
+		layerptr[0] = (layerptr[0] & mask) | data;
+		if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+
+		if (((y + v) & 7) == 7) layerptr += 248;
+	}
+
+	tile_dirty[y >> 3] |= dirtyflag;
+	tile_dirty[(y + 7) >> 3] |= dirtyflag;
 }
 
 /* output */
