@@ -171,16 +171,15 @@ copyppu(Ppu *p)
 }
 
 int
-initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad)
+initppu(Ppu *p, Uint8 hor, Uint8 ver)
 {
 	int i;
 	u16 *map_ptr;
 
 	p->hor = hor;
 	p->ver = ver;
-	p->pad = pad;
-	p->width = (8 * p->hor + p->pad * 2);
-	p->height = (8 * p->ver + p->pad * 2);
+	p->width = (8 * p->hor);
+	p->height = (8 * p->ver);
 
 	videoSetMode(DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | MODE_0_2D);
 	vramSetBankA(VRAM_A_MAIN_BG);

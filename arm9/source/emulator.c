@@ -56,7 +56,7 @@ quit(void)
 int
 init(void)
 {
-	if(!initppu(&ppu, 32, 24, 0))
+	if(!initppu(&ppu, 32, 24))
 		return error("PPU", "Init failure");
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_RATE | SAMPLE_FREQUENCY);
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_ADDR | ((u32) (&apu_samples)));

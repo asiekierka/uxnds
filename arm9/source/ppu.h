@@ -20,10 +20,10 @@ typedef unsigned int Uint32;
 
 typedef struct Ppu {
 	Uint32 *bg, *fg;
-	Uint16 hor, ver, pad, width, height;
+	Uint16 hor, ver, width, height;
 } Ppu;
 
-int initppu(Ppu *p, Uint8 hor, Uint8 ver, Uint8 pad);
+int initppu(Ppu *p, Uint8 hor, Uint8 ver);
 void putcolors(Ppu *p, Uint8 *addr);
 void putpixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color);
 void puticn(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
