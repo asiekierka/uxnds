@@ -320,10 +320,10 @@ console_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	if(!w) return;
 	switch(b0) {
-	case 0x8: iprintf("%c", d->dat[0x8]); break;
-	case 0x9: iprintf("0x%02x", d->dat[0x9]); break;
-	case 0xb: iprintf("0x%04x", mempeek16(d->dat, 0xa)); break;
-	case 0xd: iprintf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
+	case 0x8: dprintf("%c", d->dat[0x8]); break;
+	case 0x9: dprintf("0x%02x", d->dat[0x9]); break;
+	case 0xb: dprintf("0x%04x", mempeek16(d->dat, 0xa)); break;
+	case 0xd: dprintf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
 	}
 	fflush(stdout);
 }
@@ -360,10 +360,10 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 addr = mempeek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
-			iprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
+			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
 			if(fseek(f, offset, SEEK_SET) != -1)
 				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
-			iprintf("%04x bytes\n", result);
+			dprintf("%04x bytes\n", result);
 			fclose(f);
 		}
 		mempoke16(d->dat, 0x2, result);
