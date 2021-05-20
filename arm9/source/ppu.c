@@ -37,7 +37,7 @@ static Uint8 font[][8] = {
 #define PPU_TILES_HEIGHT 24
 
 DTCM_BSS
-static Uint32 tile_dirty[PPU_TILES_HEIGHT];
+static Uint32 tile_dirty[PPU_TILES_HEIGHT + 1];
 
 DTCM_DATA
 static Uint32 lut_expand_8_32[256] = {
