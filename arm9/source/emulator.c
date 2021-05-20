@@ -271,6 +271,8 @@ static Uint32 tticks_peak[3];
 void
 profiler_ticks(Uint32 tticks, int pos, const char *name)
 {
+	if (tticks >= 0x80000000)
+		tticks = ~tticks;
 	if (tticks_peak[pos] < tticks)
 		tticks_peak[pos] = tticks;
 	consoleSelect(&profileConsole);
