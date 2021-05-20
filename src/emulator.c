@@ -9,6 +9,7 @@
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
+Copyright (c) 2021 Adrian "asie" Siekierka
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -58,6 +59,8 @@ error(char *msg, const char *err)
 	iprintf("Error %s: %s\n", msg, err);
 	gfxSwapBuffers();
 	while (aptMainLoop()) {
+		hidScanInput();
+		if (hidKeysDown() & KEY_START) break;
 		gspWaitForVBlank();
 	}
 	exit(0);
@@ -86,7 +89,8 @@ redraw(Uxn *u)
 {
 	C2D_DrawParams drawParams;
 	float slider = osGet3DSliderState();
-	int x_offset = (int) (slider * 10.0f);
+	int x_offset_bg = (int) (slider * 7.0f);
+	int x_offset_fg = (slider > 0.0f) ? -1 : 0;
 
 	if(debug) {
 		drawdebugger(&ppu, u->wst.dat, u->wst.ptr);
@@ -122,21 +126,21 @@ redraw(Uxn *u)
 	if (!dispswap) {
 		C2D_TargetClear(topLeft, C2D_Color32(0, 0, 0, 0));
 		C2D_SceneBegin(topLeft);
-		drawParams.pos.x = 40.0f - x_offset;
+		drawParams.pos.x = 40.0f - x_offset_bg;
 		drawParams.depth = 0.0f;
 		C2D_DrawImage(gpuBg, &drawParams, NULL);
-		drawParams.pos.x = 40.0f;
-		drawParams.depth = -1.0f;
+		drawParams.pos.x = 40.0f - x_offset_fg;
+		drawParams.depth = 1.0f;
 		C2D_DrawImage(gpuFg, &drawParams, NULL);
 
 		if (slider > 0.0f) {
 			C2D_TargetClear(topRight, C2D_Color32(0, 0, 0, 0));
 			C2D_SceneBegin(topRight);
-			drawParams.pos.x = 40.0f + x_offset;
+			drawParams.pos.x = 40.0f + x_offset_bg;
 			drawParams.depth = 0.0f;
 			C2D_DrawImage(gpuBg, &drawParams, NULL);
-			drawParams.pos.x = 40.0f;
-			drawParams.depth = -1.0f;
+			drawParams.pos.x = 40.0f + x_offset_fg;
+			drawParams.depth = 1.0f;
 			C2D_DrawImage(gpuFg, &drawParams, NULL);
 		}
 
@@ -148,7 +152,7 @@ redraw(Uxn *u)
 		drawParams.pos.x = 0.0f;
 		drawParams.depth = 0.0f;
 		C2D_DrawImage(gpuBg, &drawParams, NULL);
-		drawParams.depth = -1.0f;
+		drawParams.depth = 1.0f;
 		C2D_DrawImage(gpuFg, &drawParams, NULL);
 
 		// TODO: keyboard
@@ -170,8 +174,8 @@ toggledebug(Uxn *u)
 void
 quit(void)
 {
-	free(ppu.fg.pixels);
-	free(ppu.bg.pixels);
+	linearFree(ppu.fg.pixels);
+	linearFree(ppu.bg.pixels);
 	C3D_TexDelete(&texFg);
 	C3D_TexDelete(&texBg);
 	C2D_Fini();
@@ -435,6 +439,11 @@ start(Uxn *u)
 	redraw(u);
 	while(aptMainLoop()) {
 		hidScanInput();
+		if ((hidKeysHeld() &
+			(KEY_L | KEY_R | KEY_START | KEY_SELECT))
+			== (KEY_L | KEY_R | KEY_START | KEY_SELECT)) {
+			break;
+		}
 		doctrl(u);
 		domouse(u);
 		evaluxn(u, mempeek16(devscreen->dat, 0));
@@ -445,17 +454,36 @@ start(Uxn *u)
 
 static Uxn u;
 
+static bool
+fexists(const char *name)
+{
+	FILE *f = fopen(name, "rb");
+	if (f != NULL) {
+		fclose(f);
+		return true;
+	} else {
+		return false;
+	}
+}
+
 int
 main(int argc, char **argv)
 {
 	const char *bootpath = "boot.rom";
+	bool check_existing = true;
 
 	if(!init())
 		return error("Init", "Failed");
 	if(argc >= 2 && argv != NULL && argv[1] != NULL)
 		bootpath = argv[1];
-	else
-		chdir("/uxn");
+	else if (argc < 1 || argv == NULL || argv[0] == NULL || argv[0][0] == 0)
+		check_existing = false;
+	if (!check_existing || !fexists(bootpath)) {
+		chdir("/3ds/uxn");
+		if (!fexists(bootpath)) {
+			chdir("/uxn");
+		}
+	}
 	if(!bootuxn(&u))
 		return error("Boot", "Failed");
 	if(!loaduxn(&u, bootpath))

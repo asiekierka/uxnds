@@ -4,6 +4,7 @@
 /*
 Copyright (c) 2021 Devine Lu Linvega
 Copyright (c) 2021 Andrew Alderwick
+Copyright (c) 2021 Adrian "asie" Siekierka
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
