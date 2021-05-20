@@ -17,7 +17,11 @@ include $(DEVKITARM)/ds_rules
 ifeq ($(DEBUG),true)
 BUILD		:=	build_debug
 else
+ifeq ($(PROFILE),true)
+BUILD		:=	build_profile
+else
 BUILD		:=	build
+endif
 endif
 SOURCES		:=	source
 INCLUDES	:=	include
@@ -40,6 +44,11 @@ CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 ifeq ($(DEBUG),true)
 CFLAGS		+=	-DDEBUG -DCPU_ERROR_CHECKING -DDEBUG_PROFILE
 CXXFLAGS	+=	-DDEBUG -DCPU_ERROR_CHECKING -DDEBUG_PROFILE
+else
+ifeq ($(PROFILE),true)
+CFLAGS		+=	-DDEBUG -DDEBUG_PROFILE
+CXXFLAGS	+=	-DDEBUG -DDEBUG_PROFILE
+endif
 endif
 
 ASFLAGS	:=	-g $(ARCH) -march=armv5te -mtune=arm946e-s
@@ -67,8 +76,13 @@ ifneq ($(BUILD),$(notdir $(CURDIR)))
 ifeq ($(DEBUG),true)
 export ARM9ELF	:=	$(CURDIR)/$(TARGET)_debug.elf
 else
+ifeq ($(PROFILE),true)
+export ARM9ELF	:=	$(CURDIR)/$(TARGET)_profile.elf
+else
 export ARM9ELF	:=	$(CURDIR)/$(TARGET).elf
 endif
+endif
+
 export DEPSDIR := $(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
