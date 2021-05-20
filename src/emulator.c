@@ -98,6 +98,7 @@ redraw(Uxn *u)
 	}
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 	if (reqdraw & REQDRAW_BG) {
+		GSPGPU_FlushDataCache(ppu.bg.pixels, PPU_TEX_WIDTH * PPU_TEX_HEIGHT * 4);
 		C3D_SyncDisplayTransfer(
 			ppu.bg.pixels, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
 			texBg.data, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
@@ -108,6 +109,7 @@ redraw(Uxn *u)
 		);
 	}
 	if (reqdraw & REQDRAW_FG) {
+		GSPGPU_FlushDataCache(ppu.fg.pixels, PPU_TEX_WIDTH * PPU_TEX_HEIGHT * 4);
 		C3D_SyncDisplayTransfer(
 			ppu.fg.pixels, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
 			texFg.data, GX_BUFFER_DIM(PPU_TEX_WIDTH, PPU_TEX_HEIGHT),
@@ -174,6 +176,13 @@ toggledebug(Uxn *u)
 void
 quit(void)
 {
+	// APU
+	ndspExit();
+	LightLock_Lock(&soundLock);
+	linearFree(soundData);
+	LightLock_Unlock(&soundLock);
+
+	// PPU
 	linearFree(ppu.fg.pixels);
 	linearFree(ppu.bg.pixels);
 	C3D_TexDelete(&texFg);
