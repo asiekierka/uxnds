@@ -200,34 +200,28 @@ typedef struct {
 	Uint32 a, b, c, d, e, f, g, h;
 } TileBackup;
 
-DTCM_BSS
-static TileBackup tile_backup;
-
 static inline void
 copytile(TileBackup *tptr)
 {
-	tile_backup = *tptr;
-	tptr = (TileBackup*) (((u32) tptr) & 0xFFFEFFFF);
-	*tptr = tile_backup;
+	TileBackup *tdstptr = (TileBackup*) (((u32) tptr) & 0xFFFEFFFF);
+	*tdstptr = *tptr;
 }
 
 ITCM_ARM_CODE
 void
 copyppu(Ppu *p)
 {
-	int i, j, k, ofs;
+	int i, k, ofs;
 
 	for (i = 0; i < 24; i++) {
 		if (tile_dirty[i] != 0) {
-			ofs = i << 8;
-			k = 1;
-			for (j = 0; j < 32; j++, ofs += 8, k <<= 1) {
-				if (tile_dirty[i] & k) {
-					copytile((TileBackup*) (p->bg + ofs));
-					copytile((TileBackup*) (p->fg + ofs));
-				}
+			while ((k = __builtin_ffs(tile_dirty[i])) > 0) {
+				k--;
+				ofs = (i << 8) | (k << 3);
+				copytile((TileBackup*) (p->bg + ofs));
+				copytile((TileBackup*) (p->fg + ofs));
+				tile_dirty[i] ^= (1 << k);
 			}
-			tile_dirty[i] = 0;
 		}
 	}
 }
