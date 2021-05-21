@@ -186,10 +186,7 @@ doctrl(Uxn *u)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
 		| ((held & KEY_LEFT) ? 0x40 : 0);
 
-	if (key > 0) {
-		devctrl->dat[3] = key;
-		changed = true;
-	} else switch (key) {
+	switch (key) {
 		case DVK_FOLD:
 			devctrl->dat[3] = 27;
 			changed = true;
@@ -205,6 +202,16 @@ doctrl(Uxn *u)
 			break;
 		case DVK_RIGHT:
 			devctrl->dat[2] |= (1 << 7);
+			break;
+		case DVK_ENTER:
+			devctrl->dat[3] = 13;
+			changed = true;
+			break;
+		default:
+			if (key > 0) {
+				devctrl->dat[3] = key;
+				changed = true;
+			}
 			break;
 	}
 

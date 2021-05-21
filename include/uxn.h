@@ -1,4 +1,5 @@
 #include <nds.h>
+#include <stdint.h>
 #include <stdio.h>
 
 /*
@@ -21,10 +22,10 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define ITCM_ARM_CODE __attribute__((section(".itcm"), long_call, target("arm")))
 
-typedef unsigned char Uint8;
-typedef signed char Sint8;
-typedef unsigned short Uint16;
-typedef signed short Sint16;
+typedef uint8_t Uint8;
+typedef int8_t Sint8;
+typedef uint16_t Uint16;
+typedef int16_t Sint16;
 
 #define PAGE_PROGRAM 0x0100
 
