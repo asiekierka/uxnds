@@ -22,7 +22,7 @@ WITH REGARD TO THIS SOFTWARE.
 DTCM_BSS
 static Ppu ppu;
 static Apu apu[POLYPHONY];
-static u32 apu_samples[(512 * 4) >> 1];
+static u32 apu_samples[(UXNDS_AUDIO_BUFFER_SIZE * 4) >> 1];
 static Device *devscreen, *devctrl, *devmouse, *devaudio0;
 
 Uint8 dispswap = 0, debug = 0;
@@ -216,24 +216,14 @@ doctrl(Uxn *u)
 }
 
 static touchPosition tpos;
-static Uint8 last_dispswap = 0;
+static Uint8 istouching = 0;
 
 void
 domouse(Uxn *u)
 {
-	bool firstTouch;
-
-	if (last_dispswap || (keysUp() & KEY_TOUCH)) {
-		mempoke16(devmouse->dat, 0x2, tpos.px);
-		mempoke16(devmouse->dat, 0x4, tpos.py);
-		devmouse->dat[6] = 0x00;
-		devmouse->dat[7] = 0x00;
-		evaluxn(u, mempeek16(devmouse->dat, 0));
-		last_dispswap = 0;
-	} else if (dispswap && ((keysDown() | keysHeld()) & KEY_TOUCH)) {
-		firstTouch = (keysDown() & KEY_TOUCH);
+	if (dispswap && (keysHeld() & KEY_TOUCH)) {
 		touchRead(&tpos);
-		if (firstTouch
+		if (!istouching
 			|| mempeek16(devmouse->dat, 0x2) != tpos.px
 			|| mempeek16(devmouse->dat, 0x4) != tpos.py)
 		{
@@ -242,8 +232,15 @@ domouse(Uxn *u)
 			devmouse->dat[6] = 0x01;
 			devmouse->dat[7] = 0x00;
 			evaluxn(u, mempeek16(devmouse->dat, 0));
-			last_dispswap = 1;
+			istouching = 1;
 		}
+	} else if (istouching) {
+		mempoke16(devmouse->dat, 0x2, tpos.px);
+		mempoke16(devmouse->dat, 0x4, tpos.py);
+		devmouse->dat[6] = 0x00;
+		devmouse->dat[7] = 0x00;
+		evaluxn(u, mempeek16(devmouse->dat, 0));
+		istouching = 0;
 	}
 }
 

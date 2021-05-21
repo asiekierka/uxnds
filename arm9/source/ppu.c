@@ -196,33 +196,19 @@ drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
 	}
 } */
 
+typedef struct {
+	Uint32 a, b, c, d, e, f, g, h;
+} TileBackup;
+
 DTCM_BSS
-static Uint32 tile_backup[8];
+static TileBackup tile_backup;
 
 static inline void
-copytile(Uint32 *tptr)
+copytile(TileBackup *tptr)
 {
-	// TODO: use ldmia/stmia for faster performance
-
-	tile_backup[0] = tptr[0];
-	tile_backup[1] = tptr[1];
-	tile_backup[2] = tptr[2];
-	tile_backup[3] = tptr[3];
-	tile_backup[4] = tptr[4];
-	tile_backup[5] = tptr[5];
-	tile_backup[6] = tptr[6];
-	tile_backup[7] = tptr[7];
-
-	tptr = (Uint32*) (((u32) tptr) & 0xFFFEFFFF);
-
-	tptr[0] = tile_backup[0];
-	tptr[1] = tile_backup[1];
-	tptr[2] = tile_backup[2];
-	tptr[3] = tile_backup[3];
-	tptr[4] = tile_backup[4];
-	tptr[5] = tile_backup[5];
-	tptr[6] = tile_backup[6];
-	tptr[7] = tile_backup[7];
+	tile_backup = *tptr;
+	tptr = (TileBackup*) (((u32) tptr) & 0xFFFEFFFF);
+	*tptr = tile_backup;
 }
 
 ITCM_ARM_CODE
@@ -237,8 +223,8 @@ copyppu(Ppu *p)
 			k = 1;
 			for (j = 0; j < 32; j++, ofs += 8, k <<= 1) {
 				if (tile_dirty[i] & k) {
-					copytile(p->bg + ofs);
-					copytile(p->fg + ofs);
+					copytile((TileBackup*) (p->bg + ofs));
+					copytile((TileBackup*) (p->fg + ofs));
 				}
 			}
 			tile_dirty[i] = 0;

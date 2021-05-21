@@ -79,7 +79,7 @@ void fifo_handler(u32 cmd, void *unused) {
 		case UXNDS_FIFO_CMD_SET_ADDR:
 			sampling_addr = (s16*) (cmd & ~UXNDS_FIFO_CMD_MASK);
 			sampling_pos = 0;
-			sampling_bufsize = 512;
+			sampling_bufsize = UXNDS_AUDIO_BUFFER_SIZE;
 
 			SCHANNEL_CR(0) = 0;
 			SCHANNEL_TIMER(0) = sampling_timer_freq;
