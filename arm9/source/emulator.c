@@ -255,7 +255,7 @@ void
 datetime_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	time_t seconds = time(NULL);
-	struct tm *t = localtime(&seconds);
+	struct tm *t = gmtime(&seconds);
 	t->tm_year += 1900;
 	mempoke16(d->dat, 0x0, t->tm_year);
 	d->dat[0x2] = t->tm_mon;
