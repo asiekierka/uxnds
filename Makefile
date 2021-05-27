@@ -48,7 +48,7 @@ GRAPHICS	:=
 GFXBUILD	:=	$(BUILD)
 #ROMFS		:=	romfs
 #GFXBUILD	:=	$(ROMFS)/gfx
-APP_TITLE := uxn3ds (v0.1.0)
+APP_TITLE := uxn3ds (v0.1.1)
 ifeq ($(DEBUG),true)
 APP_DESCRIPTION := tiny virtual machine (debug)
 else
