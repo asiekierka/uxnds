@@ -510,14 +510,15 @@ evaluxn(Uxn *u, Uint16 vec)
 		case 0xa1: /* LIT2k */
 			__asm__( "evaluxn_21_LIT2:" );
 			{
-				u->wst.dat[u->wst.ptr] = mempeek8(u->ram.dat, u->ram.ptr++);
-				u->wst.dat[u->wst.ptr + 1] = mempeek8(u->ram.dat, u->ram.ptr++);
+				u->wst.dat[u->wst.ptr] = mempeek8(u->ram.dat, u->ram.ptr);
+				u->wst.dat[u->wst.ptr + 1] = mempeek8(u->ram.dat, u->ram.ptr + 1);
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->wst.ptr > 253, 0)) {
 					u->wst.error = 2;
 					goto error;
 				}
 #endif
+				u->ram.ptr += 2;
 				u->wst.ptr += 2;
 			}
 			break;
@@ -1433,14 +1434,15 @@ evaluxn(Uxn *u, Uint16 vec)
 		case 0xe1: /* LIT2kr */
 			__asm__( "evaluxn_61_LIT2r:" );
 			{
-				u->rst.dat[u->rst.ptr] = mempeek8(u->ram.dat, u->ram.ptr++);
-				u->rst.dat[u->rst.ptr + 1] = mempeek8(u->ram.dat, u->ram.ptr++);
+				u->rst.dat[u->rst.ptr] = mempeek8(u->ram.dat, u->ram.ptr);
+				u->rst.dat[u->rst.ptr + 1] = mempeek8(u->ram.dat, u->ram.ptr + 1);
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->rst.ptr > 253, 0)) {
 					u->rst.error = 2;
 					goto error;
 				}
 #endif
+				u->ram.ptr += 2;
 				u->rst.ptr += 2;
 			}
 			break;
