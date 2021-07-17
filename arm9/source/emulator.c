@@ -83,14 +83,10 @@ system_talk(Device *d, Uint8 b0, Uint8 w)
 void
 console_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(!w) return;
-	switch(b0) {
-	case 0x8: iprintf("%c", d->dat[0x8]); break;
-	case 0x9: iprintf("0x%02x", d->dat[0x9]); break;
-	case 0xb: iprintf("0x%04x", mempeek16(d->dat, 0xa)); break;
-	case 0xd: iprintf("%s", &d->mem[mempeek16(d->dat, 0xc)]); break;
+	if(w && b0 > 0x7) {
+		fwrite(&d->dat[b0], 1, 1, stdout);
+		fflush(stdout);
 	}
-	fflush(stdout);
 }
 #endif
 
@@ -150,7 +146,7 @@ audio_talk(Device *d, Uint8 b0, Uint8 w)
 		c->volume[1] = d->dat[0xe] & 0xf;
 		c->repeat = !(d->dat[0xf] & 0x80);
 		apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
-		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + (d - devaudio0))
+		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((d - devaudio0) << 28))
 			| ((u32) (&apu)));
 	}
 }
