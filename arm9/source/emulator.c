@@ -97,15 +97,26 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 	if(w && b0 == 0xe) {
 		Uint16 x = mempeek16(d->dat, 0x8);
 		Uint16 y = mempeek16(d->dat, 0xa);
-		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
 		Uint32 *layer = d->dat[0xe] >> 4 & 0x1 ? ppu.fg : ppu.bg;
 		Uint8 mode = d->dat[0xe] >> 5;
 		if(!mode)
-			putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
-		else if(mode-- & 0x1)
-			puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+			ppu_pixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
+		else {
+			Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
+			if(mode-- & 0x1)
+				ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+			else
+				ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+		}
+	} else if(w && b0 == 0xf) {
+		Uint16 x = mempeek16(d->dat, 0x8);
+		Uint16 y = mempeek16(d->dat, 0xa);
+		Uint32 *layer = d->dat[0xf] >> 6 & 0x1 ? ppu.fg : ppu.bg;
+		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
+		if(d->dat[0xf] >> 0x7 & 0x1)
+			ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
 		else
-			putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+			ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
 	}
 }
 
