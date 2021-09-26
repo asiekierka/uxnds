@@ -67,7 +67,7 @@ init(void)
 
 #pragma mark - Devices
 
-void
+int
 system_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	if(!w) {
@@ -76,59 +76,74 @@ system_talk(Device *d, Uint8 b0, Uint8 w)
 	} else {
 		putcolors(&ppu, &d->dat[0x8]);
 	}
-	(void)b0;
+	return 1;
 }
 
 #ifdef DEBUG
-void
+int
 console_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(w && b0 > 0x7) {
-		fwrite(&d->dat[b0], 1, 1, stdout);
-		fflush(stdout);
+	if(w) {
+		if(b0 == 0x1) {
+			d->vector = peek16(d->dat, 0x0);
+		}
+		if(b0 > 0x7) {
+			fwrite(&d->dat[b0], 1, 1, stdout);
+			fflush(stdout);
+		}
 	}
+	return 1;
 }
 #endif
 
 ITCM_ARM_CODE
-void
+int
 screen_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	if(w && b0 == 0xe) {
-		Uint16 x = mempeek16(d->dat, 0x8);
-		Uint16 y = mempeek16(d->dat, 0xa);
-		Uint32 *layer = d->dat[0xe] >> 4 & 0x1 ? ppu.fg : ppu.bg;
-		Uint8 mode = d->dat[0xe] >> 5;
-		if(!mode)
+        if(!w) switch(b0) {
+                case 0x2: d->dat[0x2] = PPU_PIXELS_WIDTH >> 8; break;
+                case 0x3: d->dat[0x3] = PPU_PIXELS_WIDTH; break;
+                case 0x4: d->dat[0x4] = PPU_PIXELS_HEIGHT >> 8; break;
+                case 0x5: d->dat[0x5] = PPU_PIXELS_HEIGHT; break;
+                }
+	else {
+		if(b0 == 0x1) {
+			d->vector = peek16(d->dat, 0x0);
+		} else if(b0 == 0xe) {
+			Uint16 x = peek16(d->dat, 0x8);
+			Uint16 y = peek16(d->dat, 0xa);
+			Uint32 *layer = (d->dat[0xe] >> 6) & 0x1 ? ppu.fg : ppu.bg;
 			ppu_pixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
-		else {
-			Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-			if(mode-- & 0x1)
-				ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
-			else
-				ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+                        if(d->dat[0x6] & 0x01) poke16(d->dat, 0x8, x + 1); /* auto x+1 */
+                        if(d->dat[0x6] & 0x02) poke16(d->dat, 0xa, y + 1); /* auto y+1 */
+		} else if(b0 == 0xf) {
+			Uint16 x = peek16(d->dat, 0x8);
+			Uint16 y = peek16(d->dat, 0xa);
+			Uint32 *layer = d->dat[0xf] >> 6 & 0x1 ? ppu.fg : ppu.bg;
+			Uint8 *addr = &d->mem[peek16(d->dat, 0xc)];
+			if(d->dat[0xf] & 0x80) {
+				ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
+                                if(d->dat[0x6] & 0x04) poke16(d->dat, 0xc, peek16(d->dat, 0xc) + 16); /* auto addr+16 */
+			} else {
+				ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
+                                if(d->dat[0x6] & 0x04) poke16(d->dat, 0xc, peek16(d->dat, 0xc) + 8); /* auto addr+8 */
+			}
+                        if(d->dat[0x6] & 0x01) poke16(d->dat, 0x8, x + 8); /* auto x+8 */
+                        if(d->dat[0x6] & 0x02) poke16(d->dat, 0xa, y + 8); /* auto y+8 */
 		}
-	} else if(w && b0 == 0xf) {
-		Uint16 x = mempeek16(d->dat, 0x8);
-		Uint16 y = mempeek16(d->dat, 0xa);
-		Uint32 *layer = d->dat[0xf] >> 6 & 0x1 ? ppu.fg : ppu.bg;
-		Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-		if(d->dat[0xf] >> 0x7 & 0x1)
-			ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
-		else
-			ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
 	}
+	return 1;
 }
 
-void
+int
 file_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Uint8 read = b0 == 0xd;
 	if(w && (read || b0 == 0xf)) {
-		char *name = (char *)&d->mem[mempeek16(d->dat, 0x8)];
-		Uint16 result = 0, length = mempeek16(d->dat, 0xa);
-		Uint16 offset = mempeek16(d->dat, 0x4);
-		Uint16 addr = mempeek16(d->dat, b0 - 1);
+		char *name = (char *)&d->mem[peek16(d->dat, 0x8)];
+		Uint16 result = 0, length = peek16(d->dat, 0xa);
+		Uint16 offset = peek16(d->dat, 0x4);
+		Uint16 addr = peek16(d->dat, b0 - 1);
 		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
 		if(f) {
 			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
@@ -137,37 +152,39 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 			dprintf("%04x bytes\n", result);
 			fclose(f);
 		}
-		mempoke16(d->dat, 0x2, result);
+		poke16(d->dat, 0x2, result);
 	}
+	return 1;
 }
 
-static void
+static int
 audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	Apu *c = &apu[d - devaudio0];
 	if(!w) {
 		if(b0 == 0x2)
-			mempoke16(d->dat, 0x2, c->i);
+			poke16(d->dat, 0x2, c->i);
 		else if(b0 == 0x4)
 			d->dat[0x4] = apu_get_vu(c);
 	} else if(b0 == 0xf) {
-		c->len = mempeek16(d->dat, 0xa);
-		c->addr = &d->mem[mempeek16(d->dat, 0xc)];
+		c->len = peek16(d->dat, 0xa);
+		c->addr = &d->mem[peek16(d->dat, 0xc)];
 		c->volume[0] = d->dat[0xe] >> 4;
 		c->volume[1] = d->dat[0xe] & 0xf;
 		c->repeat = !(d->dat[0xf] & 0x80);
-		apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
+		apu_start(c, peek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
 		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((d - devaudio0) << 28))
 			| ((u32) (&apu)));
 	}
+	return 1;
 }
 
-void
+int
 nil_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	(void)d;
-	(void)b0;
-	(void)w;
+        if(w && b0 == 0x1)
+                d->vector = peek16(d->dat, 0x0);
+	return 1;
 }
 
 #pragma mark - Generics
@@ -224,7 +241,7 @@ doctrl(Uxn *u)
 
 	changed |= old_flags != devctrl->dat[2];
 	if (changed) {
-		evaluxn(u, mempeek16(devctrl->dat, 0));
+		evaluxn(u, devctrl->vector);
 		devctrl->dat[3] = 0;
 	}
 }
@@ -238,43 +255,42 @@ domouse(Uxn *u)
 	if (dispswap && (keysHeld() & KEY_TOUCH)) {
 		touchRead(&tpos);
 		if (!istouching
-			|| mempeek16(devmouse->dat, 0x2) != tpos.px
-			|| mempeek16(devmouse->dat, 0x4) != tpos.py)
+			|| peek16(devmouse->dat, 0x2) != tpos.px
+			|| peek16(devmouse->dat, 0x4) != tpos.py)
 		{
-			mempoke16(devmouse->dat, 0x2, tpos.px);
-			mempoke16(devmouse->dat, 0x4, tpos.py);
+			poke16(devmouse->dat, 0x2, tpos.px);
+			poke16(devmouse->dat, 0x4, tpos.py);
 			devmouse->dat[6] = 0x01;
 			devmouse->dat[7] = 0x00;
-			evaluxn(u, mempeek16(devmouse->dat, 0));
+			evaluxn(u, devmouse->vector);
 			istouching = 1;
 		}
 	} else if (istouching) {
-		mempoke16(devmouse->dat, 0x2, tpos.px);
-		mempoke16(devmouse->dat, 0x4, tpos.py);
+		poke16(devmouse->dat, 0x2, tpos.px);
+		poke16(devmouse->dat, 0x4, tpos.py);
 		devmouse->dat[6] = 0x00;
 		devmouse->dat[7] = 0x00;
-		evaluxn(u, mempeek16(devmouse->dat, 0));
+		evaluxn(u, devmouse->vector);
 		istouching = 0;
 	}
 }
 
-void
+int
 datetime_talk(Device *d, Uint8 b0, Uint8 w)
 {
 	time_t seconds = time(NULL);
 	struct tm *t = gmtime(&seconds);
 	t->tm_year += 1900;
-	mempoke16(d->dat, 0x0, t->tm_year);
+	poke16(d->dat, 0x0, t->tm_year);
 	d->dat[0x2] = t->tm_mon;
 	d->dat[0x3] = t->tm_mday;
 	d->dat[0x4] = t->tm_hour;
 	d->dat[0x5] = t->tm_min;
 	d->dat[0x6] = t->tm_sec;
 	d->dat[0x7] = t->tm_wday;
-	mempoke16(d->dat, 0x08, t->tm_yday);
+	poke16(d->dat, 0x08, t->tm_yday);
 	d->dat[0xa] = t->tm_isdst;
-	(void)b0;
-	(void)w;
+	return 1;
 }
 
 #define timer_ticks(tid) (TIMER_DATA((tid)) | (TIMER_DATA((tid)+1) << 16))
@@ -317,7 +333,7 @@ start(Uxn *u)
 		profiler_ticks(timer_ticks(0) - tticks, 1, "ctrl");
 		tticks = timer_ticks(0);
 #endif
-		evaluxn(u, mempeek16(devscreen->dat, 0));
+		evaluxn(u, devscreen->vector);
 #ifdef DEBUG_PROFILE
 		profiler_ticks(timer_ticks(0) - tticks, 0, "main");
 #endif
@@ -404,8 +420,8 @@ main(int argc, char **argv)
 	portuxn(&u, 0xf, "---", nil_talk);
 
 	/* Write screen size to dev/screen */
-	mempoke16(devscreen->dat, 2, PPU_PIXELS_WIDTH);
-	mempoke16(devscreen->dat, 4, PPU_PIXELS_HEIGHT);
+	poke16(devscreen->dat, 2, PPU_PIXELS_WIDTH);
+	poke16(devscreen->dat, 4, PPU_PIXELS_HEIGHT);
 
 	start(&u);
 	quit();
