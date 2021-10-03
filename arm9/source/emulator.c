@@ -325,6 +325,21 @@ start(Uxn *u)
 		// X+Y in debugger mode resets tticks_peak
 		if ((keysHeld() & (KEY_X | KEY_Y)) == (KEY_X | KEY_Y))
 			memset(tticks_peak, 0, sizeof(tticks_peak));
+
+		int held = keysDown() | keysHeld();
+		// On the first frame that L+R are held
+		if ((keysDown() & (KEY_R | KEY_L)) &&
+			((held & (KEY_R | KEY_L)) == (KEY_R | KEY_L))) {
+			// reset the cpu
+			if(!resetuxn(u))
+				return error("Resetting", "Failed");
+			if(!loaduxn(u, "boot.rom"))
+				return error("Load", "Failed");
+			if(!initppu(&ppu))
+				return error("PPU", "Init failure");
+			evaluxn(u, 0x0100);
+		}
+
 		tticks = timer_ticks(0);
 #endif
 		doctrl(u);

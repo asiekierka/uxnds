@@ -4043,6 +4043,24 @@ bootuxn(Uxn *u)
         return 1;
 }
 
+int resetuxn(Uxn *u)
+{
+	// Reset the stacks
+	memset(&(u->wst), 0, sizeof(Stack));
+	memset(&(u->rst), 0, sizeof(Stack));
+
+	Device *device;
+	for (int i = 0; i < 16; i++) {
+		device = &(u->dev[i]);
+		memset(device->dat, 0, 16);
+		device->vector = (Uint16) 0;
+	}
+
+	// Reset RAM
+	memset(u->ram.dat, 0, 65536);
+	return 1;
+}
+
 int
 loaduxn(Uxn *u, char *filepath)
 {
