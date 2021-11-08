@@ -184,6 +184,7 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		FILE *f; DIR *dir;
 		if (dir = opendir(name)) {
 			result = file_read_dir(&d->mem[addr], length, dir, name);
+			closedir(dir);
 		} else if(f = fopen(name, read ? "r" : (offset ? "a" : "w"))) {
 			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
 			if(fseek(f, offset, SEEK_SET) != -1)
