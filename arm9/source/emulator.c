@@ -155,7 +155,7 @@ get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int f
 static Uint16
 file_read_dir(char *dest, Uint16 len, DIR *dir, const char *filename)
 {
-	static char pathname[4096];
+	static char pathname[512];
 	char *p = dest;
 	struct dirent *de;
 	while(de = readdir(dir)) {
