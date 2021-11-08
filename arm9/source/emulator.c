@@ -1,5 +1,6 @@
 #include <nds.h>
 #include <fat.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <time.h>
 #include "../../include/uxn.h"
@@ -135,6 +136,42 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 	return 1;
 }
 
+static Uint16
+get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int fail_nonzero)
+{
+	struct stat st;
+	if(len < strlen(basename) + 7)
+		return 0;
+	if(stat(pathname, &st))
+		return fail_nonzero ? snprintf(p, len, "!!!! %s\n", basename) : 0;
+	else if(S_ISDIR(st.st_mode))
+		return snprintf(p, len, "---- %s\n", basename);
+	else if(st.st_size < 0x10000)
+		return snprintf(p, len, "%04x %s\n", (Uint16)st.st_size, basename);
+	else
+		return snprintf(p, len, "???? %s\n", basename);
+}
+
+static Uint16
+file_read_dir(char *dest, Uint16 len, DIR *dir, const char *filename)
+{
+	static char pathname[4096];
+	char *p = dest;
+	struct dirent *de;
+	while(de = readdir(dir)) {
+		Uint16 n;
+		if(de->d_name[0] == '.' && de->d_name[1] == '\0')
+			continue;
+		snprintf(pathname, sizeof(pathname), "%s/%s", filename, de->d_name);
+		n = get_entry(p, len, pathname, de->d_name, 1);
+		if(!n) break;
+		p += n;
+		len -= n;
+	}
+	return p - dest;
+}
+
+
 int
 file_talk(Device *d, Uint8 b0, Uint8 w)
 {
@@ -144,8 +181,10 @@ file_talk(Device *d, Uint8 b0, Uint8 w)
 		Uint16 result = 0, length = peek16(d->dat, 0xa);
 		Uint16 offset = peek16(d->dat, 0x4);
 		Uint16 addr = peek16(d->dat, b0 - 1);
-		FILE *f = fopen(name, read ? "r" : (offset ? "a" : "w"));
-		if(f) {
+		FILE *f; DIR *dir;
+		if (dir = opendir(name)) {
+			result = file_read_dir(&d->mem[addr], length, dir, name);
+		} else if(f = fopen(name, read ? "r" : (offset ? "a" : "w"))) {
 			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
 			if(fseek(f, offset, SEEK_SET) != -1)
 				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
