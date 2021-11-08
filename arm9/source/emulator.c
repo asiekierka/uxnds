@@ -311,6 +311,9 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 }
 #endif
 
+#define RESET_KEYS (KEY_R | KEY_L)
+#define TICK_RESET_KEYS (KEY_X | KEY_Y)
+
 int
 start(Uxn *u)
 {
@@ -323,15 +326,15 @@ start(Uxn *u)
 		scanKeys();
 #ifdef DEBUG_PROFILE
 		// X+Y in debugger mode resets tticks_peak
-		if ((keysHeld() & (KEY_X | KEY_Y)) == (KEY_X | KEY_Y))
+		if ((keysHeld() & TICK_RESET_KEYS) == TICK_RESET_KEYS)
 			memset(tticks_peak, 0, sizeof(tticks_peak));
 		tticks = timer_ticks(0);
 #endif
 
 		int held = keysDown() | keysHeld();
 		// On the first frame that L+R are held
-		if ((keysDown() & (KEY_R | KEY_L)) &&
-			((held & (KEY_R | KEY_L)) == (KEY_R | KEY_L))) {
+		if ((keysDown() & RESET_KEYS) &&
+			((held & RESET_KEYS) == RESET_KEYS)) {
 			// reset the cpu
 			if(!resetuxn(u))
 				return error("Resetting", "Failed");
