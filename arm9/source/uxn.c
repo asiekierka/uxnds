@@ -4035,12 +4035,30 @@ error:
 }
 
 int
+resetuxn(Uxn *u)
+{
+	// Reset the stacks
+	memset(&(u->wst), 0, sizeof(Stack));
+	memset(&(u->rst), 0, sizeof(Stack));
+
+	Device *device;
+	for (int i = 0; i < 16; i++) {
+		device = &(u->dev[i]);
+		memset(device->dat, 0, 16);
+		device->vector = (Uint16) 0;
+	}
+
+	// Reset RAM
+	memset(u->ram.dat, 0, 65536);
+	return 1;
+}
+
+int
 bootuxn(Uxn *u)
 {
         memset(u, 0, sizeof(*u));
         u->ram.dat = malloc(65536);
-        memset(u->ram.dat, 0, 65536);
-        return 1;
+	return resetuxn(u);
 }
 
 int

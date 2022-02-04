@@ -60,6 +60,7 @@ static inline void   poke16(Uint8 *m, Uint16 a, Uint16 b) { poke8(m, a, b >> 8);
 static inline Uint16 peek16(Uint8 *m, Uint16 a) { return (peek8(m, a) << 8) + peek8(m, a + 1); }
 
 int loaduxn(Uxn *c, char *filepath);
+int resetuxn(Uxn *c);
 int bootuxn(Uxn *c);
 int evaluxn(Uxn *u, Uint16 vec);
 Device *portuxn(Uxn *u, Uint8 id, char *name, int (*talkfn)(Device *, Uint8, Uint8));

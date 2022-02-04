@@ -28,12 +28,15 @@ static Device *devscreen, *devctrl, *devmouse, *devaudio0;
 
 Uint8 dispswap = 0, debug = 0;
 
-#ifdef DEBUG
 static PrintConsole *mainConsole;
+#ifdef DEBUG
 #ifdef DEBUG_PROFILE
 static PrintConsole profileConsole;
 #endif
 #endif
+
+#define RESET_KEYS (KEY_START | KEY_SELECT)
+#define TICK_RESET_KEYS (KEY_X | KEY_Y)
 
 int
 clamp(int val, int min, int max)
@@ -356,6 +359,37 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 }
 #endif
 
+void
+prompt_reset(Uxn *u)
+{
+	consoleClear();
+	iprintf("Would you like to reset uxnds?\n\n [A] - Yes\n [B] - No\n");
+	while(1) {
+		swiWaitForVBlank();
+		scanKeys();
+		int allHeld = keysDown() | keysHeld();
+		if (allHeld & KEY_A) {
+			consoleClear();
+			break;
+		} else if (allHeld & KEY_B) {
+			consoleClear();
+			return;
+		}
+	}
+
+	iprintf("Resetting...\n");
+
+	if(!resetuxn(u))
+		return error("Resetting", "Failed");
+	if(!loaduxn(u, "boot.rom"))
+		return error("Load", "Failed");
+	if(!initppu(&ppu))
+		return error("PPU", "Init failure");
+	evaluxn(u, 0x0100);
+
+	consoleClear();
+}
+
 int
 start(Uxn *u)
 {
@@ -366,12 +400,16 @@ start(Uxn *u)
 	evaluxn(u, 0x0100);
 	while(1) {
 		scanKeys();
+		int allHeld = keysDown() | keysHeld();
 #ifdef DEBUG_PROFILE
 		// X+Y in debugger mode resets tticks_peak
-		if ((keysHeld() & (KEY_X | KEY_Y)) == (KEY_X | KEY_Y))
+		if ((keysDown() & TICK_RESET_KEYS) && ((allHeld & TICK_RESET_KEYS) == TICK_RESET_KEYS))
 			memset(tticks_peak, 0, sizeof(tticks_peak));
 		tticks = timer_ticks(0);
 #endif
+		// On the first frame that L+R are held
+		if ((keysDown() & RESET_KEYS) && ((allHeld & RESET_KEYS) == RESET_KEYS))
+			prompt_reset(u);
 		doctrl(u);
 		domouse(u);
 #ifdef DEBUG_PROFILE
@@ -406,9 +444,8 @@ main(int argc, char **argv)
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
 
-#ifdef DEBUG
 	mainConsole = consoleDemoInit();
-
+#ifdef DEBUG
 #ifdef DEBUG_PROFILE
 	// Timers 0-1 - profiling timers
 	TIMER0_DATA = 0;
@@ -423,8 +460,8 @@ main(int argc, char **argv)
 #else
 	consoleSetWindow(mainConsole, 0, 0, 32, 14);
 #endif
-	consoleSelect(mainConsole);
 #endif
+	consoleSelect(mainConsole);
 
 	keyboardDemoInit();
 
