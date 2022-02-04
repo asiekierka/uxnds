@@ -9,6 +9,9 @@ On start, a keyboard is presented on the bottom screen, and the uxn display - on
 Use the L or R buttons to swap them - in this configuration, mouse input is approximated via 
 touchscreen.
 
+In addition, you can use the START and SELECT buttons to reset the uxn virtual machine - press
+A to confirm, B to cancel if you press the buttons by accident.
+
 When using a real DS, DSi or 3DS console, it is recommended to launch this program via
 [nds-hb-menu](https://github.com/devkitPro/nds-hb-menu) - though, as it currently doesn't use argc/argv,
 it doesn't really change much.
