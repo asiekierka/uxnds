@@ -13,9 +13,9 @@ export TOPDIR	:=	$(CURDIR)
 NITRO_FILES	:=
 
 # These set the information text in the nds file
-GAME_TITLE     := uxnds v0.3.3
+GAME_TITLE     := uxnds v0.3.4
 GAME_SUBTITLE1 := tiny virtual machine
-GAME_SUBTITLE2 := 26/09/2021
+GAME_SUBTITLE2 := 04/02/2022
 
 include $(DEVKITARM)/ds_rules
 
