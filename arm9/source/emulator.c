@@ -286,32 +286,37 @@ doctrl(Uxn *u)
 	}
 }
 
-static touchPosition tpos;
-static Uint8 istouching = 0;
+static bool istouching = false;
 
 void
 domouse(Uxn *u)
 {
+	bool changed = false;
+
 	if (dispswap && (keysHeld() & KEY_TOUCH)) {
+		if (!istouching) {
+			devmouse->dat[6] = 0x01;
+			istouching = true;
+			changed = true;
+		}
+
+		touchPosition tpos;
 		touchRead(&tpos);
-		if (!istouching
-			|| peek16(devmouse->dat, 0x2) != tpos.px
+		if (peek16(devmouse->dat, 0x2) != tpos.px
 			|| peek16(devmouse->dat, 0x4) != tpos.py)
 		{
 			poke16(devmouse->dat, 0x2, tpos.px);
 			poke16(devmouse->dat, 0x4, tpos.py);
-			devmouse->dat[6] = 0x01;
-			devmouse->dat[7] = 0x00;
-			evaluxn(u, devmouse->vector);
-			istouching = 1;
+			changed = true;
 		}
 	} else if (istouching) {
-		poke16(devmouse->dat, 0x2, tpos.px);
-		poke16(devmouse->dat, 0x4, tpos.py);
 		devmouse->dat[6] = 0x00;
-		devmouse->dat[7] = 0x00;
+		istouching = false;
+		changed = true;
+	}
+
+	if (changed) {
 		evaluxn(u, devmouse->vector);
-		istouching = 0;
 	}
 }
 
