@@ -143,7 +143,7 @@ int main() {
 	irqSet(IRQ_VCOUNT, VcountHandler);
 	irqSet(IRQ_TIMER0, apu_handler);
 
-	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_TIMER0);
+	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_NETWORK | IRQ_TIMER0);
 
 	setPowerButtonCB(powerButtonCB);
 
