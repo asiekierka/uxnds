@@ -3,6 +3,8 @@
 Quick and simple port of the [uxn virtual machine](https://wiki.xxiivv.com/site/uxn.html) to the
 NDS console.
 
+You can download a binary build [here](https://github.com/asiekierka/uxnds/releases).
+
 By default, uxnds will run /uxn/boot.rom. It also supports reading files from within /uxn.
 
 On start, a keyboard is presented on the bottom screen, and the uxn display - on the top screen.
