@@ -6,6 +6,7 @@
 #include "../../include/uxn.h"
 #include "../../include/apu.h"
 #include "../../include/fifo.h"
+#include "file.h"
 #include "ppu.h"
 
 /*
@@ -27,6 +28,7 @@ static u32 apu_samples[(UXNDS_AUDIO_BUFFER_SIZE * 4) >> 1];
 static Device *devscreen, *devctrl, *devmouse, *devaudio0;
 
 Uint8 dispswap = 0, debug = 0;
+char load_filename[129];
 
 static PrintConsole *mainConsole;
 #ifdef DEBUG
@@ -121,19 +123,28 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
                         if(d->dat[0x6] & 0x01) poke16(d->dat, 0x8, x + 1); /* auto x+1 */
                         if(d->dat[0x6] & 0x02) poke16(d->dat, 0xa, y + 1); /* auto y+1 */
 		} else if(b0 == 0xf) {
+			Uint8 twobpp = d->dat[0xf] >> 7;
 			Uint16 x = peek16(d->dat, 0x8);
 			Uint16 y = peek16(d->dat, 0xa);
 			Uint32 *layer = d->dat[0xf] >> 6 & 0x1 ? ppu.fg : ppu.bg;
-			Uint8 *addr = &d->mem[peek16(d->dat, 0xc)];
-			if(d->dat[0xf] & 0x80) {
-				ppu_2bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
-                                if(d->dat[0x6] & 0x04) poke16(d->dat, 0xc, peek16(d->dat, 0xc) + 16); /* auto addr+16 */
-			} else {
-				ppu_1bpp(&ppu, layer, x, y, addr, d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
-                                if(d->dat[0x6] & 0x04) poke16(d->dat, 0xc, peek16(d->dat, 0xc) + 8); /* auto addr+8 */
+			Uint16 addr = peek16(d->dat, 0xc);
+			Uint8 n = d->dat[0x6] >> 4;
+			Uint8 dx = (d->dat[0x6] & 0x01) << 3;
+			Uint8 dy = (d->dat[0x6] & 0x02) << 2;
+			Uint16 len = (n + 1) << (3 + twobpp);
+			if(addr > (0x10000 - len)) return 1;
+			for (Uint8 i = 0; i <= n; i++) {
+				if (twobpp) {
+					ppu_2bpp(&ppu, layer, x + dy * i, y + dx * i, &d->mem[addr], d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
+					addr += (d->dat[0x6] & 0x04) << 2;
+				} else {
+					ppu_1bpp(&ppu, layer, x + dy * i, y + dx * i, &d->mem[addr], d->dat[0xf] & 0xf, d->dat[0xf] >> 0x4 & 0x1, d->dat[0xf] >> 0x5 & 0x1);
+					addr += (d->dat[0x6] & 0x04) << 1;
+				}
 			}
-                        if(d->dat[0x6] & 0x01) poke16(d->dat, 0x8, x + 8); /* auto x+8 */
-                        if(d->dat[0x6] & 0x02) poke16(d->dat, 0xa, y + 8); /* auto y+8 */
+                        poke16(d->dat, 0x8, x + dx); /* auto x+dx */
+                        poke16(d->dat, 0xa, y + dy); /* auto y+dy */
+    	                poke16(d->dat, 0xc, addr); /* auto addr */
 		}
 	}
 	return 1;
@@ -155,48 +166,11 @@ get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int f
 		return snprintf(p, len, "???? %s\n", basename);
 }
 
-static Uint16
-file_read_dir(char *dest, Uint16 len, DIR *dir, const char *filename)
-{
-	static char pathname[512];
-	char *p = dest;
-	struct dirent *de;
-	while(de = readdir(dir)) {
-		Uint16 n;
-		if(de->d_name[0] == '.' && de->d_name[1] == '\0')
-			continue;
-		snprintf(pathname, sizeof(pathname), "%s/%s", filename, de->d_name);
-		n = get_entry(p, len, pathname, de->d_name, 1);
-		if(!n) break;
-		p += n;
-		len -= n;
-	}
-	return p - dest;
-}
-
-
 int
 file_talk(Device *d, Uint8 b0, Uint8 w)
 {
-	Uint8 read = b0 == 0xd;
-	if(w && (read || b0 == 0xf)) {
-		char *name = (char *)&d->mem[peek16(d->dat, 0x8)];
-		Uint16 result = 0, length = peek16(d->dat, 0xa);
-		Uint16 offset = peek16(d->dat, 0x4);
-		Uint16 addr = peek16(d->dat, b0 - 1);
-		FILE *f; DIR *dir;
-		if (dir = opendir(name)) {
-			result = file_read_dir(&d->mem[addr], length, dir, name);
-			closedir(dir);
-		} else if(f = fopen(name, read ? "r" : (offset ? "a" : "w"))) {
-			dprintf("%s %04x %s %s: ", read ? "Loading" : "Saving", addr, read ? "from" : "to", name);
-			if(fseek(f, offset, SEEK_SET) != -1)
-				result = read ? fread(&d->mem[addr], 1, length, f) : fwrite(&d->mem[addr], 1, length, f);
-			dprintf("%04x bytes\n", result);
-			fclose(f);
-		}
-		poke16(d->dat, 0x2, result);
-	}
+	if (w) file_deo(d, b0);
+	else file_dei(d, b0);
 	return 1;
 }
 
@@ -359,7 +333,7 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 }
 #endif
 
-void
+int
 prompt_reset(Uxn *u)
 {
 	consoleClear();
@@ -373,7 +347,7 @@ prompt_reset(Uxn *u)
 			break;
 		} else if (allHeld & KEY_B) {
 			consoleClear();
-			return;
+			return 0;
 		}
 	}
 
@@ -381,13 +355,14 @@ prompt_reset(Uxn *u)
 
 	if(!resetuxn(u))
 		return error("Resetting", "Failed");
-	if(!loaduxn(u, "boot.rom"))
+	if(!loaduxn(u, load_filename))
 		return error("Load", "Failed");
 	if(!initppu(&ppu))
 		return error("PPU", "Init failure");
 	evaluxn(u, 0x0100);
 
 	consoleClear();
+	return 0;
 }
 
 int
@@ -470,8 +445,12 @@ main(int argc, char **argv)
 	if (!fatInitDefault())
 		return error("FAT init", "Failed");
 	chdir("/uxn");
-	if(!loaduxn(&u, "boot.rom"))
-		return error("Load", "Failed");
+	if(!loaduxn(&u, "boot.rom")) {
+		if(!loaduxn(&u, "launcher.rom")) {
+	                dprintf("Halted: Missing input rom.\n");
+			return error("Load", "Failed");
+		}
+	}
 	if(!init())
 		return error("Init", "Failed");
 
@@ -494,9 +473,9 @@ main(int argc, char **argv)
 	portuxn(&u, 0x7, "---", nil_talk);
 	devctrl = portuxn(&u, 0x8, "controller", nil_talk);
 	devmouse = portuxn(&u, 0x9, "mouse", nil_talk);
-	portuxn(&u, 0xa, "file", file_talk);
-	portuxn(&u, 0xb, "datetime", datetime_talk);
-	portuxn(&u, 0xc, "---", nil_talk);
+	portuxn(&u, 0xa, "file0", file_talk);
+	portuxn(&u, 0xb, "file1", file_talk);
+	portuxn(&u, 0xc, "datetime", datetime_talk);
 	portuxn(&u, 0xd, "---", nil_talk);
 	portuxn(&u, 0xe, "---", nil_talk);
 	portuxn(&u, 0xf, "---", nil_talk);

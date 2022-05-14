@@ -92,7 +92,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr -= 1;
 			}
 			break;
-		case 0x03: /* DUP */
+		case 0x06: /* DUP */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1];
 				u->wst.dat[u->wst.ptr] = a;
@@ -109,7 +109,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 1;
 			}
 			break;
-		case 0x04: /* NIP */
+		case 0x03: /* NIP */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1];
 				u->wst.dat[u->wst.ptr - 2];
@@ -123,7 +123,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr -= 1;
 			}
 			break;
-		case 0x05: /* SWP */
+		case 0x04: /* SWP */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr - 2] = a;
@@ -136,7 +136,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0x06: /* OVR */
+		case 0x07: /* OVR */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr] = b;
@@ -153,7 +153,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 1;
 			}
 			break;
-		case 0x07: /* ROT */
+		case 0x05: /* OVR */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3];
 				u->wst.dat[u->wst.ptr - 3] = b;
@@ -542,7 +542,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr -= 2;
 			}
 			break;
-		case 0x23: /* DUP2 */
+		case 0x26: /* DUP2 */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr] = b;
@@ -560,7 +560,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 2;
 			}
 			break;
-		case 0x24: /* NIP2 */
+		case 0x23: /* NIP2 */
 			{
 				Uint16 a = (u->wst.dat[u->wst.ptr - 1] | (u->wst.dat[u->wst.ptr - 2] << 8));
 				(u->wst.dat[u->wst.ptr - 3] | (u->wst.dat[u->wst.ptr - 4] << 8));
@@ -575,7 +575,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr -= 2;
 			}
 			break;
-		case 0x25: /* SWP2 */
+		case 0x24: /* SWP2 */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4];
 				u->wst.dat[u->wst.ptr - 4] = b;
@@ -590,7 +590,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0x26: /* OVR2 */
+		case 0x27: /* OVR2 */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4];
 				u->wst.dat[u->wst.ptr] = d;
@@ -608,7 +608,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 2;
 			}
 			break;
-		case 0x27: /* ROT2 */
+		case 0x25: /* OVR2 */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4], e = u->wst.dat[u->wst.ptr - 5], f = u->wst.dat[u->wst.ptr - 6];
 				u->wst.dat[u->wst.ptr - 6] = d;
@@ -1025,7 +1025,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr -= 1;
 			}
 			break;
-		case 0x43: /* DUPr */
+		case 0x46: /* DUPr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1];
 				u->rst.dat[u->rst.ptr] = a;
@@ -1042,7 +1042,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 1;
 			}
 			break;
-		case 0x44: /* NIPr */
+		case 0x43: /* NIPr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1];
 				u->rst.dat[u->rst.ptr - 2];
@@ -1056,7 +1056,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr -= 1;
 			}
 			break;
-		case 0x45: /* SWPr */
+		case 0x44: /* SWPr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr - 2] = a;
@@ -1069,7 +1069,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0x46: /* OVRr */
+		case 0x47: /* OVRr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr] = b;
@@ -1086,7 +1086,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 1;
 			}
 			break;
-		case 0x47: /* ROTr */
+		case 0x45: /* OVRr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3];
 				u->rst.dat[u->rst.ptr - 3] = b;
@@ -1475,7 +1475,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr -= 2;
 			}
 			break;
-		case 0x63: /* DUP2r */
+		case 0x66: /* DUP2r */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr] = b;
@@ -1493,7 +1493,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 2;
 			}
 			break;
-		case 0x64: /* NIP2r */
+		case 0x63: /* NIP2r */
 			{
 				Uint16 a = (u->rst.dat[u->rst.ptr - 1] | (u->rst.dat[u->rst.ptr - 2] << 8));
 				(u->rst.dat[u->rst.ptr - 3] | (u->rst.dat[u->rst.ptr - 4] << 8));
@@ -1508,7 +1508,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr -= 2;
 			}
 			break;
-		case 0x65: /* SWP2r */
+		case 0x64: /* SWP2r */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4];
 				u->rst.dat[u->rst.ptr - 4] = b;
@@ -1523,7 +1523,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0x66: /* OVR2r */
+		case 0x67: /* OVR2r */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4];
 				u->rst.dat[u->rst.ptr] = d;
@@ -1541,7 +1541,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 2;
 			}
 			break;
-		case 0x67: /* ROT2r */
+		case 0x65: /* OVR2r */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4], e = u->rst.dat[u->rst.ptr - 5], f = u->rst.dat[u->rst.ptr - 6];
 				u->rst.dat[u->rst.ptr - 6] = d;
@@ -1949,7 +1949,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0x83: /* DUPk */
+		case 0x86: /* DUPk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1];
 				u->wst.dat[u->wst.ptr] = a;
@@ -1967,7 +1967,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 2;
 			}
 			break;
-		case 0x84: /* NIPk */
+		case 0x83: /* NIPk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1];
 				u->wst.dat[u->wst.ptr - 2];
@@ -1985,7 +1985,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 1;
 			}
 			break;
-		case 0x85: /* SWPk */
+		case 0x84: /* SWPk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr] = a;
@@ -2003,7 +2003,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 2;
 			}
 			break;
-		case 0x86: /* OVRk */
+		case 0x87: /* OVRk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr] = b;
@@ -2022,7 +2022,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 3;
 			}
 			break;
-		case 0x87: /* ROTk */
+		case 0x85: /* OVRk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3];
 				u->wst.dat[u->wst.ptr] = b;
@@ -2461,7 +2461,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0xa3: /* DUP2k */
+		case 0xa6: /* DUP2k */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
 				u->wst.dat[u->wst.ptr] = b;
@@ -2481,7 +2481,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 4;
 			}
 			break;
-		case 0xa4: /* NIP2k */
+		case 0xa3: /* NIP2k */
 			{
 				Uint16 a = (u->wst.dat[u->wst.ptr - 1] | (u->wst.dat[u->wst.ptr - 2] << 8));
 				(u->wst.dat[u->wst.ptr - 3] | (u->wst.dat[u->wst.ptr - 4] << 8));
@@ -2500,7 +2500,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 2;
 			}
 			break;
-		case 0xa5: /* SWP2k */
+		case 0xa4: /* SWP2k */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4];
 				u->wst.dat[u->wst.ptr] = b;
@@ -2520,7 +2520,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 4;
 			}
 			break;
-		case 0xa6: /* OVR2k */
+		case 0xa7: /* OVR2k */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4];
 				u->wst.dat[u->wst.ptr] = d;
@@ -2542,7 +2542,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->wst.ptr += 6;
 			}
 			break;
-		case 0xa7: /* ROT2k */
+		case 0xa5: /* OVR2k */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2], c = u->wst.dat[u->wst.ptr - 3], d = u->wst.dat[u->wst.ptr - 4], e = u->wst.dat[u->wst.ptr - 5], f = u->wst.dat[u->wst.ptr - 6];
 				u->wst.dat[u->wst.ptr] = d;
@@ -2996,7 +2996,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0xc3: /* DUPkr */
+		case 0xc6: /* DUPkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1];
 				u->rst.dat[u->rst.ptr] = a;
@@ -3014,7 +3014,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 2;
 			}
 			break;
-		case 0xc4: /* NIPkr */
+		case 0xc3: /* NIPkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1];
 				u->rst.dat[u->rst.ptr - 2];
@@ -3032,7 +3032,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 1;
 			}
 			break;
-		case 0xc5: /* SWPkr */
+		case 0xc4: /* SWPkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr] = a;
@@ -3050,7 +3050,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 2;
 			}
 			break;
-		case 0xc6: /* OVRkr */
+		case 0xc7: /* OVRkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr] = b;
@@ -3069,7 +3069,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 3;
 			}
 			break;
-		case 0xc7: /* ROTkr */
+		case 0xc5: /* OVRkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3];
 				u->rst.dat[u->rst.ptr] = b;
@@ -3508,7 +3508,7 @@ evaluxn(Uxn *u, Uint16 vec)
 #endif
 			}
 			break;
-		case 0xe3: /* DUP2kr */
+		case 0xe6: /* DUP2kr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
 				u->rst.dat[u->rst.ptr] = b;
@@ -3528,7 +3528,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 4;
 			}
 			break;
-		case 0xe4: /* NIP2kr */
+		case 0xe3: /* NIP2kr */
 			{
 				Uint16 a = (u->rst.dat[u->rst.ptr - 1] | (u->rst.dat[u->rst.ptr - 2] << 8));
 				(u->rst.dat[u->rst.ptr - 3] | (u->rst.dat[u->rst.ptr - 4] << 8));
@@ -3547,7 +3547,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 2;
 			}
 			break;
-		case 0xe5: /* SWP2kr */
+		case 0xe4: /* SWP2kr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4];
 				u->rst.dat[u->rst.ptr] = b;
@@ -3567,7 +3567,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 4;
 			}
 			break;
-		case 0xe6: /* OVR2kr */
+		case 0xe7: /* OVR2kr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4];
 				u->rst.dat[u->rst.ptr] = d;
@@ -3589,7 +3589,7 @@ evaluxn(Uxn *u, Uint16 vec)
 				u->rst.ptr += 6;
 			}
 			break;
-		case 0xe7: /* ROT2kr */
+		case 0xe5: /* OVR2kr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2], c = u->rst.dat[u->rst.ptr - 3], d = u->rst.dat[u->rst.ptr - 4], e = u->rst.dat[u->rst.ptr - 5], f = u->rst.dat[u->rst.ptr - 6];
 				u->rst.dat[u->rst.ptr] = d;
@@ -4061,16 +4061,18 @@ bootuxn(Uxn *u)
 	return resetuxn(u);
 }
 
+extern char *load_filename;
+
 int
 loaduxn(Uxn *u, char *filepath)
 {
         FILE *f;
         if(!(f = fopen(filepath, "rb"))) {
-                dprintf("Halted: Missing input rom.\n");
                 return 0;
         }
         fread(u->ram.dat + PAGE_PROGRAM, sizeof(u->ram.dat) - PAGE_PROGRAM, 1, f);
         dprintf("Uxn loaded[%s].\n", filepath);
+	strcpy(load_filename, filepath);
         return 1;
 }
 
