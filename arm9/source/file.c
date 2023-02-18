@@ -22,7 +22,7 @@ WITH REGARD TO THIS SOFTWARE.
 typedef struct {
 	FILE *f;
 	DIR *dir;
-	char current_filename[4096];
+	char current_filename[MAX_PATH];
 	struct dirent *de;
 	enum { IDLE,
 		FILE_READ,
@@ -51,12 +51,12 @@ static Uint16
 get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int fail_nonzero)
 {
 	struct stat st;
-	if(len < strlen(basename) + 7)
+	if(len < strlen(basename) + 8)
 		return 0;
 	if(stat(pathname, &st))
 		return fail_nonzero ? siprintf(p, "!!!! %s\n", basename) : 0;
 	else if(S_ISDIR(st.st_mode))
-		return siprintf(p, "---- %s\n", basename);
+		return siprintf(p, "---- %s/\n", basename);
 	else if(st.st_size < 0x10000)
 		return siprintf(p, "%04x %s\n", (unsigned int)st.st_size, basename);
 	else
@@ -66,7 +66,7 @@ get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int f
 static Uint16
 file_read_dir(UxnFile *c, char *dest, Uint16 len)
 {
-	static char pathname[512];
+	static char pathname[MAX_PATH + 256];
 	char *p = dest;
 	if(c->de == NULL) c->de = readdir(c->dir);
 	for(; c->de != NULL; c->de = readdir(c->dir)) {

@@ -20,6 +20,7 @@ WITH REGARD TO THIS SOFTWARE.
 #define dprintf(...)
 #endif
 
+#define MAX_PATH 512
 #define ITCM_ARM_CODE __attribute__((section(".itcm"), long_call, target("arm")))
 
 typedef uint8_t Uint8;
