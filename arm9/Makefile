@@ -23,7 +23,7 @@ else
 BUILD		:=	build
 endif
 endif
-SOURCES		:=	source
+SOURCES		:=	source/devices source
 INCLUDES	:=	include
 DATA		:=
 

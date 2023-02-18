@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "../../include/uxn.h"
+#include "../../../include/uxn.h"
 #include "file.h"
 
 /*
@@ -151,67 +151,61 @@ file_delete(UxnFile *c)
 	return unlink(c->current_filename);
 }
 
-static UxnFile *
-file_instance(Device *d)
-{
-	return &uxn_file[d - &d->u->dev[DEV_FILE0]];
-}
-
 /* IO */
 
 void
-file_deo(Device *d, Uint8 port)
+file_deo(Uint8 id, Uint8 *ram, Uint8 *d, Uint8 port)
 {
-	UxnFile *c = file_instance(d);
+	UxnFile *c = &uxn_file[id];
 	Uint16 addr, len, res;
 	switch(port) {
 	case 0x5:
-		DEVPEEK16(addr, 0x4);
-		DEVPEEK16(len, 0xa);
+		PEKDEV(addr, 0x4);
+		PEKDEV(len, 0xa);
 		if(len > 0x10000 - addr)
 			len = 0x10000 - addr;
-		res = file_stat(c, &d->mem[addr], len);
-		DEVPOKE16(0x2, res);
+		res = file_stat(c, &ram[addr], len);
+		POKDEV(0x2, res);
 		break;
 	case 0x6:
 		res = file_delete(c);
-		DEVPOKE16(0x2, res);
+		POKDEV(0x2, res);
 		break;
 	case 0x9:
-		DEVPEEK16(addr, 0x8);
-		res = file_init(c, (char *)&d->mem[addr], 0x10000 - addr);
-		DEVPOKE16(0x2, res);
+		PEKDEV(addr, 0x8);
+		res = file_init(c, (char *)&ram[addr], 0x10000 - addr);
+		POKDEV(0x2, res);
 		break;
 	case 0xd:
-		DEVPEEK16(addr, 0xc);
-		DEVPEEK16(len, 0xa);
+		PEKDEV(addr, 0xc);
+		PEKDEV(len, 0xa);
 		if(len > 0x10000 - addr)
 			len = 0x10000 - addr;
-		res = file_read(c, &d->mem[addr], len);
-		DEVPOKE16(0x2, res);
+		res = file_read(c, &ram[addr], len);
+		POKDEV(0x2, res);
 		break;
 	case 0xf:
-		DEVPEEK16(addr, 0xe);
-		DEVPEEK16(len, 0xa);
+		PEKDEV(addr, 0xe);
+		PEKDEV(len, 0xa);
 		if(len > 0x10000 - addr)
 			len = 0x10000 - addr;
-		res = file_write(c, &d->mem[addr], len, d->dat[0x7]);
-		DEVPOKE16(0x2, res);
+		res = file_write(c, &ram[addr], len, d[0x7]);
+		POKDEV(0x2, res);
 		break;
 	}
 }
 
 Uint8
-file_dei(Device *d, Uint8 port)
+file_dei(Uint8 id, Uint8 *d, Uint8 port)
 {
-	UxnFile *c = file_instance(d);
+	UxnFile *c = &uxn_file[id];
 	Uint16 res;
 	switch(port) {
 	case 0xc:
 	case 0xd:
-		res = file_read(c, &d->dat[port], 1);
-		DEVPOKE16(0x2, res);
+		res = file_read(c, &d[port], 1);
+		POKDEV(0x2, res);
 		break;
 	}
-	return d->dat[port];
+	return d[port];
 }

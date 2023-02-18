@@ -1,6 +1,5 @@
 /*
-Copyright (c) 2021 Devine Lu Linvega
-Copyright (c) 2021 Andrew Alderwick
+Copyright (c) 2022 Devine Lu Linvega, Andrew Alderwick
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -10,8 +9,8 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define POLYFILEY 2
-#define DEV_FILE0 0xa
+#define PEEK16(d) ((d)[0] << 8 | (d)[1])
 
-void file_deo(Device *d, Uint8 port);
-Uint8 file_dei(Device *d, Uint8 port);
+int system_load(Uxn *u, char *filename);
+void system_deo(Uxn *u, Uint8 *d, Uint8 port);
+void system_inspect(Uxn *u);
