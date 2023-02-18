@@ -108,9 +108,9 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
 {
         if(!w) switch(b0) {
                 case 0x2: d->dat[0x2] = PPU_PIXELS_WIDTH >> 8; break;
-                case 0x3: d->dat[0x3] = PPU_PIXELS_WIDTH; break;
+                case 0x3: d->dat[0x3] = PPU_PIXELS_WIDTH & 0xFF; break;
                 case 0x4: d->dat[0x4] = PPU_PIXELS_HEIGHT >> 8; break;
-                case 0x5: d->dat[0x5] = PPU_PIXELS_HEIGHT; break;
+                case 0x5: d->dat[0x5] = PPU_PIXELS_HEIGHT & 0xFF; break;
                 }
 	else {
 		if(b0 == 0x1) {

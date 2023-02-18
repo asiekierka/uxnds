@@ -83,14 +83,14 @@ void fifo_handler(u32 cmd, void *unused) {
 
 			SCHANNEL_CR(0) = 0;
 			SCHANNEL_TIMER(0) = sampling_timer_freq;
-			SCHANNEL_SOURCE(0) = sampling_addr;
+			SCHANNEL_SOURCE(0) = (vu32) sampling_addr;
 			SCHANNEL_LENGTH(0) = sampling_bufsize;
 
 			SCHANNEL_CR(0) = SCHANNEL_ENABLE | SOUND_VOL(96) | SOUND_PAN(0) | SOUND_FORMAT_16BIT | SOUND_REPEAT;
 
 			SCHANNEL_CR(1) = 0;
 			SCHANNEL_TIMER(1) = sampling_timer_freq;
-			SCHANNEL_SOURCE(1) = sampling_addr + (sampling_bufsize * 2);
+			SCHANNEL_SOURCE(1) = (vu32) (sampling_addr + (sampling_bufsize * 2));
 			SCHANNEL_LENGTH(1) = sampling_bufsize;
 
 			SCHANNEL_CR(1) = SCHANNEL_ENABLE | SOUND_VOL(96) | SOUND_PAN(127) | SOUND_FORMAT_16BIT | SOUND_REPEAT;
