@@ -65,4 +65,4 @@ static inline Uint16 peek16(Uint8 *m, Uint16 a) { return (peek8(m, a) << 8) + pe
 
 int uxn_boot(Uxn *u, Uint8 *ram, Dei *dei, Deo *deo);
 int resetuxn(Uxn *c);
-int evaluxn(Uxn *u, Uint16 vec);
+int uxn_eval(Uxn *u, Uint16 vec);

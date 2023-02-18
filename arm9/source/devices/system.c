@@ -99,7 +99,7 @@ uxn_halt(Uxn *u, Uint8 instr, Uint8 err, Uint16 addr)
 		u->wst.dat[1] = addr & 0xff;
 		u->wst.dat[2] = instr;
 		u->wst.dat[3] = err;
-		return evaluxn(u, handler);
+		return uxn_eval(u, handler);
 	} else {
 		system_inspect(u);
 		iprintf("%s %s, by %02x at 0x%04x.\n", (instr & 0x40) ? "Return-stack" : "Working-stack", errors[err - 1], instr, addr);

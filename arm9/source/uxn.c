@@ -33,7 +33,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 ITCM_ARM_CODE
 int
-evaluxn(Uxn *u, Uint16 vec)
+uxn_eval(Uxn *u, Uint16 vec)
 {
 	Uint8 instr;
 	if(!vec || u->dev[0x0f])

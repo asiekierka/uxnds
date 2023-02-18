@@ -74,6 +74,14 @@ init(void)
 
 #pragma mark - Devices
 
+static int
+console_input(Uxn *u, char c)
+{
+	Uint8 *d = &u->dev[0x10];
+	d[0x02] = c;
+	return uxn_eval(u, GETVEC(d));
+}
+
 static void
 console_deo(Uint8 *d, Uint8 port)
 {
@@ -81,7 +89,6 @@ console_deo(Uint8 *d, Uint8 port)
 		fputc(d[port], stdout);
 		fflush(stdout);
 	}
-	return 1;
 }
 
 ITCM_ARM_CODE
@@ -254,7 +261,7 @@ doctrl(Uxn *u)
 
 	changed |= old_flags != u->dev[0x82];
 	if (changed) {
-		evaluxn(u, GETVEC(u->dev + 0x80));
+		uxn_eval(u, GETVEC(u->dev + 0x80));
 		u->dev[0x83] = 0;
 	}
 }
@@ -289,7 +296,7 @@ domouse(Uxn *u)
 	}
 
 	if (changed) {
-		evaluxn(u, GETVEC(u->dev + 0x90));
+		uxn_eval(u, GETVEC(u->dev + 0x90));
 	}
 }
 
@@ -337,7 +344,7 @@ prompt_reset(Uxn *u)
 		return error("Load", "Failed");
 	if(!initppu(&ppu))
 		return error("PPU", "Init failure");
-	evaluxn(u, 0x0100);
+	uxn_eval(u, 0x0100);
 
 	consoleClear();
 	return 0;
@@ -350,7 +357,7 @@ start(Uxn *u)
 	u32 tticks;
 #endif
 
-	evaluxn(u, 0x0100);
+	uxn_eval(u, 0x0100);
 	while(1) {
 		if(u->dev[0x0f]) return 1; // Run ended.
 		scanKeys();
@@ -370,7 +377,7 @@ start(Uxn *u)
 		profiler_ticks(timer_ticks(0) - tticks, 1, "ctrl");
 		tticks = timer_ticks(0);
 #endif
-		evaluxn(u, GETVEC(u->dev + 0x20));
+		uxn_eval(u, GETVEC(u->dev + 0x20));
 #ifdef DEBUG_PROFILE
 		profiler_ticks(timer_ticks(0) - tticks, 0, "main");
 #endif
