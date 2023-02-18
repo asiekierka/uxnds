@@ -29,6 +29,9 @@ typedef int16_t Sint16;
 
 #define PAGE_PROGRAM 0x0100
 
+#define DEVPEEK16(o, x) { (o) = (d->dat[(x)] << 8) + d->dat[(x) + 1]; }
+#define DEVPOKE16(x, y) { d->dat[(x)] = (y) >> 8; d->dat[(x) + 1] = (y); }
+
 typedef struct {
 	Uint8 ptr, kptr, error;
 	Uint8 dat[256];
