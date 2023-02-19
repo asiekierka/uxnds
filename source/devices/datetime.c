@@ -1,6 +1,6 @@
 #include <time.h>
 
-#include "../../../include/uxn.h"
+#include "uxn.h"
 #include "datetime.h"
 
 /*

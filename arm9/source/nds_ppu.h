@@ -23,13 +23,13 @@ typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;
 
-typedef struct Ppu {
+typedef struct NdsPpu {
 	Uint32 *bg, *fg;
-} Ppu;
+} NdsPpu;
 
-int initppu(Ppu *p);
-void putcolors(Ppu *p, Uint8 *addr);
-void ppu_pixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color);
-void ppu_2bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
-void ppu_1bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
-void copyppu(Ppu *p);
+int nds_initppu(NdsPpu *p);
+void nds_putcolors(NdsPpu *p, Uint8 *addr);
+void nds_ppu_pixel(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color);
+void nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void nds_copyppu(NdsPpu *p);

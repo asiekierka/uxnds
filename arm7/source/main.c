@@ -39,22 +39,22 @@ Based on the devkitARM/libnds examples' default ARM7 core.
 #include <nds.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../include/uxn.h"
-#include "../../include/apu.h"
-#include "../../include/fifo.h"
+#include "uxn.h"
+#include "nds/apu.h"
+#include "nds/fifo.h"
 
 static u16 sampling_freq, sampling_bufsize;
 static u16 sampling_timer_freq;
 static s16 *sampling_addr;
 static u8 sampling_pos;
-static Apu apus[POLYPHONY];
+static NdsApu apus[POLYPHONY];
 
 void apu_handler() {
 	memset(sampling_addr, 0, sampling_bufsize * 2);
 	memset(sampling_addr + (sampling_bufsize * 2), 0, sampling_bufsize * 2);
 
 	for (int i = 0; i < 4; i++) {
-		apu_render(&apus[i], sampling_addr, sampling_addr + (sampling_bufsize * 2), sampling_bufsize);
+		nds_apu_render(&apus[i], sampling_addr, sampling_addr + (sampling_bufsize * 2), sampling_bufsize);
 	}
 
 	if (sampling_pos) {
@@ -102,7 +102,7 @@ void fifo_handler(u32 cmd, void *unused) {
 		case UXNDS_FIFO_CMD_APU1:
 		case UXNDS_FIFO_CMD_APU2:
 		case UXNDS_FIFO_CMD_APU3:
-			Apu *apus_remote = (Apu*) (cmd & ~UXNDS_FIFO_CMD_MASK);
+			NdsApu *apus_remote = (NdsApu*) (cmd & ~UXNDS_FIFO_CMD_MASK);
 			int oldIME = enterCriticalSection();
 			apus[(cmd >> 28) & 0x03] = apus_remote[(cmd >> 28) & 0x03];
 			leaveCriticalSection(oldIME);

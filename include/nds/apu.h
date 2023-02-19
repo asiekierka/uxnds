@@ -23,8 +23,8 @@ typedef struct {
 	Uint16 i, len;
 	Sint8 volume[2];
 	Uint8 pitch, repeat;
-} Apu;
+} NdsApu;
 
-void apu_render(Apu *c, Sint16 *sample_left, Sint16 *sample_right, int samples); /* ARM7 */
-void apu_start(Apu *c, Uint16 adsr, Uint8 pitch); /* ARM9 */
-Uint8 apu_get_vu(Apu *c); /* ARM9 */
+void nds_apu_render(NdsApu *c, Sint16 *sample_left, Sint16 *sample_right, int samples); /* ARM7 */
+void nds_apu_start(NdsApu *c, Uint16 adsr, Uint8 pitch); /* ARM9 */
+Uint8 nds_apu_get_vu(NdsApu *c); /* ARM9 */

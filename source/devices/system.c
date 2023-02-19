@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../../include/uxn.h"
+#include "uxn.h"
 #include "system.h"
 
 /*

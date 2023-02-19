@@ -1,6 +1,6 @@
 #include <nds.h>
-#include "../../include/uxn.h"
-#include "ppu.h"
+#include "uxn.h"
+#include "nds_ppu.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -58,7 +58,7 @@ static Uint32 lut_expand_8_32_flipx[256] = {
 };
 
 void
-putcolors(Ppu *p, Uint8 *addr)
+nds_putcolors(NdsPpu *p, Uint8 *addr)
 {
 	int i;
 	for(i = 0; i < 4; ++i) {
@@ -76,7 +76,7 @@ putcolors(Ppu *p, Uint8 *addr)
 
 ITCM_ARM_CODE
 void
-ppu_pixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
+nds_ppu_pixel(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
@@ -88,7 +88,7 @@ ppu_pixel(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 
 ITCM_ARM_CODE
 void
-ppu_1bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline;
 	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
@@ -143,7 +143,7 @@ ppu_1bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, 
 ITCM_ARM_CODE
 #endif
 void
-ppu_2bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline1, sprline2;
 	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
@@ -266,7 +266,7 @@ ppu_2bpp(Ppu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, 
 /* output */
 
 /* void
-drawdebugger(Ppu *p, Uint8 *stack, Uint8 ptr)
+drawdebugger(NdsPpu *p, Uint8 *stack, Uint8 ptr)
 {
 	Uint8 i, x, y, b;
 	for(i = 0; i < 0x20; ++i) { // memory
@@ -297,7 +297,7 @@ copytile(TileBackup *tptr)
 
 ITCM_ARM_CODE
 void
-copyppu(Ppu *p)
+nds_copyppu(NdsPpu *p)
 {
 	int i, k, ofs;
 
@@ -315,7 +315,7 @@ copyppu(Ppu *p)
 }
 
 int
-initppu(Ppu *p)
+nds_initppu(NdsPpu *p)
 {
 	int i;
 	u16 *map_ptr;

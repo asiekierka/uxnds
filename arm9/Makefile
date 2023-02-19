@@ -23,8 +23,8 @@ else
 BUILD		:=	build
 endif
 endif
-SOURCES		:=	source/devices source
-INCLUDES	:=	include
+SOURCES		:=	../source/devices source ../source
+INCLUDES	:=	include ../include ../source $(BUILD)
 DATA		:=
 
 
@@ -126,7 +126,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr build build_debug *.elf *.nds* *.bin 
+	@rm -fr build build_debug build_profile *.elf *.nds* *.bin 
  
  
 #---------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../include/uxn.h"
+#include "uxn.h"
 
 #ifndef CPU_ERROR_CHECKING
 #define NO_STACK_CHECKS

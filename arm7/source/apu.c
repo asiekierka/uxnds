@@ -1,5 +1,5 @@
-#include "../../include/uxn.h"
-#include "../../include/apu.h"
+#include "uxn.h"
+#include "nds/apu.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -15,7 +15,7 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 static Sint32
-envelope(Apu *c, Uint32 age)
+envelope(NdsApu *c, Uint32 age)
 {
 	if(!c->r) return 0x0888;
 	if(age < c->a) return 0x0888 * age / c->a;
@@ -27,7 +27,7 @@ envelope(Apu *c, Uint32 age)
 }
 
 void
-apu_render(Apu *c, Sint16 *sample_left, Sint16 *sample_right, int samples)
+nds_apu_render(NdsApu *c, Sint16 *sample_left, Sint16 *sample_right, int samples)
 {
 	Sint32 s, i;
 	if(!c->advance || !c->period) return;

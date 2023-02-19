@@ -1,5 +1,5 @@
-#include "../../include/uxn.h"
-#include "../../include/apu.h"
+#include "uxn.h"
+#include "nds/apu.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -27,7 +27,7 @@ static Uint32 advances[12] = {
 /* clang-format on */
 
 static Sint32
-envelope(Apu *c, Uint32 age)
+envelope(NdsApu *c, Uint32 age)
 {
 	if(!c->r) return 0x0888;
 	if(age < c->a) return 0x0888 * age / c->a;
@@ -39,7 +39,7 @@ envelope(Apu *c, Uint32 age)
 }
 
 void
-apu_start(Apu *c, Uint16 adsr, Uint8 pitch)
+nds_apu_start(NdsApu *c, Uint16 adsr, Uint8 pitch)
 {
 	if(pitch < 108 && c->len)
 		c->advance = advances[pitch % 12] >> (8 - pitch / 12);
@@ -60,7 +60,7 @@ apu_start(Apu *c, Uint16 adsr, Uint8 pitch)
 }
 
 Uint8
-apu_get_vu(Apu *c)
+nds_apu_get_vu(NdsApu *c)
 {
 	size_t i;
 	Sint32 sum[2];

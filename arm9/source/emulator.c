@@ -2,13 +2,13 @@
 #include <fat.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <time.h>
-#include "../../include/uxn.h"
-#include "../../include/apu.h"
-#include "../../include/fifo.h"
+#include "uxn.h"
+#include "util.h"
+#include "nds/apu.h"
+#include "nds/fifo.h"
+#include "nds_ppu.h"
 #include "devices/datetime.h"
 #include "devices/file.h"
-#include "devices/ppu.h"
 #include "devices/system.h"
 
 /*
@@ -24,8 +24,8 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 DTCM_BSS
-static Ppu ppu;
-static Apu apu[POLYPHONY];
+static NdsPpu ppu;
+static NdsApu apu[POLYPHONY];
 static u32 apu_samples[(UXNDS_AUDIO_BUFFER_SIZE * 4) >> 1];
 
 Uint8 dispswap = 0, debug = 0;
@@ -40,12 +40,6 @@ static PrintConsole profileConsole;
 
 #define RESET_KEYS (KEY_START | KEY_SELECT)
 #define TICK_RESET_KEYS (KEY_X | KEY_Y)
-
-int
-clamp(int val, int min, int max)
-{
-	return (val >= min) ? (val <= max) ? val : max : min;
-}
 
 int
 error(char *msg, const char *err)
@@ -65,7 +59,7 @@ quit(void)
 int
 init(void)
 {
-	if(!initppu(&ppu))
+	if(!nds_initppu(&ppu))
 		return error("PPU", "Init failure");
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_RATE | SAMPLE_FREQUENCY);
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_ADDR | ((u32) (&apu_samples)));
@@ -112,7 +106,7 @@ screen_deo(Uint8 *d, Uint8 port, Uxn *u)
 		Uint16 x = peek16(d, 0x8);
 		Uint16 y = peek16(d, 0xa);
 		Uint32 *layer = (d[0xe] >> 6) & 0x1 ? ppu.fg : ppu.bg;
-		ppu_pixel(&ppu, layer, x, y, d[0xe] & 0x3);
+		nds_ppu_pixel(&ppu, layer, x, y, d[0xe] & 0x3);
                 if(d[0x6] & 0x01) poke16(d, 0x8, x + 1); /* auto x+1 */
                 if(d[0x6] & 0x02) poke16(d, 0xa, y + 1); /* auto y+1 */
 	} else if(port == 0xf) {
@@ -128,10 +122,10 @@ screen_deo(Uint8 *d, Uint8 port, Uxn *u)
 		if(addr > (0x10000 - len)) return;
 		for (Uint8 i = 0; i <= n; i++) {
 			if (twobpp) {
-				ppu_2bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
+				nds_ppu_2bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
 				addr += (d[0x6] & 0x04) << 2;
 			} else {
-				ppu_1bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
+				nds_ppu_1bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
 				addr += (d[0x6] & 0x04) << 1;
 			}
 		}
@@ -144,9 +138,9 @@ screen_deo(Uint8 *d, Uint8 port, Uxn *u)
 static Uint8
 audio_dei(int instance_id, Uint8 *d, Uint8 port)
 {
-	Apu *instance = &apu[instance_id];
+	NdsApu *instance = &apu[instance_id];
 	switch(port) {
-		case 0x4: return apu_get_vu(instance);
+		case 0x4: return nds_apu_get_vu(instance);
 		case 0x2: POKDEV(0x2, instance->i); /* fall through */
 		default: return d[port];
 	}
@@ -155,14 +149,14 @@ audio_dei(int instance_id, Uint8 *d, Uint8 port)
 static void
 audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 {
-	Apu *instance = &apu[instance_id];
+	NdsApu *instance = &apu[instance_id];
 	if(port == 0xf) {
 		instance->len = peek16(d, 0xa);
 		instance->addr = &u->ram.dat[peek16(d, 0xc)];
 		instance->volume[0] = d[0xe] >> 4;
 		instance->volume[1] = d[0xe] & 0xf;
 		instance->repeat = !(d[0xf] & 0x80);
-		apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f);
+		nds_apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f);
 		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((instance_id) << 28))
 			| ((u32) (&apu)));
 	}
@@ -194,7 +188,7 @@ emu_deo(Uxn *u, Uint8 addr, Uint8 v)
 	case 0x00:
 		system_deo(u, &u->dev[d], p);
 		if(p > 0x7 && p < 0xe)
-			putcolors(&ppu, &u->dev[0x8]);
+			nds_putcolors(&ppu, &u->dev[0x8]);
 		break;
 	case 0x10: console_deo(&u->dev[d], p); break;
 	case 0x20: screen_deo(&u->dev[d], p, u); break;
@@ -342,7 +336,7 @@ prompt_reset(Uxn *u)
 		return error("Resetting", "Failed");
 	if(!system_load(u, load_filename))
 		return error("Load", "Failed");
-	if(!initppu(&ppu))
+	if(!nds_initppu(&ppu))
 		return error("PPU", "Init failure");
 	uxn_eval(u, 0x0100);
 
@@ -385,7 +379,7 @@ start(Uxn *u)
 #ifdef DEBUG_PROFILE
 		tticks = timer_ticks(0);
 #endif
-		copyppu(&ppu);
+		nds_copyppu(&ppu);
 #ifdef DEBUG_PROFILE
 		profiler_ticks(timer_ticks(0) - tticks, 2, "flip");
 #endif
