@@ -1,5 +1,9 @@
 #include <nds.h>
-#include <fat.h>
+#ifdef BLOCKSDS
+# include <fatfs.h>
+#else
+# include <fat.h>
+#endif
 #include <dirent.h>
 #include <stdio.h>
 #include "uxn.h"
@@ -394,6 +398,8 @@ int
 main(int argc, char **argv)
 {
 	Keyboard *keyboard;
+
+	defaultExceptionHandler();
 
 	powerOn(POWER_ALL_2D);
 	videoSetModeSub(MODE_0_2D);

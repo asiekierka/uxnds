@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: CC0-1.0
+#
+# SPDX-FileContributor: Antonio Niño Díaz, 2023
+
+# User config
+# ===========
+
+NAME		:= uxnds
+
+GAME_TITLE     := uxnds v0.3.6
+GAME_SUBTITLE1 := tiny virtual machine
+GAME_SUBTITLE2 := 18/02/2023
+GAME_ICON	:= assets/uxn32.bmp
+
+# DLDI and internal SD slot of DSi
+# --------------------------------
+
+# Root folder of the SD image
+SDROOT		:= sdroot
+# Name of the generated image it "DSi-1.sd" for no$gba in DSi mode
+SDIMAGE		:= image.bin
+
+# Source code paths
+# -----------------
+
+NITROFATDIR	:=
+
+# Tools
+# -----
+
+MAKE		:= make
+RM		:= rm -rf
+
+# Verbose flag
+# ------------
+
+ifeq ($(VERBOSE),1)
+V		:=
+else
+V		:= @
+endif
+
+# Directories
+# -----------
+
+ARM9DIR		:= arm9
+ARM7DIR		:= arm7
+
+# Build artfacts
+# --------------
+
+NITROFAT_IMG	:= build/nitrofat.bin
+ROM		:= $(NAME).nds
+ROM_DEBUG	:= $(NAME)_debug.nds
+ROM_PROFILE	:= $(NAME)_profile.nds
+
+# Targets
+# -------
+
+.PHONY: all clean arm9 arm9debug arm9profile arm7 sdimage
+
+all: $(ROM) $(ROM_DEBUG) $(ROM_PROFILE)
+
+clean:
+	@echo "  CLEAN"
+	$(V)$(MAKE) -f Makefile.blocksds.arm9 clean --no-print-directory DEBUG=false PROFILE=false
+	$(V)$(MAKE) -f Makefile.blocksds.arm9 clean --no-print-directory DEBUG=true PROFILE=false
+	$(V)$(MAKE) -f Makefile.blocksds.arm9 clean --no-print-directory DEBUG=false PROFILE=true
+	$(V)$(MAKE) -f Makefile.blocksds.arm7 clean --no-print-directory
+	$(V)$(RM) $(ROM) build $(SDIMAGE)
+
+arm9:
+	$(V)+$(MAKE) -f Makefile.blocksds.arm9 --no-print-directory DEBUG=false PROFILE=false
+
+arm9debug:
+	$(V)+$(MAKE) -f Makefile.blocksds.arm9 --no-print-directory DEBUG=true PROFILE=false
+
+arm9profile:
+	$(V)+$(MAKE) -f Makefile.blocksds.arm9 --no-print-directory DEBUG=false PROFILE=true
+
+arm7:
+	$(V)+$(MAKE) -f Makefile.blocksds.arm7 --no-print-directory
+
+ifneq ($(strip $(NITROFATDIR)),)
+# Additional arguments for ndstool
+NDSTOOL_FAT	:= -F $(NITROFAT_IMG)
+
+$(NITROFAT_IMG): $(NITROFATDIR)
+	@echo "  IMGBUILD $@ $(NITROFATDIR)"
+	$(V)sh $(BLOCKSDS)/tools/imgbuild/imgbuild.sh $@ $(NITROFATDIR)
+
+# Make the NDS ROM depend on the filesystem image only if it is needed
+$(ROM): $(NITROFAT_IMG)
+$(ROM_DEBUG): $(NITROFAT_IMG)
+$(ROM_PROFILE): $(NITROFAT_IMG)
+endif
+
+$(ROM): arm9 arm7
+	@echo "  NDSTOOL $@"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
+		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9/arm9.elf \
+		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		$(NDSTOOL_FAT)
+
+$(ROM_DEBUG): arm9debug arm7
+	@echo "  NDSTOOL $@"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
+		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_debug/arm9.elf \
+		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		$(NDSTOOL_FAT)
+
+$(ROM_PROFILE): arm9profile arm7
+	@echo "  NDSTOOL $@"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
+		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_profile/arm9.elf \
+		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		$(NDSTOOL_FAT)
+
+sdimage:
+	@echo "  IMGBUILD $(SDIMAGE) $(SDROOT)"
+	$(V)sh $(BLOCKSDS)/tools/imgbuild/imgbuild.sh $(SDIMAGE) $(SDROOT)

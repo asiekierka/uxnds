@@ -20,6 +20,12 @@ WITH REGARD TO THIS SOFTWARE.
 #define dprintf(...)
 #endif
 
+#ifdef BLOCKSDS
+#define iprintf printf
+#define siprintf sprintf
+#define fiprintf fprintf
+#endif
+
 #define MAX_PATH 512
 #define ITCM_ARM_CODE __attribute__((section(".itcm"), long_call, target("arm")))
 

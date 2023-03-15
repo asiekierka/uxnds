@@ -1,3 +1,12 @@
+// Admittedly, this was more useful to reduce filesize before "datetime" device support.
+#if 0
+#ifdef BLOCKSDS
+#include <stdint.h>
+
+uint32_t get_fattime(void) {
+	return 0;
+}
+#else
 #include <nds.h>
 #include <time.h>
 
@@ -16,5 +25,5 @@ uint16_t _FAT_filetime_getDateFromRTC (void) {
 time_t _FAT_filetime_to_time_t (uint16_t t, uint16_t d) {
 	return 0;
 }
-
-
+#endif
+#endif
