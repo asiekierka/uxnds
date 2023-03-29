@@ -29,9 +29,8 @@ DEFINES		:=
 # Libraries
 # ---------
 
-LIBS		:= -lmm9 -lsysnds9 -lnds9 -lc
+LIBS		:= -lmm9 -lnds9 -lc
 LIBDIRS		:= $(BLOCKSDS)/libs/maxmod \
-		   $(BLOCKSDS)/libs/libsysnds \
 		   $(BLOCKSDS)/libs/libnds \
 		   $(BLOCKSDS)/libs/libc9
 
@@ -131,13 +130,12 @@ CXXFLAGS	+=	-DDEBUG -DDEBUG_PROFILE
 endif
 endif
 
-LDFLAGS		:= -mthumb -mthumb-interwork $(LIBDIRSFLAGS) \
+LDFLAGS		:= -Wl,--defsym=vfprintf=__i_vfprintf -Wl,--defsym=vfscanf=__i_vfscanf \
+		   -mthumb -mthumb-interwork $(LIBDIRSFLAGS) \
 		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nolibc -nostartfiles \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.mem \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.ld \
 		   -Wl,--start-group $(LIBS) -Wl,--end-group
-
-LDFLAGS +=  -Wl,--defsym=vfprintf=__i_vfprintf -Wl,--defsym=vfscanf=__i_vfscanf
 
 # Intermediate build files
 # ------------------------
