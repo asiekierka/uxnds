@@ -24,4 +24,7 @@ There are three binaries provided:
 * uxnds_debug.nds - slower, but provides debugging information, profiling information and performs CPU stack bounds checks.
 * uxnds_profile.nds - almost as fast as uxnds.nds - with debugging/profiling information, no CPU stack bounds checks.
 
-Use the latest devkitARM toolchain from the devkitPro organization to compile. After [installing](https://devkitpro.org/wiki/Getting_Started), simply run `make`.
+To compile uxnds, you may use:
+
+* the [BlocksDS toolchain](https://github.com/blocksds/sdk) - run `make -f Makefile.blocksds`;
+* the latest devkitARM toolchain from the devkitPro organization to compile. After [installing](https://devkitpro.org/wiki/Getting_Started), simply run `make -f Makefile.nds`.
