@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "uxn.h"
+#include "../uxn.h"
 #include "system.h"
 
 /*
@@ -35,24 +35,23 @@ system_print(Stack *s, char *name)
 static void
 system_cmd(Uint8 *ram, Uint16 addr)
 {
-	if(ram[addr] == 0x01) {
-		Uint16 i, length = PEEK16(ram + addr + 1);
-		Uint16 a_page = PEEK16(ram + addr + 1 + 2), a_addr = PEEK16(ram + addr + 1 + 4);
-		Uint16 b_page = PEEK16(ram + addr + 1 + 6), b_addr = PEEK16(ram + addr + 1 + 8);
+	if(ram[addr] == 0x1) {
+		Uint16 i, length = PEEK2(ram + addr + 1);
+		Uint16 a_page = PEEK2(ram + addr + 1 + 2), a_addr = PEEK2(ram + addr + 1 + 4);
+		Uint16 b_page = PEEK2(ram + addr + 1 + 6), b_addr = PEEK2(ram + addr + 1 + 8);
 		int src = (a_page % RAM_PAGES) * 0x10000, dst = (b_page % RAM_PAGES) * 0x10000;
 		for(i = 0; i < length; i++)
 			ram[dst + (Uint16)(b_addr + i)] = ram[src + (Uint16)(a_addr + i)];
 	}
 }
 
-void
-system_inspect(Uxn *u)
+int
+system_error(char *msg, const char *err)
 {
-	system_print(&u->wst, "wst");
-	system_print(&u->rst, "rst");
+	iprintf("%s: %s\n", msg, err);
+	fflush(stderr);
+	return 0;
 }
-
-extern char *load_filename;
 
 int
 system_load(Uxn *u, char *filename)
@@ -65,8 +64,14 @@ system_load(Uxn *u, char *filename)
 	while(l && ++i < RAM_PAGES)
 		l = fread(u->ram.dat + 0x10000 * i, 0x10000, 1, f);
 	fclose(f);
-	strcpy(load_filename, filename);
 	return 1;
+}
+
+void
+system_inspect(Uxn *u)
+{
+	system_print(&u->wst, "wst");
+	system_print(&u->rst, "rst");
 }
 
 /* IO */
@@ -74,25 +79,23 @@ system_load(Uxn *u, char *filename)
 void
 system_deo(Uxn *u, Uint8 *d, Uint8 port)
 {
-	Uint16 a;
 	switch(port) {
 	case 0x3:
-		PEKDEV(a, 0x2);
-		system_cmd(u->ram.dat, a);
+		system_cmd(u->ram.dat, PEEK2(d + 2));
 		break;
 	case 0xe:
-		if(u->wst.ptr || u->rst.ptr) system_inspect(u);
+		system_inspect(u);
 		break;
 	}
 }
 
-/* Error */
+/* Errors */
 
 int
 uxn_halt(Uxn *u, Uint8 instr, Uint8 err, Uint16 addr)
 {
-	Uint8 *d = &u->dev[0x00];
-	Uint16 handler = GETVEC(d);
+	Uint8 *d = &u->dev[0];
+	Uint16 handler = PEEK2(d);
 	if(handler) {
 		u->wst.ptr = 4;
 		u->wst.dat[0] = addr >> 0x8;
@@ -105,4 +108,27 @@ uxn_halt(Uxn *u, Uint8 instr, Uint8 err, Uint16 addr)
 		iprintf("%s %s, by %02x at 0x%04x.\n", (instr & 0x40) ? "Return-stack" : "Working-stack", errors[err - 1], instr, addr);
 	}
 	return 0;
+}
+
+/* Console */
+
+int
+console_input(Uxn *u, char c, int type)
+{
+	Uint8 *d = &u->dev[0x10];
+	d[0x2] = c;
+	d[0x7] = type;
+	return uxn_eval(u, PEEK2(d));
+}
+
+void
+console_deo(Uint8 *d, Uint8 port)
+{
+	switch(port) {
+	case 0x8:
+	case 0x9:
+		fputc(d[port], stdout);
+		fflush(stdout);
+		return;
+	}
 }

@@ -9,4 +9,4 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-Uint8 datetime_dei(Uint8 *d, Uint8 port);
+Uint8 datetime_dei(Uxn *u, Uint8 addr);

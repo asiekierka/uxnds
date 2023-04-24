@@ -54,13 +54,13 @@ get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int f
 	if(len < strlen(basename) + 8)
 		return 0;
 	if(stat(pathname, &st))
-		return fail_nonzero ? siprintf(p, "!!!! %s\n", basename) : 0;
+		return fail_nonzero ? sniprintf(p, len, "!!!! %s\n", basename) : 0;
 	else if(S_ISDIR(st.st_mode))
-		return siprintf(p, "---- %s/\n", basename);
+		return sniprintf(p, len, "---- %s/\n", basename);
 	else if(st.st_size < 0x10000)
-		return siprintf(p, "%04x %s\n", (unsigned int)st.st_size, basename);
+		return sniprintf(p, len, "%04x %s\n", (unsigned int)st.st_size, basename);
 	else
-		return siprintf(p, "???? %s\n", basename);
+		return sniprintf(p, len, "???? %s\n", basename);
 }
 
 static Uint16
@@ -74,7 +74,7 @@ file_read_dir(UxnFile *c, char *dest, Uint16 len)
 		if(c->de->d_name[0] == '.' && c->de->d_name[1] == '\0')
 			continue;
 		if(strlen(c->current_filename) + 1 + strlen(c->de->d_name) < sizeof(pathname))
-			siprintf(pathname, "%s/%s", c->current_filename, c->de->d_name);
+			sniprintf(pathname, sizeof(pathname), "%s/%s", c->current_filename, c->de->d_name);
 		else
 			pathname[0] = '\0';
 		n = get_entry(p, len, pathname, c->de->d_name, 1);

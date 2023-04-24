@@ -23,6 +23,7 @@ WITH REGARD TO THIS SOFTWARE.
 #ifdef BLOCKSDS
 #define iprintf printf
 #define siprintf sprintf
+#define sniprintf snprintf
 #define fiprintf fprintf
 #endif
 
@@ -41,6 +42,8 @@ typedef int16_t Sint16;
 #define GETVEC(d) ((d)[0] << 8 | (d)[1])
 #define POKDEV(x, y) { d[(x)] = (y) >> 8; d[(x) + 1] = (y); }
 #define PEKDEV(o, x) { (o) = (d[(x)] << 8) + d[(x) + 1]; }
+#define POKE2(d, v) { (d)[0] = (v) >> 8; (d)[1] = (v); }
+#define PEEK2(d) ((d)[0] << 8 | (d)[1])
 
 typedef struct {
 	Uint8 ptr, kptr, error;

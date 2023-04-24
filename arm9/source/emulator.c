@@ -72,23 +72,6 @@ init(void)
 
 #pragma mark - Devices
 
-static int
-console_input(Uxn *u, char c)
-{
-	Uint8 *d = &u->dev[0x10];
-	d[0x02] = c;
-	return uxn_eval(u, GETVEC(d));
-}
-
-static void
-console_deo(Uint8 *d, Uint8 port)
-{
-	if(port >= 0x8) {
-		fputc(d[port], stdout);
-		fflush(stdout);
-	}
-}
-
 ITCM_ARM_CODE
 static Uint8
 screen_dei(Uint8 *d, Uint8 port)
@@ -178,7 +161,7 @@ emu_dei(Uxn *u, Uint8 addr)
 	case 0x60: return audio_dei(3, &u->dev[d], p);
 	case 0xa0: return file_dei(0, &u->dev[d], p);
 	case 0xb0: return file_dei(1, &u->dev[d], p);
-	case 0xc0: return datetime_dei(&u->dev[d], p);
+	case 0xc0: return datetime_dei(u, p);
 	}
 	return u->dev[addr];
 }

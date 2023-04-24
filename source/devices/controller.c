@@ -17,7 +17,7 @@ controller_down(Uxn *u, Uint8 *d, Uint8 mask)
 {
 	if(mask) {
 		d[2] |= mask;
-		uxn_eval(u, GETVEC(d));
+		uxn_eval(u, PEEK2(d));
 	}
 }
 
@@ -26,7 +26,7 @@ controller_up(Uxn *u, Uint8 *d, Uint8 mask)
 {
 	if(mask) {
 		d[2] &= (~mask);
-		uxn_eval(u, GETVEC(d));
+		uxn_eval(u, PEEK2(d));
 	}
 }
 
@@ -35,7 +35,7 @@ controller_key(Uxn *u, Uint8 *d, Uint8 key)
 {
 	if(key) {
 		d[3] = key;
-		uxn_eval(u, GETVEC(d));
+		uxn_eval(u, PEEK2(d));
 		d[3] = 0x00;
 	}
 }
