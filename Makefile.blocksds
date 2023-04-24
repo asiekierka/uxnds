@@ -7,10 +7,10 @@
 
 NAME		:= uxnds
 
-GAME_TITLE     := uxnds v0.3.6
+GAME_TITLE     := uxnds v0.3.7
 GAME_SUBTITLE1 := tiny virtual machine
-GAME_SUBTITLE2 := 18/02/2023
-GAME_ICON	:= assets/uxn32.bmp
+GAME_SUBTITLE2 := 24/04/2023
+GAME_ICON	:= assets/uxn32.png
 
 # DLDI and internal SD slot of DSi
 # --------------------------------

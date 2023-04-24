@@ -57,6 +57,18 @@ static Uint32 lut_expand_8_32_flipx[256] = {
 #include "lut_expand_8_32_flipx.inc"
 };
 
+/* DTCM_DATA
+static Uint32 lut_mask_8_32_count[8] = {
+	0x0000000F,
+	0x000000FF,
+	0x00000FFF,
+	0x0000FFFF,
+	0x000FFFFF,
+	0x00FFFFFF,
+	0x0FFFFFFF,
+	0xFFFFFFFF
+}; */
+
 void
 nds_putcolors(NdsPpu *p, Uint8 *addr)
 {
@@ -80,10 +92,49 @@ nds_ppu_pixel(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 {
 	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
-	Uint32 pos = ((y & 7) + (((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8));
+	Uint32 pos = ((y & 7) + ( ((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8) );
 	Uint32 shift = (x & 7) << 2;
 	layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
 	tile_dirty[y >> 3] |= 1 << (x >> 3);
+}
+
+ITCM_ARM_CODE
+void
+nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color)
+{
+	if (x1 > PPU_TILES_WIDTH * 8)  x1 = PPU_TILES_WIDTH * 8;
+	if (x2 > PPU_TILES_WIDTH * 8)  x2 = PPU_TILES_WIDTH * 8;
+	if (y1 > PPU_TILES_HEIGHT * 8) y1 = PPU_TILES_HEIGHT * 8;
+	if (y2 > PPU_TILES_HEIGHT * 8) y2 = PPU_TILES_HEIGHT * 8;
+
+	Uint32 color_full = ((Uint32) color) * 0x11111111;
+
+	for (Uint16 y = y1; y < y2; y++) {
+		Uint32 y_pos = (y & 7) + ((y >> 3) * PPU_TILES_WIDTH * 8);
+
+		// TODO: write a more optimized implementation
+		for (Uint16 x = x1; x < x2; x++) {
+			if (!(x & 0x7) && ((x2 - x) >= 8)) {
+				layer[y_pos + x] = color_full;
+				x += 7;
+			} else {
+				Uint32 pos = y_pos + (x & (~7));
+				Uint32 shift = (x & 7) << 2;
+				layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
+			}
+		}
+	}
+
+	// calculate tile_dirty
+	{
+		Uint32 dirty_line = 0;
+		for (Uint16 x = x1 >> 3; x <= (x2 - 1) >> 3; x++) {
+			dirty_line |= (1 << x);
+		}
+		for (Uint16 y = y1 >> 3; y <= (y2 - 1) >> 3; y++) {
+			tile_dirty[y] |= dirty_line;
+		}
+	}
 }
 
 ITCM_ARM_CODE
