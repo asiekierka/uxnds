@@ -5,7 +5,8 @@
 /*
 Copyright (c) 2021 Devine Lu Linvega
 Copyright (c) 2021 Andrew Alderwick
-Copyright (c) 2021 Adrian "asie" Siekierka
+Copyright (c) 2021, 2022, 2023 Adrian "asie" Siekierka
+Copyright (c) 2021 Bad Diode
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -98,6 +99,45 @@ nds_ppu_pixel(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color)
 	tile_dirty[y >> 3] |= 1 << (x >> 3);
 }
 
+// Doesn't calculate tile_dirty by itself.
+// Modified from https://git.badd10de.dev/uxngba/tree/src/ppu.c
+ITCM_ARM_CODE
+static inline void
+__nds_ppu_hline(Uint32 *layer, Uint16 x0, Uint16 x1, Uint32 y, Uint32 row) {
+	Uint32 y_pos = (y & 7) + ((y >> 3) * PPU_TILES_WIDTH * 8);
+	// Find row positions for the given x/y coordinates.
+	size_t tile_x0 = x0 >> 3;
+	size_t tile_x1 = x1 >> 3;
+	size_t start_col = x0 & 7;
+	size_t end_col = x1 & 7;
+
+	// Horizontal line. There are 3 cases:
+	//     1. Lines fit on a single tile.
+	//     2. Lines go through 2 tiles, both require partial row updates.
+	//     3. Lines go through 3 or more tiles, first and last tiles use
+	//        partial row updates, rows in the middle can write the entire
+	//        row.
+	size_t dtx = tile_x1 - tile_x0;
+	Uint32 *dst = &layer[(x0 & (~7)) + y_pos];
+
+	size_t shift_left = start_col * 4;
+	size_t shift_right = (7 - end_col) * 4;
+
+	if (dtx < 1) {
+		u32 mask = (0xFFFFFFFF >> shift_right) & (0xFFFFFFFF << shift_left);
+		*dst = (*dst & ~mask) | (row & mask);
+	} else {
+		u32 mask = 0xFFFFFFFF;
+		*dst = (*dst & ~(mask << shift_left)) | (row << shift_left);
+		dst += 8;
+		for (size_t i = 1; i < dtx; i++) {
+			*dst = row;
+			dst += 8;
+		}
+		*dst = (*dst & ~(mask >> shift_right)) | (row >> shift_right);
+	}
+}
+
 ITCM_ARM_CODE
 void
 nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color)
@@ -107,9 +147,12 @@ nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y
 	if (y1 > PPU_TILES_HEIGHT * 8) y1 = PPU_TILES_HEIGHT * 8;
 	if (y2 > PPU_TILES_HEIGHT * 8) y2 = PPU_TILES_HEIGHT * 8;
 
-	Uint32 color_full = ((Uint32) color) * 0x11111111;
+	Uint32 color_full = 0x11111111 * color;
 
 	for (Uint16 y = y1; y < y2; y++) {
+#if 1
+		__nds_ppu_hline(layer, x1, x2, y, color_full);
+#else
 		Uint32 y_pos = (y & 7) + ((y >> 3) * PPU_TILES_WIDTH * 8);
 
 		// TODO: write a more optimized implementation
@@ -123,6 +166,7 @@ nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y
 				layer[pos] = (layer[pos] & (~(0xF << shift))) | (color << shift);
 			}
 		}
+#endif
 	}
 
 	// calculate tile_dirty
