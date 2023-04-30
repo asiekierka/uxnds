@@ -223,7 +223,13 @@ doctrl(Uxn *u)
 	// int key = dispswap ? -1 : keyboardUpdate();
 	int key = -1;
 
-	int held = hidKeysDown() | hidKeysHeld();
+	int pressed = keysDown();
+	int held = pressed | keysHeld();
+
+	if (pressed & (KEY_L | KEY_R)) {
+		dispswap ^= 1;
+	}
+
 	u->dev[0x82] = (held & 0x0F)
 		| ((held & KEY_UP) ? 0x10 : 0)
 		| ((held & KEY_DOWN) ? 0x20 : 0)
