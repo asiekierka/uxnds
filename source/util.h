@@ -11,3 +11,4 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 int clamp(int val, int min, int max);
+int next_power_of_two(int val);

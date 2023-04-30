@@ -176,7 +176,7 @@ emu_dei(Uxn *u, Uint8 addr)
 	case 0x60: return audio_dei(3, &u->dev[d], p);
 	case 0xa0: return file_dei(0, &u->dev[d], p);
 	case 0xb0: return file_dei(1, &u->dev[d], p);
-	case 0xc0: return datetime_dei(u, p);
+	case 0xc0: return datetime_dei(u, addr);
 	}
 	return u->dev[addr];
 }

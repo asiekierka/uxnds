@@ -75,18 +75,15 @@ void
 audio_start(int instance, Uint8 *d, Uxn *u)
 {
 	UxnAudio *c = &uxn_audio[instance];
-	Uint16 addr, adsr;
-	Uint8 pitch;
-	PEKDEV(adsr, 0x8);
-	PEKDEV(c->len, 0xa);
-	PEKDEV(addr, 0xc);
+	Uint8 pitch = d[0xf] & 0x7f;
+	Uint16 addr = PEEK2(d + 0xc), adsr = PEEK2(d + 0x8);
+	c->len = PEEK2(d + 0xa);
 	if(c->len > 0x10000 - addr)
 		c->len = 0x10000 - addr;
 	c->addr = &u->ram.dat[addr];
 	c->volume[0] = d[0xe] >> 4;
 	c->volume[1] = d[0xe] & 0xf;
 	c->repeat = !(d[0xf] & 0x80);
-	pitch = d[0xf] & 0x7f;
 	if(pitch < 108 && c->len)
 		c->advance = advances[pitch % 12] >> (8 - pitch / 12);
 	else {
