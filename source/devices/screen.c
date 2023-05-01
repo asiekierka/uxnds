@@ -71,7 +71,7 @@ screen_resize(UxnScreen *p, Uint16 width, Uint16 height)
 {
 	Uint8 *bg, *fg;
 	Uint32 *pixels;
-	if(width < 0x20 || height < 0x20 || width >= 0x400 || height >= 0x400)
+	if(width < 0x8 || height < 0x8 || width >= 0x400 || height >= 0x400)
 		return;
 	bg = realloc(p->bg.pixels, width * height),
 	fg = realloc(p->fg.pixels, width * height);
