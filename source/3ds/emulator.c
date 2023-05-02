@@ -230,11 +230,13 @@ init(void)
 	return 1;
 }
 
+static u8 ctrl_flags = 0;
+
 void
 doctrl(Uxn *u)
 {
 	bool changed = false;
-	u8 old_flags = u->dev[0x82];
+	u8 old_flags = ctrl_flags;
 	int key = dispswap ? -1 : keyboard_update();
 
 	int pressed = keysDown();
@@ -244,7 +246,7 @@ doctrl(Uxn *u)
 		dispswap ^= 1;
 	}
 
-	u->dev[0x82] = (held & 0x0F)
+	ctrl_flags = (held & 0x0F)
 		| (keyboard_is_held(K_CTRL) ? 0x01 : 0)
 		| (keyboard_is_held(K_ALT) ? 0x02 : 0)
 		| (keyboard_is_held(K_SHIFT) ? 0x04 : 0)
@@ -258,11 +260,16 @@ doctrl(Uxn *u)
 		u->dev[0x83] = key;
 		changed = true;
 	}
-
-	changed |= old_flags != u->dev[0x82];
+	if (old_flags != ctrl_flags) {
+		changed = true;
+	}
 	if (changed) {
+		// clear only changed bits
+		u->dev[0x82] = (u->dev[0x82] & (old_flags & (~ctrl_flags))) | (ctrl_flags & (~old_flags));
 		uxn_eval(u, GETVEC(u->dev + 0x80));
-		u->dev[0x83] = 0;
+		if (key > 0 && key < 128) {
+			u->dev[0x83] = 0;
+		}
 	}
 
 	if (key == K_SYSTEM) {
@@ -420,6 +427,7 @@ prompt_reset(Uxn *u)
 		hidScanInput();
 		if ((hidKeysDown() | hidKeysHeld()) == 0) break;
 	}
+	ctrl_flags = 0;
 	uxn_eval(u, 0x0100);
 
 restoreGfx:
