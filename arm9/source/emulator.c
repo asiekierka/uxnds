@@ -318,11 +318,11 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 static int
 uxn_load_boot(Uxn *u)
 {
-	if(system_load(u, "boot.rom")) {
-		return 1;
-	}
 	if(system_load(u, "nitro:/boot.rom")) {
 		chdir("nitro:/");
+		return 1;
+	}
+	if(system_load(u, "boot.rom")) {
 		return 1;
 	}
 	if(system_load(u, "/uxn/boot.rom")) {

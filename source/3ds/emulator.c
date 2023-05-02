@@ -373,11 +373,11 @@ emu_deo(Uxn *u, Uint8 addr, Uint8 v)
 static int
 uxn_load_boot(Uxn *u)
 {
-	if(system_load(u, "boot.rom")) {
-		return 1;
-	}
 	if(system_load(u, "romfs:/boot.rom")) {
 		chdir("romfs:/");
+		return 1;
+	}
+	if(system_load(u, "boot.rom")) {
 		return 1;
 	}
 	if(system_load(u, "/uxn/boot.rom")) {
