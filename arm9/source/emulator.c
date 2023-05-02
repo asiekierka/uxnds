@@ -305,13 +305,22 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 static int
 uxn_load_boot(Uxn *u)
 {
-	chdir("/uxn");
-	if(!system_load(u, "boot.rom")) {
-		if(!system_load(u, "launcher.rom")) {
-			return 0;
-		}
+	if(system_load(u, "boot.rom")) {
+		return 1;
 	}
-	return 1;
+	if(system_load(u, "romfs:/boot.rom")) {
+		chdir("romfs:/");
+		return 1;
+	}
+	if(system_load(u, "/uxn/boot.rom")) {
+		chdir("/uxn");
+		return 1;
+	}
+	if(system_load(u, "/uxn/launcher.rom")) {
+		chdir("/uxn");
+		return 1;
+	}
+	return 0;
 }
 
 int
