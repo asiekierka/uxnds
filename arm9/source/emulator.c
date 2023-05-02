@@ -157,14 +157,20 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 {
 	NdsApu *instance = &apu[instance_id];
 	if(port == 0xf) {
+		Uint16 addr = peek16(d, 0xc);
 		instance->len = peek16(d, 0xa);
-		instance->addr = &u->ram.dat[peek16(d, 0xc)];
+		if(instance->len > 0x10000 - addr)
+			instance->len = 0x10000 - addr;
+		instance->addr = &u->ram.dat[addr];
 		instance->volume[0] = d[0xe] >> 4;
 		instance->volume[1] = d[0xe] & 0xf;
 		instance->repeat = !(d[0xf] & 0x80);
 		nds_apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f);
+		DC_FlushAll();
 		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((instance_id) << 28))
 			| ((u32) (&apu)));
+		// fifoWaitValue32(UXNDS_FIFO_CHANNEL);
+		// fifoGetValue32(UXNDS_FIFO_CHANNEL);
 	}
 }
 
@@ -315,8 +321,8 @@ uxn_load_boot(Uxn *u)
 	if(system_load(u, "boot.rom")) {
 		return 1;
 	}
-	if(system_load(u, "romfs:/boot.rom")) {
-		chdir("romfs:/");
+	if(system_load(u, "nitro:/boot.rom")) {
+		chdir("nitro:/");
 		return 1;
 	}
 	if(system_load(u, "/uxn/boot.rom")) {
@@ -444,6 +450,7 @@ main(int argc, char **argv)
 		return error("Boot", "Failed");
 	if(!fatInitDefault())
 		return error("FAT init", "Failed");
+	nitroFSInit(NULL); // no big deal if this one fails
 	if(!uxn_load_boot(&u)) {
                 dprintf("Halted: Missing input rom.\n");
 		return error("Load", "Failed");

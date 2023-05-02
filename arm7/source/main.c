@@ -106,6 +106,7 @@ void fifo_handler(u32 cmd, void *unused) {
 			int oldIME = enterCriticalSection();
 			apus[(cmd >> 28) & 0x03] = apus_remote[(cmd >> 28) & 0x03];
 			leaveCriticalSection(oldIME);
+			// fifoSendValue32(UXNDS_FIFO_CHANNEL, 0);
 			break;
 	}
 }
