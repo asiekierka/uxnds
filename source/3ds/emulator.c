@@ -433,6 +433,7 @@ prompt_reset(Uxn *u)
 restoreGfx:
 #ifndef DEBUG_CONSOLE
 	gfxInitDefault();
+	gfxSet3D(true);
 #endif
 	return 0;
 }
