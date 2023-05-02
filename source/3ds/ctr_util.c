@@ -1,0 +1,31 @@
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include <3ds.h>
+#include <citro2d.h>
+#include <citro3d.h>
+#include <tex3ds.h>
+
+#include "../util.h"
+#include "ctr_util.h"
+
+/*
+Copyright (c) 2018, 2023 Adrian "asie" Siekierka
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE.
+*/
+
+bool ctr_load_t3x(C3D_Tex* tex, const char* name, ctr_texture_target_t loc) {
+	FILE *file;
+	file = fopen(name, "rb");
+	if (file == NULL) return false;
+	Tex3DS_TextureImportStdio(file, tex, NULL, loc == TEXTURE_TARGET_VRAM);
+	fclose(file);
+	return true;
+}

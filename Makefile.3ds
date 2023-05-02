@@ -44,17 +44,16 @@ endif
 SOURCES		:=	source source/3ds source/devices
 DATA		:=
 INCLUDES	:=	include source
-GRAPHICS	:=
-GFXBUILD	:=	$(BUILD)
-#ROMFS		:=	romfs
-#GFXBUILD	:=	$(ROMFS)/gfx
+GRAPHICS	:=	assets/3ds
+ROMFS		:=	romfs/3ds
+GFXBUILD	:=	$(ROMFS)
 APP_TITLE := uxn3ds v0.4.0
 ifeq ($(DEBUG),true)
 APP_DESCRIPTION := tiny virtual machine (debug)
 else
 APP_DESCRIPTION := tiny virtual machine
 endif
-ICON := assets/uxn48.png
+ICON := misc/uxn48.png
 
 #---------------------------------------------------------------------------------
 # options for code generation

@@ -11,6 +11,7 @@
 #include "devices/audio.h"
 #include "devices/datetime.h"
 #include "devices/file.h"
+#include "ctr_keyboard.h"
 #include "ctr_screen.h"
 #include "devices/system.h"
 
@@ -129,6 +130,8 @@ redraw(Uxn *u)
 #ifndef DEBUG_CONSOLE
 		C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 0));
 		C2D_SceneBegin(bottom);
+
+		keyboard_draw();
 #endif
 	} else {
 #ifndef DEBUG_CONSOLE
@@ -145,8 +148,6 @@ redraw(Uxn *u)
 		C2D_SceneBegin(topLeft);
 	}
 
-	// TODO: keyboard?
-
 	C3D_FrameEnd(0);
 	reqdraw = 0;
 }
@@ -154,6 +155,8 @@ redraw(Uxn *u)
 void
 quit(void)
 {
+	keyboard_exit();
+
 	// APU
 	ndspExit();
 	LightLock_Lock(&soundLock);
@@ -165,6 +168,8 @@ quit(void)
 	C2D_Fini();
 	C3D_Fini();
 	gfxExit();
+
+	romfsExit();
 	exit(0);
 }
 
@@ -172,6 +177,7 @@ int
 init(void)
 {
 	osSetSpeedupEnable(1);
+
 	// PPU
 	ctr_screen_init(&uxn_ctr_screen, 320, 240);
 	gfxInitDefault();
@@ -211,17 +217,23 @@ init(void)
 
 	ndspChnWaveBufAdd(0, &soundBuffer[0]);
 	ndspChnWaveBufAdd(0, &soundBuffer[1]);
+
+	if (R_FAILED(romfsInit())) {
+		error("romfsInit", "Failed");
+	}
+
+	if (!keyboard_init()) {
+		error("keyboard init", "Failed");
+	}
 	return 1;
 }
 
 void
 doctrl(Uxn *u)
 {
-	// TODO: keyboard
 	bool changed = false;
 	u8 old_flags = u->dev[0x82];
-	// int key = dispswap ? -1 : keyboardUpdate();
-	int key = -1;
+	int key = dispswap ? -1 : keyboard_update();
 
 	int pressed = keysDown();
 	int held = pressed | keysHeld();
@@ -231,12 +243,16 @@ doctrl(Uxn *u)
 	}
 
 	u->dev[0x82] = (held & 0x0F)
+		| (keyboard_is_held(K_CTRL) ? 0x01 : 0)
+		| (keyboard_is_held(K_ALT) ? 0x02 : 0)
+		| (keyboard_is_held(K_SHIFT) ? 0x04 : 0)
+		| ((key == K_HOME) ? 0x08 : 0)
 		| ((held & KEY_UP) ? 0x10 : 0)
 		| ((held & KEY_DOWN) ? 0x20 : 0)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
 		| ((held & KEY_LEFT) ? 0x40 : 0);
 
-	if (key > 0) {
+	if (key > 0 && key < 128) {
 		u->dev[0x83] = key;
 		changed = true;
 	}

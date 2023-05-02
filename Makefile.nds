@@ -41,19 +41,19 @@ checkarm9profile:
 	$(MAKE) -C arm9 DEBUG=false PROFILE=true
 
 #---------------------------------------------------------------------------------
-$(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf assets/uxn32.bmp
+$(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf misc/uxn32.bmp
 	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
-	-b assets/uxn32.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	-b misc/uxn32.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
-$(TARGET)_debug.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_debug.elf assets/uxn32.bmp
+$(TARGET)_debug.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_debug.elf misc/uxn32.bmp
 	ndstool	-c $(TARGET)_debug.nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET)_debug.elf \
-	-b assets/uxn32.bmp "$(GAME_TITLE) (debug);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	-b misc/uxn32.bmp "$(GAME_TITLE) (debug);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
-$(TARGET)_profile.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_profile.elf assets/uxn32.bmp
+$(TARGET)_profile.nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET)_profile.elf misc/uxn32.bmp
 	ndstool	-c $(TARGET)_profile.nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET)_profile.elf \
-	-b assets/uxn32.bmp "$(GAME_TITLE) (profile);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	-b misc/uxn32.bmp "$(GAME_TITLE) (profile);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
 
 #---------------------------------------------------------------------------------
