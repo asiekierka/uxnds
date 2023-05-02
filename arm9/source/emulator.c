@@ -33,7 +33,6 @@ static NdsApu apu[POLYPHONY];
 static u32 apu_samples[(UXNDS_AUDIO_BUFFER_SIZE * 4) >> 1];
 
 Uint8 dispswap = 0, debug = 0;
-char load_filename[129];
 
 static PrintConsole *mainConsole;
 #ifdef DEBUG
@@ -314,6 +313,18 @@ profiler_ticks(Uint32 tticks, int pos, const char *name)
 }
 #endif
 
+static int
+uxn_load_boot(Uxn *u)
+{
+	chdir("/uxn");
+	if(!system_load(u, "boot.rom")) {
+		if(!system_load(u, "launcher.rom")) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int
 prompt_reset(Uxn *u)
 {
@@ -336,7 +347,7 @@ prompt_reset(Uxn *u)
 
 	if(!resetuxn(u))
 		return error("Resetting", "Failed");
-	if(!system_load(u, load_filename))
+	if(!uxn_load_boot(u))
 		return error("Load", "Failed");
 	if(!nds_initppu(&ppu))
 		return error("PPU", "Init failure");
@@ -426,14 +437,11 @@ main(int argc, char **argv)
 
 	if(!uxn_boot(&u, (Uint8 *)calloc(0x10000 * RAM_PAGES, sizeof(Uint8)), emu_dei, emu_deo))
 		return error("Boot", "Failed");
-	if (!fatInitDefault())
+	if(!fatInitDefault())
 		return error("FAT init", "Failed");
-	chdir("/uxn");
-	if(!system_load(&u, "boot.rom")) {
-		if(!system_load(&u, "launcher.rom")) {
-	                dprintf("Halted: Missing input rom.\n");
-			return error("Load", "Failed");
-		}
+	if(!uxn_load_boot(&u)) {
+                dprintf("Halted: Missing input rom.\n");
+		return error("Load", "Failed");
 	}
 	if(!init())
 		return error("Init", "Failed");

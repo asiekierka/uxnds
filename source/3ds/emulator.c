@@ -341,7 +341,17 @@ emu_deo(Uxn *u, Uint8 addr, Uint8 v)
 	}
 }
 
-#pragma mark - Generics
+static int
+uxn_load_boot(Uxn *u)
+{
+	chdir("/uxn");
+	if(!system_load(u, "boot.rom")) {
+		if(!system_load(u, "launcher.rom")) {
+			return 0;
+		}
+	}
+	return 1;
+}
 
 int
 start(Uxn *u)
@@ -377,12 +387,9 @@ main(int argc, char **argv)
 
 	if(!uxn_boot(&u, (Uint8 *)calloc(0x10000 * RAM_PAGES, sizeof(Uint8)), emu_dei, emu_deo))
 		return error("Boot", "Failed");
-	chdir("/uxn");
-	if(!system_load(&u, "boot.rom")) {
-		if(!system_load(&u, "launcher.rom")) {
-	                dprintf("Halted: Missing input rom.\n");
-			return error("Load", "Failed");
-		}
+	if(!uxn_load_boot(&u)) {
+                dprintf("Halted: Missing input rom.\n");
+		return error("Load", "Failed");
 	}
 
 	// Write screen size to dev/screen
