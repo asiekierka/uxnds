@@ -49,6 +49,8 @@ static LightLock soundLock;
 
 Uint8 dispswap = 0, reqdraw = 0;
 
+int prompt_reset(Uxn *u);
+
 int
 error(char *msg, const char *err)
 {
@@ -262,6 +264,10 @@ doctrl(Uxn *u)
 		uxn_eval(u, GETVEC(u->dev + 0x80));
 		u->dev[0x83] = 0;
 	}
+
+	if (key == K_SYSTEM) {
+		prompt_reset(u);
+	}
 }
 
 static bool istouching = false;
@@ -367,6 +373,51 @@ uxn_load_boot(Uxn *u)
 		}
 	}
 	return 1;
+}
+
+int
+prompt_reset(Uxn *u)
+{
+#ifndef DEBUG_CONSOLE
+	consoleInit(GFX_BOTTOM, NULL);
+#endif
+	consoleClear();
+	iprintf("\n\n\n\n\n\n\n\n\n\n\n\n\n        Would you like to reset?\n\n          [A] - Yes\n          [B] - No\n");
+        gfxSwapBuffers();
+	while(aptMainLoop()) {
+                gspWaitForVBlank();
+		hidScanInput();
+		int allHeld = hidKeysDown() | hidKeysHeld();
+		if (allHeld & KEY_A) {
+			consoleClear();
+			break;
+		} else if (allHeld & KEY_B) {
+			consoleClear();
+			goto restoreGfx;
+		}
+	}
+
+	iprintf("Resetting...\n");
+
+	if(!resetuxn(u))
+		return error("Resetting", "Failed");
+	if(!uxn_load_boot(u))
+		return error("Load", "Failed");
+	ctr_screen_free(&uxn_ctr_screen);
+	ctr_screen_init(&uxn_ctr_screen, 320, 240);
+	keyboard_clear();
+	while(aptMainLoop()) {
+                gspWaitForVBlank();
+		hidScanInput();
+		if ((hidKeysDown() | hidKeysHeld()) == 0) break;
+	}
+	uxn_eval(u, 0x0100);
+
+restoreGfx:
+#ifndef DEBUG_CONSOLE
+	gfxInitDefault();
+#endif
+	return 0;
 }
 
 int

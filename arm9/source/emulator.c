@@ -340,6 +340,12 @@ prompt_reset(Uxn *u)
 		return error("Load", "Failed");
 	if(!nds_initppu(&ppu))
 		return error("PPU", "Init failure");
+	keyboard_clear();
+	while(1) {
+		swiWaitForVBlank();
+		scanKeys();
+		if ((keysDown() | keysHeld()) == 0) break;
+	}
 	uxn_eval(u, 0x0100);
 
 	consoleClear();
