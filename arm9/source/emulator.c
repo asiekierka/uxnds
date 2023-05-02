@@ -10,6 +10,7 @@
 #include "util.h"
 #include "nds/apu.h"
 #include "nds/fifo.h"
+#include "nds_keyboard.h"
 #include "nds_ppu.h"
 #include "devices/datetime.h"
 #include "devices/file.h"
@@ -41,8 +42,9 @@ static PrintConsole profileConsole;
 #endif
 #endif
 
-#define RESET_KEYS (KEY_START | KEY_SELECT)
 #define TICK_RESET_KEYS (KEY_X | KEY_Y)
+
+int prompt_reset(Uxn *u);
 
 int
 error(char *msg, const char *err)
@@ -56,6 +58,8 @@ error(char *msg, const char *err)
 void
 quit(void)
 {
+	keyboard_exit();
+
 	exit(0);
 }
 
@@ -66,6 +70,7 @@ init(void)
 		return error("PPU", "Init failure");
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_RATE | SAMPLE_FREQUENCY);
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_ADDR | ((u32) (&apu_samples)));
+	keyboard_init();
 	return 1;
 }
 
@@ -209,55 +214,39 @@ doctrl(Uxn *u)
 {
 	bool changed = false;
 	u8 old_flags = u->dev[0x82];
-	int key = dispswap ? -1 : keyboardUpdate();
+	int key = dispswap ? -1 : keyboard_update();
 
 	int pressed = keysDown();
 	int held = pressed | keysHeld();
 
 	if (pressed & (KEY_L | KEY_R)) {
 		lcdSwap();
-		if (dispswap) keyboardShow(); else keyboardHide();
+		if (!dispswap) videoBgDisableSub(3); else videoBgEnableSub(3);
 		dispswap ^= 1;
 	}
 
 	u->dev[0x82] = (held & 0x0F)
+		| (keyboard_is_held(K_CTRL) ? 0x01 : 0)
+		| (keyboard_is_held(K_ALT) ? 0x02 : 0)
+		| (keyboard_is_held(K_SHIFT) ? 0x04 : 0)
+		| ((key == K_HOME) ? 0x08 : 0)
 		| ((held & 0xC0) >> 2)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
 		| ((held & KEY_LEFT) ? 0x40 : 0);
 
-	switch (key) {
-		case DVK_FOLD:
-			u->dev[0x83] = 27;
-			changed = true;
-			break;
-		case DVK_UP:
-			u->dev[0x82] |= (1 << 4);
-			break;
-		case DVK_DOWN:
-			u->dev[0x82] |= (1 << 5);
-			break;
-		case DVK_LEFT:
-			u->dev[0x82] |= (1 << 6);
-			break;
-		case DVK_RIGHT:
-			u->dev[0x82] |= (1 << 7);
-			break;
-		case DVK_ENTER:
-			u->dev[0x83] = 13;
-			changed = true;
-			break;
-		default:
-			if (key > 0) {
-				u->dev[0x83] = key;
-				changed = true;
-			}
-			break;
+	if (key > 0 && key < 128) {
+		u->dev[0x83] = key;
+		changed = true;
 	}
 
 	changed |= old_flags != u->dev[0x82];
 	if (changed) {
 		uxn_eval(u, GETVEC(u->dev + 0x80));
 		u->dev[0x83] = 0;
+	}
+
+	if (key == K_SYSTEM) {
+		prompt_reset(u);
 	}
 }
 
@@ -329,7 +318,7 @@ int
 prompt_reset(Uxn *u)
 {
 	consoleClear();
-	iprintf("Would you like to reset uxnds?\n\n [A] - Yes\n [B] - No\n");
+	iprintf("\n\n\n\n\n    Would you like to reset?\n\n      [A] - Yes\n      [B] - No\n");
 	while(1) {
 		swiWaitForVBlank();
 		scanKeys();
@@ -368,16 +357,13 @@ start(Uxn *u)
 	while(1) {
 		if(u->dev[0x0f]) return 1; // Run ended.
 		scanKeys();
-		int allHeld = keysDown() | keysHeld();
 #ifdef DEBUG_PROFILE
+		int allHeld = keysDown() | keysHeld();
 		// X+Y in debugger mode resets tticks_peak
 		if ((keysDown() & TICK_RESET_KEYS) && ((allHeld & TICK_RESET_KEYS) == TICK_RESET_KEYS))
 			memset(tticks_peak, 0, sizeof(tticks_peak));
 		tticks = timer_ticks(0);
 #endif
-		// On the first frame that L+R are held
-		if ((keysDown() & RESET_KEYS) && ((allHeld & RESET_KEYS) == RESET_KEYS))
-			prompt_reset(u);
 		doctrl(u);
 		domouse(u);
 #ifdef DEBUG_PROFILE
@@ -406,8 +392,6 @@ static Uxn u;
 int
 main(int argc, char **argv)
 {
-	Keyboard *keyboard;
-
 	defaultExceptionHandler();
 
 	powerOn(POWER_ALL_2D);
@@ -433,8 +417,6 @@ main(int argc, char **argv)
 #endif
 	consoleSelect(mainConsole);
 
-	keyboardDemoInit();
-
 	if(!uxn_boot(&u, (Uint8 *)calloc(0x10000 * RAM_PAGES, sizeof(Uint8)), emu_dei, emu_deo))
 		return error("Boot", "Failed");
 	if(!fatInitDefault())
@@ -445,11 +427,6 @@ main(int argc, char **argv)
 	}
 	if(!init())
 		return error("Init", "Failed");
-
-	keyboard = keyboardGetDefault();
-	keyboard->scrollSpeed = 0;
-
-	keyboardShow();
 
 	/* Write screen size to dev/screen */
 	poke16(u.dev + 0x20, 2, PPU_PIXELS_WIDTH);

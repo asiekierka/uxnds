@@ -2,14 +2,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <3ds.h>
-#include <citro2d.h>
-#include <citro3d.h>
-#include <tex3ds.h>
+#include <nds.h>
 
-#include "../util.h"
-#include "ctr_util.h"
-#include "ctr_keyboard.h"
+#include "util.h"
+#include "gfx_keyboard.h"
+#include "nds_keyboard.h"
 
 /*
 Copyright (c) 2018, 2023 Adrian "asie" Siekierka
@@ -31,8 +28,8 @@ typedef struct {
 } key_area_t;
 
 #define KEYS_HELD_MAX_COUNT 6
-#define KEY_SIZE 10
-#define KEY_YOFS (240 - (KEY_SIZE*2)*5)
+#define KEY_SIZE 8
+#define KEY_YOFS (192 - (KEY_SIZE*2)*5)
 #define KEY_POS(ix, iy, iw) ((int)(ix*2)*(KEY_SIZE)+1), (KEY_YOFS)+((int)(iy*2)*(KEY_SIZE)+1), ((int)(iw*2)*(KEY_SIZE)-2), ((KEY_SIZE)*2-2)
 
 #define KF_MODIFIER		0x01
@@ -111,14 +108,15 @@ static key_area_t keyboard_areas[] = {
 };
 #define KEYBOARD_AREAS_COUNT (sizeof(keyboard_areas) / sizeof(key_area_t))
 
-#define KR_REDRAW	0x01
 #define KR_CLEAR_HELD	0x02
 #define KR_CAPS_LOCK	0x04
+
+#define KBD_MAP_BASE 20
+#define KBD_TILE_BASE 2
 
 static keycode_t keys_held[KEYS_HELD_MAX_COUNT];
 static uint8_t keys_held_count;
 static uint8_t keyboard_reqs;
-static C3D_Tex gfx_keyboard_tex;
 
 static bool key_area_touched(touchPosition* pos, const key_area_t* area) {
 	return pos->px >= area->x && pos->py >= area->y
@@ -150,51 +148,76 @@ static bool keyboard_is_shifted(void) {
 	return (keyboard_reqs & KR_CAPS_LOCK) || keyboard_is_held(K_SHIFT);
 }
 
-bool keyboard_init(void) {
-	if (!ctr_load_t3x(&gfx_keyboard_tex, "romfs:/gfx_keyboard.t3x", TEXTURE_TARGET_VRAM)) {
-		return false;
+static void keyboard_update_map(void) {
+	bool shifted = keyboard_is_shifted();
+	uint32_t *src = (uint32_t*) (gfx_keyboardMap + (shifted ? 32*10 : 0));
+	uint32_t *dst = (uint32_t*) (BG_MAP_RAM_SUB(KBD_MAP_BASE) + (32*14));
+
+	for (int i = 0; i < 32*10/2; i++, src++, dst++) {
+		*dst = (*dst & 0xF000F000) | (*src & 0x0FFF0FFF);
+	}
+}
+
+static void keyboard_update_palette(key_area_t *area) {
+	uint16_t palette_idx = 0;
+	bool shifted = keyboard_is_shifted();
+	keycode_t keycode = shifted ? area->keycode_shifted : area->keycode;
+
+	if (keycode == K_SHIFT && (keyboard_reqs & KR_CAPS_LOCK)) {
+		palette_idx = 2 << 12;
+	} else if (area->flags & KF_RUNTIME_ANY_HIGHLIGHT) {
+		palette_idx = 1 << 12;
 	}
 
+	for (int ty = (area->y >> 3); ty <= ((area->y + area->h - 1) >> 3); ty++) {
+		for (int tx = (area->x >> 3); tx <= ((area->x + area->w - 1) >> 3); tx++) {
+			uint16_t tile = BG_MAP_RAM_SUB(KBD_MAP_BASE)[(ty << 5) | tx];
+			BG_MAP_RAM_SUB(KBD_MAP_BASE)[(ty << 5) | tx] = (tile & 0xFFF) | palette_idx;
+		}
+	}
+}
+
+static void keyboard_update_palettes(int target_keycode) {
+	bool shifted = keyboard_is_shifted();
+	for (int i = 0; i < KEYBOARD_AREAS_COUNT; i++) {
+		key_area_t* area = &keyboard_areas[i];
+		keycode_t keycode = shifted ? area->keycode_shifted : area->keycode;
+		if (target_keycode == -1 || target_keycode == keycode) {
+			keyboard_update_palette(area);
+		}
+	}
+}
+
+static void keyboard_set_palette_colors(uint16_t *pal, uint8_t mul /* 0-15 */) {
+	for (int i = 0; i < 14; i++) {
+		uint16_t col = gfx_keyboardPal[i];
+		pal[i] =
+			((col & 0x1F) * mul / 15)
+			| ((((col >> 5) & 0x1F) * mul / 15) << 5)
+			| ((((col >> 10) & 0x1F) * mul / 15) << 10)
+			| (col & 0x8000);
+	}
+}
+
+bool keyboard_init(void) {
+	decompress(gfx_keyboardTiles, BG_TILE_RAM_SUB(KBD_TILE_BASE), LZ77Vram);
+	memset(BG_MAP_RAM_SUB(KBD_MAP_BASE), 0, 2*(32*14));
+
+	memcpy(BG_PALETTE_SUB, gfx_keyboardPal, 2*14);
+	keyboard_set_palette_colors(BG_PALETTE_SUB + 16, 12);
+	keyboard_set_palette_colors(BG_PALETTE_SUB + 32, 10);
+
 	keyboard_clear();
+	swiWaitForVBlank();
+	REG_BG3CNT_SUB = BG_32x32 | BG_COLOR_16 | BG_PRIORITY_3 | BG_TILE_BASE(KBD_TILE_BASE) | BG_MAP_BASE(KBD_MAP_BASE);
+	REG_BG3HOFS_SUB = 0;
+	REG_BG3VOFS_SUB = 0;
+	videoBgEnableSub(3);
 	return true;
 }
 
 void keyboard_exit(void) {
-	C3D_TexDelete(&gfx_keyboard_tex);
-}
 
-void keyboard_draw(void) {
-	bool shifted = keyboard_is_shifted();
-
-	C2D_Image kbd_image;
-	Tex3DS_SubTexture kbd_subtex;
-
-	kbd_subtex.width = 320;
-	kbd_subtex.height = 100;
-	kbd_subtex.left = 0.0f;
-	kbd_subtex.top = 1.0f - ((shifted ? 100.0f : 200.0f) / 256.0f);
-	kbd_subtex.right = 320.0f / 512.0f;
-	kbd_subtex.bottom = kbd_subtex.top + (100.0f / 256.0f);
-	kbd_image.tex = &gfx_keyboard_tex;
-	kbd_image.subtex = &kbd_subtex;
-
-	C2D_DrawImageAt(kbd_image, 0, KEY_YOFS, 0.0f, NULL, 1.0f, 1.0f);
-
-	for (int i = 0; i < KEYBOARD_AREAS_COUNT; i++) {
-		const key_area_t* area = &keyboard_areas[i];
-		keycode_t keycode = shifted ? area->keycode_shifted : area->keycode;
-		if (keycode == K_SHIFT && (keyboard_reqs & KR_CAPS_LOCK)) {
-			C2D_DrawRectSolid(area->x, area->y, 0.0f, area->w, area->h, 0x70000000);
-		} else if (area->flags & KF_RUNTIME_ANY_HIGHLIGHT) {
-			C2D_DrawRectSolid(area->x, area->y, 1.0f, area->w, area->h, 0x38000000);
-		}
-	}
-
-	keyboard_reqs &= ~KR_REDRAW;
-}
-
-bool keyboard_needs_draw(void) {
-	return keyboard_reqs & KR_REDRAW;
 }
 
 void keyboard_clear(void) {
@@ -202,49 +225,57 @@ void keyboard_clear(void) {
 		key_area_t* area = &keyboard_areas[i];
 		area->flags &= ~KF_RUNTIME_ALL;
 	}
+	memcpy(BG_MAP_RAM_SUB(KBD_MAP_BASE) + (32*14), gfx_keyboardMap, 2*(32*10));
 	keys_held_count = 0;
-	keyboard_reqs = KR_REDRAW;
 }
 
 int keyboard_update(void) {
-	u32 kDown = hidKeysDown();
-	u32 kHeld = hidKeysHeld();
-	u32 kUp = hidKeysUp();
+	u32 kDown = keysDown();
+	u32 kHeld = keysHeld();
+	u32 kUp = keysUp();
 	touchPosition pos;
 	int retval = -1;
 
 	if (keyboard_reqs & KR_CLEAR_HELD) {
+		bool was_shifted = keyboard_is_shifted();
 		// no keypress ongoing - pop all held keys
-		if (keys_held_count > 0) {
-			keys_held_count = 0;
-			keyboard_reqs |= KR_REDRAW;
-		}
+		keys_held_count = 0;
 		for (int i = 0; i < KEYBOARD_AREAS_COUNT; i++) {
 			key_area_t* area = &keyboard_areas[i];
-			area->flags &= ~KF_RUNTIME_HELD;
+			if (area->flags & KF_RUNTIME_HELD) {
+				area->flags &= ~KF_RUNTIME_HELD;
+				keyboard_update_palette(area);
+			}
 		}
 		keyboard_reqs &= ~KR_CLEAR_HELD;
+		if (was_shifted) {
+			keyboard_update_map();
+		}
 	}
 
 	bool touching = ((kDown | kHeld) & KEY_TOUCH) != 0;
 	bool shifted = keyboard_is_shifted();
 	if (touching) {
-		hidTouchRead(&pos);
+		touchRead(&pos);
 
 		// handle key hovering
 		for (int i = 0; i < KEYBOARD_AREAS_COUNT; i++) {
 			key_area_t* area = &keyboard_areas[i];
 			if (key_area_touched(&pos, area)) {
-				if (!(area->flags & KF_RUNTIME_HOVERED))
-					keyboard_reqs |= KR_REDRAW;
 				keycode_t keycode = shifted ? area->keycode_shifted : area->keycode;
 
-				area->flags |= KF_RUNTIME_HOVERED;
+				if (!(area->flags & KF_RUNTIME_HOVERED)) {
+					area->flags |= KF_RUNTIME_HOVERED;
+					keyboard_update_palette(area);
+				}
 				if (area->flags & KF_HELD) {
 					retval = keycode;
 				}
 			} else {
-				area->flags &= ~KF_RUNTIME_HOVERED;
+				if (area->flags & KF_RUNTIME_HOVERED) {
+					area->flags &= ~KF_RUNTIME_HOVERED;
+					keyboard_update_palette(area);
+				}
 			}
 		}
 	} else if (kUp & KEY_TOUCH) {
@@ -252,7 +283,6 @@ int keyboard_update(void) {
 		for (int i = 0; i < KEYBOARD_AREAS_COUNT; i++) {
 			key_area_t* area = &keyboard_areas[i];
 			if (area->flags & KF_RUNTIME_HOVERED) {
-				keyboard_reqs |= KR_REDRAW;
 				area->flags &= ~KF_RUNTIME_HOVERED;
 				keycode_t keycode = shifted ? area->keycode_shifted : area->keycode;
 
@@ -274,6 +304,15 @@ int keyboard_update(void) {
 						retval = keycode;
 					}
 					keyboard_reqs |= KR_CLEAR_HELD;
+				}
+
+				if (keycode == K_SHIFT) {
+					keyboard_update_map();
+				}
+				if (area->flags & KF_MODIFIER) {
+					keyboard_update_palettes(keycode);
+				} else {
+					keyboard_update_palette(area);
 				}
 			}
 		}

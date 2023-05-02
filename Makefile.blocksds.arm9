@@ -17,7 +17,7 @@ endif
 
 SOURCEDIRS	:= source/devices source arm9/source
 INCLUDEDIRS	:= arm9/include include source $(BUILDDIR)
-GFXDIRS		:=
+GFXDIRS		:= assets/nds
 BINDIRS		:=
 AUDIODIRS	:=
 
