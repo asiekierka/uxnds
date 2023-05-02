@@ -29,7 +29,11 @@ WITH REGARD TO THIS SOFTWARE.
 #endif
 
 #define MAX_PATH 512
+#ifdef __NDS__
 #define ITCM_ARM_CODE __attribute__((section(".itcm"), long_call, target("arm")))
+#else
+#define ITCM_ARM_CODE
+#endif
 
 typedef uint8_t Uint8;
 typedef int8_t Sint8;
