@@ -251,7 +251,7 @@ doctrl(Uxn *u)
 	}
 	if (changed) {
 		// clear only changed bits
-		u->dev[0x82] = (u->dev[0x82] & (old_flags & (~ctrl_flags))) | (ctrl_flags & (~old_flags));
+		u->dev[0x82] = (u->dev[0x82] & ~(old_flags & (~ctrl_flags))) | (ctrl_flags & (~old_flags));
 		uxn_eval(u, GETVEC(u->dev + 0x80));
 		if (key > 0 && key < 128) {
 			u->dev[0x83] = 0;
