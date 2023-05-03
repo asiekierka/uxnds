@@ -91,6 +91,8 @@ audio_callback(void *u)
 	}
 }
 
+static u32 vsync_counter = 0;
+
 void
 redraw(Uxn *u)
 {
@@ -106,7 +108,13 @@ redraw(Uxn *u)
 
 	ctr_screen_redraw(&uxn_ctr_screen);
 
-	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+	u32 curr_frame = C3D_FrameCounter(0);
+	if (curr_frame > vsync_counter) {
+		// ticking took >1 frame's worth
+		C3D_FrameBegin(0);
+	} else {
+		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+	}
 
 	memset(&drawParams, 0, sizeof(drawParams));
 	drawParams.pos.w = PPU_PIXELS_WIDTH;
@@ -161,7 +169,9 @@ redraw(Uxn *u)
 	}
 
 	C3D_FrameEnd(0);
+
 	reqdraw = 0;
+	vsync_counter = C3D_FrameCounter(0);
 }
 
 void
