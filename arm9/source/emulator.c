@@ -28,6 +28,9 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
+#define ENABLE_KEYBOARD
+#define ENABLE_TOUCH
+
 DTCM_BSS
 static NdsPpu ppu;
 static NdsApu apu[POLYPHONY];
@@ -58,8 +61,9 @@ error(char *msg, const char *err)
 void
 quit(void)
 {
+#ifdef ENABLE_KEYBOARD
 	keyboard_exit();
-
+#endif
 	exit(0);
 }
 
@@ -70,7 +74,9 @@ init(void)
 		return error("PPU", "Init failure");
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_RATE | SAMPLE_FREQUENCY);
 	fifoSendValue32(UXNDS_FIFO_CHANNEL, UXNDS_FIFO_CMD_SET_ADDR | ((u32) (&apu_samples)));
+#ifdef ENABLE_KEYBOARD
 	keyboard_init();
+#endif
 	return 1;
 }
 
@@ -222,23 +228,31 @@ doctrl(Uxn *u)
 {
 	bool changed = false;
 	u8 old_flags = ctrl_flags;
+#ifdef ENABLE_KEYBOARD
 	int key = dispswap ? -1 : keyboard_update();
+#else
+	int key = -1;
+#endif
 
 	int pressed = keysDown();
 	// pressed or held, clear if repeated
 	int held = (pressed | keysHeld()) & ~(keysDownRepeat() & ~pressed);
 
+#ifdef ENABLE_TOUCH
 	if (pressed & (KEY_L | KEY_R)) {
 		lcdSwap();
 		if (!dispswap) videoBgDisableSub(3); else videoBgEnableSub(3);
 		dispswap ^= 1;
 	}
+#endif
 
 	ctrl_flags = (held & 0x0F)
+#ifdef ENABLE_KEYBOARD
 		| (keyboard_is_held(K_CTRL) ? 0x01 : 0)
 		| (keyboard_is_held(K_ALT) ? 0x02 : 0)
 		| (keyboard_is_held(K_SHIFT) ? 0x04 : 0)
 		| ((key == K_HOME) ? 0x08 : 0)
+#endif
 		| ((held & 0xC0) >> 2)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
 		| ((held & KEY_LEFT) ? 0x40 : 0);
@@ -363,7 +377,9 @@ prompt_reset(Uxn *u)
 		return error("Load", "Failed");
 	if(!nds_initppu(&ppu))
 		return error("PPU", "Init failure");
+#ifdef ENABLE_KEYBOARD
 	keyboard_clear();
+#endif
 	while(1) {
 		swiWaitForVBlank();
 		scanKeys();
