@@ -45,12 +45,14 @@ screen_fill(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint16 x2, Uin
 		memset(pixels + (y * width) + x1, color, x2-x1);
 }
 
+// ASSUMPTION: The pixels[] texture array is at least 7 pixels wider than the actual display width.
+// This allows skipping expensive "if (x < width)" checks.
 __attribute__((optimize("-O3")))
 static void
 screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Uint16 addr, Uint8 color, Uint8 flipx, Uint8 flipy, Uint8 twobpp)
 {
 	int v, h, width = s->width, height = s->height, opaque = (color % 5) || !color;
-	if ((color == 1 || color == 5) && !flipy && !flipx && x1 <= width-8 && y1 <= height-8) {
+	if ((color == 1 || color == 5) && !flipy && !flipx && y1 <= height-8) {
 		// fast path
 		for(v = 0; v < 8; v++) {
 			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
@@ -72,23 +74,24 @@ screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Ui
 			}
 		}
 	} else {
+		if (flipx) flipx = 7;
+		if (flipy) flipy = 7;
 		for(v = 0; v < 8; v++) {
 			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
-			Uint16 y = y1 + (flipy ? 7 - v : v);
+			Uint16 y = y1 + (v ^ flipy);
+			if (y >= height) continue;
 			if(opaque) {
 				for(h = 7; h >= 0; --h, c >>= 1) {
 					Uint8 ch = (c & 1) | ((c >> 7) & 2);
-					Uint16 x = x1 + (flipx ? 7 - h : h);
-					if(x < width && y < height)
-						pixels[x + y * width] = blending[ch][color];
+					Uint16 x = x1 + (h ^ flipx);
+					pixels[x + y * width] = blending[ch][color];
 				}
 			} else {
 				for(h = 7; h >= 0; --h, c >>= 1) {
 					Uint8 ch = (c & 1) | ((c >> 7) & 2);
 					if(ch) {
-						Uint16 x = x1 + (flipx ? 7 - h : h);
-						if(x < width && y < height)
-							pixels[x + y * width] = blending[ch][color];
+						Uint16 x = x1 + (h ^ flipx);
+						pixels[x + y * width] = blending[ch][color];
 					}
 				}
 			}
@@ -141,7 +144,7 @@ void
 ctr_screen_init(UxnCtrScreen *p, Uint16 width, Uint16 height)
 {
 	Uint16
-		pitch = next_power_of_two(width),
+		pitch = next_power_of_two(width + 7), // See assumption in screen_blit
 		texHeight = next_power_of_two(height);
 	Uint8
 		*bg = malloc(width * height),
