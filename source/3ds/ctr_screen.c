@@ -37,24 +37,59 @@ static void
 screen_fill(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color)
 {
 	int x, y, width = s->width, height = s->height;
-	for(y = y1; y < y2 && y < height; y++)
-		for(x = x1; x < x2 && x < width; x++)
+	if (x2 > width) x2 = width;
+	if (y2 > height) y2 = height;
+	for(y = y1; y < y2; y++)
+		for(x = x1; x < x2; x++)
 			pixels[x + y * width] = color;
 }
 
+__attribute__((optimize("-O3")))
 static void
 screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Uint16 addr, Uint8 color, Uint8 flipx, Uint8 flipy, Uint8 twobpp)
 {
 	int v, h, width = s->width, height = s->height, opaque = (color % 5) || !color;
-	for(v = 0; v < 8; v++) {
-		Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
-		Uint16 y = y1 + (flipy ? 7 - v : v);
-		for(h = 7; h >= 0; --h, c >>= 1) {
-			Uint8 ch = (c & 1) | ((c >> 7) & 2);
-			if(opaque || ch) {
-				Uint16 x = x1 + (flipx ? 7 - h : h);
-				if(x < width && y < height)
-					pixels[x + y * width] = blending[ch][color];
+	if ((color == 1 || color == 5) && !flipy && !flipx && x1 <= width-8 && y1 <= height-8) {
+		// fast path
+		for(v = 0; v < 8; v++) {
+			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
+			Uint16 y = y1 + v;
+			if(opaque) {
+				for(h = 7; h >= 0; --h, c >>= 1) {
+					Uint8 ch = (c & 1) | ((c >> 7) & 2);
+					Uint16 x = x1 + h;
+					pixels[x + y * width] = ch;
+				}
+			} else {
+				for(h = 7; h >= 0; --h, c >>= 1) {
+					Uint8 ch = (c & 1) | ((c >> 7) & 2);
+					if(ch) {
+						Uint16 x = x1 + h;
+						pixels[x + y * width] = ch;
+					}
+				}
+			}
+		}
+	} else {
+		for(v = 0; v < 8; v++) {
+			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
+			Uint16 y = y1 + (flipy ? 7 - v : v);
+			if(opaque) {
+				for(h = 7; h >= 0; --h, c >>= 1) {
+					Uint8 ch = (c & 1) | ((c >> 7) & 2);
+					Uint16 x = x1 + (flipx ? 7 - h : h);
+					if(x < width && y < height)
+						pixels[x + y * width] = blending[ch][color];
+				}
+			} else {
+				for(h = 7; h >= 0; --h, c >>= 1) {
+					Uint8 ch = (c & 1) | ((c >> 7) & 2);
+					if(ch) {
+						Uint16 x = x1 + (flipx ? 7 - h : h);
+						if(x < width && y < height)
+							pixels[x + y * width] = blending[ch][color];
+					}
+				}
 			}
 		}
 	}
