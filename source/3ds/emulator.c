@@ -27,9 +27,13 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
+#define ENABLE_3D
+#define ENABLE_KEYBOARD
+#define ENABLE_TOUCH
 #define PPU_PIXELS_WIDTH 320
 #define PPU_PIXELS_HEIGHT 240
 #define AUDIO_BUFFER_SIZE 2048
+// #define DEBUG_CONSOLE
 
 static C3D_RenderTarget *topLeft, *topRight, *bottom;
 
@@ -37,10 +41,6 @@ static bool soundFillBlock;
 static ndspWaveBuf soundBuffer[2];
 static u8 *soundData;
 static LightLock soundLock;
-
-#ifdef DEBUG
-#define DEBUG_CONSOLE
-#endif
 
 #define PAD 0
 
@@ -95,45 +95,55 @@ void
 redraw(Uxn *u)
 {
 	C2D_DrawParams drawParams;
+#ifdef ENABLE_3D
 	float slider = osGet3DSliderState();
 	int x_offset_bg = (int) (slider * 7.0f);
 	int x_offset_fg = (slider > 0.0f) ? -1 : 0;
+#else
+	int x_offset_bg = 0;
+	int x_offset_fg = 0;
+#endif
 
 	ctr_screen_redraw(&uxn_ctr_screen);
 
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 
 	memset(&drawParams, 0, sizeof(drawParams));
-	drawParams.pos.y = 0.0f;
-	drawParams.pos.w = 320.0f;
-	drawParams.pos.h = 240.0f;
+	drawParams.pos.w = PPU_PIXELS_WIDTH;
+	drawParams.pos.h = PPU_PIXELS_HEIGHT;
+	drawParams.pos.y = (240 - PPU_PIXELS_HEIGHT) >> 1;
+	int x_bg = (400 - PPU_PIXELS_WIDTH) >> 1;
 
 	if (!dispswap) {
 		C2D_TargetClear(topLeft, C2D_Color32(0, 0, 0, 0));
 		C2D_SceneBegin(topLeft);
-		drawParams.pos.x = 40.0f - x_offset_bg;
+		drawParams.pos.x = x_bg - x_offset_bg;
 		drawParams.depth = 0.0f;
 		C2D_DrawImage(uxn_ctr_screen.bg.gpuImage, &drawParams, NULL);
-		drawParams.pos.x = 40.0f - x_offset_fg;
+		drawParams.pos.x = x_bg - x_offset_fg;
 		drawParams.depth = 1.0f;
 		C2D_DrawImage(uxn_ctr_screen.fg.gpuImage, &drawParams, NULL);
 
+#ifdef ENABLE_3D
 		if (slider > 0.0f) {
 			C2D_TargetClear(topRight, C2D_Color32(0, 0, 0, 0));
 			C2D_SceneBegin(topRight);
-			drawParams.pos.x = 40.0f + x_offset_bg;
+			drawParams.pos.x = x_bg + x_offset_bg;
 			drawParams.depth = 0.0f;
 			C2D_DrawImage(uxn_ctr_screen.bg.gpuImage, &drawParams, NULL);
-			drawParams.pos.x = 40.0f + x_offset_fg;
+			drawParams.pos.x = x_bg + x_offset_fg;
 			drawParams.depth = 1.0f;
 			C2D_DrawImage(uxn_ctr_screen.fg.gpuImage, &drawParams, NULL);
 		}
+#endif
 
 #ifndef DEBUG_CONSOLE
+#ifdef ENABLE_KEYBOARD
 		C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 0));
 		C2D_SceneBegin(bottom);
 
 		keyboard_draw();
+#endif
 #endif
 	} else {
 #ifndef DEBUG_CONSOLE
@@ -157,7 +167,9 @@ redraw(Uxn *u)
 void
 quit(void)
 {
+#ifdef ENABLE_KEYBOARD
 	keyboard_exit();
+#endif
 
 	// APU
 	ndspExit();
@@ -181,9 +193,11 @@ init(void)
 	osSetSpeedupEnable(1);
 
 	// PPU
-	ctr_screen_init(&uxn_ctr_screen, 320, 240);
+	ctr_screen_init(&uxn_ctr_screen, PPU_PIXELS_WIDTH, PPU_PIXELS_HEIGHT);
 	gfxInitDefault();
+#ifdef ENABLE_3D
 	gfxSet3D(true);
+#endif
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 	C2D_Init(4096);
 	C2D_Prepare();
@@ -224,9 +238,11 @@ init(void)
 		error("romfsInit", "Failed");
 	}
 
+#ifdef ENABLE_KEYBOARD
 	if (!keyboard_init()) {
 		error("keyboard init", "Failed");
 	}
+#endif
 	return 1;
 }
 
@@ -237,20 +253,28 @@ doctrl(Uxn *u)
 {
 	bool changed = false;
 	u8 old_flags = ctrl_flags;
+#ifdef ENABLE_KEYBOARD
 	int key = dispswap ? -1 : keyboard_update();
+#else
+	int key = -1;
+#endif
 
 	int pressed = keysDown();
 	int held = pressed | keysHeld();
 
+#ifdef ENABLE_TOUCH
 	if (pressed & (KEY_L | KEY_R)) {
 		dispswap ^= 1;
 	}
+#endif
 
 	ctrl_flags = (held & 0x0F)
+#ifdef ENABLE_KEYBOARD
 		| (keyboard_is_held(K_CTRL) ? 0x01 : 0)
 		| (keyboard_is_held(K_ALT) ? 0x02 : 0)
 		| (keyboard_is_held(K_SHIFT) ? 0x04 : 0)
 		| ((key == K_HOME) ? 0x08 : 0)
+#endif
 		| ((held & KEY_UP) ? 0x10 : 0)
 		| ((held & KEY_DOWN) ? 0x20 : 0)
 		| ((held & KEY_RIGHT) ? 0x80 : 0)
@@ -420,8 +444,10 @@ prompt_reset(Uxn *u)
 	if(!uxn_load_boot(u))
 		return error("Load", "Failed");
 	ctr_screen_free(&uxn_ctr_screen);
-	ctr_screen_init(&uxn_ctr_screen, 320, 240);
+	ctr_screen_init(&uxn_ctr_screen, PPU_PIXELS_WIDTH, PPU_PIXELS_HEIGHT);
+#ifdef ENABLE_KEYBOARD
 	keyboard_clear();
+#endif
 	while(aptMainLoop()) {
                 gspWaitForVBlank();
 		hidScanInput();
@@ -433,7 +459,9 @@ prompt_reset(Uxn *u)
 restoreGfx:
 #ifndef DEBUG_CONSOLE
 	gfxInitDefault();
+#ifdef ENABLE_3D
 	gfxSet3D(true);
+#endif
 #endif
 	return 0;
 }

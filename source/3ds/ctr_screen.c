@@ -33,15 +33,16 @@ static Uint8 blending[4][16] = {
 	{1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1},
 	{2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2}};
 
+__attribute__((optimize("-O3")))
 static void
 screen_fill(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color)
 {
 	int x, y, width = s->width, height = s->height;
 	if (x2 > width) x2 = width;
 	if (y2 > height) y2 = height;
+	//iprintf("fill %d %d %d %d\n", x1, y1, x2, y2);
 	for(y = y1; y < y2; y++)
-		for(x = x1; x < x2; x++)
-			pixels[x + y * width] = color;
+		memset(pixels + (y * width) + x1, color, x2-x1);
 }
 
 __attribute__((optimize("-O3")))

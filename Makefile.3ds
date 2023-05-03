@@ -41,7 +41,7 @@ BUILD		:=	build_3ds_debug
 else
 BUILD		:=	build_3ds
 endif
-SOURCES		:=	source source/3ds source/devices
+SOURCES		:=	source source/3ds source/devices source/ndsabi
 DATA		:=
 INCLUDES	:=	include source
 GRAPHICS	:=	assets/3ds
