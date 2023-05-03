@@ -204,27 +204,27 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		u64 mask = ~((u64)0xFFFFFFFF << shift);
 
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
+			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
+				sprline = sprite[v ^ flipy];
+				u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
+				data |= (u64)(lut_expand[sprline ^ 0xFF] * (color >> 2)) << shift;
 
-			sprline = sprite[v ^ flipy];
-			u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
-			data |= (u64)(lut_expand[sprline ^ 0xFF] * (color >> 2)) << shift;
-
-			layerptr[0] = (layerptr[0] & mask) | data;
-			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+			} else if (!flipy) break;
 
 			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
 	} else {
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
+			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
+				sprline = sprite[v ^ flipy];
+				u64 mask = ~((u64)(lut_expand[sprline] * 0xF) << shift);
+				u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
 
-			sprline = sprite[v ^ flipy];
-			u64 mask = ~((u64)(lut_expand[sprline] * 0xF) << shift);
-			u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
-
-			layerptr[0] = (layerptr[0] & mask) | data;
-			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+			} else if (!flipy) break;
 
 			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
@@ -259,16 +259,16 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		u64 mask = ~((u64)0xFFFFFFFF << shift);
 
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
+			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
+				sprline1 = sprite[v ^ flipy];
+				sprline2 = sprite[(v ^ flipy) | 8];
 
-			sprline1 = sprite[v ^ flipy];
-			sprline2 = sprite[(v ^ flipy) | 8];
+				u32 data32 = (lut_expand[sprline1]) | (lut_expand[sprline2] << 1);
+				u64 data = ((u64) (data32 & 0x33333333)) << shift;
 
-			u32 data32 = (lut_expand[sprline1]) | (lut_expand[sprline2] << 1);
-			u64 data = ((u64) (data32 & 0x33333333)) << shift;
-
-			layerptr[0] = (layerptr[0] & mask) | data;
-			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+			} else if (!flipy) break;
 
 			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
@@ -276,79 +276,79 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		u64 mask = ~((u64)0xFFFFFFFF << shift);
 
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
+			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
+				Uint8 ch1 = sprite[v ^ flipy];
+				Uint8 ch2 = sprite[(v ^ flipy) | 8];
+				u32 data32 = 0;
 
-			Uint8 ch1 = sprite[v ^ flipy];
-			Uint8 ch2 = sprite[(v ^ flipy) | 8];
-			u32 data32 = 0;
+				if (!flipx) {
+					for (h = 0; h < 8; h++) {
+						data32 <<= 4;
 
-			if (!flipx) {
-				for (h = 0; h < 8; h++) {
-					data32 <<= 4;
+						Uint8 ch = (ch1 & 1) | ((ch2 & 1) << 1);
+						data32 |= blending[ch][color];
 
-					Uint8 ch = (ch1 & 1) | ((ch2 & 1) << 1);
-					data32 |= blending[ch][color];
+						ch1 >>= 1; ch2 >>= 1;
+					}
+				} else {
+					for (h = 0; h < 8; h++) {
+						data32 <<= 4;
 
-					ch1 >>= 1; ch2 >>= 1;
+						Uint8 ch = (ch1 >> 7) | ((ch2 >> 7) << 1);
+						data32 |= blending[ch][color];
+
+						ch1 <<= 1; ch2 <<= 1;
+					}
 				}
-			} else {
-				for (h = 0; h < 8; h++) {
-					data32 <<= 4;
 
-					Uint8 ch = (ch1 >> 7) | ((ch2 >> 7) << 1);
-					data32 |= blending[ch][color];
+				u64 data = ((u64) (data32 & 0x33333333)) << shift;
 
-					ch1 <<= 1; ch2 <<= 1;
-				}
-			}
-
-			u64 data = ((u64) (data32 & 0x33333333)) << shift;
-
-			layerptr[0] = (layerptr[0] & mask) | data;
-			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+			} else if (!flipy) break;
 
 			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
 	} else {
 		for (v = 0; v < 8; v++, layerptr++) {
-			if ((y + v) >= (PPU_TILES_HEIGHT * 8)) break;
+			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
+				Uint8 ch1 = sprite[v ^ flipy];
+				Uint8 ch2 = sprite[(v ^ flipy) | 8];
+				u32 data32 = 0;
+				u32 mask32 = 0;
 
-			Uint8 ch1 = sprite[v ^ flipy];
-			Uint8 ch2 = sprite[(v ^ flipy) | 8];
-			u32 data32 = 0;
-			u32 mask32 = 0;
+				if (!flipx) {
+					for (h = 0; h < 8; h++) {
+						data32 <<= 4; mask32 <<= 4;
 
-			if (!flipx) {
-				for (h = 0; h < 8; h++) {
-					data32 <<= 4; mask32 <<= 4;
+						if ((ch1 | ch2) & 1) {
+							Uint8 ch = (ch1 & 1) | ((ch2 & 1) << 1);
+							data32 |= blending[ch][color];
+							mask32 |= 0xF;
+						}
 
-					if ((ch1 | ch2) & 1) {
-						Uint8 ch = (ch1 & 1) | ((ch2 & 1) << 1);
-						data32 |= blending[ch][color];
-						mask32 |= 0xF;
+						ch1 >>= 1; ch2 >>= 1;
 					}
+				} else {
+					for (h = 0; h < 8; h++) {
+						data32 <<= 4; mask32 <<= 4;
 
-					ch1 >>= 1; ch2 >>= 1;
-				}
-			} else {
-				for (h = 0; h < 8; h++) {
-					data32 <<= 4; mask32 <<= 4;
+						if ((ch1 | ch2) & 128) {
+							Uint8 ch = (ch1 >> 7) | ((ch2 >> 7) << 1);
+							data32 |= blending[ch][color];
+							mask32 |= 0xF;
+						}
 
-					if ((ch1 | ch2) & 128) {
-						Uint8 ch = (ch1 >> 7) | ((ch2 >> 7) << 1);
-						data32 |= blending[ch][color];
-						mask32 |= 0xF;
+						ch1 <<= 1; ch2 <<= 1;
 					}
-
-					ch1 <<= 1; ch2 <<= 1;
 				}
-			}
 
-			u64 data = ((u64) (data32 & 0x33333333)) << shift;
-			u64 mask = ~(((u64) (mask32 & 0x33333333)) << shift);
+				u64 data = ((u64) (data32 & 0x33333333)) << shift;
+				u64 mask = ~(((u64) (mask32 & 0x33333333)) << shift);
 
-			layerptr[0] = (layerptr[0] & mask) | data;
-			if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
+			} else if (!flipy) break;
 
 			if (((y + v) & 7) == 7) layerptr += (PPU_TILES_WIDTH - 1) * 8;
 		}
