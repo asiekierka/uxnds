@@ -225,7 +225,8 @@ doctrl(Uxn *u)
 	int key = dispswap ? -1 : keyboard_update();
 
 	int pressed = keysDown();
-	int held = pressed | keysHeld();
+	// pressed or held, clear if repeated
+	int held = (pressed | keysHeld()) & ~(keysDownRepeat() & ~pressed);
 
 	if (pressed & (KEY_L | KEY_R)) {
 		lcdSwap();
@@ -426,6 +427,8 @@ main(int argc, char **argv)
 	powerOn(POWER_ALL_2D);
 	videoSetModeSub(MODE_0_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
+
+	keysSetRepeat(27, 4);
 
 	mainConsole = consoleDemoInit();
 #ifdef DEBUG

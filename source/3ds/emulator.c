@@ -243,6 +243,9 @@ init(void)
 		error("keyboard init", "Failed");
 	}
 #endif
+
+	hidSetRepeatParameters(27, 4);
+
 	return 1;
 }
 
@@ -259,8 +262,8 @@ doctrl(Uxn *u)
 	int key = -1;
 #endif
 
-	int pressed = keysDown();
-	int held = pressed | keysHeld();
+	int pressed = hidKeysDown();
+	int held = (pressed | hidKeysHeld()) & ~(hidKeysDownRepeat() & ~pressed);
 
 #ifdef ENABLE_TOUCH
 	if (pressed & (KEY_L | KEY_R)) {
