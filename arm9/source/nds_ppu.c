@@ -70,6 +70,11 @@ static Uint32 lut_mask_8_32_count[8] = {
 	0xFFFFFFFF
 }; */
 
+DTCM_BSS
+static Uint16 pal_colors_cache[4];
+DTCM_BSS
+static bool pal_colors_cache_changed = false;
+
 void
 nds_putcolors(NdsPpu *p, Uint8 *addr)
 {
@@ -79,12 +84,13 @@ nds_putcolors(NdsPpu *p, Uint8 *addr)
 			r = (*(addr + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f,
 			g = (*(addr + 2 + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f,
 			b = (*(addr + 4 + (i >> 1)) >> (!(i & 1) << 2)) & 0x0f;
-		BG_PALETTE[i] = RGB15(
+		pal_colors_cache[i] = RGB15(
 			(r << 1) | (r >> 3),
 			(g << 1) | (g >> 3),
 			(b << 1) | (b >> 3)
 		);
 	}
+	pal_colors_cache_changed = true;
 }
 
 ITCM_ARM_CODE
@@ -406,6 +412,14 @@ nds_copyppu(NdsPpu *p)
 				tile_dirty[i] ^= (1 << k);
 			}
 		}
+	}
+
+	if (pal_colors_cache_changed) {
+		BG_PALETTE[0] = pal_colors_cache[0];
+		BG_PALETTE[1] = pal_colors_cache[1];
+		BG_PALETTE[2] = pal_colors_cache[2];
+		BG_PALETTE[3] = pal_colors_cache[3];
+		pal_colors_cache_changed = false;
 	}
 }
 
