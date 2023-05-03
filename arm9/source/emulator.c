@@ -392,16 +392,28 @@ prompt_reset(Uxn *u)
 	return 0;
 }
 
+DTCM_BSS
+u32 vbl_counter = 0;
+
+static void vblankHandler(void)
+{
+	vbl_counter++;
+}
+
 int
 start(Uxn *u)
 {
 #ifdef DEBUG_PROFILE
 	u32 tticks;
 #endif
+	u32 last_vbl_counter = 0;
+
+	irqSet(IRQ_VBLANK, vblankHandler);
+	irqEnable(IRQ_VBLANK);
 
 	uxn_eval(u, 0x0100);
 	while(1) {
-		if(u->dev[0x0f]) return 1; // Run ended.
+		if(u->dev[0x0f]) break; // Run ended.
 		scanKeys();
 #ifdef DEBUG_PROFILE
 		int allHeld = keysDown() | keysHeld();
@@ -420,7 +432,17 @@ start(Uxn *u)
 #ifdef DEBUG_PROFILE
 		profiler_ticks(timer_ticks(0) - tticks, 0, "main");
 #endif
-		swiWaitForVBlank();
+		bool req_wait_vblank;
+		{
+			int oldIME = enterCriticalSection();
+			req_wait_vblank = vbl_counter == last_vbl_counter;
+			last_vbl_counter = vbl_counter;
+			leaveCriticalSection(oldIME);
+		}
+		if (req_wait_vblank) {
+			swiWaitForVBlank();
+			last_vbl_counter++;
+		}
 #ifdef DEBUG_PROFILE
 		tticks = timer_ticks(0);
 #endif
@@ -429,6 +451,10 @@ start(Uxn *u)
 		profiler_ticks(timer_ticks(0) - tticks, 2, "flip");
 #endif
 	}
+
+	irqDisable(IRQ_VBLANK);
+	irqClear(IRQ_VBLANK);
+
 	return 1;
 }
 
