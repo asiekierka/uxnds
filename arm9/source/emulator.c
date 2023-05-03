@@ -15,6 +15,7 @@
 #include "devices/datetime.h"
 #include "devices/file.h"
 #include "devices/system.h"
+#include "emulator_config.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -28,15 +29,13 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define ENABLE_KEYBOARD
-#define ENABLE_TOUCH
-
 DTCM_BSS
 static NdsPpu ppu;
 static NdsApu apu[POLYPHONY];
 static u32 apu_samples[(UXNDS_AUDIO_BUFFER_SIZE * 4) >> 1];
 
-Uint8 dispswap = 0, debug = 0;
+Uint8 dispswap;
+Uint8 debug = 0;
 
 static PrintConsole *mainConsole;
 #ifdef DEBUG
@@ -471,6 +470,13 @@ main(int argc, char **argv)
 	vramSetBankC(VRAM_C_SUB_BG);
 
 	keysSetRepeat(27, 4);
+
+#ifdef USE_BOTTOM_SCREEN_DEFAULT
+	dispswap = 1;
+	lcdSwap();
+#else
+	dispswap = 0;
+#endif
 
 	mainConsole = consoleDemoInit();
 #ifdef DEBUG

@@ -55,6 +55,12 @@ APP_DESCRIPTION := tiny virtual machine
 endif
 ICON := misc/uxn48.png
 
+#TARGET := donsol
+#APP_TITLE = Donsol
+#APP_DESCRIPTION := Exploring a dungeon made of a standard 54 poker card set
+#APP_AUTHOR := Rek & Devine
+#ICON := misc/donsol48.png
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------

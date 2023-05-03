@@ -8,9 +8,14 @@
 NAME		:= uxnds
 
 GAME_TITLE     := uxnds v0.4.1
-GAME_SUBTITLE1 := tiny virtual machine
-GAME_SUBTITLE2 := 02/05/2023
-GAME_ICON	:= misc/uxn32.png
+GAME_SUBTITLE  :=
+GAME_AUTHOR    := 02/05/2023
+GAME_ICON      := misc/uxn32.png
+
+#NAME := donsol
+#GAME_TITLE = Donsol
+#GAME_AUTHOR := Rek & Devine
+#GAME_ICON := misc/donsol32.png
 
 # DLDI and internal SD slot of DSi
 # --------------------------------
@@ -23,7 +28,7 @@ SDIMAGE		:= image.bin
 # Source code paths
 # -----------------
 
-NITROFATDIR	:=
+NITROFATDIR	:= romfs/nds
 
 # Tools
 # -----
@@ -49,7 +54,7 @@ ARM7DIR		:= arm7
 # Build artfacts
 # --------------
 
-NITROFAT_IMG	:= build/nitrofat.bin
+NITROFAT_IMG	:= build_blocksds/nitrofat.bin
 ROM		:= $(NAME).nds
 ROM_DEBUG	:= $(NAME)_debug.nds
 ROM_PROFILE	:= $(NAME)_profile.nds
@@ -86,8 +91,8 @@ ifneq ($(strip $(NITROFATDIR)),)
 NDSTOOL_FAT	:= -F $(NITROFAT_IMG)
 
 $(NITROFAT_IMG): $(NITROFATDIR)
-	@echo "  IMGBUILD $@ $(NITROFATDIR)"
-	$(V)sh $(BLOCKSDS)/tools/imgbuild/imgbuild.sh $@ $(NITROFATDIR)
+	@echo "  MKFATIMG $@ $(NITROFATDIR)"
+	$(V)$(BLOCKSDS)/tools/mkfatimg/mkfatimg -t $(NITROFATDIR) $@ 0
 
 # Make the NDS ROM depend on the filesystem image only if it is needed
 $(ROM): $(NITROFAT_IMG)
@@ -95,25 +100,32 @@ $(ROM_DEBUG): $(NITROFAT_IMG)
 $(ROM_PROFILE): $(NITROFAT_IMG)
 endif
 
+# Combine the title strings
+ifeq ($(strip $(GAME_SUBTITLE)),)
+    GAME_FULL_TITLE := $(GAME_TITLE);$(GAME_AUTHOR)
+else
+    GAME_FULL_TITLE := $(GAME_TITLE);$(GAME_SUBTITLE);$(GAME_AUTHOR)
+endif
+
 $(ROM): arm9 arm7
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9/arm9.elf \
-		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
 		$(NDSTOOL_FAT)
 
 $(ROM_DEBUG): arm9debug arm7
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_debug/arm9.elf \
-		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
 		$(NDSTOOL_FAT)
 
 $(ROM_PROFILE): arm9profile arm7
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_profile/arm9.elf \
-		-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
 		$(NDSTOOL_FAT)
 
 sdimage:

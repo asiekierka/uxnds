@@ -62,11 +62,12 @@ nds_apu_start(NdsApu *c, Uint16 adsr, Uint8 pitch)
 Uint8
 nds_apu_get_vu(NdsApu *c)
 {
-	size_t i;
-	Sint32 sum[2];
+	int i;
+	Sint32 sum[2] = {0, 0};
 	if(!c->advance || !c->period) return 0;
-	for(i = 0; i < 2; ++i) {
-		sum[i] = envelope(c, c->age) * c->volume[i] / 0x800;
+	for(i = 0; i < 2; i++) {
+		if(!c->volume[i]) continue;
+		sum[i] = 1 + envelope(c, c->age) * c->volume[i] / 0x800;
 		if(sum[i] > 0xf) sum[i] = 0xf;
 	}
 	return (sum[0] << 4) | sum[1];

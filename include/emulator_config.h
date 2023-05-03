@@ -1,0 +1,4 @@
+#define ENABLE_3D
+#define ENABLE_KEYBOARD
+#define ENABLE_TOUCH
+// #define USE_BOTTOM_SCREEN_DEFAULT

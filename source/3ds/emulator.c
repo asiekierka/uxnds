@@ -14,6 +14,7 @@
 #include "ctr_keyboard.h"
 #include "ctr_screen.h"
 #include "devices/system.h"
+#include "emulator_config.h"
 
 /*
 Copyright (c) 2021 Devine Lu Linvega
@@ -27,9 +28,6 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-#define ENABLE_3D
-#define ENABLE_KEYBOARD
-#define ENABLE_TOUCH
 #define PPU_PIXELS_WIDTH 320
 #define PPU_PIXELS_HEIGHT 240
 #define AUDIO_BUFFER_SIZE 2048
@@ -47,7 +45,8 @@ static LightLock soundLock;
 #define REQDRAW_DISPLAY 1
 #define REQDRAW_ALL 1
 
-Uint8 dispswap = 0, reqdraw = 0;
+Uint8 dispswap;
+Uint8 reqdraw = 0;
 
 int prompt_reset(Uxn *u);
 
@@ -146,10 +145,10 @@ redraw(Uxn *u)
 #endif
 
 #ifndef DEBUG_CONSOLE
-#ifdef ENABLE_KEYBOARD
 		C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 0));
 		C2D_SceneBegin(bottom);
 
+#ifdef ENABLE_KEYBOARD
 		keyboard_draw();
 #endif
 #endif
@@ -506,6 +505,13 @@ main(int argc, char **argv)
 {
 	if(!init())
 		return error("Init", "Failed");
+
+#ifdef USE_BOTTOM_SCREEN_DEFAULT
+	dispswap = 1;
+#else
+	dispswap = 0;
+#endif
+
 #ifdef DEBUG_CONSOLE
 	consoleInit(GFX_BOTTOM, NULL);
 	iprintf("uxn3ds\n");
