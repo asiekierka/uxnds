@@ -176,6 +176,9 @@ redraw(Uxn *u)
 void
 quit(void)
 {
+	gspWaitForVBlank();
+	gspWaitForVBlank();
+
 #ifdef ENABLE_KEYBOARD
 	keyboard_exit();
 #endif
