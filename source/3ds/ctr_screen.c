@@ -33,11 +33,18 @@ static Uint8 blending[4][16] = {
 	{1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1},
 	{2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2}};
 
+static inline void
+screen_change(Layer *s, int x1, int y1, int x2, int y2)
+{
+	if(y1 < s->y1) s->y1 = y1;
+	if(y2 > s->y2) s->y2 = y2;
+}
+
 __attribute__((optimize("-O3")))
 static void
-screen_fill(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color)
+screen_fill(UxnCtrScreen *s, Uint8 *pixels, int x1, int y1, int x2, int y2, Uint8 color)
 {
-	int x, y, width = s->width, height = s->height;
+	int y, width = s->width, height = s->height;
 	if (x2 > width) x2 = width;
 	if (y2 > height) y2 = height;
 	//iprintf("fill %d %d %d %d\n", x1, y1, x2, y2);
@@ -45,14 +52,12 @@ screen_fill(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint16 x2, Uin
 		memset(pixels + (y * width) + x1, color, x2-x1);
 }
 
-// ASSUMPTION: The pixels[] texture array is at least 7 pixels wider than the actual display width.
-// This allows skipping expensive "if (x < width)" checks.
 __attribute__((optimize("-O3")))
 static void
 screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Uint16 addr, Uint8 color, Uint8 flipx, Uint8 flipy, Uint8 twobpp)
 {
 	int v, h, width = s->width, height = s->height, opaque = (color % 5) || !color;
-	if ((color == 1 || color == 5) && !flipy && !flipx && y1 <= height-8) {
+	if ((color == 1 || color == 5) && !flipy && !flipx && x1 <= width-8 && y1 <= height-8) {
 		// fast path
 		for(v = 0; v < 8; v++) {
 			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
@@ -76,22 +81,45 @@ screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Ui
 	} else {
 		if (flipx) flipx = 7;
 		if (flipy) flipy = 7;
-		for(v = 0; v < 8; v++) {
-			Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
-			Uint16 y = y1 + (v ^ flipy);
-			if (y >= height) continue;
-			if(opaque) {
-				for(h = 7; h >= 0; --h, c >>= 1) {
-					Uint8 ch = (c & 1) | ((c >> 7) & 2);
-					Uint16 x = x1 + (h ^ flipx);
-					pixels[x + y * width] = blending[ch][color];
-				}
-			} else {
-				for(h = 7; h >= 0; --h, c >>= 1) {
-					Uint8 ch = (c & 1) | ((c >> 7) & 2);
-					if(ch) {
+		if (x1 <= width-8) {
+			for(v = 0; v < 8; v++) {
+				Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
+				Uint16 y = y1 + (v ^ flipy);
+				if (y >= height) continue;
+				if(opaque) {
+					for(h = 7; h >= 0; --h, c >>= 1) {
+						Uint8 ch = (c & 1) | ((c >> 7) & 2);
 						Uint16 x = x1 + (h ^ flipx);
 						pixels[x + y * width] = blending[ch][color];
+					}
+				} else {
+					for(h = 7; h >= 0; --h, c >>= 1) {
+						Uint8 ch = (c & 1) | ((c >> 7) & 2);
+						if(ch) {
+							Uint16 x = x1 + (h ^ flipx);
+							pixels[x + y * width] = blending[ch][color];
+						}
+					}
+				}
+			}
+		} else {
+			for(v = 0; v < 8; v++) {
+				Uint16 c = ram[(addr + v) & 0xffff] | (twobpp ? (ram[(addr + v + 8) & 0xffff] << 8) : 0);
+				Uint16 y = y1 + (v ^ flipy);
+				if (y >= height) continue;
+				if(opaque) {
+					for(h = 7; h >= 0; --h, c >>= 1) {
+						Uint8 ch = (c & 1) | ((c >> 7) & 2);
+						Uint16 x = x1 + (h ^ flipx);
+						if (x < width) pixels[x + y * width] = blending[ch][color];
+					}
+				} else {
+					for(h = 7; h >= 0; --h, c >>= 1) {
+						Uint8 ch = (c & 1) | ((c >> 7) & 2);
+						if(ch) {
+							Uint16 x = x1 + (h ^ flipx);
+							if (x < width) pixels[x + y * width] = blending[ch][color];
+						}
 					}
 				}
 			}
@@ -112,21 +140,21 @@ ctr_screen_palette(UxnCtrScreen *p, Uint8 *addr)
 		color |= color << 4;
 		if (color != p->bg.palette[i]) {
 			p->bg.palette[i] = color;
-			p->bg.changed = true;
-			if (i > 0) p->fg.changed = true;
+			screen_change(&p->bg, 0, 0, p->width, p->height);
+			if (i > 0) {
+				p->fg.palette[i] = color;
+				screen_change(&p->bg, 0, 0, p->width, p->height);
+			}
 		}
 	}
 	p->fg.palette[0] = 0;
-	for (i = 1; i < 4; i++) {
-		p->fg.palette[i] = p->bg.palette[i];
-	}
 }
 
 static void
 ctr_screen_clear_layer(UxnCtrScreen *p, Layer *layer)
 {
 	memset(layer->pixels, 0, p->width * p->height);
-	layer->changed = true;
+	screen_change(&p->bg, 0, 0, p->width, p->height);
 }
 
 void
@@ -141,10 +169,10 @@ ctr_screen_free(UxnCtrScreen *p)
 }
 
 void
-ctr_screen_init(UxnCtrScreen *p, Uint16 width, Uint16 height)
+ctr_screen_init(UxnCtrScreen *p, int width, int height)
 {
-	Uint16
-		pitch = next_power_of_two(width + 7), // See assumption in screen_blit
+	int
+		pitch = next_power_of_two(width),
 		texHeight = next_power_of_two(height);
 	Uint8
 		*bg = malloc(width * height),
@@ -186,31 +214,45 @@ ctr_screen_redraw_layer(UxnCtrScreen *p, Layer *layer)
 	Uint32 x, y, width = p->width, height = p->height, pitch_step = p->pitch - p->width, *dest = layer->gpuPixels;
 	Uint8 *src = layer->pixels;
 
-	GSPGPU_InvalidateDataCache(layer->gpuPixels, p->pitch * p->height * 4);
-	for(y = 0; y < height; y++, dest += pitch_step) {
+	int y1 = layer->y1;
+	int y2 = layer->y2;
+	if (y1 < 0) y1 = 0;
+	if (y2 > height) y2 = height;
+	int yh = y2 - y1;
+
+	src += y1 * p->width;
+	dest += y1 * p->pitch;
+	Uint32 *destStart = dest;
+
+	GSPGPU_InvalidateDataCache(destStart, p->pitch * yh * 4);
+	for(y = y1; y < y2; y++, dest += pitch_step) {
 		for (x = 0; x < width; x++) {
 			*(dest++) = layer->palette[*(src++)];
 		}
 	}
-	GSPGPU_FlushDataCache(layer->gpuPixels, p->pitch * p->height * 4);
+	GSPGPU_FlushDataCache(destStart, p->pitch * yh * 4);
+
+	int transferY = y1 & (~7);
+	int transferHeight = ((y2 + 7) & (~7)) - transferY;
 
 	C3D_SyncDisplayTransfer(
-		layer->gpuPixels, GX_BUFFER_DIM(p->pitch, p->height),
-		layer->gpuTexture.data, GX_BUFFER_DIM(p->pitch, p->height),
+		layer->gpuPixels + (transferY * p->pitch), GX_BUFFER_DIM(p->pitch, transferHeight),
+		((Uint32*)layer->gpuTexture.data) + (transferY * p->pitch), GX_BUFFER_DIM(p->pitch, transferHeight),
 		(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(1) |
 		GX_TRANSFER_RAW_COPY(0) | GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO) |
 		GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) |
 		GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGBA8))
 	);
 
-	layer->changed = false;
+	layer->y1 = height;
+	layer->y2 = 0;
 }
 
 void
 ctr_screen_redraw(UxnCtrScreen *p)
 {
-	if (p->bg.changed) ctr_screen_redraw_layer(p, &p->bg);
-	if (p->fg.changed) ctr_screen_redraw_layer(p, &p->fg);
+	if (p->bg.y2 > p->bg.y1) ctr_screen_redraw_layer(p, &p->bg);
+	if (p->fg.y2 > p->fg.y1) ctr_screen_redraw_layer(p, &p->fg);
 }
 
 Uint8
@@ -252,7 +294,7 @@ ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 			if(ctrl & 0x10) x2 = x, x = 0;
 			if(ctrl & 0x20) y2 = y, y = 0;
 			screen_fill(&uxn_ctr_screen, layer->pixels, x, y, x2, y2, color);
-			layer->changed = 1;
+			screen_change(layer, x, y, x2, y2);
 		}
 		/* pixel mode */
 		else {
@@ -260,7 +302,7 @@ ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 			Uint16 height = uxn_ctr_screen.height;
 			if(x < width && y < height)
 				layer->pixels[x + y * width] = color;
-			layer->changed = 1;
+			screen_change(layer, x, y, x + 1, y + 1);
 			if(d[0x6] & 0x1) POKE2(d + 0x8, x + 1); /* auto x+1 */
 			if(d[0x6] & 0x2) POKE2(d + 0xa, y + 1); /* auto y+1 */
 		}
@@ -282,7 +324,7 @@ ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 			screen_blit(&uxn_ctr_screen, layer->pixels, x + dy * i, y + dx * i, ram, addr, ctrl & 0xf, ctrl & 0x10, ctrl & 0x20, twobpp);
 			addr += (move & 0x04) << (1 + twobpp);
 		}
-		layer->changed = 1;
+		screen_change(layer, x, y, x + dy * length + 8, y + dx * length + 8);
 		if(move & 0x1) POKE2(d + 0x8, x + dx); /* auto x+8 */
 		if(move & 0x2) POKE2(d + 0xa, y + dy); /* auto y+8 */
 		if(move & 0x4) POKE2(d + 0xc, addr);   /* auto addr+length */

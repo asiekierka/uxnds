@@ -7,15 +7,16 @@
 
 NAME		:= uxnds
 
-GAME_TITLE     := uxnds v0.4.1
+GAME_TITLE     := uxnds v0.4.2
 GAME_SUBTITLE  :=
-GAME_AUTHOR    := 02/05/2023
+GAME_AUTHOR    := 03/05/2023
 GAME_ICON      := misc/uxn32.png
 
 #NAME := donsol
 #GAME_TITLE = Donsol
 #GAME_AUTHOR := Rek & Devine
 #GAME_ICON := misc/donsol32.png
+#NITROFATDIR	:= romfs/nds
 
 # DLDI and internal SD slot of DSi
 # --------------------------------
@@ -24,11 +25,6 @@ GAME_ICON      := misc/uxn32.png
 SDROOT		:= sdroot
 # Name of the generated image it "DSi-1.sd" for no$gba in DSi mode
 SDIMAGE		:= image.bin
-
-# Source code paths
-# -----------------
-
-NITROFATDIR	:= romfs/nds
 
 # Tools
 # -----

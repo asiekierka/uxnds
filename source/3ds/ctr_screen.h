@@ -16,6 +16,7 @@ WITH REGARD TO THIS SOFTWARE.
 #include <tex3ds.h>
 
 typedef struct Layer {
+	int y1, y2;
 	Uint32 palette[4];
 	Uint32 *gpuPixels;
 	C2D_Image gpuImage;
@@ -24,7 +25,7 @@ typedef struct Layer {
 } Layer;
 
 typedef struct UxnCtrScreen {
-	Uint16 width, height, pitch;
+	int width, height, pitch;
 	Layer fg, bg;
 	Tex3DS_SubTexture gpuSubTexture;
 } UxnCtrScreen;
@@ -33,7 +34,7 @@ extern UxnCtrScreen uxn_ctr_screen;
 
 void ctr_screen_palette(UxnCtrScreen *p, Uint8 *addr);
 void ctr_screen_free(UxnCtrScreen *p);
-void ctr_screen_init(UxnCtrScreen *p, Uint16 width, Uint16 height);
+void ctr_screen_init(UxnCtrScreen *p, int width, int height);
 void ctr_screen_redraw(UxnCtrScreen *p);
 
 Uint8 ctr_screen_dei(Uxn *u, Uint8 addr);

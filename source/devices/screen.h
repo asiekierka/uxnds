@@ -10,21 +10,15 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-typedef struct Layer {
-	Uint8 *pixels, changed;
-} Layer;
-
 typedef struct UxnScreen {
+	int width, height, x1, y1, x2, y2;
 	Uint32 palette[4], *pixels;
-	Uint16 width, height;
-	Layer fg, bg;
+	Uint8 *fg, *bg;
 } UxnScreen;
 
 extern UxnScreen uxn_screen;
-
-void screen_palette(UxnScreen *p, Uint8 *addr);
-void screen_resize(UxnScreen *p, Uint16 width, Uint16 height);
-void screen_redraw(UxnScreen *p);
-
+void screen_palette(Uint8 *addr);
+void screen_resize(Uint16 width, Uint16 height);
+void screen_redraw(void);
 Uint8 screen_dei(Uxn *u, Uint8 addr);
 void screen_deo(Uint8 *ram, Uint8 *d, Uint8 port);
