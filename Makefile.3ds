@@ -47,7 +47,7 @@ INCLUDES	:=	include source
 GRAPHICS	:=	assets/3ds
 ROMFS		:=	romfs/3ds
 GFXBUILD	:=	$(ROMFS)
-APP_TITLE := uxnds v0.4.2
+APP_TITLE := uxnds v0.4.3
 ifeq ($(DEBUG),true)
 APP_DESCRIPTION := tiny virtual machine (debug)
 else
@@ -67,7 +67,7 @@ ICON := misc/uxn48.png
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -O2 -mword-relocations \
+CFLAGS	:=	-g -Wall -O3 -mword-relocations \
 			-ffunction-sections \
 			$(ARCH)
 
