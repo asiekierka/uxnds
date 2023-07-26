@@ -34,8 +34,10 @@ static Uint8 blending[4][16] = {
 	{2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2, 2, 3, 1, 2}};
 
 static inline void
-screen_change(UxnCtrScreen *scr, Layer *s, int x1, int y1, int x2, int y2)
+screen_change(UxnCtrScreen *scr, Layer *s, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2)
 {
+	if(y1 > scr->height && y2 > y1) return;
+	if(y1 > y2) y1 = 0;
 	if(y1 >= scr->height) s->y1 = 0;
 	else if(y1 < s->y1) s->y1 = y1;
 	if(y2 > scr->height) s->y2 = scr->height;
