@@ -270,7 +270,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				sprline2 = sprite[(v ^ flipy) | 8];
 
 				u32 data32 = (lut_expand[sprline1]) | (lut_expand[sprline2] << 1);
-				u64 data = ((u64) (data32 & 0x33333333)) << shift;
+				u64 data = ((u64) (data32)) << shift;
 
 				layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
@@ -307,7 +307,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 					}
 				}
 
-				u64 data = ((u64) (data32 & 0x33333333)) << shift;
+				u64 data = ((u64) (data32)) << shift;
 
 				layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
@@ -330,7 +330,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 						if ((ch1 | ch2) & 1) {
 							Uint8 ch = (ch1 & 1) | ((ch2 & 1) << 1);
 							data32 |= blending[ch][color];
-							mask32 |= 0xF;
+							mask32 |= 0x3;
 						}
 
 						ch1 >>= 1; ch2 >>= 1;
@@ -342,15 +342,15 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 						if ((ch1 | ch2) & 128) {
 							Uint8 ch = (ch1 >> 7) | ((ch2 >> 7) << 1);
 							data32 |= blending[ch][color];
-							mask32 |= 0xF;
+							mask32 |= 0x3;
 						}
 
 						ch1 <<= 1; ch2 <<= 1;
 					}
 				}
 
-				u64 data = ((u64) (data32 & 0x33333333)) << shift;
-				u64 mask = ~(((u64) (mask32 & 0x33333333)) << shift);
+				u64 data = ((u64) (data32)) << shift;
+				u64 mask = ~(((u64) (mask32)) << shift);
 
 				layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
