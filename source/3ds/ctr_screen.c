@@ -58,7 +58,7 @@ __attribute__((optimize("-O3")))
 static void
 screen_blit(UxnCtrScreen *s, Uint8 *pixels, Uint16 x1, Uint16 y1, Uint8 *ram, Uint16 addr, Uint8 color, Uint8 flipx, Uint8 flipy, Uint8 twobpp)
 {
-	int v, h, width = s->width, height = s->height, opaque = (color % 5) || !color;
+	int v, h, width = s->width, height = s->height, opaque = (color % 5);
 	if ((color == 1 || color == 5) && !flipy && !flipx && x1 <= width-8 && y1 <= height-8) {
 		// fast path
 		for(v = 0; v < 8; v++) {
