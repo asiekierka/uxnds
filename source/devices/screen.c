@@ -172,20 +172,22 @@ screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 		Uint8 move = d[0x6];
 		Uint8 length = move >> 4;
 		Uint8 twobpp = !!(ctrl & 0x80);
-		Uint16 x = PEEK2(d + 0x8);
-		Uint16 y = PEEK2(d + 0xa);
-		Uint16 addr = PEEK2(d + 0xc);
-		Uint16 dx = (move & 0x1) << 3;
-		Uint16 dy = (move & 0x2) << 2;
 		Uint8 *layer = (ctrl & 0x40) ? uxn_screen.fg : uxn_screen.bg;
+		Uint8 color = ctrl & 0xf;
+		Uint16 x = PEEK2(d + 0x8), dx = (move & 0x1) << 3;
+		Uint16 y = PEEK2(d + 0xa), dy = (move & 0x2) << 2;
+		Uint16 addr = PEEK2(d + 0xc), addr_incr = (move & 0x4) << (1 + twobpp);
+		int flipx = (ctrl & 0x10), fx = flipx ? -1 : 1;
+		int flipy = (ctrl & 0x20), fy = flipy ? -1 : 1;
+		Uint16 dyx = dy * fx, dxy = dx * fy;
 		for(i = 0; i <= length; i++) {
-			screen_blit(layer, ram, addr, x + dy * i, y + dx * i, ctrl & 0xf, ctrl & 0x10, ctrl & 0x20, twobpp);
-			addr += (move & 0x04) << (1 + twobpp);
+			screen_blit(layer, ram, addr, x + dyx * i, y + dxy * i, color, flipx, flipy, twobpp);
+			addr += addr_incr;
 		}
-		screen_change(x, y, x + dy * length + 8, y + dx * length + 8);
-		if(move & 0x1) POKE2(d + 0x8, x + dx); /* auto x+8 */
-		if(move & 0x2) POKE2(d + 0xa, y + dy); /* auto y+8 */
-		if(move & 0x4) POKE2(d + 0xc, addr);   /* auto addr+length */
+		screen_change(x, y, x + dyx * length + 8, y + dxy * length + 8);
+		if(move & 0x1) POKE2(d + 0x8, x + dx * fx); /* auto x+8 */
+		if(move & 0x2) POKE2(d + 0xa, y + dy * fy); /* auto y+8 */
+		if(move & 0x4) POKE2(d + 0xc, addr);        /* auto addr+length */
 		break;
 	}
 	}
