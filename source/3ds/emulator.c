@@ -96,7 +96,7 @@ void
 redraw(Uxn *u)
 {
 	C2D_DrawParams drawParams;
-#ifdef ENABLE_3D
+#ifdef ENABLE_CTR_3D
 	float slider = osGet3DSliderState();
 	int x_offset_bg = (int) (slider * 7.0f);
 	int x_offset_fg = (slider > 0.0f) ? -1 : 0;
@@ -131,7 +131,7 @@ redraw(Uxn *u)
 		drawParams.depth = 1.0f;
 		C2D_DrawImage(uxn_ctr_screen.fg.gpuImage, &drawParams, NULL);
 
-#ifdef ENABLE_3D
+#ifdef ENABLE_CTR_3D
 		if (slider > 0.0f) {
 			C2D_TargetClear(topRight, C2D_Color32(0, 0, 0, 0));
 			C2D_SceneBegin(topRight);
@@ -207,7 +207,7 @@ init(void)
 	// PPU
 	ctr_screen_init(&uxn_ctr_screen, PPU_PIXELS_WIDTH, PPU_PIXELS_HEIGHT);
 	gfxInitDefault();
-#ifdef ENABLE_3D
+#ifdef ENABLE_CTR_3D
 	gfxSet3D(true);
 #endif
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
@@ -474,7 +474,7 @@ prompt_reset(Uxn *u)
 restoreGfx:
 #ifndef DEBUG_CONSOLE
 	gfxInitDefault();
-#ifdef ENABLE_3D
+#ifdef ENABLE_CTR_3D
 	gfxSet3D(true);
 #endif
 #endif
