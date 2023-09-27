@@ -7,9 +7,9 @@
 
 NAME		:= uxnds
 
-GAME_TITLE     := uxnds v0.4.4
+GAME_TITLE     := uxnds v0.4.5
 GAME_SUBTITLE  :=
-GAME_AUTHOR    := 26/07/2023
+GAME_AUTHOR    := 27/09/2023
 GAME_ICON      := misc/uxn32.png
 
 #NAME := donsol
