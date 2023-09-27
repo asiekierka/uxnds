@@ -170,7 +170,8 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 		instance->volume[0] = d[0xe] >> 4;
 		instance->volume[1] = d[0xe] & 0xf;
 		instance->repeat = !(d[0xf] & 0x80);
-		nds_apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f);
+		Uint8 detune = d[0x5];
+		nds_apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f, detune);
 		DC_FlushAll();
 		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((instance_id) << 28))
 			| ((u32) (&apu)));

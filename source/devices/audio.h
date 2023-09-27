@@ -1,6 +1,5 @@
 /*
-Copyright (c) 2021 Devine Lu Linvega
-Copyright (c) 2021 Andrew Alderwick
+Copyright (c) 2021 Devine Lu Linvega, Andrew Alderwick
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -11,6 +10,10 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 typedef signed int Sint32;
+
+#define AUDIO_VERSION 1
+#define AUDIO_DEIMASK 0x0014
+#define AUDIO_DEOMASK 0x8000
 
 #define SAMPLE_FREQUENCY 44100
 #define POLYPHONY 4

@@ -26,5 +26,5 @@ typedef struct {
 } NdsApu;
 
 void nds_apu_render(NdsApu *c, Sint16 *sample_left, Sint16 *sample_right, int samples); /* ARM7 */
-void nds_apu_start(NdsApu *c, Uint16 adsr, Uint8 pitch); /* ARM9 */
+void nds_apu_start(NdsApu *c, Uint16 adsr, Uint8 pitch, Uint8 detune); /* ARM9 */
 Uint8 nds_apu_get_vu(NdsApu *c); /* ARM9 */
