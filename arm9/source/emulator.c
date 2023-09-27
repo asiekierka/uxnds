@@ -121,28 +121,31 @@ screen_deo(Uint8 *d, Uint8 port, Uxn *u)
 			if(d[0x6] & 0x2) POKE2(d + 0xa, y + 1); /* auto y+1 */
 		}
 	} else if(port == 0xf) {
-		Uint8 twobpp = d[0xf] >> 7;
+		Uint8 twobpp = d[0xf] & 0x80;
 		Uint16 x = peek16(d, 0x8);
 		Uint16 y = peek16(d, 0xa);
-		Uint32 *layer = d[0xf] >> 6 & 0x1 ? ppu.fg : ppu.bg;
+		Uint32 *layer = d[0xf] & 0x40 ? ppu.fg : ppu.bg;
 		Uint16 addr = peek16(d, 0xc);
 		Uint8 n = d[0x6] >> 4;
 		Uint8 dx = (d[0x6] & 0x01) << 3;
 		Uint8 dy = (d[0x6] & 0x02) << 2;
+		int flipx = (d[0xf] & 0x10), fx = flipx ? -1 : 1;
+		int flipy = (d[0xf] & 0x20), fy = flipy ? -1 : 1;
+		Uint16 dyx = dy * fx, dxy = dx * fy;
 		Uint16 len = (n + 1) << (3 + twobpp);
 		if(addr > (0x10000 - len)) return;
 		for (Uint8 i = 0; i <= n; i++) {
 			if (twobpp) {
-				nds_ppu_2bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
+				nds_ppu_2bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u->ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
 				addr += (d[0x6] & 0x04) << 2;
 			} else {
-				nds_ppu_1bpp(&ppu, layer, x + dy * i, y + dx * i, &u->ram.dat[addr], d[0xf] & 0xf, d[0xf] >> 0x4 & 0x1, d[0xf] >> 0x5 & 0x1);
+				nds_ppu_1bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u->ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
 				addr += (d[0x6] & 0x04) << 1;
 			}
 		}
-                poke16(d, 0x8, x + dx); /* auto x+dx */
-                poke16(d, 0xa, y + dy); /* auto y+dy */
-                poke16(d, 0xc, addr); /* auto addr */
+                poke16(d, 0x8, x + dx * fx); /* auto x+dx */
+                poke16(d, 0xa, y + dy * fy); /* auto y+dy */
+                poke16(d, 0xc, addr);        /* auto addr */
 	}
 }
 
