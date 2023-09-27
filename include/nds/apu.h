@@ -14,7 +14,7 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned int Uint32;
 typedef signed int Sint32;
 
-#define SAMPLE_FREQUENCY 44100
+#define SAMPLE_FREQUENCY 22050
 #define POLYPHONY 4
 
 typedef struct {

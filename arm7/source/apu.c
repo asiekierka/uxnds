@@ -14,7 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE.
 */
 
-static Sint32
+static Sint16
 envelope(NdsApu *c, Uint32 age)
 {
 	if(!c->r) return 0x0888;
