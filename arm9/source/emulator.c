@@ -163,7 +163,7 @@ audio_dei(int instance_id, Uint8 *d, Uint8 port)
 static void
 audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 {
-	NdsApu *instance = &apu[instance_id];
+	NdsApu *instance = memUncached(&apu[instance_id]);
 	if(port == 0xf) {
 		Uint16 addr = peek16(d, 0xc);
 		instance->len = peek16(d, 0xa);
@@ -175,7 +175,6 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 		instance->repeat = !(d[0xf] & 0x80);
 		Uint8 detune = d[0x5];
 		nds_apu_start(instance, peek16(d, 0x8), d[0xf] & 0x7f, detune);
-		DC_FlushAll();
 		fifoSendValue32(UXNDS_FIFO_CHANNEL, (UXNDS_FIFO_CMD_APU0 + ((instance_id) << 28))
 			| ((u32) (&apu)));
 		// fifoWaitValue32(UXNDS_FIFO_CHANNEL);
