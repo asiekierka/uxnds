@@ -188,6 +188,7 @@ static void keyboard_update_palettes(int target_keycode) {
 	}
 }
 
+__attribute__((optimize("-Os")))
 static void keyboard_set_palette_colors(uint16_t *pal, uint8_t mul /* 0-15 */) {
 	for (int i = 0; i < 14; i++) {
 		uint16_t col = gfx_keyboardPal[i];
@@ -199,6 +200,7 @@ static void keyboard_set_palette_colors(uint16_t *pal, uint8_t mul /* 0-15 */) {
 	}
 }
 
+__attribute__((optimize("-Os")))
 bool keyboard_init(void) {
 	decompress(gfx_keyboardTiles, BG_TILE_RAM_SUB(KBD_TILE_BASE), LZ77Vram);
 	memset(BG_MAP_RAM_SUB(KBD_MAP_BASE), 0, 2*(32*14));
