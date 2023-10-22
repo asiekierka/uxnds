@@ -500,7 +500,7 @@ main(int argc, char **argv)
 #endif
 	consoleSelect(mainConsole);
 
-	if(!uxn_boot(&u, (Uint8 *)calloc(0x10000 * RAM_PAGES, sizeof(Uint8)), emu_dei, emu_deo))
+	if(!uxn_boot(&u, (Uint8 *)malloc(0x10000 * RAM_PAGES), emu_dei, emu_deo))
 		return error("Boot", "Failed");
 	if(!fatInitDefault())
 		return error("FAT init", "Failed");
