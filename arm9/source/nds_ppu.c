@@ -58,6 +58,16 @@ static Uint32 lut_expand_8_32_flipx[256] = {
 #include "lut_expand_8_32_flipx.inc"
 };
 
+DTCM_DATA
+static Uint32 lut_expand_8_32_f[256] = {
+#include "lut_expand_8_32_f.inc"
+};
+
+DTCM_DATA
+static Uint32 lut_expand_8_32_f_flipx[256] = {
+#include "lut_expand_8_32_f_flipx.inc"
+};
+
 /* DTCM_DATA
 static Uint32 lut_mask_8_32_count[8] = {
 	0x0000000F,
@@ -199,7 +209,9 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 	Uint32 layerpos = ((y & 7) + (((x >> 3) + (y >> 3) * PPU_TILES_WIDTH) * 8));
 	Uint32 *layerptr = &layer[layerpos];
 	Uint32 shift = (x & 7) << 2;
-	Uint32 *lut_expand = flipx ? lut_expand_8_32 : lut_expand_8_32_flipx;
+	Uint32 *lut_expand = flipx ? lut_expand_8_32_f : lut_expand_8_32_f_flipx;
+	Uint32 color_fg = (color & 3) * 0x11111111;
+	Uint32 color_bg = (color >> 2) * 0x11111111;
 
 	if (flipy) flipy = 7;
 
@@ -212,8 +224,8 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		for (v = 0; v < 8; v++, layerptr++) {
 			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
 				sprline = sprite[v ^ flipy];
-				u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
-				data |= (u64)(lut_expand[sprline ^ 0xFF] * (color >> 2)) << shift;
+				u64 data = (u64)(lut_expand[sprline] & color_fg) << shift;
+				data |= (u64)(lut_expand[sprline ^ 0xFF] & color_bg) << shift;
 
 				layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
@@ -225,8 +237,8 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		for (v = 0; v < 8; v++, layerptr++) {
 			if ((y + v) < (PPU_TILES_HEIGHT * 8)) {
 				sprline = sprite[v ^ flipy];
-				u64 mask = ~((u64)(lut_expand[sprline] * 0xF) << shift);
-				u64 data = (u64)(lut_expand[sprline] * (color & 3)) << shift;
+				u64 mask = ~((u64)(lut_expand[sprline]) << shift);
+				u64 data = (u64)(lut_expand[sprline] & color_fg) << shift;
 
 				layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
@@ -269,7 +281,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				sprline1 = sprite[v ^ flipy];
 				sprline2 = sprite[(v ^ flipy) | 8];
 
-				u32 data32 = (lut_expand[sprline1]) | (lut_expand[sprline2] << 1);
+				u32 data32 = (lut_expand[sprline1]) | ((lut_expand[sprline2]) << 1);
 				u64 data = ((u64) (data32)) << shift;
 
 				layerptr[0] = (layerptr[0] & mask) | data;
