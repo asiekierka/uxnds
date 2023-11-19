@@ -187,6 +187,7 @@ emu_dei(Uxn *u, Uint8 addr)
 {
 	Uint8 p = addr & 0x0f, d = addr & 0xf0;
 	switch(d) {
+	case 0x00: return system_dei(u, addr);
 	case 0x20: return screen_dei(&u->dev[d], p);
 	case 0x30: return audio_dei(0, &u->dev[d], p);
 	case 0x40: return audio_dei(1, &u->dev[d], p);

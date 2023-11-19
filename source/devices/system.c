@@ -76,6 +76,16 @@ system_inspect(Uxn *u)
 
 /* IO */
 
+Uint8
+system_dei(Uxn *u, Uint8 addr)
+{
+        switch(addr) {
+        case 0x4: return u->wst.ptr;
+        case 0x5: return u->rst.ptr;
+        default: return u->dev[addr];
+        }
+}
+
 void
 system_deo(Uxn *u, Uint8 *d, Uint8 port)
 {
@@ -83,6 +93,12 @@ system_deo(Uxn *u, Uint8 *d, Uint8 port)
 	case 0x3:
 		system_cmd(u->ram.dat, PEEK2(d + 2));
 		break;
+        case 0x4:
+                u->wst.ptr = d[4];
+                break;
+        case 0x5:
+                u->rst.ptr = d[5];
+                break;
 	case 0xe:
 		system_inspect(u);
 		break;

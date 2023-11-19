@@ -17,6 +17,7 @@ WITH REGARD TO THIS SOFTWARE.
 int system_load(Uxn *u, char *filename);
 void system_inspect(Uxn *u);
 int system_error(char *msg, const char *err);
+Uint8 system_dei(Uxn *u, Uint8 addr);
 void system_deo(Uxn *u, Uint8 *d, Uint8 port);
 int console_input(Uxn *u, char c, int type);
 void console_deo(Uint8 *d, Uint8 port);
