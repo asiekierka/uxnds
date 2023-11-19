@@ -2,6 +2,12 @@
 #
 # SPDX-FileContributor: Antonio Niño Díaz, 2023
 
+BLOCKSDS        ?= /opt/blocksds/core
+BLOCKSDSEXT     ?= /opt/blocksds/external
+
+WONDERFUL_TOOLCHAIN     ?= /opt/wonderful
+ARM_NONE_EABI_PATH      ?= $(WONDERFUL_TOOLCHAIN)/toolchain/gcc-arm-none-eabi/bin/
+
 # Source code paths
 # -----------------
 
@@ -17,9 +23,8 @@ DEFINES		:=
 # Libraries
 # ---------
 
-LIBS		:= -lnds7 -ldswifi7 -lmm7 -lc
+LIBS		:= -lnds7 -lmm7 -lc
 LIBDIRS		:= $(BLOCKSDS)/libs/libnds \
-		   $(BLOCKSDS)/libs/dswifi \
 		   $(BLOCKSDS)/libs/maxmod \
 		   $(BLOCKSDS)/libs/libc7
 
@@ -35,7 +40,7 @@ MAP		:= build_blocksds/arm7/$(NAME).map
 # Tools
 # -----
 
-PREFIX		:= arm-none-eabi-
+PREFIX          := $(ARM_NONE_EABI_PATH)arm-none-eabi-
 CC		:= $(PREFIX)gcc
 CXX		:= $(PREFIX)g++
 OBJDUMP		:= $(PREFIX)objdump
@@ -99,9 +104,9 @@ CXXFLAGS	+= -std=gnu++14 $(WARNFLAGS) $(DEFINES) $(ARCH) \
 		   -fomit-frame-pointer
 
 LDFLAGS		:= -mthumb -mthumb-interwork $(LIBDIRSFLAGS) \
-		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nolibc -nostartfiles \
+		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm7.ld \
-		   -Wl,--start-group $(LIBS) -Wl,--end-group
+		   -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
 
 # Intermediate build files
 # ------------------------
