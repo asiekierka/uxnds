@@ -460,14 +460,7 @@ uxn_eval(Uxn *u, Uint16 vec)
 		case 0x1b: /* DIV */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
-				if(a == 0) {
-					u->wst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
-				}
-				u->wst.dat[u->wst.ptr - 2] = b / a;
+				u->wst.dat[u->wst.ptr - 2] = a == 0 ? 0 : b / a;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->wst.ptr < 2, 0)) {
 					u->wst.error = 1;
@@ -938,14 +931,12 @@ uxn_eval(Uxn *u, Uint16 vec)
 			{
 				Uint16 a = (u->wst.dat[u->wst.ptr - 1] | (u->wst.dat[u->wst.ptr - 2] << 8)), b = (u->wst.dat[u->wst.ptr - 3] | (u->wst.dat[u->wst.ptr - 4] << 8));
 				if(a == 0) {
-					u->wst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
+					u->wst.dat[u->wst.ptr - 4] = 0;
+					u->wst.dat[u->wst.ptr - 3] = 0;
+				} else {
+					u->wst.dat[u->wst.ptr - 4] = (b / a) >> 8;
+					u->wst.dat[u->wst.ptr - 3] = (b / a) & 0xff;
 				}
-				u->wst.dat[u->wst.ptr - 4] = (b / a) >> 8;
-				u->wst.dat[u->wst.ptr - 3] = (b / a) & 0xff;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->wst.ptr < 4, 0)) {
 					u->wst.error = 1;
@@ -1389,14 +1380,7 @@ uxn_eval(Uxn *u, Uint16 vec)
 		case 0x5b: /* DIVr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
-				if(a == 0) {
-					u->rst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
-				}
-				u->rst.dat[u->rst.ptr - 2] = b / a;
+				u->rst.dat[u->rst.ptr - 2] = a == 0 ? 0 : b / a;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->rst.ptr < 2, 0)) {
 					u->rst.error = 1;
@@ -1867,14 +1851,12 @@ uxn_eval(Uxn *u, Uint16 vec)
 			{
 				Uint16 a = (u->rst.dat[u->rst.ptr - 1] | (u->rst.dat[u->rst.ptr - 2] << 8)), b = (u->rst.dat[u->rst.ptr - 3] | (u->rst.dat[u->rst.ptr - 4] << 8));
 				if(a == 0) {
-					u->rst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
+					u->rst.dat[u->rst.ptr - 4] = 0;
+					u->rst.dat[u->rst.ptr - 3] = 0;
+				} else {
+					u->rst.dat[u->rst.ptr - 4] = (b / a) >> 8;
+					u->rst.dat[u->rst.ptr - 3] = (b / a) & 0xff;
 				}
-				u->rst.dat[u->rst.ptr - 4] = (b / a) >> 8;
-				u->rst.dat[u->rst.ptr - 3] = (b / a) & 0xff;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->rst.ptr < 4, 0)) {
 					u->rst.error = 1;
@@ -2362,14 +2344,7 @@ uxn_eval(Uxn *u, Uint16 vec)
 		case 0x9b: /* DIVk */
 			{
 				Uint8 a = u->wst.dat[u->wst.ptr - 1], b = u->wst.dat[u->wst.ptr - 2];
-				if(a == 0) {
-					u->wst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
-				}
-				u->wst.dat[u->wst.ptr] = b / a;
+				u->wst.dat[u->wst.ptr] = a == 0 ? 0 : b / a;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->wst.ptr < 2, 0)) {
 					u->wst.error = 1;
@@ -2892,14 +2867,12 @@ uxn_eval(Uxn *u, Uint16 vec)
 			{
 				Uint16 a = (u->wst.dat[u->wst.ptr - 1] | (u->wst.dat[u->wst.ptr - 2] << 8)), b = (u->wst.dat[u->wst.ptr - 3] | (u->wst.dat[u->wst.ptr - 4] << 8));
 				if(a == 0) {
-					u->wst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
+					u->wst.dat[u->wst.ptr] = 0;
+					u->wst.dat[u->wst.ptr + 1] = 0;
+				} else {
+					u->wst.dat[u->wst.ptr] = (b / a) >> 8;
+					u->wst.dat[u->wst.ptr + 1] = (b / a) & 0xff;
 				}
-				u->wst.dat[u->wst.ptr] = (b / a) >> 8;
-				u->wst.dat[u->wst.ptr + 1] = (b / a) & 0xff;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->wst.ptr < 4, 0)) {
 					u->wst.error = 1;
@@ -3407,14 +3380,7 @@ uxn_eval(Uxn *u, Uint16 vec)
 		case 0xdb: /* DIVkr */
 			{
 				Uint8 a = u->rst.dat[u->rst.ptr - 1], b = u->rst.dat[u->rst.ptr - 2];
-				if(a == 0) {
-					u->rst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
-				}
-				u->rst.dat[u->rst.ptr] = b / a;
+				u->rst.dat[u->rst.ptr] = a == 0 ? 0 : b / a;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->rst.ptr < 2, 0)) {
 					u->rst.error = 1;
@@ -3937,14 +3903,12 @@ uxn_eval(Uxn *u, Uint16 vec)
 			{
 				Uint16 a = (u->rst.dat[u->rst.ptr - 1] | (u->rst.dat[u->rst.ptr - 2] << 8)), b = (u->rst.dat[u->rst.ptr - 3] | (u->rst.dat[u->rst.ptr - 4] << 8));
 				if(a == 0) {
-					u->rst.error = 3;
-#ifndef NO_STACK_CHECKS
-					goto error;
-#endif
-					a = 1;
+					u->rst.dat[u->rst.ptr] = 0;
+					u->rst.dat[u->rst.ptr + 1] = 0;
+				} else {
+					u->rst.dat[u->rst.ptr] = (b / a) >> 8;
+					u->rst.dat[u->rst.ptr + 1] = (b / a) & 0xff;
 				}
-				u->rst.dat[u->rst.ptr] = (b / a) >> 8;
-				u->rst.dat[u->rst.ptr + 1] = (b / a) & 0xff;
 #ifndef NO_STACK_CHECKS
 				if(__builtin_expect(u->rst.ptr < 4, 0)) {
 					u->rst.error = 1;
