@@ -7,9 +7,9 @@
 
 NAME		:= uxnds
 
-GAME_TITLE     := uxnds v0.4.7
+GAME_TITLE     := uxnds v0.4.8
 GAME_SUBTITLE  := tiny virtual machine
-GAME_AUTHOR    := 19/11/2023
+GAME_AUTHOR    := 16/12/2023
 GAME_ICON      := misc/uxn32.png
 
 #NAME := donsol
