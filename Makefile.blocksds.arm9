@@ -93,7 +93,7 @@ SOURCES_CPP	:= $(shell find -L $(SOURCEDIRS) -maxdepth 1 -name "*.cpp")
 # Compiler and linker flags
 # -------------------------
 
-DEFINES		+= -D__NDS__ -DARM9 -DBLOCKSDS
+DEFINES		+= -D__NDS__ -DARM9 -D__BLOCKSDS__
 
 ARCH		:= -mcpu=arm946e-s+nofp
 
@@ -137,7 +137,7 @@ endif
 endif
 
 LDFLAGS		:= -Wl,--defsym=vfprintf=__i_vfprintf -Wl,--defsym=vfscanf=__i_vfscanf \
-		   -mthumb -mthumb-interwork $(LIBDIRSFLAGS) \
+		   -mthumb -mthumb-interwork $(LIBDIRSFLAGS) $(ARCH) \
 		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.mem \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.ld \

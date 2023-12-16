@@ -1,6 +1,6 @@
 // Admittedly, this was more useful to reduce filesize before "datetime" device support.
 #if 0
-#ifdef BLOCKSDS
+#ifdef __BLOCKSDS__
 #include <stdint.h>
 
 uint32_t get_fattime(void) {

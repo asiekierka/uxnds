@@ -1,5 +1,5 @@
 #include <nds.h>
-#ifdef BLOCKSDS
+#ifdef __BLOCKSDS__
 # include <fatfs.h>
 #else
 # include <fat.h>

@@ -21,7 +21,7 @@ WITH REGARD TO THIS SOFTWARE.
 #define dprintf(...)
 #endif
 
-#ifdef BLOCKSDS
+#ifdef __BLOCKSDS__
 #define iprintf printf
 #define siprintf sprintf
 #define sniprintf snprintf

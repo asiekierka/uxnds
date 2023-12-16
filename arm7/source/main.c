@@ -122,17 +122,20 @@ void powerButtonCB() {
 }
 
 int main() {
+#ifdef __BLOCKSDS__
+	enableSound();
+#else
 	dmaFillWords(0, (void*)0x04000400, 0x100);
 
 	REG_SOUNDCNT |= SOUND_ENABLE;
 	writePowerManagement(PM_CONTROL_REG, ( readPowerManagement(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
 	powerOn(POWER_SOUND);
+#endif
 
 	readUserSettings();
 	ledBlink(0);
 
 	irqInit();
-	initClockIRQ();
 	fifoInit();
 	touchInit();
 
@@ -141,10 +144,16 @@ int main() {
 	fifoSetValue32Handler(UXNDS_FIFO_CHANNEL, fifo_handler, NULL);
 	installSystemFIFO();
 
-	irqSet(IRQ_VCOUNT, VcountHandler);
+	irqSet(IRQ_VBLANK, VcountHandler);
 	irqSet(IRQ_TIMER0, apu_handler);
 
+#ifdef __BLOCKSDS__
+	initClockIRQTimer(3);
+	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_TIMER0);
+#else
+	initClockIRQ();
 	irqEnable(IRQ_VBLANK | IRQ_VCOUNT | IRQ_NETWORK | IRQ_TIMER0);
+#endif
 
 	setPowerButtonCB(powerButtonCB);
 
