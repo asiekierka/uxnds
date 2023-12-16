@@ -420,6 +420,10 @@ uxn_load_boot(Uxn *u)
 	if(system_load(u, "boot.rom")) {
 		return 1;
 	}
+	if(system_load(u, "./uxn/boot.rom")) {
+		chdir("./uxn");
+		return 1;
+	}
 	if(system_load(u, "/uxn/boot.rom")) {
 		chdir("/uxn");
 		return 1;

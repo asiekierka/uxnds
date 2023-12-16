@@ -73,7 +73,7 @@ SOURCES_CPP	:= $(shell find -L $(SOURCEDIRS) -name "*.cpp")
 
 DEFINES		+= -D__NDS__ -DARM7
 
-ARCH		:= -mcpu=arm7tdmi -mtune=arm7tdmi
+ARCH		:= -mcpu=arm7tdmi
 
 WARNFLAGS	:= -Wall
 
@@ -106,6 +106,7 @@ CXXFLAGS	+= -std=gnu++14 $(WARNFLAGS) $(DEFINES) $(ARCH) \
 LDFLAGS		:= -mthumb -mthumb-interwork $(LIBDIRSFLAGS) \
 		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm7.ld \
+		   -Wl,--no-warn-rwx-segments \
 		   -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
 
 # Intermediate build files

@@ -95,7 +95,7 @@ SOURCES_CPP	:= $(shell find -L $(SOURCEDIRS) -maxdepth 1 -name "*.cpp")
 
 DEFINES		+= -D__NDS__ -DARM9 -DBLOCKSDS
 
-ARCH		:= -march=armv5te -mtune=arm946e-s
+ARCH		:= -mcpu=arm946e-s+nofp
 
 WARNFLAGS	:= -Wall
 
@@ -141,6 +141,7 @@ LDFLAGS		:= -Wl,--defsym=vfprintf=__i_vfprintf -Wl,--defsym=vfscanf=__i_vfscanf 
 		   -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.mem \
 		   -T$(BLOCKSDS)/sys/crts/ds_arm9.ld \
+		   -Wl,--no-warn-rwx-segments -Wl,--use-blx \
 		   -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
 
 # Intermediate build files
