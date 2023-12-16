@@ -424,6 +424,10 @@ uxn_load_boot(Uxn *u)
 		chdir("./uxn");
 		return 1;
 	}
+	if(system_load(u, "./uxn/launcher.rom")) {
+		chdir("./uxn");
+		return 1;
+	}
 	if(system_load(u, "/uxn/boot.rom")) {
 		chdir("/uxn");
 		return 1;

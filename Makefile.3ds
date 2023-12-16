@@ -47,7 +47,7 @@ INCLUDES	:=	include source
 GRAPHICS	:=	assets/3ds
 ROMFS		:=	romfs/3ds
 GFXBUILD	:=	$(ROMFS)
-APP_TITLE := uxnds v0.4.8
+APP_TITLE := uxnds v0.4.9
 ifeq ($(DEBUG),true)
 APP_DESCRIPTION := tiny virtual machine (debug)
 else
