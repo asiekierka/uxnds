@@ -32,6 +32,13 @@ typedef struct {
 
 static UxnFile uxn_file[POLYFILEY];
 
+static char
+inthex(int n)
+{
+	n &= 0xf;
+	return n < 10 ? '0' + n : 'a' + (n - 10);
+}
+
 static void
 reset(UxnFile *c)
 {
@@ -48,7 +55,7 @@ reset(UxnFile *c)
 }
 
 static Uint16
-get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int fail_nonzero)
+put_line(char *p, Uint16 len, const char *pathname, const char *basename, int fail_nonzero)
 {
 	struct stat st;
 	if(len < strlen(basename) + 8)
@@ -77,7 +84,7 @@ file_read_dir(UxnFile *c, char *dest, Uint16 len)
 			sniprintf(pathname, sizeof(pathname), "%s/%s", c->current_filename, c->de->d_name);
 		else
 			pathname[0] = '\0';
-		n = get_entry(p, len, pathname, c->de->d_name, 1);
+		n = put_line(p, len, pathname, c->de->d_name, 1);
 		if(!n) break;
 		p += n;
 		len -= n;
@@ -135,14 +142,25 @@ file_write(UxnFile *c, void *src, Uint16 len, Uint8 flags)
 }
 
 static Uint16
-file_stat(UxnFile *c, void *dest, Uint16 len)
+file_stat(UxnFile *c, char *p, Uint16 len)
 {
-	char *basename = strrchr(c->current_filename, '/');
-	if(basename != NULL)
-		basename++;
+	unsigned int i, size;
+	struct stat st;
+	if(!len)
+		return 0;
+	if(stat(c->current_filename, &st))
+		for(i = 0; i < len; i++)
+			p[i] = '!';
+	else if(S_ISDIR(st.st_mode))
+		for(i = 0; i < len; i++)
+			p[i] = '-';
+	else if(st.st_size >= 1 << (len << 2))
+		for(i = 0; i < len; i++)
+			p[i] = '?';
 	else
-		basename = c->current_filename;
-	return get_entry(dest, len, c->current_filename, basename, 0);
+		for(i = 0, size = st.st_size; i < len; i++)
+			p[i] = inthex(size >> ((len - i - 1) << 2));
+	return len;
 }
 
 static Uint16
@@ -151,47 +169,49 @@ file_delete(UxnFile *c)
 	return unlink(c->current_filename);
 }
 
+/* file registers */
+
+static Uint16 rL;
+
 /* IO */
 
 void
 file_deo(Uint8 id, Uint8 *ram, Uint8 *d, Uint8 port)
 {
 	UxnFile *c = &uxn_file[id];
-	Uint16 addr, len, res;
+	Uint16 addr, res;
 	switch(port) {
 	case 0x5:
-		PEKDEV(addr, 0x4);
-		PEKDEV(len, 0xa);
-		if(len > 0x10000 - addr)
-			len = 0x10000 - addr;
-		res = file_stat(c, &ram[addr], len);
-		POKDEV(0x2, res);
-		break;
+		addr = (d[0x4] << 8) | d[0x5];
+		if(rL > 0x10000 - addr) rL = 0x10000 - addr;
+		res = file_stat(c, (char *)&ram[addr], rL > 0x10 ? 0x10 : rL);
+		d[0x2] = res >> 8, d[0x3] = res;
+		return;
 	case 0x6:
 		res = file_delete(c);
-		POKDEV(0x2, res);
-		break;
+		d[0x2] = res >> 8, d[0x3] = res;
+		return;
 	case 0x9:
-		PEKDEV(addr, 0x8);
+		addr = (d[0x8] << 8) | d[0x9];
 		res = file_init(c, (char *)&ram[addr], 0x10000 - addr);
-		POKDEV(0x2, res);
-		break;
+		d[0x2] = res >> 8, d[0x3] = res;
+		return;
+	case 0xa:
+	case 0xb:
+		rL = (d[0xa] << 8) | d[0xb];
+		return;
 	case 0xd:
-		PEKDEV(addr, 0xc);
-		PEKDEV(len, 0xa);
-		if(len > 0x10000 - addr)
-			len = 0x10000 - addr;
-		res = file_read(c, &ram[addr], len);
-		POKDEV(0x2, res);
-		break;
+		addr = (d[0xc] << 8) | d[0xd];
+		if(rL > 0x10000 - addr) rL = 0x10000 - addr;
+		res = file_read(c, &ram[addr], rL);
+		d[0x2] = res >> 8, d[0x3] = res;
+		return;
 	case 0xf:
-		PEKDEV(addr, 0xe);
-		PEKDEV(len, 0xa);
-		if(len > 0x10000 - addr)
-			len = 0x10000 - addr;
-		res = file_write(c, &ram[addr], len, d[0x7]);
-		POKDEV(0x2, res);
-		break;
+		addr = (d[0xe] << 8) | d[0xf];
+		if(rL > 0x10000 - addr) rL = 0x10000 - addr;
+		res = file_write(c, &ram[addr], rL, d[0x7]);
+		d[0x2] = res >> 8, d[0x3] = res;
+		return;
 	}
 }
 
