@@ -1,8 +1,7 @@
 #include <nds.h>
-#ifdef __BLOCKSDS__
-# include <fatfs.h>
-#else
-# include <fat.h>
+#include <fat.h>
+#ifndef __BLOCKSDS__
+#include <filesystem.h>
 #endif
 #include <dirent.h>
 #include <stdio.h>
