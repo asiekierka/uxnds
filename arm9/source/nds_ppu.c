@@ -199,9 +199,10 @@ nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y
 
 ITCM_ARM_CODE
 void
-nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline;
+	Uint8 xleftedge = x >= 0;
 	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
 	Uint16 v;
 	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
@@ -215,7 +216,7 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 
 	if (flipy) flipy = 7;
 
-	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
+	if(x <= -8 || y <= -8 || x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
 
 	if (blending[4][color]) {
@@ -227,7 +228,7 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				u64 data = (u64)(lut_expand[sprline] & color_fg) << shift;
 				data |= (u64)(lut_expand[sprline ^ 0xFF] & color_bg) << shift;
 
-				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xleftedge) layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 			} else if (!flipy) break;
 
@@ -240,7 +241,7 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				u64 mask = ~((u64)(lut_expand[sprline]) << shift);
 				u64 data = (u64)(lut_expand[sprline] & color_fg) << shift;
 
-				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xleftedge) layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 			} else if (!flipy) break;
 
@@ -248,7 +249,7 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		}
 	}
 
-	tile_dirty[y >> 3] |= dirtyflag;
+	if (y >= 0) tile_dirty[y >> 3] |= dirtyflag;
 	tile_dirty[(y + 7) >> 3] |= dirtyflag;
 }
 
@@ -256,9 +257,10 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 ITCM_ARM_CODE
 #endif
 void
-nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
+nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {
 	Uint8 sprline1, sprline2;
+	Uint8 xleftedge = x >= 0;
 	Uint8 xrightedge = x < ((PPU_TILES_WIDTH - 1) * 8);
 	Uint16 v, h;
 	Uint32 dirtyflag = (1 << (x >> 3)) | (1 << ((x + 7) >> 3));
@@ -269,7 +271,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 
 	if (flipy) flipy = 7;
 
-	if(x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
+	if(x <= -8 || y <= -8 || x >= PPU_TILES_WIDTH * 8 || y >= PPU_TILES_HEIGHT * 8)
 		return;
 
 	if (color == 1) {
@@ -284,7 +286,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				u32 data32 = (lut_expand[sprline1]) | ((lut_expand[sprline2]) << 1);
 				u64 data = ((u64) (data32)) << shift;
 
-				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xleftedge) layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 			} else if (!flipy) break;
 
@@ -321,7 +323,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 
 				u64 data = ((u64) (data32)) << shift;
 
-				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xleftedge) layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 			} else if (!flipy) break;
 
@@ -364,7 +366,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 				u64 data = ((u64) (data32)) << shift;
 				u64 mask = ~(((u64) (mask32)) << shift);
 
-				layerptr[0] = (layerptr[0] & mask) | data;
+				if (xleftedge) layerptr[0] = (layerptr[0] & mask) | data;
 				if (xrightedge) layerptr[8] = (layerptr[8] & (mask >> 32)) | (data >> 32);
 			} else if (!flipy) break;
 
@@ -372,7 +374,7 @@ nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 
 		}
 	}
 
-	tile_dirty[y >> 3] |= dirtyflag;
+	if (y >= 0) tile_dirty[y >> 3] |= dirtyflag;
 	tile_dirty[(y + 7) >> 3] |= dirtyflag;
 }
 

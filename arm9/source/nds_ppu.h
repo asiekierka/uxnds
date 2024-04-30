@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,6 +32,6 @@ int nds_initppu(NdsPpu *p);
 void nds_putcolors(NdsPpu *p, Uint8 *addr);
 void nds_ppu_pixel(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 color);
 void nds_ppu_fill(NdsPpu *p, Uint32 *layer, Uint16 x1, Uint16 y1, Uint16 x2, Uint16 y2, Uint8 color);
-void nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
-void nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, Uint16 x, Uint16 y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
+void nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy);
 void nds_copyppu(NdsPpu *p);
