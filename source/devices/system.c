@@ -104,7 +104,7 @@ system_deo(Uxn *u, Uint8 *d, Uint8 port)
 			for(i = length - 1; i != 0xffff; i--)
 				ram[dst + (Uint16)(b_addr + i)] = ram[src + (Uint16)(a_addr + i)];
 		} else
-			fprintf(stderr, "Unknown Expansion Command 0x%02x\n", ram[addr]);
+			fiprintf(stderr, "Unknown Expansion Command 0x%02x\n", ram[addr]);
 		break;
 	case 0x4:
 		u->wst.ptr = d[4];
