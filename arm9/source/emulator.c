@@ -1,8 +1,6 @@
 #include <nds.h>
 #include <fat.h>
-#ifndef __BLOCKSDS__
 #include <filesystem.h>
-#endif
 #include <dirent.h>
 #include <stdio.h>
 #include "uxn.h"

@@ -28,7 +28,7 @@ WITH REGARD TO THIS SOFTWARE.
 #define fiprintf fprintf
 #endif
 
-#define MAX_PATH 512
+#define MAX_PATH 1024
 #ifdef __NDS__
 #define ITCM_ARM_CODE __attribute__((section(".itcm"), long_call, target("arm")))
 #else
