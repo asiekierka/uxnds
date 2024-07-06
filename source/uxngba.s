@@ -1429,7 +1429,7 @@ div:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush8  r3
@@ -1441,7 +1441,7 @@ div2:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush16 r3
@@ -1853,7 +1853,7 @@ divr:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush8  r3
@@ -1865,7 +1865,7 @@ div2r:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush16 r3
@@ -2285,7 +2285,7 @@ divk:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush8  r3
@@ -2297,7 +2297,7 @@ div2k:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush16 r3
@@ -2717,7 +2717,7 @@ divkr:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush8  r3
@@ -2729,7 +2729,7 @@ div2kr:
     push    {r0, r1, r2, r7, lr}
     mov     r1, r3
     mov     r0, r4
-    bl      __aeabi_uidiv
+    bl      uxn_uidiv
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush16 r3

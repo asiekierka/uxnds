@@ -39,6 +39,13 @@ dei_stub(u8 *dev, u8 port) {
     return dev[port];
 }
 
+unsigned int __aeabi_uidiv(unsigned int num, unsigned int den);
+
+unsigned int
+uxn_uidiv(unsigned int num, unsigned int den) {
+    return den ? __aeabi_uidiv(num, den) : 0;
+}
+
 int
 resetuxn(void)
 {
