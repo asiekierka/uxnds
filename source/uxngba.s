@@ -1,7 +1,3 @@
-#ifndef ARM9
-#define ARM9
-#endif
-
 @
 @ Core variables
 @
@@ -461,7 +457,7 @@ dei:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -488,7 +484,7 @@ dei2:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -498,7 +494,7 @@ dei2:
     mov     r5, r0
     ldr     r0, =device_data
     add     r0, r4
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -535,7 +531,7 @@ deo:
     add     r0, r4
     strb    r5, [r0, r3]
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -577,7 +573,7 @@ deo2:
     strb    r5, [r3]
     mov     r2, r6
     ldr     r6, =deo2_wrap
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -605,7 +601,7 @@ deir:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -632,7 +628,7 @@ dei2r:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -642,7 +638,7 @@ dei2r:
     mov     r5, r0
     ldr     r0, =device_data
     add     r0, r4
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -679,7 +675,7 @@ deor:
     add     r0, r4
     strb    r5, [r0, r3]
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -721,7 +717,7 @@ deo2r:
     strb    r5, [r3]
     mov     r2, r6
     ldr     r6, =deo2_wrap
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -749,7 +745,7 @@ deik:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -776,7 +772,7 @@ dei2k:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -786,7 +782,7 @@ dei2k:
     mov     r5, r0
     ldr     r0, =device_data
     add     r0, r4
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -816,7 +812,7 @@ deok:
     add     r0, r4
     strb    r5, [r0, r3]
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -849,7 +845,7 @@ deo2k:
     strb    r5, [r3]
     mov     r2, r6
     ldr     r6, =deo2_wrap
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -875,7 +871,7 @@ deikr:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -902,7 +898,7 @@ dei2kr:
     lsl     r4, #4
     add     r0, r4
     mov     r1, r5
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -912,7 +908,7 @@ dei2kr:
     mov     r5, r0
     ldr     r0, =device_data
     add     r0, r4
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -942,7 +938,7 @@ deokr:
     add     r0, r4
     strb    r5, [r0, r3]
     mov     r1, r3
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -975,7 +971,7 @@ deo2kr:
     strb    r5, [r3]
     mov     r2, r6
     ldr     r6, =deo2_wrap
-#ifdef ARM9
+#if __ARM_ARCH >= 5
     blx     r6
 #else
     mov     lr, pc
@@ -1034,8 +1030,12 @@ jci:
     ldrb    r5, [r0], #1
     ldrb    r3, [r0], #1
     orr     r3, r3, r5, lsl #8
+#if __ARM_ARCH >= 6
+    sxth    r3, r3
+#else
     lsl     r3, r3, #16
     asr     r3, r3, #16
+#endif
     wpop8   r4
     cmp     r4, #0
     addne   r0, r3
@@ -1045,20 +1045,28 @@ jmi:
     ldrb    r5, [r0], #1
     ldrb    r3, [r0], #1
     orr     r3, r3, r5, lsl #8
+#if __ARM_ARCH >= 6
+    sxtah   r0, r0, r3
+#else
     lsl     r3, r3, #16
     asr     r3, r3, #16
     add     r0, r3
+#endif
     b       uxn_decode
 
 jsi:
     ldrb    r5, [r0], #1
     ldrb    r3, [r0], #1
     orr     r3, r3, r5, lsl #8
-    lsl     r3, r3, #16
-    asr     r3, r3, #16
     mov     r4, r0
     rpush16 r4
+#if __ARM_ARCH >= 6
+    sxtah   r0, r0, r3
+#else
+    lsl     r3, r3, #16
+    asr     r3, r3, #16
     add     r0, r3
+#endif
     b       uxn_decode
 
 lit:
