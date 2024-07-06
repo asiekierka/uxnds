@@ -264,10 +264,10 @@ Uint8
 ctr_screen_dei(Uint8 *d, Uint8 addr)
 {
 	switch(addr) {
-	case 0x22: return uxn_ctr_screen.width >> 8;
-	case 0x23: return uxn_ctr_screen.width;
-	case 0x24: return uxn_ctr_screen.height >> 8;
-	case 0x25: return uxn_ctr_screen.height;
+	case 0x2: return uxn_ctr_screen.width >> 8;
+	case 0x3: return uxn_ctr_screen.width;
+	case 0x4: return uxn_ctr_screen.height >> 8;
+	case 0x5: return uxn_ctr_screen.height;
 	default: return d[addr];
 	}
 }

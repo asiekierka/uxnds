@@ -529,10 +529,6 @@ main(int argc, char **argv)
 		return error("Load", "Failed");
 	}
 
-	// Write screen size to dev/screen
-	poke16(u.dev + 0x20, 2, PPU_PIXELS_WIDTH);
-	poke16(u.dev + 0x20, 4, PPU_PIXELS_HEIGHT);
-
 	start(&u);
 	quit();
 	return 0;
