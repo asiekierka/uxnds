@@ -41,5 +41,5 @@ There are three binaries provided:
 
 To compile uxnds for NDS, you may use:
 
-* the [BlocksDS toolchain](https://github.com/blocksds/sdk) - run `make -f Makefile.blocksds`. This is the recommended path and is used by recent release builds;
-* the latest devkitARM toolchain from the devkitPro organization to compile. After [installing](https://devkitpro.org/wiki/Getting_Started), run `make -f Makefile.nds`.
+* the [BlocksDS toolchain](https://github.com/blocksds/sdk) - run `make -f Makefile.blocksds`;
+* the latest devkitARM toolchain from the devkitPro organization to compile. After [installing](https://devkitpro.org/wiki/Getting_Started), simply run `make -f Makefile.nds`.

@@ -39,7 +39,7 @@ typedef uint8_t Uint8;
 typedef int8_t Sint8;
 typedef uint16_t Uint16;
 typedef int16_t Sint16;
- typedef unsigned int Uint32;
+typedef unsigned int Uint32;
 
 #define PAGE_PROGRAM 0x0100
 #define RAM_PAGES 0x0F
@@ -50,34 +50,41 @@ typedef int16_t Sint16;
 #define POKE2(d, v) { (d)[0] = (v) >> 8; (d)[1] = (v); }
 #define PEEK2(d) ((d)[0] << 8 | (d)[1])
 
+static inline void   poke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
+static inline Uint8  peek8(Uint8 *m, Uint16 a) { return m[a]; }
+static inline void   poke16(Uint8 *m, Uint16 a, Uint16 b) { poke8(m, a, b >> 8); poke8(m, a + 1, b); }
+static inline Uint16 peek16(Uint8 *m, Uint16 a) { return (peek8(m, a) << 8) + peek8(m, a + 1); }
+
+typedef Uint8 (*uxn_dei_t)(Uint8*, Uint8);
+typedef void (*uxn_deo_t)(Uint8*, Uint8);
+
+int uxn_get_wst_ptr(void);
+int uxn_get_rst_ptr(void);
+void uxn_set_wst_ptr(int value);
+void uxn_set_rst_ptr(int value);
+void uxn_register_device(int id, uxn_dei_t dei, uxn_deo_t deo);
+
+int resetuxn(void);
+int uxn_boot(void);
+
+// Legacy API
+
 typedef struct {
-	Uint8 ptr, kptr, error;
-	Uint8 dat[256];
+	Uint8 *dat;
 } Stack;
 
 typedef struct {
-	Uint16 ptr;
 	Uint8 *dat;
 } Memory;
 
 typedef struct Uxn {
 	Stack wst, rst;
 	Memory ram;
-	Uint8 dev[256];
-	Uint8 (*dei)(struct Uxn *u, Uint8 addr);
-	void (*deo)(struct Uxn *u, Uint8 addr, Uint8 value);
+	Uint8 *dev;
 } Uxn;
 
 struct Uxn;
 
-typedef Uint8 Dei(Uxn *u, Uint8 addr);
-typedef void Deo(Uxn *u, Uint8 addr, Uint8 value);
+extern Uxn u;
 
-static inline void   poke8(Uint8 *m, Uint16 a, Uint8 b) { m[a] = b; }
-static inline Uint8  peek8(Uint8 *m, Uint16 a) { return m[a]; }
-static inline void   poke16(Uint8 *m, Uint16 a, Uint16 b) { poke8(m, a, b >> 8); poke8(m, a + 1, b); }
-static inline Uint16 peek16(Uint8 *m, Uint16 a) { return (peek8(m, a) << 8) + peek8(m, a + 1); }
-
-int uxn_boot(Uxn *u, Uint8 *ram, Dei *dei, Deo *deo);
-int resetuxn(Uxn *c);
-int uxn_eval(Uxn *u, Uint16 vec);
+int uxn_eval(Uxn *u, Uint32 vec);

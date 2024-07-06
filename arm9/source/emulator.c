@@ -93,7 +93,7 @@ screen_dei(Uint8 *d, Uint8 port)
 
 ITCM_ARM_CODE
 static void
-screen_deo(Uint8 *d, Uint8 port, Uxn *u)
+screen_deo(Uint8 *d, Uint8 port)
 {
 	if(port == 0xe) {
 		Uint8 ctrl = d[0xe];
@@ -133,10 +133,10 @@ screen_deo(Uint8 *d, Uint8 port, Uxn *u)
 		if(addr > (0x10000 - len)) return;
 		for (Uint8 i = 0; i <= n; i++) {
 			if (twobpp) {
-				nds_ppu_2bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u->ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
+				nds_ppu_2bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u.ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
 				addr += (d[0x6] & 0x04) << 2;
 			} else {
-				nds_ppu_1bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u->ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
+				nds_ppu_1bpp(&ppu, layer, x + dyx * i, y + dxy * i, &u.ram.dat[addr], d[0xf] & 0xf, flipx, flipy);
 				addr += (d[0x6] & 0x04) << 1;
 			}
 		}
@@ -158,7 +158,7 @@ audio_dei(int instance_id, Uint8 *d, Uint8 port)
 }
 
 static void
-audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
+audio_deo(int instance_id, Uint8 *d, Uint8 port)
 {
 	NdsApu *instance = memUncached(&apu[instance_id]);
 	if(port == 0xf) {
@@ -166,7 +166,7 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 		instance->len = peek16(d, 0xa);
 		if(instance->len > 0x10000 - addr)
 			instance->len = 0x10000 - addr;
-		instance->addr = &u->ram.dat[addr];
+		instance->addr = &u.ram.dat[addr];
 		instance->volume[0] = d[0xe] >> 4;
 		instance->volume[1] = d[0xe] & 0xf;
 		instance->repeat = !(d[0xf] & 0x80);
@@ -179,44 +179,26 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port, Uxn *u)
 	}
 }
 
-static Uint8
-emu_dei(Uxn *u, Uint8 addr)
-{
-	Uint8 p = addr & 0x0f, d = addr & 0xf0;
-	switch(d) {
-	case 0x00: return system_dei(u, addr);
-	case 0x20: return screen_dei(&u->dev[d], p);
-	case 0x30: return audio_dei(0, &u->dev[d], p);
-	case 0x40: return audio_dei(1, &u->dev[d], p);
-	case 0x50: return audio_dei(2, &u->dev[d], p);
-	case 0x60: return audio_dei(3, &u->dev[d], p);
-	case 0xa0: return file_dei(0, &u->dev[d], p);
-	case 0xb0: return file_dei(1, &u->dev[d], p);
-	case 0xc0: return datetime_dei(u, addr);
-	}
-	return u->dev[addr];
-}
+static Uint8 audio0_dei(Uint8 *d, Uint8 port) { return audio_dei(0, d, port); }
+static Uint8 audio1_dei(Uint8 *d, Uint8 port) { return audio_dei(1, d, port); }
+static Uint8 audio2_dei(Uint8 *d, Uint8 port) { return audio_dei(2, d, port); }
+static Uint8 audio3_dei(Uint8 *d, Uint8 port) { return audio_dei(3, d, port); }
+static Uint8 file0_dei(Uint8 *d, Uint8 port) { return file_dei(0, d, port); }
+static Uint8 file1_dei(Uint8 *d, Uint8 port) { return file_dei(1, d, port); }
+static void audio0_deo(Uint8 *d, Uint8 port) { audio_deo(0, d, port); }
+static void audio1_deo(Uint8 *d, Uint8 port) { audio_deo(1, d, port); }
+static void audio2_deo(Uint8 *d, Uint8 port) { audio_deo(2, d, port); }
+static void audio3_deo(Uint8 *d, Uint8 port) { audio_deo(3, d, port); }
+static void file0_deo(Uint8 *d, Uint8 port) { file_deo(0, u.ram.dat, d, port); }
+static void file1_deo(Uint8 *d, Uint8 port) { file_deo(1, u.ram.dat, d, port); }
 
+static Uint8 nds_system_dei(Uint8 *d, Uint8 port) { return system_dei(&u, port); }
 static void
-emu_deo(Uxn *u, Uint8 addr, Uint8 v)
+nds_system_deo(Uint8 *d, Uint8 port)
 {
-	Uint8 p = addr & 0x0f, d = addr & 0xf0;
-	u->dev[addr] = v;
-	switch(d) {
-	case 0x00:
-		system_deo(u, &u->dev[d], p);
-		if(p > 0x7 && p < 0xe)
-			nds_putcolors(&ppu, &u->dev[0x8]);
-		break;
-	case 0x10: console_deo(&u->dev[d], p); break;
-	case 0x20: screen_deo(&u->dev[d], p, u); break;
-	case 0x30: audio_deo(0, &u->dev[d], p, u); break;
-	case 0x40: audio_deo(1, &u->dev[d], p, u); break;
-	case 0x50: audio_deo(2, &u->dev[d], p, u); break;
-	case 0x60: audio_deo(3, &u->dev[d], p, u); break;
-	case 0xa0: file_deo(0, u->ram.dat, &u->dev[d], p); break;
-	case 0xb0: file_deo(1, u->ram.dat, &u->dev[d], p); break;
-	}
+	system_deo(&u, d, port);
+	if(port > 0x7 && port < 0xe)
+		nds_putcolors(&ppu, &u.dev[0x8]);
 }
 
 #pragma mark - Generics
@@ -379,7 +361,7 @@ prompt_reset(Uxn *u)
 
 	iprintf("Resetting...\n");
 
-	if(!resetuxn(u))
+	if(!resetuxn())
 		return error("Resetting", "Failed");
 	if(!uxn_load_boot(u))
 		return error("Load", "Failed");
@@ -467,7 +449,7 @@ start(Uxn *u)
 }
 
 DTCM_BSS
-static Uxn u;
+Uxn u;
 
 int
 main(int argc, char **argv)
@@ -496,17 +478,28 @@ main(int argc, char **argv)
 	TIMER0_CR = TIMER_ENABLE | TIMER_DIV_1;
 	TIMER1_CR = TIMER_ENABLE | TIMER_CASCADE;
 
-	consoleSetWindow(mainConsole, 0, 0, 32, 11);
+	consoleSetWindow(mainConsole, 0, 0, 32, 24);
 
 	profileConsole = *mainConsole;
 	consoleSetWindow(&profileConsole, 0, 11, 32, 4);
 #else
-	consoleSetWindow(mainConsole, 0, 0, 32, 14);
+	consoleSetWindow(mainConsole, 0, 0, 32, 24);
 #endif
 #endif
 	consoleSelect(mainConsole);
 
-	if(!uxn_boot(&u, (Uint8 *)malloc(0x10000 * RAM_PAGES), emu_dei, emu_deo))
+	uxn_register_device(0x0, nds_system_dei, nds_system_deo);
+	uxn_register_device(0x1, NULL, console_deo);
+	uxn_register_device(0x2, screen_dei, screen_deo);
+	uxn_register_device(0x3, audio0_dei, audio0_deo);
+	uxn_register_device(0x4, audio1_dei, audio1_deo);
+	uxn_register_device(0x5, audio2_dei, audio2_deo);
+	uxn_register_device(0x6, audio3_dei, audio3_deo);
+	uxn_register_device(0xa, file0_dei, file0_deo);
+	uxn_register_device(0xb, file1_dei, file1_deo);
+	uxn_register_device(0xc, datetime_dei, NULL);
+
+	if(!uxn_boot())
 		return error("Boot", "Failed");
 	if(!fatInitDefault())
 		return error("FAT init", "Failed");
@@ -523,6 +516,12 @@ main(int argc, char **argv)
 	poke16(u.dev + 0x20, 4, PPU_PIXELS_HEIGHT);
 
 	start(&u);
+#ifdef DEBUG
+	scanKeys();
+	while(keysHeld()) scanKeys();
+	printf("Press any button to exit");
+	while(!keysHeld()) scanKeys();
+#endif
 	quit();
 	return 0;
 }

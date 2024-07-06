@@ -21,11 +21,11 @@ static const char *errors[] = {
 	"division by zero"};
 
 static void
-system_print(Stack *s, char *name)
+system_print(Stack *s, int ptr, char *name)
 {
 	Uint8 i;
 	iprintf("<%s>", name);
-	for(i = 0; i < s->ptr; i++)
+	for(i = 0; i < ptr; i++)
 		iprintf(" %02x", s->dat[i]);
 	if(!i)
 		iprintf(" empty");
@@ -57,8 +57,8 @@ system_load(Uxn *u, char *filename)
 void
 system_inspect(Uxn *u)
 {
-	system_print(&u->wst, "wst");
-	system_print(&u->rst, "rst");
+	system_print(&u->wst, uxn_get_wst_ptr(), "wst");
+	system_print(&u->rst, uxn_get_rst_ptr(), "rst");
 }
 
 /* IO */
@@ -67,8 +67,8 @@ Uint8
 system_dei(Uxn *u, Uint8 addr)
 {
         switch(addr) {
-        case 0x4: return u->wst.ptr;
-        case 0x5: return u->rst.ptr;
+        case 0x4: return uxn_get_wst_ptr();
+        case 0x5: return uxn_get_rst_ptr();
         default: return u->dev[addr];
         }
 }
@@ -107,10 +107,10 @@ system_deo(Uxn *u, Uint8 *d, Uint8 port)
 			fiprintf(stderr, "Unknown Expansion Command 0x%02x\n", ram[addr]);
 		break;
 	case 0x4:
-		u->wst.ptr = d[4];
+		uxn_set_wst_ptr(d[4]);
 		break;
 	case 0x5:
-		u->rst.ptr = d[5];
+		uxn_set_rst_ptr(d[5]);
 		break;
 	case 0xe:
 		system_inspect(u);
@@ -126,7 +126,7 @@ uxn_halt(Uxn *u, Uint8 instr, Uint8 err, Uint16 addr)
 	Uint8 *d = &u->dev[0];
 	Uint16 handler = PEEK2(d);
 	if(handler) {
-		u->wst.ptr = 4;
+		uxn_set_wst_ptr(4);
 		u->wst.dat[0] = addr >> 0x8;
 		u->wst.dat[1] = addr & 0xff;
 		u->wst.dat[2] = instr;

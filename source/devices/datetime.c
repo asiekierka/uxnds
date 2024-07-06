@@ -15,7 +15,7 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 Uint8
-datetime_dei(Uxn *u, Uint8 addr)
+datetime_dei(Uint8 *d, Uint8 addr)
 {
 	time_t seconds = time(NULL);
 	struct tm zt = {0};
@@ -23,17 +23,17 @@ datetime_dei(Uxn *u, Uint8 addr)
 	if(t == NULL)
 		t = &zt;
 	switch(addr) {
-	case 0xc0: return (t->tm_year + 1900) >> 8;
-	case 0xc1: return (t->tm_year + 1900);
-	case 0xc2: return t->tm_mon;
-	case 0xc3: return t->tm_mday;
-	case 0xc4: return t->tm_hour;
-	case 0xc5: return t->tm_min;
-	case 0xc6: return t->tm_sec;
-	case 0xc7: return t->tm_wday;
-	case 0xc8: return t->tm_yday >> 8;
-	case 0xc9: return t->tm_yday;
-	case 0xca: return t->tm_isdst;
-	default: return u->dev[addr];
+	case 0x0: return (t->tm_year + 1900) >> 8;
+	case 0x1: return (t->tm_year + 1900);
+	case 0x2: return t->tm_mon;
+	case 0x3: return t->tm_mday;
+	case 0x4: return t->tm_hour;
+	case 0x5: return t->tm_min;
+	case 0x6: return t->tm_sec;
+	case 0x7: return t->tm_wday;
+	case 0x8: return t->tm_yday >> 8;
+	case 0x9: return t->tm_yday;
+	case 0xa: return t->tm_isdst;
+	default: return d[addr];
 	}
 }
