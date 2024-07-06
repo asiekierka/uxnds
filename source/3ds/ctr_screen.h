@@ -37,5 +37,5 @@ void ctr_screen_free(UxnCtrScreen *p);
 void ctr_screen_init(UxnCtrScreen *p, int width, int height);
 void ctr_screen_redraw(UxnCtrScreen *p);
 
-Uint8 ctr_screen_dei(Uxn *u, Uint8 addr);
-void ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port);
+Uint8 ctr_screen_dei(Uint8 *d, Uint8 addr);
+void ctr_screen_deo(Uint8 *d, Uint8 port);

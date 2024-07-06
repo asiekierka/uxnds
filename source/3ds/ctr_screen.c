@@ -241,8 +241,8 @@ ctr_screen_redraw_layer(UxnCtrScreen *p, Layer *layer)
 	int transferHeight = ((y2 + 7) & (~7)) - transferY;
 
 	C3D_SyncDisplayTransfer(
-		layer->gpuPixels + (transferY * p->pitch), GX_BUFFER_DIM(p->pitch, transferHeight),
-		((Uint32*)layer->gpuTexture.data) + (transferY * p->pitch), GX_BUFFER_DIM(p->pitch, transferHeight),
+		(u32*) (layer->gpuPixels + (transferY * p->pitch)), GX_BUFFER_DIM(p->pitch, transferHeight),
+		(u32*) (((Uint32*) layer->gpuTexture.data) + (transferY * p->pitch)), GX_BUFFER_DIM(p->pitch, transferHeight),
 		(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(1) |
 		GX_TRANSFER_RAW_COPY(0) | GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO) |
 		GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) |
@@ -261,19 +261,19 @@ ctr_screen_redraw(UxnCtrScreen *p)
 }
 
 Uint8
-ctr_screen_dei(Uxn *u, Uint8 addr)
+ctr_screen_dei(Uint8 *d, Uint8 addr)
 {
 	switch(addr) {
 	case 0x22: return uxn_ctr_screen.width >> 8;
 	case 0x23: return uxn_ctr_screen.width;
 	case 0x24: return uxn_ctr_screen.height >> 8;
 	case 0x25: return uxn_ctr_screen.height;
-	default: return u->dev[addr];
+	default: return d[addr];
 	}
 }
 
 void
-ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
+ctr_screen_deo(Uint8 *d, Uint8 port)
 {
 	switch(port) {
 	case 0x3:
@@ -328,7 +328,7 @@ ctr_screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 		int flipy = (ctrl & 0x20), fy = flipy ? -1 : 1;
 		Uint16 dyx = dy * fx, dxy = dx * fy;
 		for(i = 0; i <= length; i++) {
-			screen_blit(&uxn_ctr_screen, layer->pixels, x + dyx * i, y + dxy * i, ram, addr, color, flipx, flipy, twobpp);
+			screen_blit(&uxn_ctr_screen, layer->pixels, x + dyx * i, y + dxy * i, u.ram.dat, addr, color, flipx, flipy, twobpp);
 			addr += addr_incr;
 		}
 		screen_change(&uxn_ctr_screen, layer, x, y, x + dyx * length + 8, y + dxy * length + 8);

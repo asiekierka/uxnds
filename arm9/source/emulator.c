@@ -478,12 +478,12 @@ main(int argc, char **argv)
 	TIMER0_CR = TIMER_ENABLE | TIMER_DIV_1;
 	TIMER1_CR = TIMER_ENABLE | TIMER_CASCADE;
 
-	consoleSetWindow(mainConsole, 0, 0, 32, 24);
+	consoleSetWindow(mainConsole, 0, 0, 32, 11);
 
 	profileConsole = *mainConsole;
 	consoleSetWindow(&profileConsole, 0, 11, 32, 4);
 #else
-	consoleSetWindow(mainConsole, 0, 0, 32, 24);
+	consoleSetWindow(mainConsole, 0, 0, 32, 14);
 #endif
 #endif
 	consoleSelect(mainConsole);
