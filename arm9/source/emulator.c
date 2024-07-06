@@ -146,6 +146,7 @@ screen_deo(Uint8 *d, Uint8 port)
 	}
 }
 
+ITCM_ARM_CODE
 static Uint8
 audio_dei(int instance_id, Uint8 *d, Uint8 port)
 {
@@ -157,6 +158,7 @@ audio_dei(int instance_id, Uint8 *d, Uint8 port)
 	}
 }
 
+ITCM_ARM_CODE
 static void
 audio_deo(int instance_id, Uint8 *d, Uint8 port)
 {
@@ -179,20 +181,35 @@ audio_deo(int instance_id, Uint8 *d, Uint8 port)
 	}
 }
 
+ITCM_ARM_CODE
 static Uint8 audio0_dei(Uint8 *d, Uint8 port) { return audio_dei(0, d, port); }
+ITCM_ARM_CODE
 static Uint8 audio1_dei(Uint8 *d, Uint8 port) { return audio_dei(1, d, port); }
+ITCM_ARM_CODE
 static Uint8 audio2_dei(Uint8 *d, Uint8 port) { return audio_dei(2, d, port); }
+ITCM_ARM_CODE
 static Uint8 audio3_dei(Uint8 *d, Uint8 port) { return audio_dei(3, d, port); }
+ITCM_ARM_CODE
 static Uint8 file0_dei(Uint8 *d, Uint8 port) { return file_dei(0, d, port); }
+ITCM_ARM_CODE
 static Uint8 file1_dei(Uint8 *d, Uint8 port) { return file_dei(1, d, port); }
+ITCM_ARM_CODE
 static void audio0_deo(Uint8 *d, Uint8 port) { audio_deo(0, d, port); }
+ITCM_ARM_CODE
 static void audio1_deo(Uint8 *d, Uint8 port) { audio_deo(1, d, port); }
+ITCM_ARM_CODE
 static void audio2_deo(Uint8 *d, Uint8 port) { audio_deo(2, d, port); }
+ITCM_ARM_CODE
 static void audio3_deo(Uint8 *d, Uint8 port) { audio_deo(3, d, port); }
+ITCM_ARM_CODE
 static void file0_deo(Uint8 *d, Uint8 port) { file_deo(0, u.ram.dat, d, port); }
+ITCM_ARM_CODE
 static void file1_deo(Uint8 *d, Uint8 port) { file_deo(1, u.ram.dat, d, port); }
 
+ITCM_ARM_CODE
 static Uint8 nds_system_dei(Uint8 *d, Uint8 port) { return system_dei(&u, port); }
+
+ITCM_ARM_CODE
 static void
 nds_system_deo(Uint8 *d, Uint8 port)
 {

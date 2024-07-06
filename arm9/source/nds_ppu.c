@@ -253,9 +253,7 @@ nds_ppu_1bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint
 	tile_dirty[(y + 7) >> 3] |= dirtyflag;
 }
 
-#ifndef DEBUG
 ITCM_ARM_CODE
-#endif
 void
 nds_ppu_2bpp(NdsPpu *p, Uint32 *layer, int16_t x, int16_t y, Uint8 *sprite, Uint8 color, Uint8 flipx, Uint8 flipy)
 {

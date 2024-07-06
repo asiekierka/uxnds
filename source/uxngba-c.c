@@ -44,18 +44,21 @@ DTCM_BSS u8 device_data[256];
 __attribute__((aligned(65536)))
 u8 uxn_ram[64 * 1024 * RAM_PAGES];
 
+ITCM_ARM_CODE
 void
 deo_stub(u8 *dev, u8 port) {
     (void)dev;
     (void)port;
 }
 
+ITCM_ARM_CODE
 void
 deo2_wrap(u8 *dev, u8 port, uxn_deo_t deo1) {
     deo1(dev,port);
     deo1(dev,port+1);
 }
 
+ITCM_ARM_CODE
 Uint8
 dei_stub(u8 *dev, u8 port) {
     return dev[port];
@@ -63,6 +66,7 @@ dei_stub(u8 *dev, u8 port) {
 
 unsigned int __aeabi_uidiv(unsigned int num, unsigned int den);
 
+ITCM_ARM_CODE
 unsigned int
 uxn_uidiv(unsigned int num, unsigned int den) {
     return den ? __aeabi_uidiv(num, den) : 0;
