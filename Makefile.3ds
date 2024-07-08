@@ -47,7 +47,7 @@ INCLUDES	:=	include source
 GRAPHICS	:=	assets/3ds
 ROMFS		:=	romfs/3ds
 GFXBUILD	:=	$(ROMFS)
-APP_TITLE := uxnds v0.5.0
+APP_TITLE := uxnds v0.5.1
 ifeq ($(DEBUG),true)
 APP_DESCRIPTION := tiny virtual machine (debug)
 else
@@ -80,7 +80,7 @@ CFLAGS += -DDEBUG -DDEBUG_PROFILE -DCPU_ERROR_CHECKING
 CXXFLAGS += -DDEBUG -DDEBUG_PROFILE -DCPU_ERROR_CHECKING
 endif
 
-ASFLAGS	:=	-g $(ARCH)
+ASFLAGS	:=	-g $(ARCH) -D__3DS__
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -lcitro2d -lcitro3d -lctru -lm

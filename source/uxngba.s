@@ -2,12 +2,26 @@
 @ Core variables
 @
 
+#ifdef __3DS__
+.macro restore_wst_rst_r1_r2 a
+    ldr     \a, =wst_ptr
+    ldr     r1, [\a]
+    ldr     \a, =rst_ptr
+    ldr     r2, [\a]
+.endm
+#else
 .section .itcm, "ax", %progbits
+
+.macro restore_wst_rst_r1_r2 a
+    ldr     r1, wst_ptr
+    ldr     r2, rst_ptr
+.endm
 
 .global wst_ptr
 wst_ptr: .word wst
 .global rst_ptr
 rst_ptr: .word rst
+#endif
 
 @ UXN evaluation function.
 @
@@ -25,8 +39,7 @@ uxn_eval_asm:
 
     @ Initialization.
     push    {r4-r7}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     ldr     r7, =uxn_ram
     add     r0, r0, r7
 
@@ -40,9 +53,9 @@ uxn_decode:
 
 uxn_ret:
     @ Update stack pointers and return.
-    adr     r0, wst_ptr
+    ldr     r0, =wst_ptr
     str     r1, [r0]
-    adr     r0, rst_ptr
+    ldr     r0, =rst_ptr
     str     r2, [r0]
     pop     {r4-r7}
     bx      lr
@@ -463,8 +476,7 @@ dei:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
     b       uxn_decode
@@ -500,8 +512,7 @@ dei2:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     wpush8  r5
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
@@ -540,8 +551,7 @@ deo:
 
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deo2:
@@ -582,8 +592,7 @@ deo2:
 
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deir:
@@ -607,8 +616,7 @@ deir:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
     b       uxn_decode
@@ -644,8 +652,7 @@ dei2r:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     rpush8  r5
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
@@ -684,8 +691,7 @@ deor:
 
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deo2r:
@@ -726,8 +732,7 @@ deo2r:
 
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deik:
@@ -751,8 +756,7 @@ deik:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
     b       uxn_decode
@@ -788,8 +792,7 @@ dei2k:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     wpush8  r5
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
@@ -819,8 +822,7 @@ deok:
     bx      r6
 #endif
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deo2k:
@@ -852,8 +854,7 @@ deo2k:
     bx      r6
 #endif
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deikr:
@@ -877,8 +878,7 @@ deikr:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
     b       uxn_decode
@@ -914,8 +914,7 @@ dei2kr:
     mov     lr, pc
     bx      r6
 #endif
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     rpush8  r5
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
@@ -945,8 +944,7 @@ deokr:
     bx      r6
 #endif
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 deo2kr:
@@ -978,50 +976,11 @@ deo2kr:
     bx      r6
 #endif
     ldmfd   sp!, {r0, r7, lr}
-    ldr     r1, wst_ptr
-    ldr     r2, rst_ptr
+    restore_wst_rst_r1_r2 r6
     b       uxn_decode
 
 .ltorg
 .align 2
-
-.global dei_map
-dei_map:
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-    .word dei_stub
-
-.global deo_map
-deo_map:
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
-    .word deo_stub
 
 brk:
     b       uxn_ret

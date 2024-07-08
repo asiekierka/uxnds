@@ -24,6 +24,7 @@
 #include <nds.h>
 #else
 #include <3ds.h>
+#define DTCM_DATA
 #define DTCM_BSS
 #endif
 
@@ -33,12 +34,14 @@ extern void uxn_eval_asm(Uint32 pc);
 
 DTCM_BSS u8 wst[256];
 DTCM_BSS u8 rst[256];
+
+#ifdef __3DS__
+uintptr_t wst_ptr = (uintptr_t) wst;
+uintptr_t rst_ptr = (uintptr_t) rst;
+#else
 extern uintptr_t wst_ptr;
 extern uintptr_t rst_ptr;
-
-extern uxn_deo_t deo_map[16];
-extern uxn_dei_t dei_map[16];
-DTCM_BSS u8 device_data[256];
+#endif
 
 // JSI and similar depend on a 64K alignment (!)
 __attribute__((aligned(65536)))
@@ -71,6 +74,23 @@ unsigned int
 uxn_uidiv(unsigned int num, unsigned int den) {
     return den ? __aeabi_uidiv(num, den) : 0;
 }
+
+DTCM_DATA
+uxn_deo_t deo_map[16] = {
+	deo_stub, deo_stub, deo_stub, deo_stub,
+	deo_stub, deo_stub, deo_stub, deo_stub,
+	deo_stub, deo_stub, deo_stub, deo_stub,
+	deo_stub, deo_stub, deo_stub, deo_stub
+};
+
+DTCM_DATA
+uxn_dei_t dei_map[16] = {
+	dei_stub, dei_stub, dei_stub, dei_stub,
+	dei_stub, dei_stub, dei_stub, dei_stub,
+	dei_stub, dei_stub, dei_stub, dei_stub,
+	dei_stub, dei_stub, dei_stub, dei_stub
+};
+DTCM_BSS u8 device_data[256];
 
 int
 resetuxn(void)
