@@ -350,6 +350,8 @@ domouse(Uxn *u)
 	}
 }
 
+Uxn u;
+
 #pragma mark - Devices
 
 static Uint8
@@ -374,14 +376,12 @@ static Uint8 audio0_dei(Uint8 *d, Uint8 port) { return audio_dei(0, d, port); }
 static Uint8 audio1_dei(Uint8 *d, Uint8 port) { return audio_dei(1, d, port); }
 static Uint8 audio2_dei(Uint8 *d, Uint8 port) { return audio_dei(2, d, port); }
 static Uint8 audio3_dei(Uint8 *d, Uint8 port) { return audio_dei(3, d, port); }
-static Uint8 file0_dei(Uint8 *d, Uint8 port) { return file_dei(0, d, port); }
-static Uint8 file1_dei(Uint8 *d, Uint8 port) { return file_dei(1, d, port); }
 static void audio0_deo(Uint8 *d, Uint8 port) { audio_deo(0, d, port); }
 static void audio1_deo(Uint8 *d, Uint8 port) { audio_deo(1, d, port); }
 static void audio2_deo(Uint8 *d, Uint8 port) { audio_deo(2, d, port); }
 static void audio3_deo(Uint8 *d, Uint8 port) { audio_deo(3, d, port); }
-static void file0_deo(Uint8 *d, Uint8 port) { file_deo(0, u.ram.dat, d, port); }
-static void file1_deo(Uint8 *d, Uint8 port) { file_deo(1, u.ram.dat, d, port); }
+static void file0_deo(Uint8 *d, Uint8 port) { file_deo(&u, 0xa0+port); }
+static void file1_deo(Uint8 *d, Uint8 port) { file_deo(&u, 0xb0+port); }
 
 static Uint8 ctr_system_dei(Uint8 *d, Uint8 port) { return system_dei(&u, port); }
 static void
@@ -492,8 +492,6 @@ start(Uxn *u)
 	return 1;
 }
 
-Uxn u;
-
 int
 main(int argc, char **argv)
 {
@@ -518,8 +516,8 @@ main(int argc, char **argv)
         uxn_register_device(0x4, audio1_dei, audio1_deo);
         uxn_register_device(0x5, audio2_dei, audio2_deo);
         uxn_register_device(0x6, audio3_dei, audio3_deo);
-        uxn_register_device(0xa, file0_dei, file0_deo);
-        uxn_register_device(0xb, file1_dei, file1_deo);
+        uxn_register_device(0xa, NULL, file0_deo);
+        uxn_register_device(0xb, NULL, file1_deo);
         uxn_register_device(0xc, datetime_dei, NULL);
 
 	if(!uxn_boot())
