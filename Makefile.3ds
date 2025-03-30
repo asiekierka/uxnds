@@ -47,11 +47,11 @@ INCLUDES	:=	include source
 GRAPHICS	:=	assets/3ds
 ROMFS		:=	romfs/3ds
 GFXBUILD	:=	$(ROMFS)
-APP_TITLE := uxnds v0.5.1
+APP_TITLE := uxnds v0.5.3
 ifeq ($(DEBUG),true)
-APP_DESCRIPTION := tiny virtual machine (debug)
+APP_DESCRIPTION := varvara virtual machine (debug)
 else
-APP_DESCRIPTION := tiny virtual machine
+APP_DESCRIPTION := varvara virtual machine
 endif
 APP_AUTHOR := asie
 ICON := misc/uxn48.png

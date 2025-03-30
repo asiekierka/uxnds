@@ -1,4 +1,3 @@
-#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
