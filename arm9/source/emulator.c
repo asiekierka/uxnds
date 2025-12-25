@@ -48,7 +48,7 @@ int prompt_reset(Uxn *u);
 int
 error(char *msg, const char *err)
 {
-	dprintf("Error %s: %s\n", msg, err);
+	dbgprintf("Error %s: %s\n", msg, err);
 	while(1) {
 		swiWaitForVBlank();
 	}
@@ -518,7 +518,7 @@ main(int argc, char **argv)
 		return error("FAT init", "Failed");
 	nitroFSInit(NULL); // no big deal if this one fails
 	if(!uxn_load_boot(&u)) {
-                dprintf("Halted: Missing input rom.\n");
+                dbgprintf("Halted: Missing input rom.\n");
 		return error("Load", "Failed");
 	}
 	if(!init())

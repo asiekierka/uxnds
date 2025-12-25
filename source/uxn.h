@@ -16,9 +16,9 @@ WITH REGARD TO THIS SOFTWARE.
 */
 
 #ifdef DEBUG
-#define dprintf iprintf
+#define dbgprintf iprintf
 #else
-#define dprintf(...)
+#define dbgprintf(...)
 #endif
 
 #ifdef __BLOCKSDS__

@@ -523,7 +523,7 @@ main(int argc, char **argv)
 	if(!uxn_boot())
 		return error("Boot", "Failed");
 	if(!uxn_load_boot(&u)) {
-                dprintf("Halted: Missing input rom.\n");
+                dbgprintf("Halted: Missing input rom.\n");
 		return error("Load", "Failed");
 	}
 
