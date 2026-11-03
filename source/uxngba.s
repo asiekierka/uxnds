@@ -1220,8 +1220,7 @@ jmp:
 
 jmp2:
     wpop16  r3, r5
-    mov     r0, r7
-    add     r0, r0, r3
+    add     r0, r7, r3
     b       uxn_decode
 
 jcn:
@@ -1235,26 +1234,21 @@ jcn2:
     wpop16  r3, r5
     wpop8   r4
     cmp     r4, #0
-    movne   r0, r7
-    cmp     r4, #0
-    addne   r0, r0, r3
+    addne   r0, r7, r3
     b       uxn_decode
 
 jsr:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     wpop8s  r4
     rpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     wpop16  r4, r5
     rpush16 r3
-    mov     r0, r7
-    add     r0, r0, r4
+    add     r0, r7, r4
     b       uxn_decode
 
 sth:
@@ -1644,8 +1638,7 @@ jmpr:
 
 jmp2r:
     rpop16  r3, r5
-    mov     r0, r7
-    add     r0, r0, r3
+    add     r0, r7, r3
     b       uxn_decode
 
 jcnr:
@@ -1659,26 +1652,21 @@ jcn2r:
     rpop16  r3, r5
     rpop8   r4
     cmp     r4, #0
-    movne   r0, r7
-    cmp     r4, #0
-    addne   r0, r0, r3
+    addne   r0, r7, r3
     b       uxn_decode
 
 jsrr:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     rpop8s  r4
     rpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2r:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     rpop16  r4, r5
     rpush16 r3
-    mov     r0, r7
-    add     r0, r0, r4
+    add     r0, r7, r4
     b       uxn_decode
 
 sthr:
@@ -2076,8 +2064,7 @@ jmpk:
 
 jmp2k:
     wpeek16 r3, r5, #-1, #-2
-    mov     r0, r7
-    add     r0, r0, r3
+    add     r0, r7, r3
     b       uxn_decode
 
 jcnk:
@@ -2091,26 +2078,21 @@ jcn2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek8  r4, #-3
     cmp     r4, #0
-    movne   r0, r7
-    cmp     r4, #0
-    addne   r0, r0, r3
+    addne   r0, r7, r3
     b       uxn_decode
 
 jsrk:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     wpeek8s r4, #-1
     rpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2k:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     wpeek16 r4, r5, #-1, #-2
     rpush16 r3
-    mov     r0, r7
-    add     r0, r0, r4
+    add     r0, r7, r4
     b       uxn_decode
 
 sthk:
@@ -2508,8 +2490,7 @@ jmpkr:
 
 jmp2kr:
     rpeek16 r3, r5, #-1, #-2
-    mov     r0, r7
-    add     r0, r0, r3
+    add     r0, r7, r3
     b       uxn_decode
 
 jcnkr:
@@ -2523,26 +2504,21 @@ jcn2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek8  r4, #-3
     cmp     r4, #0
-    movne   r0, r7
-    cmp     r4, #0
-    addne   r0, r0, r3
+    addne   r0, r7, r3
     b       uxn_decode
 
 jsrkr:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     rpeek8s r4, #-1
     rpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2kr:
-    mov     r3, r0
-    sub     r3, r3, r7
+    sub     r3, r0, r7
     rpeek16 r4, r5, #-1, #-2
     rpush16 r3
-    mov     r0, r7
-    add     r0, r0, r4
+    add     r0, r7, r4
     b       uxn_decode
 
 sthkr:
