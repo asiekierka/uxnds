@@ -123,7 +123,9 @@ uxn_boot(void)
 int
 uxn_eval(Uxn *u, Uint32 vec)
 {
-	uxn_eval_asm(vec);
+	if (vec) {
+		uxn_eval_asm(vec);
+	}
 	return 1;
 }
 
