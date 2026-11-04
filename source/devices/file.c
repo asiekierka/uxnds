@@ -78,8 +78,6 @@ static Uint16
 get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int fail_nonzero)
 {
 	struct stat st;
-	if(len < strlen(basename) + 8)
-		return 0;
 	if(stat(pathname, &st))
 		return fail_nonzero ? sniprintf(p, len, "!!!!\t%s\n", basename) : 0;
 	else if(S_ISDIR(st.st_mode))
@@ -306,7 +304,7 @@ file_stat(UxnFile *c, void *dest, Uint16 len)
 static Uint16
 file_delete(UxnFile *c)
 {
-	return c->outside_sandbox ? 0 : unlink(c->current_filename);
+	return c->outside_sandbox ? 0 : !unlink(c->current_filename);
 }
 
 /* IO */
