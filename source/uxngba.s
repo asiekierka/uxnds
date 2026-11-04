@@ -5,6 +5,13 @@
 @
 
 #ifdef __3DS__
+.macro save_wst_rst_r1_r2 a
+    ldr     \a, =wst_ptr
+    str     r1, [\a]
+    ldr     \a, =rst_ptr
+    str     r2, [\a]
+.endm
+
 .macro restore_wst_rst_r1_r2 a
     ldr     \a, =wst_ptr
     ldr     r1, [\a]
@@ -13,6 +20,11 @@
 .endm
 #else
 .section .itcm, "ax", %progbits
+
+.macro save_wst_rst_r1_r2 a
+    str     r1, wst_ptr
+    str     r2, rst_ptr
+.endm
 
 .macro restore_wst_rst_r1_r2 a
     ldr     r1, wst_ptr
@@ -72,10 +84,7 @@ uxn_decode:
 
 uxn_ret:
     @ Update stack pointers and return.
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     pop     {r4-r8}
     bx      lr
 
@@ -481,10 +490,7 @@ dei:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -507,10 +513,7 @@ dei2:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -544,16 +547,13 @@ deo:
     and     r3, #0x0f      @ port
     wpop8   r5             @ value
 
-    @ Find current devide.
+    @ Find current device.
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
 
     @ Save registers that can be affected.
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
 
     @ Call the deo function.
     ldr     r0, =device_data
@@ -580,16 +580,13 @@ deo2:
     and     r3, #0x0f      @ port
     wpop16  r5, r6         @ value
 
-    @ Find current devide.
+    @ Find current device.
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
 
     @ Save registers that can be affected.
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
 
     @ Call the deo function.
     ldr     r0, =device_data
@@ -621,10 +618,7 @@ deir:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -647,10 +641,7 @@ dei2r:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -684,16 +675,13 @@ deor:
     and     r3, #0x0f      @ port
     rpop8   r5             @ value
 
-    @ Find current devide.
+    @ Find current device.
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
 
     @ Save registers that can be affected.
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
 
     @ Call the deo function.
     ldr     r0, =device_data
@@ -720,16 +708,13 @@ deo2r:
     and     r3, #0x0f      @ port
     rpop16  r5, r6         @ value
 
-    @ Find current devide.
+    @ Find current device.
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
 
     @ Save registers that can be affected.
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
 
     @ Call the deo function.
     ldr     r0, =device_data
@@ -761,10 +746,7 @@ deik:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -787,10 +769,7 @@ dei2k:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -825,10 +804,7 @@ deok:
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -852,10 +828,7 @@ deo2k:
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -883,10 +856,7 @@ deikr:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -909,10 +879,7 @@ dei2kr:
     ldr     r6, =dei_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -947,10 +914,7 @@ deokr:
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
@@ -974,10 +938,7 @@ deo2kr:
     ldr     r6, =deo_map
     ldr     r6, [r6, r4, lsl #2]
     stmfd   sp!, {r0, r7, lr}
-    ldr     r0, =wst_ptr
-    str     r1, [r0]
-    ldr     r0, =rst_ptr
-    str     r2, [r0]
+    save_wst_rst_r1_r2 r0
     ldr     r0, =device_data
     lsl     r4, #4
     add     r0, r4
