@@ -47,14 +47,18 @@ uxn_eval_asm:
     ldr     r8, =op_table
     add     r0, r0, r7
 
+popk:
+pop2k:
+popkr:
+pop2kr:
+uxn_decode:
+
 #ifdef UXN_DECODE_INLINE
 .macro to_uxn_decode
 #else
 .macro to_uxn_decode
     b       uxn_decode
 .endm
-
-uxn_decode:
 #endif
     ldrb    r3, [r0], #1 @ current OP value / table index
 
@@ -63,8 +67,6 @@ uxn_decode:
     bx      r4                   @ op_table[idx * 4]()
 #ifdef UXN_DECODE_INLINE
 .endm
-
-uxn_decode:
 	to_uxn_decode
 #endif
 
@@ -1920,12 +1922,6 @@ inc2k:
     wpush16 r3
     to_uxn_decode
 
-popk:
-    to_uxn_decode
-
-pop2k:
-    to_uxn_decode
-
 nipk:
     wpeek8  r3, #-1
     wpush8  r3
@@ -2344,12 +2340,6 @@ inc2kr:
     rpeek16 r3, r5, #-1, #-2
     add     r3, r3, #1
     rpush16 r3
-    to_uxn_decode
-
-popkr:
-    to_uxn_decode
-
-pop2kr:
     to_uxn_decode
 
 nipkr:
