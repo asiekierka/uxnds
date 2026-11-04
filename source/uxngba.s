@@ -1,3 +1,5 @@
+#define UXN_DECODE_INLINE
+
 @
 @ Core variables
 @
@@ -30,6 +32,7 @@ rst_ptr: .word rst
 @   r2: Stack pointer (rst).
 @   r3-r6: Scratch registers.
 @   r7: Ram ptr.
+@   r8: Opcode table ptr.
 @
 .global uxn_eval_asm
 uxn_eval_asm:
@@ -38,18 +41,32 @@ uxn_eval_asm:
     bxeq    lr
 
     @ Initialization.
-    push    {r4-r7}
+    push    {r4-r8}
     restore_wst_rst_r1_r2 r6
     ldr     r7, =uxn_ram
+    ldr     r8, =op_table
     add     r0, r0, r7
 
+#ifdef UXN_DECODE_INLINE
+.macro to_uxn_decode
+#else
+.macro to_uxn_decode
+    b       uxn_decode
+.endm
+
 uxn_decode:
+#endif
     ldrb    r3, [r0], #1 @ current OP value / table index
 
     @ Decode OP based on table lookup.
-    adr     r4, op_table         @ decoding table
-    ldr     r4, [r4, r3, lsl #2] @ op_table[idx * 4]
+    ldr     r4, [r8, r3, lsl #2] @ op_table[idx * 4]
     bx      r4                   @ op_table[idx * 4]()
+#ifdef UXN_DECODE_INLINE
+.endm
+
+uxn_decode:
+	to_uxn_decode
+#endif
 
 uxn_ret:
     @ Update stack pointers and return.
@@ -57,7 +74,7 @@ uxn_ret:
     str     r1, [r0]
     ldr     r0, =rst_ptr
     str     r2, [r0]
-    pop     {r4-r7}
+    pop     {r4-r8}
     bx      lr
 
 @
@@ -479,7 +496,7 @@ dei:
     restore_wst_rst_r1_r2 r6
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 dei2:
     wpop8   r5
@@ -516,7 +533,7 @@ dei2:
     wpush8  r5
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 deo:
     @ Get args (idx/port/value).
@@ -552,7 +569,7 @@ deo:
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deo2:
     @ Get args (idx/port/value).
@@ -593,7 +610,7 @@ deo2:
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deir:
     rpop8   r3
@@ -619,7 +636,7 @@ deir:
     restore_wst_rst_r1_r2 r6
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 dei2r:
     rpop8   r5
@@ -656,7 +673,7 @@ dei2r:
     rpush8  r5
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 deor:
     @ Get args (idx/port/value).
@@ -692,7 +709,7 @@ deor:
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deo2r:
     @ Get args (idx/port/value).
@@ -733,7 +750,7 @@ deo2r:
     @ Restore saved variables.
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deik:
     wpeek8  r3, #-1
@@ -759,7 +776,7 @@ deik:
     restore_wst_rst_r1_r2 r6
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 dei2k:
     wpeek8  r5, #-1
@@ -796,7 +813,7 @@ dei2k:
     wpush8  r5
     wpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 deok:
     wpeek8  r3, #-1
@@ -823,7 +840,7 @@ deok:
 #endif
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deo2k:
     wpeek8  r3, #-1
@@ -855,7 +872,7 @@ deo2k:
 #endif
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deikr:
     rpeek8  r3, #-1
@@ -881,7 +898,7 @@ deikr:
     restore_wst_rst_r1_r2 r6
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 dei2kr:
     rpeek8  r5, #-1
@@ -918,7 +935,7 @@ dei2kr:
     rpush8  r5
     rpush8  r0
     ldmfd   sp!, {r0, r7, lr}
-    b       uxn_decode
+    to_uxn_decode
 
 deokr:
     rpeek8  r3, #-1
@@ -945,7 +962,7 @@ deokr:
 #endif
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 deo2kr:
     rpeek8  r3, #-1
@@ -977,7 +994,7 @@ deo2kr:
 #endif
     ldmfd   sp!, {r0, r7, lr}
     restore_wst_rst_r1_r2 r6
-    b       uxn_decode
+    to_uxn_decode
 
 .ltorg
 .align 2
@@ -998,7 +1015,7 @@ jci:
     wpop8   r4
     cmp     r4, #0
     addne   r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmi:
     ldrb    r5, [r0], #1
@@ -1011,7 +1028,7 @@ jmi:
     asr     r3, r3, #16
     add     r0, r3
 #endif
-    b       uxn_decode
+    to_uxn_decode
 
 jsi:
     ldrb    r5, [r0], #1
@@ -1026,31 +1043,31 @@ jsi:
     asr     r3, r3, #16
     add     r0, r3
 #endif
-    b       uxn_decode
+    to_uxn_decode
 
 lit:
     next    r3
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lit2:
     next    r3
     next    r4
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 litr:
     next    r3
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lit2r:
     next    r3
     next    r4
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 .ltorg
 .align 2
@@ -1059,47 +1076,47 @@ inc:
     wpop8   r3
     add     r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 inc2:
     wpop16  r3, r5
     add     r3, r3, #1
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 pop:
     sub     r1, #1
-    b       uxn_decode
+    to_uxn_decode
 
 pop2:
     sub     r1, #2
-    b       uxn_decode
+    to_uxn_decode
 
 nip:
     wpop8   r3
     strb    r3, [r1, #-1]
-    b       uxn_decode
+    to_uxn_decode
 
 nip2:
     wpop16  r3, r5
     strb    r3, [r1, #-1]
     lsr     r3, #8
     strb    r3, [r1, #-2]
-    b       uxn_decode
+    to_uxn_decode
 
 swp:
     wpop8   r3
     wpop8   r4
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 swp2:
     wpop16  r3, r5
     wpop16  r4, r5
     wpush16 r3
     wpush16 r4
-    b       uxn_decode
+    to_uxn_decode
 
 rot:
     wpop8   r5
@@ -1108,7 +1125,7 @@ rot:
     wpush8  r4
     wpush8  r5
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 rot2:
     wpop16  r5, r6
@@ -1117,31 +1134,31 @@ rot2:
     wpush16 r4
     wpush16 r5
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 dup:
     wpeek8  r3, #-1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 dup2:
     wpeek8  r3, #-2
     wpeek8  r4, #-1
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ovr:
     wpeek8  r3, #-2
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ovr2:
     wpeek8  r3, #-4
     wpeek8  r4, #-3
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equ:
     wpop8   r3
@@ -1150,7 +1167,7 @@ equ:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equ2:
     wpop16  r3, r5
@@ -1159,7 +1176,7 @@ equ2:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 neq:
     wpop8   r3
@@ -1167,7 +1184,7 @@ neq:
     subs    r3, r4, r3
     movne   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 neq2:
     wpop16  r3, r5
@@ -1175,7 +1192,7 @@ neq2:
     subs    r3, r4, r3
     movne   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gth:
     wpop8   r3
@@ -1184,7 +1201,7 @@ gth:
     movls   r3, #0
     movhi   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gth2:
     wpop16  r3, r5
@@ -1193,7 +1210,7 @@ gth2:
     movls   r3, #0
     movhi   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lth:
     wpop8   r3
@@ -1202,7 +1219,7 @@ lth:
     movcs   r3, #0
     movcc   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lth2:
     wpop16  r3, r5
@@ -1211,61 +1228,61 @@ lth2:
     movcs   r3, #0
     movcc   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmp:
     wpop8s  r3
     add     r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmp2:
     wpop16  r3, r5
     add     r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcn:
     wpop8s  r3
     wpop8   r4
     cmp     r4, #0
     addne   r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcn2:
     wpop16  r3, r5
     wpop8   r4
     cmp     r4, #0
     addne   r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jsr:
     sub     r3, r0, r7
     wpop8s  r4
     rpush16 r3
     add     r0, r4
-    b       uxn_decode
+    to_uxn_decode
 
 jsr2:
     sub     r3, r0, r7
     wpop16  r4, r5
     rpush16 r3
     add     r0, r7, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sth:
     wpop8   r3
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sth2:
     wpop16  r3, r5
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldz:
     wpop8   r3
     zload8  r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldz2:
     wpop8   r3
@@ -1274,25 +1291,25 @@ ldz2:
     add     r3, #1
     zload8  r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 stz:
     wpop8   r3
     wpop8   r4
     zsave8  r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 stz2:
     wpop8   r3
     wpop16  r4, r5
     zsave16 r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldr:
     wpop8s  r4
     rload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldr2:
     wpop8s  r4
@@ -1301,25 +1318,25 @@ ldr2:
     add     r4, #1
     rload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 str:
     wpop8s  r4
     wpop8   r3
     rsave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 str2:
     wpop8s  r4
     wpop16  r3, r5
     rsave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 lda:
     wpop16  r4, r5
     aload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lda2:
     wpop16  r4, r5
@@ -1328,61 +1345,61 @@ lda2:
     add     r4, #1
     aload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sta:
     wpop16  r4, r5
     wpop8   r3
     asave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sta2:
     wpop16  r4, r5
     wpop16  r3, r5
     asave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 add:
     wpop8   r3
     wpop8   r4
     add     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 add2:
     wpop16  r3, r5
     wpop16  r4, r5
     add     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 sub:
     wpop8   r3
     wpop8   r4
     sub     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 sub2:
     wpop16  r3, r5
     wpop16  r4, r5
     sub     r3, r4, r3
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 mul:
     wpop8   r3
     wpop8   r4
     mul     r4, r3, r4
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 mul2:
     wpop16  r3, r5
     wpop16  r4, r5
     mul     r3, r4, r3
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 div:
     wpop8   r3
@@ -1394,7 +1411,7 @@ div:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 div2:
     wpop16  r3, r5
@@ -1406,49 +1423,49 @@ div2:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 and:
     wpop8   r3
     wpop8   r4
     and     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 and2:
     wpop16  r3, r5
     wpop16  r4, r5
     and     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 ora:
     wpop8   r3
     wpop8   r4
     orr     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ora2:
     wpop16  r3, r5
     wpop16  r4, r5
     orr     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 eor:
     wpop8   r3
     wpop8   r4
     eor     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 eor2:
     wpop16  r3, r5
     wpop16  r4, r5
     eor     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 sft:
     wpop8   r4
@@ -1458,7 +1475,7 @@ sft:
     lsr r3, r3, r4
     lsl r3, r3, r5
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sft2:
     wpop8   r4
@@ -1468,7 +1485,7 @@ sft2:
     lsr r3, r3, r4
     lsl r3, r3, r5
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 .ltorg
 .align 2
@@ -1477,47 +1494,47 @@ incr:
     rpop8   r3
     add     r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 inc2r:
     rpop16  r3, r5
     add     r3, r3, #1
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 popr:
     sub     r2, #1
-    b       uxn_decode
+    to_uxn_decode
 
 pop2r:
     sub     r2, #2
-    b       uxn_decode
+    to_uxn_decode
 
 nipr:
     rpop8   r3
     strb    r3, [r2, #-1]
-    b       uxn_decode
+    to_uxn_decode
 
 nip2r:
     rpop16  r3, r5
     strb    r3, [r2, #-1]
     lsr     r3, #8
     strb    r3, [r2, #-2]
-    b       uxn_decode
+    to_uxn_decode
 
 swpr:
     rpop8   r3
     rpop8   r4
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 swp2r:
     rpop16  r3, r5
     rpop16  r4, r5
     rpush16 r3
     rpush16 r4
-    b       uxn_decode
+    to_uxn_decode
 
 rotr:
     rpop8   r5
@@ -1526,7 +1543,7 @@ rotr:
     rpush8  r4
     rpush8  r5
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 rot2r:
     rpop16  r5, r6
@@ -1535,31 +1552,31 @@ rot2r:
     rpush16 r4
     rpush16 r5
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 dupr:
     rpeek8  r3, #-1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 dup2r:
     rpeek8  r3, #-2
     rpeek8  r4, #-1
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ovrr:
     rpeek8  r3, #-2
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ovr2r:
     rpeek8  r3, #-4
     rpeek8  r4, #-3
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equr:
     rpop8   r3
@@ -1568,7 +1585,7 @@ equr:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equ2r:
     rpop16  r3, r5
@@ -1577,7 +1594,7 @@ equ2r:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 neqr:
     rpop8   r3
@@ -1585,7 +1602,7 @@ neqr:
     subs    r3, r4, r3
     movne   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 neq2r:
     rpop16  r3, r5
@@ -1593,7 +1610,7 @@ neq2r:
     subs    r3, r4, r3
     movne   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gthr:
     rpop8   r3
@@ -1602,7 +1619,7 @@ gthr:
     movls   r3, #0
     movhi   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gth2r:
     rpop16  r3, r5
@@ -1611,7 +1628,7 @@ gth2r:
     movls   r3, #0
     movhi   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lthr:
     rpop8   r3
@@ -1620,7 +1637,7 @@ lthr:
     movcs   r3, #0
     movcc   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lth2r:
     rpop16  r3, r5
@@ -1629,61 +1646,61 @@ lth2r:
     movcs   r3, #0
     movcc   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmpr:
     rpop8s  r3
     add     r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmp2r:
     rpop16  r3, r5
     add     r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcnr:
     rpop8s  r3
     rpop8   r4
     cmp     r4, #0
     addne   r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcn2r:
     rpop16  r3, r5
     rpop8   r4
     cmp     r4, #0
     addne   r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jsrr:
     sub     r3, r0, r7
     rpop8s  r4
     wpush16 r3
     add     r0, r4
-    b       uxn_decode
+    to_uxn_decode
 
 jsr2r:
     sub     r3, r0, r7
     rpop16  r4, r5
     wpush16 r3
     add     r0, r7, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sthr:
     rpop8   r3
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sth2r:
     rpop16  r3, r5
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldzr:
     rpop8   r3
     zload8  r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldz2r:
     rpop8   r3
@@ -1692,25 +1709,25 @@ ldz2r:
     add     r3, #1
     zload8  r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 stzr:
     rpop8   r3
     rpop8   r4
     zsave8  r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 stz2r:
     rpop8   r3
     rpop16  r4, r5
     zsave16 r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldrr:
     rpop8s  r4
     rload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldr2r:
     rpop8s  r4
@@ -1719,25 +1736,25 @@ ldr2r:
     add     r4, #1
     rload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 strr:
     rpop8s  r4
     rpop8   r3
     rsave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 str2r:
     rpop8s  r4
     rpop16  r3, r5
     rsave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldar:
     rpop16  r4, r5
     aload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lda2r:
     rpop16  r4, r5
@@ -1746,61 +1763,61 @@ lda2r:
     add     r4, #1
     aload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 star:
     rpop16  r4, r5
     rpop8   r3
     asave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sta2r:
     rpop16  r4, r5
     rpop16  r3, r5
     asave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 addr:
     rpop8   r3
     rpop8   r4
     add     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 add2r:
     rpop16  r3, r5
     rpop16  r4, r5
     add     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 subr:
     rpop8   r3
     rpop8   r4
     sub     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 sub2r:
     rpop16  r3, r5
     rpop16  r4, r5
     sub     r3, r4, r3
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 mulr:
     rpop8   r3
     rpop8   r4
     mul     r4, r3, r4
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 mul2r:
     rpop16  r3, r5
     rpop16  r4, r5
     mul     r3, r4, r3
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 divr:
     rpop8   r3
@@ -1812,7 +1829,7 @@ divr:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 div2r:
     rpop16  r3, r5
@@ -1824,49 +1841,49 @@ div2r:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 andr:
     rpop8   r3
     rpop8   r4
     and     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 and2r:
     rpop16  r3, r5
     rpop16  r4, r5
     and     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 orar:
     rpop8   r3
     rpop8   r4
     orr     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ora2r:
     rpop16  r3, r5
     rpop16  r4, r5
     orr     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 eorr:
     rpop8   r3
     rpop8   r4
     eor     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 eor2r:
     rpop16  r3, r5
     rpop16  r4, r5
     eor     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 sftr:
     rpop8   r4
@@ -1876,7 +1893,7 @@ sftr:
     lsr r3, r3, r4
     lsl r3, r3, r5
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sft2r:
     rpop8   r4
@@ -1886,7 +1903,7 @@ sft2r:
     lsr r3, r3, r4
     lsl r3, r3, r5
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 .ltorg
 .align 2
@@ -1895,43 +1912,43 @@ inck:
     wpeek8  r3, #-1
     add     r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 inc2k:
     wpeek16 r3, r5, #-1, #-2
     add     r3, r3, #1
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 popk:
-    b       uxn_decode
+    to_uxn_decode
 
 pop2k:
-    b       uxn_decode
+    to_uxn_decode
 
 nipk:
     wpeek8  r3, #-1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 nip2k:
     wpeek16 r3, r5, #-1, #-2
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 swpk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 swp2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     wpush16 r3
     wpush16 r4
-    b       uxn_decode
+    to_uxn_decode
 
 rotk:
     wpeek8  r5, #-1
@@ -1940,7 +1957,7 @@ rotk:
     wpush8  r4
     wpush8  r5
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 rot2k:
     wpeek16 r5, r6, #-1, #-2
@@ -1949,13 +1966,13 @@ rot2k:
     wpush16 r4
     wpush16 r5
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 dupk:
     wpeek8  r3, #-1
     wpush8  r3
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 dup2k:
     wpeek8  r3, #-2
@@ -1964,7 +1981,7 @@ dup2k:
     wpush8  r4
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ovrk:
     wpeek8  r3, #-2
@@ -1972,7 +1989,7 @@ ovrk:
     wpush8  r3
     wpush8  r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ovr2k:
     wpeek8  r3, #-4
@@ -1985,7 +2002,7 @@ ovr2k:
     wpush8  r6
     wpush8  r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equk:
     wpeek8  r3, #-1
@@ -1994,7 +2011,7 @@ equk:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equ2k:
     wpeek16 r3, r5, #-1, #-2
@@ -2003,7 +2020,7 @@ equ2k:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 neqk:
     wpeek8  r3, #-1
@@ -2011,7 +2028,7 @@ neqk:
     subs    r3, r4, r3
     movne   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 neq2k:
     wpeek16 r3, r5, #-1, #-2
@@ -2019,7 +2036,7 @@ neq2k:
     subs    r3, r4, r3
     movne   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gthk:
     wpeek8  r3, #-1
@@ -2028,7 +2045,7 @@ gthk:
     movls   r3, #0
     movhi   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gth2k:
     wpeek16 r3, r5, #-1, #-2
@@ -2037,7 +2054,7 @@ gth2k:
     movls   r3, #0
     movhi   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lthk:
     wpeek8  r3, #-1
@@ -2046,7 +2063,7 @@ lthk:
     movcs   r3, #0
     movcc   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lth2k:
     wpeek16 r3, r5, #-1, #-2
@@ -2055,61 +2072,61 @@ lth2k:
     movcs   r3, #0
     movcc   r3, #1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmpk:
     wpeek8s r3, #-1
     add     r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmp2k:
     wpeek16 r3, r5, #-1, #-2
     add     r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcnk:
     wpeek8s r3, #-1
     wpeek8  r4, #-2
     cmp     r4, #0
     addne   r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcn2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek8  r4, #-3
     cmp     r4, #0
     addne   r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jsrk:
     sub     r3, r0, r7
     wpeek8s r4, #-1
     rpush16 r3
     add     r0, r4
-    b       uxn_decode
+    to_uxn_decode
 
 jsr2k:
     sub     r3, r0, r7
     wpeek16 r4, r5, #-1, #-2
     rpush16 r3
     add     r0, r7, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sthk:
     wpeek8  r3, #-1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sth2k:
     wpeek16 r3, r5, #-1, #-2
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldzk:
     wpeek8  r3, #-1
     zload8  r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldz2k:
     wpeek8  r3, #-1
@@ -2118,25 +2135,25 @@ ldz2k:
     add     r3, #1
     zload8  r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 stzk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     zsave8  r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 stz2k:
     wpeek8  r3, #-1
     wpeek16 r4, r5, #-2, #-3
     zsave16 r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldrk:
     wpeek8s r4, #-1
     rload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldr2k:
     wpeek8s r4, #-1
@@ -2145,25 +2162,25 @@ ldr2k:
     add     r4, #1
     rload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 strk:
     wpeek8s r4, #-1
     wpeek8  r3, #-2
     rsave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 str2k:
     wpeek8s r4, #-1
     wpeek16 r3, r5, #-2, #-3
     rsave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldak:
     wpeek16 r4, r5, #-1, #-2
     aload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lda2k:
     wpeek16 r4, r5, #-1, #-2
@@ -2172,61 +2189,61 @@ lda2k:
     add     r4, #1
     aload8  r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 stak:
     wpeek16 r4, r5, #-1, #-2
     wpeek8  r3, #-3
     asave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sta2k:
     wpeek16 r4, r5, #-1, #-2
     wpeek16 r3, r5, #-3, #-4
     asave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 addk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     add     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 add2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     add     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 subk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     sub     r4, r4, r3
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 sub2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     sub     r3, r4, r3
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 mulk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     mul     r4, r3, r4
     wpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 mul2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     mul     r3, r4, r3
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 divk:
     wpeek8  r3, #-1
@@ -2238,7 +2255,7 @@ divk:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 div2k:
     wpeek16 r3, r5, #-1, #-2
@@ -2250,49 +2267,49 @@ div2k:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 andk:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     and     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 and2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     and     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 orak:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     orr     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ora2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     orr     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 eork:
     wpeek8  r3, #-1
     wpeek8  r4, #-2
     eor     r3, r3, r4
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 eor2k:
     wpeek16 r3, r5, #-1, #-2
     wpeek16 r4, r5, #-3, #-4
     eor     r3, r3, r4
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 sftk:
     wpeek8  r4, #-1
@@ -2302,7 +2319,7 @@ sftk:
     lsr r3, r3, r4
     lsl r3, r3, r5
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sft2k:
     wpeek8  r4, #-1
@@ -2312,7 +2329,7 @@ sft2k:
     lsr r3, r3, r4
     lsl r3, r3, r5
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 .ltorg
 .align 2
@@ -2321,43 +2338,43 @@ inckr:
     rpeek8  r3, #-1
     add     r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 inc2kr:
     rpeek16 r3, r5, #-1, #-2
     add     r3, r3, #1
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 popkr:
-    b       uxn_decode
+    to_uxn_decode
 
 pop2kr:
-    b       uxn_decode
+    to_uxn_decode
 
 nipkr:
     rpeek8  r3, #-1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 nip2kr:
     rpeek16 r3, r5, #-1, #-2
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 swpkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 swp2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     rpush16 r3
     rpush16 r4
-    b       uxn_decode
+    to_uxn_decode
 
 rotkr:
     rpeek8  r5, #-1
@@ -2366,7 +2383,7 @@ rotkr:
     rpush8  r4
     rpush8  r5
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 rot2kr:
     rpeek16 r5, r6, #-1, #-2
@@ -2375,13 +2392,13 @@ rot2kr:
     rpush16 r4
     rpush16 r5
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 dupkr:
     rpeek8  r3, #-1
     rpush8  r3
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 dup2kr:
     rpeek8  r3, #-2
@@ -2390,7 +2407,7 @@ dup2kr:
     rpush8  r4
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ovrkr:
     rpeek8  r3, #-2
@@ -2398,7 +2415,7 @@ ovrkr:
     rpush8  r3
     rpush8  r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ovr2kr:
     rpeek8  r3, #-4
@@ -2411,7 +2428,7 @@ ovr2kr:
     rpush8  r6
     rpush8  r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equkr:
     rpeek8  r3, #-1
@@ -2420,7 +2437,7 @@ equkr:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 equ2kr:
     rpeek16 r3, r5, #-1, #-2
@@ -2429,7 +2446,7 @@ equ2kr:
     rsbs    r4, r3, #0
     adc     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 neqkr:
     rpeek8  r3, #-1
@@ -2437,7 +2454,7 @@ neqkr:
     subs    r3, r4, r3
     movne   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 neq2kr:
     rpeek16 r3, r5, #-1, #-2
@@ -2445,7 +2462,7 @@ neq2kr:
     subs    r3, r4, r3
     movne   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gthkr:
     rpeek8  r3, #-1
@@ -2454,7 +2471,7 @@ gthkr:
     movls   r3, #0
     movhi   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 gth2kr:
     rpeek16 r3, r5, #-1, #-2
@@ -2463,7 +2480,7 @@ gth2kr:
     movls   r3, #0
     movhi   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lthkr:
     rpeek8  r3, #-1
@@ -2472,7 +2489,7 @@ lthkr:
     movcs   r3, #0
     movcc   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lth2kr:
     rpeek16 r3, r5, #-1, #-2
@@ -2481,61 +2498,61 @@ lth2kr:
     movcs   r3, #0
     movcc   r3, #1
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmpkr:
     rpeek8s r3, #-1
     add     r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jmp2kr:
     rpeek16 r3, r5, #-1, #-2
     add     r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcnkr:
     rpeek8s r3, #-1
     rpeek8  r4, #-2
     cmp     r4, #0
     addne   r0, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jcn2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek8  r4, #-3
     cmp     r4, #0
     addne   r0, r7, r3
-    b       uxn_decode
+    to_uxn_decode
 
 jsrkr:
     sub     r3, r0, r7
     rpeek8s r4, #-1
     wpush16 r3
     add     r0, r4
-    b       uxn_decode
+    to_uxn_decode
 
 jsr2kr:
     sub     r3, r0, r7
     rpeek16 r4, r5, #-1, #-2
     wpush16 r3
     add     r0, r7, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sthkr:
     rpeek8  r3, #-1
     wpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sth2kr:
     rpeek16 r3, r5, #-1, #-2
     wpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldzkr:
     rpeek8  r3, #-1
     zload8  r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldz2kr:
     rpeek8  r3, #-1
@@ -2544,25 +2561,25 @@ ldz2kr:
     add     r3, #1
     zload8  r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 stzkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     zsave8  r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 stz2kr:
     rpeek8  r3, #-1
     rpeek16 r4, r5, #-2, #-3
     zsave16 r4, r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldrkr:
     rpeek8s r4, #-1
     rload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ldr2kr:
     rpeek8s r4, #-1
@@ -2571,25 +2588,25 @@ ldr2kr:
     add     r4, #1
     rload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 strkr:
     rpeek8s r4, #-1
     rpeek8  r3, #-2
     rsave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 str2kr:
     rpeek8s r4, #-1
     rpeek16 r3, r5, #-2, #-3
     rsave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 ldakr:
     rpeek16 r4, r5, #-1, #-2
     aload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 lda2kr:
     rpeek16 r4, r5, #-1, #-2
@@ -2598,61 +2615,61 @@ lda2kr:
     add     r4, #1
     aload8  r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 stakr:
     rpeek16 r4, r5, #-1, #-2
     rpeek8  r3, #-3
     asave8  r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 sta2kr:
     rpeek16 r4, r5, #-1, #-2
     rpeek16 r3, r5, #-3, #-4
     asave16 r3, r4
-    b       uxn_decode
+    to_uxn_decode
 
 addkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     add     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 add2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     add     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 subkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     sub     r4, r4, r3
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 sub2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     sub     r3, r4, r3
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 mulkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     mul     r4, r3, r4
     rpush8  r4
-    b       uxn_decode
+    to_uxn_decode
 
 mul2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     mul     r3, r4, r3
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 divkr:
     rpeek8  r3, #-1
@@ -2664,7 +2681,7 @@ divkr:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 div2kr:
     rpeek16 r3, r5, #-1, #-2
@@ -2676,49 +2693,49 @@ div2kr:
     mov     r3, r0
     pop     {r0, r1, r2, r7, lr}
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 andkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     and     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 and2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     and     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 orakr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     orr     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 ora2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     orr     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 eorkr:
     rpeek8  r3, #-1
     rpeek8  r4, #-2
     eor     r3, r3, r4
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 eor2kr:
     rpeek16 r3, r5, #-1, #-2
     rpeek16 r4, r5, #-3, #-4
     eor     r3, r3, r4
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
 
 sftkr:
     rpeek8  r4, #-1
@@ -2728,7 +2745,7 @@ sftkr:
     lsr r3, r3, r4
     lsl r3, r3, r5
     rpush8  r3
-    b       uxn_decode
+    to_uxn_decode
 
 sft2kr:
     rpeek8  r4, #-1
@@ -2738,4 +2755,4 @@ sft2kr:
     lsr r3, r3, r4
     lsl r3, r3, r5
     rpush16 r3
-    b       uxn_decode
+    to_uxn_decode
