@@ -1658,14 +1658,14 @@ jcn2r:
 jsrr:
     sub     r3, r0, r7
     rpop8s  r4
-    rpush16 r3
+    wpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2r:
     sub     r3, r0, r7
     rpop16  r4, r5
-    rpush16 r3
+    wpush16 r3
     add     r0, r7, r4
     b       uxn_decode
 
@@ -2337,7 +2337,7 @@ pop2kr:
 
 nipkr:
     rpeek8  r3, #-1
-    wpush8  r3
+    rpush8  r3
     b       uxn_decode
 
 nip2kr:
@@ -2510,14 +2510,14 @@ jcn2kr:
 jsrkr:
     sub     r3, r0, r7
     rpeek8s r4, #-1
-    rpush16 r3
+    wpush16 r3
     add     r0, r4
     b       uxn_decode
 
 jsr2kr:
     sub     r3, r0, r7
     rpeek16 r4, r5, #-1, #-2
-    rpush16 r3
+    wpush16 r3
     add     r0, r7, r4
     b       uxn_decode
 
@@ -2581,7 +2581,7 @@ strkr:
 
 str2kr:
     rpeek8s r4, #-1
-    rpeek16 r3, r5, #-1, #-2
+    rpeek16 r3, r5, #-2, #-3
     rsave16 r3, r4
     b       uxn_decode
 
