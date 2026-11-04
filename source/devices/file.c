@@ -81,13 +81,13 @@ get_entry(char *p, Uint16 len, const char *pathname, const char *basename, int f
 	if(len < strlen(basename) + 8)
 		return 0;
 	if(stat(pathname, &st))
-		return fail_nonzero ? sniprintf(p, len, "!!!! %s\n", basename) : 0;
+		return fail_nonzero ? sniprintf(p, len, "!!!!\t%s\n", basename) : 0;
 	else if(S_ISDIR(st.st_mode))
-		return sniprintf(p, len, "---- %s/\n", basename);
+		return sniprintf(p, len, "----\t%s/\n", basename);
 	else if(st.st_size < 0x10000)
-		return sniprintf(p, len, "%04x %s\n", (unsigned int)st.st_size, basename);
+		return sniprintf(p, len, "%04x\t%s\n", (unsigned int)st.st_size, basename);
 	else
-		return sniprintf(p, len, "???? %s\n", basename);
+		return sniprintf(p, len, "????\t%s\n", basename);
 }
 
 static Uint16
