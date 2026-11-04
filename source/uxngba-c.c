@@ -144,7 +144,7 @@ uxn_get_rst_ptr(void)
 void
 uxn_set_wst_ptr(int value)
 {
-	rst_ptr = ((uintptr_t) &rst) + value;
+	wst_ptr = ((uintptr_t) &wst) + value;
 }
 
 void
