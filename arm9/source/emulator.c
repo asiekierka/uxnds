@@ -117,8 +117,8 @@ screen_deo(Uint8 *d, Uint8 port)
 			Uint16 x = peek16(d, 0x8);
 			Uint16 y = peek16(d, 0xa);
 			nds_ppu_pixel(&ppu, layer, x, y, d[0xe] & 0x3);
-			if(d[0x6] & 0x1) POKE2(d + 0x8, x + 1); /* auto x+1 */
-			if(d[0x6] & 0x2) POKE2(d + 0xa, y + 1); /* auto y+1 */
+			if(d[0x6] & 0x1) POKE2(d + 0x8, x + ((ctrl & 0x10) ? -1 : 1)); /* auto x+1 */
+			if(d[0x6] & 0x2) POKE2(d + 0xa, y + ((ctrl & 0x20) ? -1 : 1)); /* auto y+1 */
 		}
 	} else if(port == 0xf) {
 		Uint8 twobpp = d[0xf] & 0x80;

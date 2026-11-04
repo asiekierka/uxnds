@@ -161,8 +161,8 @@ screen_deo(Uint8 *ram, Uint8 *d, Uint8 port)
 			if(x < width && y < height)
 				layer[x + y * width] = color;
 			screen_change(x, y, x + 1, y + 1);
-			if(d[0x6] & 0x1) POKE2(d + 0x8, x + 1); /* auto x+1 */
-			if(d[0x6] & 0x2) POKE2(d + 0xa, y + 1); /* auto y+1 */
+			if(d[0x6] & 0x1) POKE2(d + 0x8, x + ((ctrl & 0x10) ? -1 : 1)); /* auto x+1 */
+			if(d[0x6] & 0x2) POKE2(d + 0xa, y + ((ctrl & 0x20) ? -1 : 1)); /* auto y+1 */
 		}
 		break;
 	}
