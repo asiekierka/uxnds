@@ -1,9 +1,10 @@
 # uxnds
 
-Quick and simple port of the [uxn virtual machine](https://wiki.xxiivv.com/site/uxn.html) to the
-NDS and 3DS consoles.
+Implementation of the [Varvara virtual machine](https://wiki.xxiivv.com/site/varvara.html) for NDS and 3DS consoles.
 
-You can download the latest version and source code [here](https://github.com/asiekierka/uxnds/releases).
+As of writing, uxnds should be largely compatible with Varvara 79K.
+
+You can download the latest version and source code [here](https://codeberg.org/asiekierka/uxnds/releases).
 
 ## Usage
 
@@ -43,3 +44,10 @@ To compile uxnds for NDS, you may use:
 
 * the [BlocksDS toolchain](https://github.com/blocksds/sdk) - run `make -f Makefile.blocksds`;
 * the latest devkitARM toolchain from the devkitPro organization to compile. After [installing](https://devkitpro.org/wiki/Getting_Started), simply run `make -f Makefile.nds`.
+
+## Credits
+
+* Hundred Rabbits - uxn/varvara design
+* Devine Lu Linvega - original uxn virtual machine implementation
+* Bad Diode - original ARM CPU core implementation
+* tbsp - [drif/launcher fork](https://codeberg.org/tbsp/vurxstation/src/branch/main)

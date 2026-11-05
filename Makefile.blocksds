@@ -10,10 +10,12 @@ BLOCKSDSEXT	?= /opt/blocksds/external
 
 NAME		:= uxnds
 
-GAME_TITLE     := uxnds v0.5.3
+GAME_TITLE     := uxnds v0.6.0
 GAME_SUBTITLE  := varvara virtual machine
-GAME_AUTHOR    := 30/03/2025
+GAME_AUTHOR    := 05/11/2026
 GAME_ICON      := misc/uxn32.png
+GAME_ICON_DEBUG   := misc/uxn32_debug.png
+GAME_ICON_PROFILE := misc/uxn32_profile.png
 
 # Source code paths
 # -----------------
@@ -104,12 +106,12 @@ $(ROM_DEBUG): arm9debug arm7
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_debug/arm9.elf \
-		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
+		-b $(GAME_ICON_DEBUG) "$(GAME_FULL_TITLE) (debug)" \
 		$(NDSTOOL_ARGS)
 
 $(ROM_PROFILE): arm9profile arm7
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 build_blocksds/arm7/arm7.elf -9 build_blocksds/arm9_profile/arm9.elf \
-		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
+		-b $(GAME_ICON_PROFILE) "$(GAME_FULL_TITLE) (profile)" \
 		$(NDSTOOL_ARGS)
